@@ -1,5 +1,29 @@
 # Captovix changelog
 
+## 1.2.1 — Installer Path Fix
+
+- Sửa lỗi bộ cài từ chối thư mục mới chưa tồn tại, bao gồm D:\Captovix\Captovix.
+- Thay lệnh NSIS GetFullPathName trong bước xác thực bằng Win32 GetFullPathNameW, chuẩn hóa trước khi tạo thư mục và không yêu cầu thư mục tồn tại.
+- Giữ kiểm tra ổ cục bộ cố định, quyền ghi, thư mục trống và vùng dữ liệu riêng. Tách thông báo để thấy đúng nguyên nhân nếu một kiểm tra khác không đạt.
+- Giữ các tính năng Image Editor UX của V1.2.0, nguồn cập nhật và AppId/schema dữ liệu.
+
+Để chuyển bản đã cài từ C sang D: đóng app, gỡ Captovix qua Windows Settings, chạy Setup này và chọn D:\Captovix\Captovix. Thư viện ảnh/video giữ tại vị trí hiện có. Nếu V1.2.0 bị chặn trước khi cài, chỉ cần đóng bộ cài cũ và chạy bản này.
+
+Chưa thực thi trên Windows thật trong môi trường đóng gói. Kèm harness NSIS kiểm tra chuẩn hóa thư mục mới và checklist Windows.
+
+
+## 1.2.0 — Image Editor UX (2026-10-20)
+
+- Zoom bằng con lăn quanh vị trí chuột; nút +/- và 100% giữ tâm khung nhìn.
+- Giữ Space + kéo chuột trái để di chuyển khung nhìn; nhả Space/chuột hoặc mất focus để kết thúc. Escape trong lúc pan khôi phục vị trí trước khi kéo.
+- Crop chờ xác nhận: kéo vùng, sửa bằng 8 tay nắm, di chuyển vùng, nhập X/Y/rộng/cao theo pixel ảnh gốc; Enter/Áp dụng để hoàn tất, Escape để hủy. Phím mũi tên tinh chỉnh 1 px hoặc Shift 10 px.
+- Shift khi vẽ crop tạo hình vuông; Shift kéo góc giữ tỷ lệ trong giới hạn làm tròn pixel. Ctrl+A khi crop chọn toàn khung hiện tại.
+- Alt+click luân phiên chọn các đối tượng chồng lấp. Giữ thao tác nhóm, bắt dính, đổi kích thước và undo/redo V1.1.
+- Setup có bước chọn thư mục cài, ví dụ D:\Apps\Captovix; kiểm tra thư mục trống/quyền ghi/ổ cục bộ và giữ thư mục dữ liệu riêng.
+- Nhận diện đường dẫn đã cài. Để chuyển bản cài hiện có sang ổ khác: gỡ app trong Windows Settings rồi chạy lại Setup, chọn thư mục mới; ảnh/video vẫn giữ nguyên. Cập nhật trong app giữ đường dẫn cũ.
+
+Giữ nguồn GitHub mặc định, AppId và dữ liệu/schema 2. Copy/Xuất ảnh áp dụng vùng crop đang chờ; hủy hộp thoại Xuất không áp dụng crop. Video giữ chức năng hiện tại. Chưa chạy UI/bộ cài/updater trên Windows thật trong môi trường đóng gói.
+
 ## 1.1.0 — Image Annotation (2026-10-20)
 
 - Thêm Làm mờ, Pixel hóa và Che kín; điều chỉnh mức xử lý 4–64 px, giữ ảnh gốc và xuất PNG/JPEG đã xử lý.

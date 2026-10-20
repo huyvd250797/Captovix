@@ -99,9 +99,9 @@ try
         } } }));
         WriteFeed(asset);
         var packagesDir = Path.Combine(root, "packages"); Directory.CreateDirectory(packagesDir);
-        var locator = new TestVelopackLocator(VersionInfo.AppId, "1.0.3", packagesDir);
+        var locator = new TestVelopackLocator(VersionInfo.AppId, "1.1.0", packagesDir);
         var source = new SimpleFileSource(new DirectoryInfo(sourceDir));
-        var sdk = new VelopackUpdateBackend(new() { SourceKind = "Https", SourceUrl = "https://example.com/feed" }, locator, "1.0.3", source);
+        var sdk = new VelopackUpdateBackend(new() { SourceKind = "Https", SourceUrl = "https://example.com/feed" }, locator, "1.1.0", source);
         Check(sdk.CanApply, "SDK recognizes test installed app");
         var release = await sdk.CheckAsync(); Check(release?.Version == actualVersion.ToString(), "SDK discovers real packaged version");
         await sdk.DownloadAsync(release!, _ => { }, default);
@@ -117,7 +117,7 @@ try
         Check(rejected, "Another app package is never offered");
         asset.PackageId = VersionInfo.AppId; asset.Version = SemanticVersion.Parse("0.9.0"); WriteFeed(asset);
         Check(await sdk.CheckAsync() == null, "SDK does not offer older release");
-        asset.Version = SemanticVersion.Parse("1.0.3"); WriteFeed(asset);
+        asset.Version = SemanticVersion.Parse("1.1.0"); WriteFeed(asset);
         Check(await sdk.CheckAsync() == null, "SDK does not offer the same version");
         asset.Version = SemanticVersion.Parse("99.0.0-beta.1"); WriteFeed(asset);
         rejected = false; try { rejected = await sdk.CheckAsync() == null; } catch { rejected = true; }

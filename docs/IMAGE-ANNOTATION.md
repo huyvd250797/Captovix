@@ -1,4 +1,4 @@
-# Captovix V1.1 — Chỉnh sửa ảnh
+# Captovix V1.1+ — Chỉnh sửa ảnh
 
 ## Làm mờ, Pixel hóa và Che kín
 
@@ -38,3 +38,5 @@ Tùy chỉnh kiểu → Lưu thành preset riêng → nhập tên → Lưu mẫu
 Chú thích/crop/schema 1 từ V1.0 được đọc nguyên vẹn, nâng sang schema 2 khi lưu. Schema 2 chứa loại hiệu ứng và mức xử lý mới; V1.0 không hỗ trợ schema này. Backup trước nâng cấp giữ chú thích cũ, không phải chức năng rollback tự động. Media gốc giữ nguyên. Các preset riêng được đưa vào backup của những lần cập nhật từ V1.1 trở đi.
 
 Mỗi ảnh vẫn có undo/redo tối đa 100 bước trong phiên đang mở; lịch sử undo không lưu qua lần đóng app. Bản chú thích cuối cùng tự lưu; Ctrl+S lưu ngay. Các file Edits/annotation-presets.json nằm ở %LOCALAPPDATA%\HuyVo\Captovix.
+
+V1.2 bổ sung zoom/pan và crop có bước xác nhận; xem IMAGE-EDITOR-UX.md.

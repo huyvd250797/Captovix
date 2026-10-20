@@ -24,7 +24,7 @@ foreach ($folder in @($payload,$releases)) {
 if ($PreviousReleases) { Copy-Item (Join-Path (Resolve-Path $PreviousReleases).Path '*.nupkg') $releases -Force }
 dotnet run --project tests/InstallerContractChecks/InstallerContractChecks.csproj -c Release -- $projectRoot
 if ($LASTEXITCODE -ne 0) { throw 'Installer argument regression checks failed.' }
-foreach ($check in @('GeometryChecks','EditorCoreChecks','AnnotationChecks','UpdateChecks','EditorWindowsChecks')) {
+foreach ($check in @('GeometryChecks','EditorCoreChecks','AnnotationChecks','ViewportChecks','UpdateChecks','EditorWindowsChecks')) {
     dotnet run --project "tests/$check/$check.csproj" -c Release -p:Platform=x64
     if ($LASTEXITCODE -ne 0) { throw "$check failed." }
 }
@@ -53,6 +53,13 @@ if (-not $SkipInstaller) {
     $compiler = Get-Command makensis.exe -ErrorAction SilentlyContinue
     $compilerPath = if ($compiler) { $compiler.Source } else { Join-Path ${env:ProgramFiles(x86)} 'NSIS\makensis.exe' }
     if (-not (Test-Path $compilerPath)) { throw 'Install NSIS 3 to build the migration Setup.exe. Raw Velopack output is available in artifacts/releases.' }
+    # Exercise the actual NSIS normalization function on Windows before shipping.
+    & $compilerPath tests/InstallerPathChecks/InstallerPathChecks.nsi
+    if ($LASTEXITCODE -ne 0) { throw 'NSIS path harness compilation failed.' }
+    $pathHarness = Join-Path $projectRoot 'tests/InstallerPathChecks/InstallerPathChecks.exe'
+    $pathCheck = Start-Process -FilePath $pathHarness -Wait -PassThru
+    if ($pathCheck.ExitCode -ne 0) { throw 'NSIS path regression failed. See %TEMP%/Captovix-InstallerPathChecks-result.txt.' }
+
     $prereqRoot = Join-Path $projectRoot 'prerequisites'; New-Item -ItemType Directory -Force $prereqRoot | Out-Null
     $vc = Join-Path $prereqRoot 'vc_redist.x64.exe'
     if (-not (Test-Path $vc)) { Invoke-WebRequest 'https://aka.ms/vs/17/release/vc_redist.x64.exe' -OutFile $vc }

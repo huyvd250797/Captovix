@@ -1,14 +1,30 @@
-# Captovix V1.1.0 — Image Annotation
+# Captovix V1.2.1 — Installer Path Fix
 
 Ứng dụng Windows x64 chụp ảnh, quay màn hình và chú thích ảnh trong **một cửa sổ Editor**. Cấu hình chụp/quay nằm ngay trong Editor. © 2026 HuyVo. All rights reserved.
 
 ## Bắt đầu
 
-**Khuyên dùng:** chạy `Captovix-v1.1.0-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
+**Khuyên dùng:** chạy `Captovix-v1.2.1-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
 
-**Portable:** giải nén toàn bộ `Captovix-v1.1.0-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
+**Portable:** giải nén toàn bộ `Captovix-v1.2.1-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
 
 Máy mục tiêu: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiểm thử thực tế. Windows N/KN cần Media Feature Pack. App chưa có bản x86/ARM64 hoặc chứng thư ký mã thương mại. Không tắt Windows Defender hay cơ chế bảo vệ của máy.
+
+## Sửa lỗi V1.2.1 — Installer Path Fix
+
+- Sửa bước chuẩn hóa đường dẫn để chấp nhận thư mục chưa tồn tại, ví dụ `D:\Captovix\Captovix`. Bộ cài tự tạo thư mục sau khi kiểm tra an toàn.
+- Phân biệt thông báo sai đường dẫn, loại ổ đĩa và trùng thư mục dữ liệu.
+- V1.2.0 nếu chưa cài được: đóng bộ cài cũ, chạy Setup V1.2.1; không cần cài các phiên bản trung gian.
+
+## Mới trong V1.2 — Image Editor UX
+
+- Con lăn zoom tại con trỏ; giữ Space + chuột trái để pan, không sửa chú thích.
+- Crop có vùng xem trước, 8 tay nắm và ô X/Y/rộng/cao. Enter/Áp dụng để hoàn tất; Escape hủy; phím mũi tên tinh chỉnh.
+- Alt+click chọn đối tượng nằm dưới khi chồng lấp; giữ các công cụ ảnh V1.1.
+- Setup có trang chọn thư mục cài, có thể chọn ổ D/E và thư mục riêng có quyền ghi.
+- Xem [IMAGE-EDITOR-UX.md](docs/IMAGE-EDITOR-UX.md) và [INSTALL-LOCATION.md](docs/INSTALL-LOCATION.md).
+
+Muốn chuyển bản đã cài ở ổ C sang ổ khác: gỡ Captovix trong Windows Settings (dữ liệu được giữ), chạy Setup V1.2.1 và chọn thư mục mới. Cập nhật trong app giữ thư mục cài hiện tại. Đổi thư mục cài không di chuyển ảnh/video.
 
 ## Mới trong V1.1 — Image Annotation
 
@@ -61,7 +77,7 @@ Chia sẻ ảnh PNG/JPEG qua **Copy ảnh/Xuất file**. **Che kín** phù hợp
 3. Chọn công cụ, kéo trên ảnh để vẽ. Với **Chữ**, click vị trí rồi nhập nội dung ở bảng thuộc tính bên phải; `Ctrl+Enter` để hoàn tất.
 4. Với **Bước**, click để đặt số tự tăng; có thể sửa số trong bảng thuộc tính.
 5. Dùng **Chọn** để click đối tượng, kéo di chuyển hoặc sửa thuộc tính. Delete chỉ xóa đối tượng đang chọn.
-6. Dùng **Crop**, kéo và thả vùng muốn giữ để áp dụng ngay. Undo hoặc **Khôi phục khung ảnh gốc** để lấy lại.
+6. Dùng **Crop**, kéo vùng muốn giữ, sửa tay nắm hoặc nhập kích thước rồi bấm **Áp dụng crop**. Undo hoặc **Khôi phục khung ảnh gốc** để lấy lại.
 7. Chờ nhãn **Đã lưu**. Thao tác vẽ/di chuyển tự lưu sau khoảng 0,55 giây; nhập chữ được gom theo nhịp dừng gõ khoảng 0,7 giây rồi tự lưu. `Ctrl+S` lưu ngay.
 8. Chọn **Copy ảnh** hoặc **Xuất file** để lấy ảnh hoàn chỉnh. Ảnh gốc luôn lưu riêng.
 
@@ -81,7 +97,10 @@ Bảng cấu hình chụp/quay mặc định thu gọn để dành vùng chỉnh
 | V / A / R / E | Chọn / Mũi tên / Khung / Ellipse |
 | T / H / N / C | Chữ / Highlight / Số bước / Crop |
 | B / P / K | Làm mờ / Pixel hóa / Che kín |
-| Ctrl+A | Chọn tất cả chú thích |
+| Con lăn | Zoom quanh vị trí chuột |
+| Space + kéo chuột trái | Di chuyển khung nhìn |
+| Alt+click | Chọn lớp đối tượng tiếp theo dưới con trỏ |
+| Ctrl+A | Chọn tất cả chú thích / toàn khung khi crop |
 | Shift/Ctrl+click | Thêm/bỏ đối tượng khỏi vùng chọn |
 | Delete | Xóa các đối tượng đang chọn |
 | Phím mũi tên / Shift+mũi tên | Di chuyển đối tượng 1 / 10 pixel gốc |
@@ -109,7 +128,7 @@ Lịch sử đã có trong Captovix không bị ghi đè khi mở app lần sau.
 
 ## Lưu trữ và riêng tư
 
-- App cài: `%LOCALAPPDATA%\HuyVo.Captovix`.
+- App cài mặc định: `%LOCALAPPDATA%\HuyVo.Captovix`, hoặc thư mục đã chọn trong Setup.
 - Dữ liệu mới: `%LOCALAPPDATA%\HuyVo\Captovix`.
 - `Media\`: file gốc; `Edits\`: lớp chú thích/crop JSON; `Thumbnails\`: ảnh thu nhỏ của bản chỉnh.
 - `library.json`, `settings.json`: lịch sử và cấu hình. Chưa dùng SQLite.
@@ -153,4 +172,4 @@ C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, ScreenRecorderLib 7.0.1 (Desktop Dupli
 
 ## Phiên bản tiếp theo
 
-**V1.2 — Recording & Video Tools:** cắt đầu/cuối video, chọn đoạn xuất, timeline/tua và hoàn thiện ghi hình/âm thanh.
+**V1.3 — Advanced Annotation:** sửa chữ trên ảnh, callout/vẽ tự do, nhóm/nhân bản và sắp xếp lớp. Tiếp tục ưu tiên ảnh; công cụ video chuyển sang V2.0.

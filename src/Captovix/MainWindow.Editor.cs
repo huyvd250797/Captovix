@@ -23,7 +23,8 @@ public partial class MainWindow
         Surface.SelectionChanged+=SyncProperties;
         Surface.VisualChanged+=()=>{if(_session is {} s){var v=s.Document.Viewport;ImageSizeLabel.Text=$"{v.Width} × {v.Height} px · {s.Document.Annotations.Count} chú thích";RestoreCropButton.IsEnabled=s.Document.Crop!=null;}ZoomLabel.Text=$"{Surface.Zoom*VisualTreeHelper.GetDpi(this).DpiScaleX*100:F0}%";};
         Surface.TextRequested+=()=>{AnnotationText.Focus();AnnotationText.SelectAll();};
-        Surface.CropFinished+=()=>{SelectTool(EditorTool.Select);if(_fitMode)FitImage();};
+        Surface.CropFinished+=()=>{SelectTool(EditorTool.Select);FitImage();};
+        InitializeViewport();
         InitializeAnnotationFeatures();
         SelectTool(EditorTool.Select);
     }
@@ -44,7 +45,7 @@ public partial class MainWindow
     private void UnloadEditor()
     {
         _textTimer.Stop();_saveTimer.Stop();if(_session!=null)_session.Changed-=Session_Changed;
-        Surface.Load(null,null);_session=null;_activeItem=null;UndoButton.IsEnabled=RedoButton.IsEnabled=false;
+        _spaceHeld=false;EndPan();Surface.Load(null,null);_session=null;_activeItem=null;UndoButton.IsEnabled=RedoButton.IsEnabled=false;
     }
     private void OpenImage(MediaItem item)
     {
@@ -57,16 +58,18 @@ public partial class MainWindow
     }
     private void SelectTool(EditorTool tool)
     {
-        if(Surface==null)return;Surface.CancelInteraction();Surface.Tool=tool;Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
+        if(Surface==null)return;Surface.CancelInteraction();
+        if(Surface.Tool==EditorTool.Crop&&tool!=EditorTool.Crop)Surface.ClearCropDraft();
+        Surface.Tool=tool;if(tool==EditorTool.Crop)Surface.StartCrop();Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
         foreach(var button in ToolBox.Children.OfType<Button>()){
             var selected=button.Tag?.ToString()==tool.ToString();button.Background=selected?(Brush)FindResource("Accent"):Brushes.White;button.Foreground=selected?Brushes.White:new SolidColorBrush(Color.FromRgb(36,51,72));
         }
         SyncProperties();
         ToolHint.Text=tool switch{
-            EditorTool.Select=>"Shift/Ctrl+click hoặc kéo vùng trống để chọn nhiều • Kéo tay nắm đổi kích thước • Shift khóa hướng/tỷ lệ • Ctrl bỏ bắt dính",
+            EditorTool.Select=>"Shift/Ctrl+click chọn nhiều • Alt+click chọn lớp dưới • Shift khóa hướng/tỷ lệ • Con lăn zoom • Space kéo khung nhìn",
             EditorTool.Text=>"Click vị trí trên ảnh rồi nhập chữ ở bảng thuộc tính bên phải.",
             EditorTool.Step=>"Click để đặt số bước tự tăng. Có thể sửa số ở bảng thuộc tính.",
-            EditorTool.Crop=>"Kéo vùng muốn giữ và thả chuột để crop • Ctrl+Z hoặc Khôi phục khung ảnh gốc để lấy lại.",
+            EditorTool.Crop=>"Kéo vùng → kéo tay nắm hoặc nhập kích thước → Enter/Áp dụng • Esc hủy • Space kéo khung nhìn.",
             EditorTool.Highlight=>"Kéo phủ vùng cần làm nổi bật. Chọn màu ở bảng thuộc tính.",
             EditorTool.Blur or EditorTool.Pixelate=>"Kéo vùng cần xử lý • Khi kéo vùng tạm che kín; thả chuột để áp dụng • Chỉnh mức xử lý bên phải.",
             EditorTool.Cover=>"Kéo vùng để che kín bằng màu đang chọn • Xuất PNG/JPEG để chia sẻ ảnh đã che.",_=>"Kéo để vẽ đối tượng • Chọn công cụ Chọn (V) để sửa lại."};
@@ -80,7 +83,7 @@ public partial class MainWindow
             if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
             if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
             SelectValue(StrokePicker,Surface.StrokeSize);SelectValue(FontPicker,Surface.TextSize);
-            SyncAnnotationFeatures();
+            SyncAnnotationFeatures();SyncCropProperties();
             foreach(var b in ColorPalette.Children.OfType<Button>())b.BorderThickness=new Thickness(b.Tag?.ToString()==Surface.InkColor?3:1);
             TextProperties.Visibility=a?.Kind==AnnotationKind.Text&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
@@ -122,18 +125,18 @@ public partial class MainWindow
     private void StepNumber_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Enter){CommitStep();Surface.Focus();e.Handled=true;}}
     private void CommitStep(){if(_syncProperties||_session==null||Surface.Selected is not {Kind:AnnotationKind.Step} a)return;if(int.TryParse(StepNumber.Text,out var n)&&n>=1&&n<=9999){var id=a.Id;_session.Change(d=>d.Annotations.First(x=>x.Id==id).Number=n);}SyncProperties();}
     private void DeleteAnnotation_Click(object sender,RoutedEventArgs e)=>Surface.DeleteSelected();
-    private void RestoreCrop_Click(object sender,RoutedEventArgs e){_session?.Change(d=>d.Crop=null);Surface.Refresh();if(_fitMode)FitImage();}
-    private void Undo_Click(object sender,RoutedEventArgs e){Surface.CancelInteraction();_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
-    private void Redo_Click(object sender,RoutedEventArgs e){Surface.CancelInteraction();_session?.Redo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
+    private void RestoreCrop_Click(object sender,RoutedEventArgs e){SelectTool(EditorTool.Select);_session?.Change(d=>d.Crop=null);Surface.Refresh();if(_fitMode)FitImage();}
+    private void Undo_Click(object sender,RoutedEventArgs e){Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
+    private void Redo_Click(object sender,RoutedEventArgs e){Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Redo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
     private void FitImage()
     {
         _fitMode=true;_actualPixels=false;if(_session==null)return;var v=_session.Document.Viewport;
         Surface.SetZoom(Math.Min(Math.Max(40,ImageScroll.ActualWidth-65)/v.Width,Math.Max(40,ImageScroll.ActualHeight-65)/v.Height));
     }
     private void Fit_Click(object sender,RoutedEventArgs e)=>FitImage();
-    private void Actual_Click(object sender,RoutedEventArgs e){_fitMode=false;_actualPixels=true;Surface.SetZoom(1/VisualTreeHelper.GetDpi(this).DpiScaleX);}
-    private void ZoomOut_Click(object sender,RoutedEventArgs e){_fitMode=false;_actualPixels=false;Surface.SetZoom(Surface.Zoom/1.25);}
-    private void ZoomIn_Click(object sender,RoutedEventArgs e){_fitMode=false;_actualPixels=false;Surface.SetZoom(Surface.Zoom*1.25);}
+    private void Actual_Click(object sender,RoutedEventArgs e){ZoomAtCenter(1/VisualTreeHelper.GetDpi(this).DpiScaleX);_actualPixels=true;}
+    private void ZoomOut_Click(object sender,RoutedEventArgs e)=>ZoomAtCenter(Surface.Zoom/1.25);
+    private void ZoomIn_Click(object sender,RoutedEventArgs e)=>ZoomAtCenter(Surface.Zoom*1.25);
     protected override void OnDpiChanged(DpiScale oldDpi,DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi,newDpi);if(Surface==null||_session==null)return;
@@ -143,11 +146,12 @@ public partial class MainWindow
     private void Editor_KeyDown(object sender,KeyEventArgs e)
     {
         var ctrl=Keyboard.Modifiers.HasFlag(ModifierKeys.Control);var typing=Keyboard.FocusedElement is TextBoxBase;
+        if(ViewportKey(e,typing))return;
         if(Surface.IsMouseCaptured&&e.Key!=Key.Escape){
             if(ctrl&&e.Key==Key.Z){Surface.CancelInteraction();_session?.Undo();Surface.Refresh();SyncProperties();}
             e.Handled=true;return;
         }
-        if(ctrl&&e.Key==Key.S){if(StepNumber.IsKeyboardFocusWithin)CommitStep();_session?.Commit();FlushEdits();e.Handled=true;return;}
+        if(ctrl&&e.Key==Key.S){if(Surface.Tool==EditorTool.Crop&&!ApplyCropFromFields()){e.Handled=true;return;}if(StepNumber.IsKeyboardFocusWithin)CommitStep();_session?.Commit();FlushEdits();e.Handled=true;return;}
         if(typing||Keyboard.FocusedElement is ComboBox or ComboBoxItem||_session==null||_busy)return;
         if(ctrl){
             if(e.Key==Key.Z){if(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))Redo_Click(sender,e);else Undo_Click(sender,e);e.Handled=true;}

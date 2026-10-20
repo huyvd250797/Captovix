@@ -1,13 +1,10 @@
-# Captovix V1.1.0 — Image Annotation
+# Captovix V1.2.1 — Installer Path Fix
 
-- Thêm Làm mờ, Pixel hóa và Che kín; điều chỉnh mức xử lý 4–64 px, giữ ảnh gốc và xuất PNG/JPEG đã xử lý.
-- 6 preset màu/nét/chữ có sẵn; lưu tối đa 20 preset riêng và xóa mẫu riêng.
-- Chọn nhiều bằng Shift/Ctrl+click, kéo vùng trống hoặc Ctrl+A; di chuyển, căn chỉnh, đổi kiểu và xóa cùng lúc.
-- Căn trái/giữa/phải/trên/dưới: một đối tượng căn theo ảnh/crop, nhiều đối tượng căn theo nhóm.
-- Tay nắm ở 8 hướng; góc cho chữ/số để đổi cỡ theo tỷ lệ; mũi tên giữ hai đầu. Giữ Shift để khóa hướng/tỷ lệ; bắt dính mép/tâm ảnh khi kéo, Ctrl để bỏ bắt dính.
-- Click chọn không tạo thay đổi ngoài ý muốn; Escape/hủy capture chuột khôi phục thao tác; outline khung/ellipse có hit-test theo nét.
-- Giữ undo/redo, lưu tự động và nguồn cập nhật GitHub mặc định. Backup cập nhật bổ sung preset riêng.
+- Sửa lỗi bộ cài từ chối thư mục mới chưa tồn tại, bao gồm D:\Captovix\Captovix.
+- Thay lệnh NSIS GetFullPathName trong bước xác thực bằng Win32 GetFullPathNameW, chuẩn hóa trước khi tạo thư mục và không yêu cầu thư mục tồn tại.
+- Giữ kiểm tra ổ cục bộ cố định, quyền ghi, thư mục trống và vùng dữ liệu riêng. Tách thông báo để thấy đúng nguyên nhân nếu một kiểm tra khác không đạt.
+- Giữ các tính năng Image Editor UX của V1.2.0, nguồn cập nhật và AppId/schema dữ liệu.
 
-Chú thích V1.0 được đọc và nâng lên schema 2 khi lưu. Giữ bản backup trước cập nhật; các bản V1.0 không đọc được tài liệu mới. Vùng che kín luôn phủ trên các hiệu ứng/chú thích khác. Làm mờ/pixel hóa không thay thế che kín khi cần ẩn hoàn toàn thông tin. Chia sẻ ảnh đã xuất; ảnh gốc và Edits vẫn giữ nội dung để tiếp tục chỉnh sửa.
+Để chuyển bản đã cài từ C sang D: đóng app, gỡ Captovix qua Windows Settings, chạy Setup này và chọn D:\Captovix\Captovix. Thư viện ảnh/video giữ tại vị trí hiện có. Nếu V1.2.0 bị chặn trước khi cài, chỉ cần đóng bộ cài cũ và chạy bản này.
 
-Chưa chạy WPF/Setup/Update.exe trên Windows thật trong môi trường đóng gói. Xem docs/WINDOWS-TEST-CHECKLIST.md.
+Chưa thực thi trên Windows thật trong môi trường đóng gói. Kèm harness NSIS kiểm tra chuẩn hóa thư mục mới và checklist Windows.

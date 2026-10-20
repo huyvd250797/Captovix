@@ -1,11 +1,11 @@
-; First-install/migration wrapper. Future updates are performed by Velopack.
+﻿; First-install/migration wrapper. Future updates are performed by Velopack.
 Unicode true
 !include "MUI2.nsh"
 !include "x64.nsh"
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
 !ifndef APPVERSION
- !define APPVERSION "1.1.0"
+ !define APPVERSION "1.2.1"
 !endif
 !ifndef CORESETUP
  !define CORESETUP "..\artifacts\CoreSetup.exe"
@@ -17,6 +17,7 @@ Unicode true
  !define OUTPUT "..\artifacts\Captovix-v${APPVERSION}-Setup.exe"
 !endif
 Name "Captovix ${APPVERSION}"
+InstallDir "$LOCALAPPDATA\HuyVo.Captovix"
 Icon "..\src\Captovix\Assets\Captovix.ico"
 OutFile "${OUTPUT}"
 RequestExecutionLevel user
@@ -31,10 +32,14 @@ Var LegacyPath
 Var LegacyVersion
 Var LegacyPublisher
 Var LegacyName
+Var ExistingPath
 Var NewPath
 Var CoreLog
 !define MUI_ABORTWARNING
 !insertmacro MUI_PAGE_WELCOME
+!define MUI_DIRECTORYPAGE_TEXT_TOP "Chọn thư mục riêng để cài Captovix, ví dụ D:\Apps\Captovix. Ảnh/video hiện có được giữ tại thư mục dữ liệu cũ."
+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE ValidateDirectory
+!insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN
 !define MUI_FINISHPAGE_RUN_FUNCTION LaunchInstalled
@@ -67,8 +72,89 @@ Function .onInit
  ReadRegStr $LegacyVersion HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Captovix" "DisplayVersion"
  ReadRegStr $LegacyPublisher HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Captovix" "Publisher"
  ReadRegStr $LegacyName HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Captovix" "DisplayName"
- StrCpy $NewPath "$LOCALAPPDATA\HuyVo.Captovix"
+ ; Remember an existing managed installation. Do not relocate by installing a second root.
+ ReadRegStr $ExistingPath HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\HuyVo.Captovix" "InstallLocation"
+ IfFileExists "$ExistingPath\Update.exe" 0 try_saved_location
+ IfFileExists "$ExistingPath\current\Captovix.exe" use_existing_location try_saved_location
+ try_saved_location:
+ ReadRegStr $ExistingPath HKCU "Software\HuyVo\CaptovixBootstrap" "InstallLocation"
+ IfFileExists "$ExistingPath\Update.exe" 0 try_default_location
+ IfFileExists "$ExistingPath\current\Captovix.exe" use_existing_location try_default_location
+ try_default_location:
+ StrCpy $ExistingPath "$LOCALAPPDATA\HuyVo.Captovix"
+ IfFileExists "$ExistingPath\Update.exe" 0 no_existing_location
+ IfFileExists "$ExistingPath\current\Captovix.exe" use_existing_location no_existing_location
+ no_existing_location:
+ StrCpy $ExistingPath ""
+ Goto location_ready
+ use_existing_location:
+ GetFullPathName $ExistingPath "$ExistingPath"
+ StrCpy $INSTDIR "$ExistingPath"
+ location_ready:
+ StrCpy $NewPath "$INSTDIR"
  StrCpy $CoreLog "$LOCALAPPDATA\HuyVo\Captovix\Logs\setup-core.log"
+FunctionEnd
+
+!include "InstallPath.nsh"
+
+Function ValidateDirectory
+ Call NormalizeInstallDirectory
+ IfErrors invalid_directory
+ ; Use a local fixed drive so the updater has a stable writable installation root.
+ StrCpy $0 $INSTDIR 3
+ System::Call 'kernel32::GetDriveTypeW(w r0) i.r1'
+ IntCmp $1 3 fixed_drive invalid_drive invalid_drive
+ fixed_drive:
+ ; Reject both descendants and ancestors of the persistent data folder.
+ StrLen $0 "$LOCALAPPDATA\HuyVo\Captovix\"
+ StrCpy $1 "$INSTDIR\" $0
+ StrCmp $1 "$LOCALAPPDATA\HuyVo\Captovix\" data_overlap
+ StrLen $0 "$INSTDIR\"
+ StrCpy $1 "$LOCALAPPDATA\HuyVo\Captovix\" $0
+ StrCmp $1 "$INSTDIR\" data_overlap
+ ${If} $ExistingPath != ""
+ ${AndIf} $INSTDIR != $ExistingPath
+  MessageBox MB_ICONINFORMATION "Captovix đang được cài tại $ExistingPath. Để chuyển ổ/thư mục, gỡ Captovix trong Windows Settings rồi chạy lại Setup và chọn thư mục mới. Dữ liệu ảnh/video được giữ nguyên."
+  Abort
+ ${EndIf}
+ ; Fresh installs must use an empty directory; never replace somebody else's files.
+ StrCmp $INSTDIR $ExistingPath check_write_access
+ ClearErrors
+ FindFirst $0 $1 "$INSTDIR\*"
+ IfErrors directory_empty
+ directory_scan:
+ StrCmp $1 "." directory_next
+ StrCmp $1 ".." directory_next
+ FindClose $0
+ MessageBox MB_ICONSTOP "Thư mục đã có dữ liệu. Hãy chọn một thư mục trống riêng cho Captovix."
+ Abort
+ directory_next:
+ FindNext $0 $1
+ IfErrors directory_scan_done directory_scan
+ directory_scan_done:
+ FindClose $0
+ directory_empty:
+ check_write_access:
+ ClearErrors
+ CreateDirectory "$INSTDIR"
+ IfErrors cannot_write
+ GetTempFileName $0 "$INSTDIR"
+ IfErrors cannot_write
+ Delete "$0"
+ StrCpy $NewPath "$INSTDIR"
+ Return
+ invalid_directory:
+ MessageBox MB_ICONSTOP "Đường dẫn chưa hợp lệ: $INSTDIR$\r$\nHãy nhập đường dẫn đầy đủ tới thư mục riêng, ví dụ D:\Captovix\Captovix. Không chọn gốc ổ đĩa."
+ Abort
+ invalid_drive:
+ MessageBox MB_ICONSTOP "Không xác nhận được ổ đĩa cục bộ cố định cho: $INSTDIR$\r$\nMã loại ổ đĩa Windows: $1. Hãy kiểm tra ổ đĩa đang sẵn sàng và truy cập được."
+ Abort
+ data_overlap:
+ MessageBox MB_ICONSTOP "Thư mục cài trùng hoặc bao chứa thư mục dữ liệu ảnh/video: $INSTDIR$\r$\nHãy chọn thư mục riêng, ví dụ D:\Captovix\Captovix."
+ Abort
+ cannot_write:
+ MessageBox MB_ICONSTOP "Không ghi được vào thư mục đã chọn. Hãy chọn thư mục bạn có quyền ghi."
+ Abort
 FunctionEnd
 
 Function LaunchInstalled
@@ -83,6 +169,8 @@ Function LaunchInstalled
 FunctionEnd
 
 Section "Captovix"
+ ; Validate again for silent invocations that skip the directory page.
+ Call ValidateDirectory
  SetShellVarContext current
  SetRegView 64
  DetailPrint "Buoc 1/3: Kiem tra Microsoft Visual C++ Runtime."
@@ -157,6 +245,7 @@ Section "Captovix"
   ${EndIf}
  ${EndIf}
  legacy_done:
+ WriteRegStr HKCU "Software\HuyVo\CaptovixBootstrap" "InstallLocation" "$NewPath"
  ; Old uninstall may remove the new Desktop shortcut. Recreate stable launchers.
  CreateShortcut "$DESKTOP\Captovix.lnk" "$NewPath\Update.exe" "start Captovix.exe" "$NewPath\current\Captovix.exe"
  CreateShortcut "$SMPROGRAMS\Captovix.lnk" "$NewPath\Update.exe" "start Captovix.exe" "$NewPath\current\Captovix.exe"

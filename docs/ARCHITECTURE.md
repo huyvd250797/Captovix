@@ -1,4 +1,4 @@
-# Captovix V1.1.0 architecture
+# Captovix V1.2.0 architecture
 
 ## Single Editor and window state
 
@@ -47,3 +47,9 @@ The wrapper no longer forwards application arguments through Setup.exe's trailin
 EditorDocument accepts schema 1 and 2, promotes loaded schema 1 in memory and writes schema 2 on the next edit save. Blur/Pixelate/Cover append enum kinds, with bounded EffectSize. RedactionPixels is a platform-independent, separable CPU blur/block average with opaque outputs. RedactionRenderer converts source to BGRA32, processes 512-pixel tiles with blur halos/block-aligned pixel tiles, and retains at most 32 MiB/64 cached masks per source bitmap. Large masks process in tiles without an additional full-mask working buffer. During interactive mask transforms the canvas shows opaque drafts; flatten/export always compute final pixels. Redactions are composited above normal annotations and solid Cover patches above all filters.
 
 AnnotationEditing provides multi-object layout/resize/snap/clamp transforms without WPF dependencies. EditorSurface maintains selection IDs separate from document state and snapshots geometry per gesture; selection is not undo history, geometry changes are. Presets include six immutable built-ins and up to twenty custom styles saved atomically in annotation-presets.json. UpdateBackup includes that file from V1.1.
+
+## Image Editor UX (1.2)
+
+EditorViewportMath centralizes clamped wheel scaling, cursor-anchored zoom offsets and DIP-based pan. MainWindow.Viewport maps canvas/ScrollViewer coordinates after layout, handles Space capture/release/deactivation and keeps pan out of document history. CropGeometry provides integer source-pixel creation, clamp/resize/move and overflow-safe validation. EditorSurface keeps CropDraft outside EditorDocument until an explicit apply; moving/resizing a draft never writes sidecar state. Crop applies through one EditorSession transaction and leaves annotation coordinates unchanged. Schema remains 2.
+
+NSIS bootstrap adds a directory page and validates paths before any install work (also in silent mode). It passes chosen INSTDIR via the supported --installto option, rejects nonempty fresh targets/data-folder overlap and requires a fixed local writable volume. Existing managed roots are detected through Velopack's HKCU uninstall InstallLocation, a bootstrap setting and the legacy default path, verifying Update.exe/current/Captovix.exe. Automatic relocation is deliberately not implemented; uninstall-then-install preserves external user data and avoids conflicting registry/shortcut registrations.

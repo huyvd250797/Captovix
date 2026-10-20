@@ -1,4 +1,4 @@
-# Checklist kiểm chứng Windows — Captovix V1.1.0
+# Checklist kiểm chứng Windows — Captovix V1.2.0
 
 Trạng thái ban đầu: **CHƯA CHẠY TRÊN WINDOWS THẬT**. Người kiểm thử điền Đạt/Không đạt, máy, GPU, OS, DPI, thiết bị âm thanh và đường dẫn bằng chứng. Không suy ra hiệu năng video từ kết quả build.
 
@@ -147,3 +147,24 @@ Các ô trên cần chạy bằng Windows thật; kiểm tra tĩnh hợp đồng
 - [ ] Kiểm tra capture/video/updater hiện có sau các thao tác chỉnh sửa ảnh.
 
 Các kiểm tra Windows này chưa được thực thi trong môi trường Linux đóng gói.
+
+## V1.2 — Image Editor UX / Install location
+
+- [ ] Con lăn zoom tại con trỏ khi ảnh nhỏ/lớn hơn viewport; giữ đúng vùng trên ảnh, giới hạn zoom, scrollbar xuất hiện/ẩn.
+- [ ] Space+drag ở vùng trống/ảnh/crop; nhả Space trước chuột, nhả chuột trước Space, Escape, mất focus; không để kẹt cursor/capture. Space trong textbox và wheel bên phải vẫn theo controls.
+- [ ] Crop kéo cả 8 tay nắm, move, Shift, nhập số, ảnh đã crop, mép ảnh, kích thước nhỏ, phím mũi tên, X/Y gốc, 100/150/200% DPI.
+- [ ] Crop chờ không tự lưu; áp dụng/cancel/undo/redo; Copy/Xuất áp dụng đúng vùng; hủy Save dialog giữ vùng chờ.
+- [ ] Alt+click đổi lớp với chữ/hình/che kín chồng nhau; select/move/resize/preset cũ vẫn hoạt động.
+- [ ] Cài mới ở D:\Apps\Captovix, D:\Ứng dụng\Captovix: launch/shortcut/uninstall registry đúng thư mục, update tiếp tại D.
+- [ ] Gốc ổ, UNC/ổ tháo rời, thư mục không có quyền, thư mục có dữ liệu, thư mục dữ liệu/cha/con đều bị từ chối; không xóa file có sẵn.
+- [ ] Bản đã cài ở C được nhận diện; đổi D khi chưa gỡ hiển thị hướng dẫn, chưa tạo bản thứ hai. Gỡ trong Windows Settings rồi cài D vẫn mở được thư viện/chú thích.
+- [ ] Updater 1.1.0→1.2.0 trên nguồn thử riêng: version, dữ liệu, default URL, shortcut và đường dẫn cũ được giữ.
+
+Chưa thực thi các ca Windows này trong môi trường đóng gói Linux.
+
+## V1.2.1 — Đường dẫn chưa tồn tại
+
+- Từ Developer Command Prompt có NSIS: `makensis tests\InstallerPathChecks\InstallerPathChecks.nsi`, chạy `tests\InstallerPathChecks\InstallerPathChecks.exe`, kiểm tra exit code 0 và `%TEMP%\Captovix-InstallerPathChecks-result.txt` (12 cases, failures=0). Harness chỉ kiểm tra chuẩn hóa, không cài app/tạo thư mục D.
+- Trên máy chưa cài hoặc sau khi gỡ bản managed: xóa/chọn một thư mục kiểm thử trống, nhập D:\Captovix\Captovix khi chưa tồn tại → cài thành công, app/Update.exe/shortcut đúng vị trí.
+- Lặp lại với thư mục có sẵn nhưng trống, có dấu/khoảng trắng, gốc ổ, thư mục có dữ liệu, quyền ghi thiếu và chồng lấn vùng dữ liệu.
+- Đã cài tại C: chọn D khi chưa gỡ phải hướng dẫn gỡ, không tự di chuyển; sau khi gỡ phải cài được tại D và ảnh cũ còn nguyên.

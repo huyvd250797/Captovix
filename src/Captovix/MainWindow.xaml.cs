@@ -135,7 +135,7 @@ public partial class MainWindow : Window
     private void UpdateMetadata(MediaItem item)=>Metadata.Text=$"{(item.IsVideo?"VIDEO MP4 / H.264":"ẢNH GỐC PNG")}\n{item.Width} × {item.Height} pixel\n{item.Created:dd/MM/yyyy HH:mm:ss}\n\nNguồn\n{item.Source}\n\n{(item.IsVideo?$"Mic: {(item.Microphone?"Bật":"Tắt")}\nTiếng máy: {(item.SystemAudio?"Bật":"Tắt")}\nFPS cấu hình: {item.Fps}\n":"")}\n{item.FilePath}";
     private void Copy_Click(object sender,RoutedEventArgs e)
     {
-        if(_session==null)return;_session.Commit();
+        if(_session==null||!PrepareCropForExport())return;_session.Commit();
         try{Clipboard.SetImage(Surface.Flatten());FlushEdits(false);SetStatus("Đã copy ảnh gồm chú thích và vùng crop.");}
         catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không copy được ảnh");}
     }
@@ -144,7 +144,7 @@ public partial class MainWindow : Window
         if(Selected is not { } i)return;_session?.Commit();
         var filename=string.Concat(i.Title.Select(c=>Path.GetInvalidFileNameChars().Contains(c)?'_':c));
         var save=new SaveFileDialog{FileName=filename,Filter=i.IsVideo?"MP4 video|*.mp4":"PNG image|*.png|JPEG image|*.jpg",AddExtension=true};
-        if(save.ShowDialog(this)!=true)return;
+        if(save.ShowDialog(this)!=true||!PrepareCropForExport())return;
         try{
             var destination=Path.GetFullPath(save.FileName);
             if(_store.Items.Any(item=>string.Equals(Path.GetFullPath(item.FilePath),destination,StringComparison.OrdinalIgnoreCase))){MessageBox.Show(this,"Hãy chọn tên hoặc thư mục xuất khác để giữ nguyên file gốc trong thư viện.","Giữ ảnh/video gốc");return;}

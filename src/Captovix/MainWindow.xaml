@@ -1,8 +1,8 @@
-<Window x:Class="Captovix.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:Captovix" Title="Captovix · V1.1.0 — Image Annotation" Width="1440" Height="900" MinWidth="900" MinHeight="480" WindowStartupLocation="CenterScreen" WindowState="Maximized" Icon="Assets/Captovix.ico" PreviewKeyDown="Editor_KeyDown">
+<Window x:Class="Captovix.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:Captovix" Title="Captovix · V1.2.0 — Image Editor UX" Width="1440" Height="900" MinWidth="900" MinHeight="480" WindowStartupLocation="CenterScreen" WindowState="Maximized" Icon="Assets/Captovix.ico" PreviewKeyDown="Editor_KeyDown" PreviewKeyUp="Editor_KeyUp">
  <Grid Margin="14"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <DockPanel Margin="0,0,0,10">
    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button Content="Mở file" Click="Import_Click"/><Button x:Name="UndoButton" Content="↶" ToolTip="Hoàn tác · Ctrl+Z" Click="Undo_Click" IsEnabled="False"/><Button x:Name="RedoButton" Content="↷" ToolTip="Làm lại · Ctrl+Y" Click="Redo_Click" IsEnabled="False"/><Button x:Name="CopyButton" Content="Copy ảnh" Click="Copy_Click" IsEnabled="False"/><Button x:Name="ExportButton" Content="Xuất file" Style="{StaticResource Primary}" Click="Export_Click" IsEnabled="False"/></StackPanel>
-   <StackPanel Orientation="Horizontal"><Border Background="#DDF2F2" CornerRadius="9" Padding="13,7" Margin="0,0,14,0"><StackPanel><TextBlock Text="CAPTOVIX" FontSize="18" FontWeight="Bold" Foreground="#00777F"/><TextBlock Text="V1.1.0 · Image Annotation" FontSize="10" Foreground="#667788"/></StackPanel></Border><Button x:Name="CaptureButton" Content="▣  Chụp ảnh" Style="{StaticResource Primary}" Click="Capture_Click" ToolTip="Ctrl + Shift + 1"/><Button x:Name="RecordButton" Content="●  Quay màn hình" Click="Record_Click" ToolTip="Ctrl + Shift + 2"/></StackPanel>
+   <StackPanel Orientation="Horizontal"><Border Background="#DDF2F2" CornerRadius="9" Padding="13,7" Margin="0,0,14,0"><StackPanel><TextBlock Text="CAPTOVIX" FontSize="18" FontWeight="Bold" Foreground="#00777F"/><TextBlock Text="V1.2.0 · Image Editor UX" FontSize="10" Foreground="#667788"/></StackPanel></Border><Button x:Name="CaptureButton" Content="▣  Chụp ảnh" Style="{StaticResource Primary}" Click="Capture_Click" ToolTip="Ctrl + Shift + 1"/><Button x:Name="RecordButton" Content="●  Quay màn hình" Click="Record_Click" ToolTip="Ctrl + Shift + 2"/></StackPanel>
   </DockPanel>
   <Border Grid.Row="1" Style="{StaticResource Panel}" Margin="0,0,0,10" Padding="12,7">
    <Expander Header="Thiết lập chụp &amp; quay" IsExpanded="False"><StackPanel Margin="0,7,0,0"><WrapPanel x:Name="ConfigPanel">
@@ -36,7 +36,7 @@
      <Button Content="░ Làm mờ" Tag="Blur" Click="Tool_Click" ToolTip="B · Làm mờ vùng ảnh" Padding="9,7"/>
      <Button Content="▦ Pixel" Tag="Pixelate" Click="Tool_Click" ToolTip="P · Pixel hóa vùng ảnh" Padding="9,7"/>
      <Button Content="■ Che kín" Tag="Cover" Click="Tool_Click" ToolTip="K · Che bằng màu đặc" Padding="9,7"/>
-     <Button Content="⌗ Crop" Tag="Crop" Click="Tool_Click" ToolTip="C · Kéo và thả vùng muốn giữ" Padding="9,7"/>
+     <Button Content="⌗ Crop" Tag="Crop" Click="Tool_Click" ToolTip="C · Kéo vùng, chỉnh tay nắm/kích thước rồi Áp dụng" Padding="9,7"/>
     </WrapPanel><TextBlock x:Name="ToolHint" TextWrapping="Wrap" LineHeight="17" Text="Chọn công cụ để bắt đầu chú thích ảnh." FontSize="11" Foreground="#738092" Margin="5,4,0,0"/></StackPanel>
     <Grid Grid.Row="2" Background="#E9EDF1" Margin="8,0"><ScrollViewer x:Name="ImageScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Visibility="Collapsed" SizeChanged="Viewport_Changed"><Border Background="White" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center"><local:EditorSurface x:Name="Surface"/></Border></ScrollViewer>
      <MediaElement x:Name="VideoPreview" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" Visibility="Collapsed" MediaOpened="Video_Opened" MediaEnded="Video_Ended" MediaFailed="Video_Failed"/>
@@ -47,9 +47,13 @@
     </StackPanel>
    </Grid></Border>
    <Border Grid.Column="4" Style="{StaticResource Panel}" Padding="13"><DockPanel>
-    <StackPanel DockPanel.Dock="Bottom"><Separator Margin="0,10"/><TextBlock Text="CAPTOVIX · 1.1.0" FontSize="10" Foreground="#8090A0"/><TextBlock Text="Unified Editor · Lưu trên máy" FontSize="11" Foreground="#8090A0" Margin="0,5"/></StackPanel>
+    <StackPanel DockPanel.Dock="Bottom"><Separator Margin="0,10"/><TextBlock Text="CAPTOVIX · 1.2.0" FontSize="10" Foreground="#8090A0"/><TextBlock Text="Unified Editor · Lưu trên máy" FontSize="11" Foreground="#8090A0" Margin="0,5"/></StackPanel>
     <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
-     <StackPanel x:Name="EditorProperties" Visibility="Collapsed"><TextBlock x:Name="PropertyTitle" Text="Thuộc tính chú thích" FontWeight="SemiBold" FontSize="17" TextWrapping="Wrap"/>
+     <StackPanel x:Name="EditorProperties" Visibility="Collapsed">
+      <StackPanel x:Name="CropProperties" Visibility="Collapsed"><TextBlock Text="Crop chính xác" FontSize="17" FontWeight="SemiBold"/><TextBlock x:Name="CropHint" TextWrapping="Wrap" FontSize="11" Foreground="#738092" Margin="3,7"/>
+       <UniformGrid Columns="2"><StackPanel><TextBlock Text="X · ảnh gốc"/><TextBox x:Name="CropX" PreviewKeyDown="CropField_KeyDown"/></StackPanel><StackPanel><TextBlock Text="Y · ảnh gốc"/><TextBox x:Name="CropY" PreviewKeyDown="CropField_KeyDown"/></StackPanel><StackPanel><TextBlock Text="Rộng (px)"/><TextBox x:Name="CropWidth" PreviewKeyDown="CropField_KeyDown"/></StackPanel><StackPanel><TextBlock Text="Cao (px)"/><TextBox x:Name="CropHeight" PreviewKeyDown="CropField_KeyDown"/></StackPanel></UniformGrid>
+       <Button Content="Xem vùng" Click="PreviewCrop_Click"/><Button Content="Áp dụng crop · Enter" Style="{StaticResource Primary}" Click="ApplyCrop_Click"/><WrapPanel><Button Content="Chọn lại" Click="RestartCrop_Click" Padding="10,7"/><Button Content="Hủy · Esc" Click="CancelCrop_Click" Padding="10,7"/></WrapPanel><Separator Margin="0,10"/>
+      </StackPanel><TextBlock x:Name="PropertyTitle" Text="Thuộc tính chú thích" FontWeight="SemiBold" FontSize="17" TextWrapping="Wrap"/>
       <Expander Header="Preset màu · nét · chữ" IsExpanded="True" Margin="0,10,0,3"><StackPanel>
        <ComboBox x:Name="PresetPicker" DisplayMemberPath="Name" ToolTip="Chọn mẫu rồi bấm Áp dụng"/>
        <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Button Content="Áp dụng" Click="ApplyPreset_Click"/><Button x:Name="DeletePresetButton" Grid.Column="1" Content="Xóa mẫu" Click="DeletePreset_Click" ToolTip="Chỉ xóa preset riêng"/></Grid>

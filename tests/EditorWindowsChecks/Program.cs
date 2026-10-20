@@ -55,6 +55,17 @@ internal static class Program
             Check(covered[secure]==75&&covered[secure+1]==54&&covered[secure+2]==38&&covered[secure+3]==255,"Solid covers dominate overlapping filters and text");
             var outline=new Annotation{Kind=AnnotationKind.Rectangle,X1=10,Y1=10,X2=50,Y2=40};
             Check(!EditorRenderer.Hit(outline,new(30,25),2)&&EditorRenderer.Hit(outline,new(10,25),2),"Outline hit testing permits selection through empty rectangle interiors");
+            var cropSession=new EditorSession(new(){OriginalWidth=80,OriginalHeight=60});var cropSurface=new EditorSurface();cropSurface.Load(patterned,cropSession);
+            cropSurface.StartCrop();Check(cropSurface.SetCropDraft(new(10,12,40,24)),"Numeric crop creates an editable pending rectangle");
+            Check(cropSession.Document.Crop==null&&!cropSession.CanUndo,"Crop preview does not commit document/history");
+            cropSurface.SetZoom(2);Check(cropSurface.CropDraft==new PixelRect(10,12,40,24)&&!cropSession.Dirty,"Zoom preserves pending crop in source pixels");
+            Check(!cropSurface.SetCropDraft(new(-1,12,40,24))&&cropSurface.CropDraft==new PixelRect(10,12,40,24),"Invalid numeric crop leaves the prior preview intact");
+            cropSurface.NudgeCrop(1,2);Check(cropSurface.CropDraft==new PixelRect(11,14,40,24),"Arrow nudge moves pending crop without applying it");
+            Check(cropSurface.ApplyCropDraft()&&cropSurface.CropDraft==null&&cropSession.Document.Crop==new PixelRect(11,14,40,24),"Apply crop commits exact rectangle and exits draft mode");
+            Check(cropSurface.Flatten().PixelWidth==40&&cropSurface.Flatten().PixelHeight==24,"Applied numeric crop exports exact dimensions");
+            cropSession.Undo();Check(cropSession.Document.Crop==null,"Crop gesture is undoable once");
+            cropSurface.StartCrop();cropSurface.SetCropDraft(new(5,5,20,20));cropSurface.ClearCropDraft();
+            Check(cropSurface.CropDraft==null&&cropSession.Document.Crop==null,"Cancel pending crop leaves image unmodified");
             foreach(var kind in Enum.GetValues<AnnotationKind>()){
                 var sample=new EditorDocument{OriginalWidth=64,OriginalHeight=48};sample.Annotations.Add(new(){Kind=kind,X1=12,Y1=12,X2=52,Y2=38,Text="Chữ",FontSize=16});
                 Check(EditorRenderer.Render(source,sample).PixelWidth==64,"Render tool: "+kind);

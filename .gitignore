@@ -6,3 +6,5 @@ prerequisites/
 *.user
 
 *_wpftmp.csproj
+
+tests/InstallerPathChecks/InstallerPathChecks.exe
