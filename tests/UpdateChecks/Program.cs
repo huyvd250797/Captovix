@@ -75,9 +75,11 @@ try
     File.WriteAllText(Path.Combine(root, "library.json"), "[{\"Id\":\"a\"}]"); File.WriteAllText(Path.Combine(root, "Edits", "a.json"), "{\"annotations\":[1]}");
     File.WriteAllBytes(Path.Combine(root, "Media", "a.png"), [1, 2, 3]);
     var originalHash = SHA256.HashData(File.ReadAllBytes(Path.Combine(root, "Media", "a.png")));
-    var backup = UpdateBackup.Create(root, "1.0.1", "1.0.2");
+    File.WriteAllText(Path.Combine(root,"annotation-presets.json"), "[{\"Name\":\"Mẫu\"}]");
+    var backup = UpdateBackup.Create(root, "1.0.3", "1.1.0");
     using (var zip = ZipFile.OpenRead(backup))
     {
+        Check(zip.GetEntry("annotation-presets.json")!=null,"Custom annotation presets are included in update backups");
         Check(zip.GetEntry("library.json") != null && zip.GetEntry("Edits/a.json") != null && zip.GetEntry("backup-info.txt") != null, "Metadata and annotation backup");
         Check(zip.Entries.All(e => !e.FullName.StartsWith("Media/")), "Backup excludes original media");
         using var reader = new StreamReader(zip.GetEntry("Edits/a.json")!.Open());
@@ -97,9 +99,9 @@ try
         } } }));
         WriteFeed(asset);
         var packagesDir = Path.Combine(root, "packages"); Directory.CreateDirectory(packagesDir);
-        var locator = new TestVelopackLocator(VersionInfo.AppId, "1.0.0", packagesDir);
+        var locator = new TestVelopackLocator(VersionInfo.AppId, "1.0.3", packagesDir);
         var source = new SimpleFileSource(new DirectoryInfo(sourceDir));
-        var sdk = new VelopackUpdateBackend(new() { SourceKind = "Https", SourceUrl = "https://example.com/feed" }, locator, "1.0.0", source);
+        var sdk = new VelopackUpdateBackend(new() { SourceKind = "Https", SourceUrl = "https://example.com/feed" }, locator, "1.0.3", source);
         Check(sdk.CanApply, "SDK recognizes test installed app");
         var release = await sdk.CheckAsync(); Check(release?.Version == actualVersion.ToString(), "SDK discovers real packaged version");
         await sdk.DownloadAsync(release!, _ => { }, default);
@@ -115,7 +117,7 @@ try
         Check(rejected, "Another app package is never offered");
         asset.PackageId = VersionInfo.AppId; asset.Version = SemanticVersion.Parse("0.9.0"); WriteFeed(asset);
         Check(await sdk.CheckAsync() == null, "SDK does not offer older release");
-        asset.Version = SemanticVersion.Parse("1.0.0"); WriteFeed(asset);
+        asset.Version = SemanticVersion.Parse("1.0.3"); WriteFeed(asset);
         Check(await sdk.CheckAsync() == null, "SDK does not offer the same version");
         asset.Version = SemanticVersion.Parse("99.0.0-beta.1"); WriteFeed(asset);
         rejected = false; try { rejected = await sdk.CheckAsync() == null; } catch { rejected = true; }

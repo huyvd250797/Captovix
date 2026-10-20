@@ -29,7 +29,7 @@ Check(reopened.Crop==doc.Crop&&reopened.Annotations[0].Id==doc.Annotations[0].Id
 Reject(()=>reopened.Validate(1920,1080,"DIFFERENT-HASH"),"Mismatched original content is rejected");
 Reject(()=>reopened.Validate(1280,720,"SOURCE-HASH"),"Mismatched original dimensions are rejected");
 var invalid=New();invalid.Crop=new(-1,0,50,50);Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Out-of-bounds persisted crop is rejected");
-invalid=New();invalid.Version=2;Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Unknown future document versions are not overwritten blindly");
+invalid=New();invalid.Version=99;Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Unknown future document versions are not overwritten blindly");
 invalid=New();invalid.Annotations.Add(new(){Color="not-a-color"});Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Invalid colors cannot enter rendering");
 invalid=New();invalid.Annotations.Add(new(){X1=double.NaN});Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Non-finite coordinates are rejected");
 invalid=New();invalid.Annotations.Add(new(){FontSize=0});Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Invalid font size is rejected");

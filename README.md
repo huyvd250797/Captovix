@@ -1,14 +1,26 @@
-# Captovix V1.0.3 — Default Update Source
+# Captovix V1.1.0 — Image Annotation
 
 Ứng dụng Windows x64 chụp ảnh, quay màn hình và chú thích ảnh trong **một cửa sổ Editor**. Cấu hình chụp/quay nằm ngay trong Editor. © 2026 HuyVo. All rights reserved.
 
 ## Bắt đầu
 
-**Khuyên dùng:** chạy `Captovix-v1.0.3-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
+**Khuyên dùng:** chạy `Captovix-v1.1.0-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
 
-**Portable:** giải nén toàn bộ `Captovix-v1.0.3-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
+**Portable:** giải nén toàn bộ `Captovix-v1.1.0-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
 
 Máy mục tiêu: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiểm thử thực tế. Windows N/KN cần Media Feature Pack. App chưa có bản x86/ARM64 hoặc chứng thư ký mã thương mại. Không tắt Windows Defender hay cơ chế bảo vệ của máy.
+
+## Mới trong V1.1 — Image Annotation
+
+- Làm mờ (B), Pixel hóa (P), Che kín (K); mức xử lý 4–64 px.
+- 6 preset có sẵn; lưu/xóa tối đa 20 preset riêng trong bảng thuộc tính.
+- Shift/Ctrl+click, kéo vùng trống hoặc Ctrl+A để chọn nhiều; kéo, căn chỉnh, đổi kiểu hoặc Delete cho cả nhóm.
+- Căn theo khung ảnh/crop khi chọn 1 đối tượng, theo biên nhóm khi chọn nhiều.
+- Tay nắm ở 8 hướng; kéo góc chữ/số để đổi cỡ. Shift khóa hướng/tỷ lệ; Ctrl trong lúc kéo bỏ bắt dính mép/tâm ảnh.
+- Giữ undo/redo, tự lưu, ảnh gốc và URL cập nhật mặc định.
+- Hướng dẫn đầy đủ: [IMAGE-ANNOTATION.md](docs/IMAGE-ANNOTATION.md).
+
+Chia sẻ ảnh PNG/JPEG qua **Copy ảnh/Xuất file**. **Che kín** phù hợp khi cần ẩn hoàn toàn; ảnh gốc và tài liệu chỉnh sửa vẫn được giữ để sửa lại. Tài liệu mới dùng schema 2, đọc được dữ liệu V1.0 nhưng không nên mở ngược bằng app V1.0 sau khi lưu mới.
 
 ## Sửa lỗi cài đặt V1.0.2
 
@@ -68,11 +80,14 @@ Bảng cấu hình chụp/quay mặc định thu gọn để dành vùng chỉnh
 | Ctrl+C | Copy ảnh đã chỉnh, khi không đang nhập chữ |
 | V / A / R / E | Chọn / Mũi tên / Khung / Ellipse |
 | T / H / N / C | Chữ / Highlight / Số bước / Crop |
-| Delete | Xóa đối tượng đang chọn |
+| B / P / K | Làm mờ / Pixel hóa / Che kín |
+| Ctrl+A | Chọn tất cả chú thích |
+| Shift/Ctrl+click | Thêm/bỏ đối tượng khỏi vùng chọn |
+| Delete | Xóa các đối tượng đang chọn |
 | Phím mũi tên / Shift+mũi tên | Di chuyển đối tượng 1 / 10 pixel gốc |
 | Esc | Hủy thao tác kéo đang thực hiện, về công cụ Chọn |
 
-Khi đang gõ trong ô chữ, các phím sửa văn bản vẫn dành cho ô chữ. Phím tắt capture toàn hệ thống chỉ hoạt động khi app đang chạy; nếu trùng app khác, Editor thông báo. Hãy thả chuột hoàn tất nét vẽ trước khi dùng lệnh chỉnh sửa bằng bàn phím.
+Khi đang gõ trong ô chữ, các phím sửa văn bản vẫn dành cho ô chữ. Phím tắt capture toàn hệ thống chỉ hoạt động khi app đang chạy; nếu trùng app khác, Editor thông báo. Hãy thả chuột hoàn tất nét vẽ trước khi dùng lệnh chỉnh sửa bằng bàn phím. Khi đang kéo vùng làm mờ/pixel, Editor dùng màu che tạm; thả chuột để áp hiệu ứng.
 
 ## Chụp và quay kế thừa V0.1
 
@@ -99,6 +114,7 @@ Lịch sử đã có trong Captovix không bị ghi đè khi mở app lần sau.
 - `Media\`: file gốc; `Edits\`: lớp chú thích/crop JSON; `Thumbnails\`: ảnh thu nhỏ của bản chỉnh.
 - `library.json`, `settings.json`: lịch sử và cấu hình. Chưa dùng SQLite.
 - `update-settings.json`: nguồn phát hành, tùy chọn và lần kiểm tra gần nhất.
+- `annotation-presets.json`: preset riêng; được bổ sung vào backup trước cập nhật.
 - `Backups/before-update-*.zip`: metadata và JSON/Edits trước cập nhật; không chứa media.
 - `editor-resume.json`: nội dung cần mở lại sau cập nhật, được xóa sau khi đọc thành công.
 - Dữ liệu được ghi qua file tạm rồi thay thế trong cùng thư mục. File chụp/quay chỉ đưa vào lịch sử khi engine xác nhận hoàn tất. File `.pending.*` sau lỗi không được coi là bản quay thành công.
@@ -137,4 +153,4 @@ C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, ScreenRecorderLib 7.0.1 (Desktop Dupli
 
 ## Phiên bản tiếp theo
 
-**V1.1 — Image Annotation:** hoàn thiện công cụ ảnh, preset, căn chỉnh và trải nghiệm thao tác theo phản hồi thực tế. **V1.2 — Recording & Video Tools:** công cụ cắt video và hoàn thiện luồng ghi hình/âm thanh.
+**V1.2 — Recording & Video Tools:** cắt đầu/cuối video, chọn đoạn xuất, timeline/tua và hoàn thiện ghi hình/âm thanh.

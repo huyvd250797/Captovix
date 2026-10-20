@@ -24,6 +24,7 @@ public partial class MainWindow
         Surface.VisualChanged+=()=>{if(_session is {} s){var v=s.Document.Viewport;ImageSizeLabel.Text=$"{v.Width} × {v.Height} px · {s.Document.Annotations.Count} chú thích";RestoreCropButton.IsEnabled=s.Document.Crop!=null;}ZoomLabel.Text=$"{Surface.Zoom*VisualTreeHelper.GetDpi(this).DpiScaleX*100:F0}%";};
         Surface.TextRequested+=()=>{AnnotationText.Focus();AnnotationText.SelectAll();};
         Surface.CropFinished+=()=>{SelectTool(EditorTool.Select);if(_fitMode)FitImage();};
+        InitializeAnnotationFeatures();
         SelectTool(EditorTool.Select);
     }
     private void Session_Changed()
@@ -60,41 +61,50 @@ public partial class MainWindow
         foreach(var button in ToolBox.Children.OfType<Button>()){
             var selected=button.Tag?.ToString()==tool.ToString();button.Background=selected?(Brush)FindResource("Accent"):Brushes.White;button.Foreground=selected?Brushes.White:new SolidColorBrush(Color.FromRgb(36,51,72));
         }
+        SyncProperties();
         ToolHint.Text=tool switch{
-            EditorTool.Select=>"Click chọn • Kéo để di chuyển • Kéo tay nắm đổi đầu mũi tên/khung • Delete để xóa",
+            EditorTool.Select=>"Shift/Ctrl+click hoặc kéo vùng trống để chọn nhiều • Kéo tay nắm đổi kích thước • Shift khóa hướng/tỷ lệ • Ctrl bỏ bắt dính",
             EditorTool.Text=>"Click vị trí trên ảnh rồi nhập chữ ở bảng thuộc tính bên phải.",
             EditorTool.Step=>"Click để đặt số bước tự tăng. Có thể sửa số ở bảng thuộc tính.",
             EditorTool.Crop=>"Kéo vùng muốn giữ và thả chuột để crop • Ctrl+Z hoặc Khôi phục khung ảnh gốc để lấy lại.",
-            EditorTool.Highlight=>"Kéo phủ vùng cần làm nổi bật. Chọn màu ở bảng thuộc tính.",_=>"Kéo để vẽ đối tượng • Chọn công cụ Chọn (V) để sửa lại."};
+            EditorTool.Highlight=>"Kéo phủ vùng cần làm nổi bật. Chọn màu ở bảng thuộc tính.",
+            EditorTool.Blur or EditorTool.Pixelate=>"Kéo vùng cần xử lý • Khi kéo vùng tạm che kín; thả chuột để áp dụng • Chỉnh mức xử lý bên phải.",
+            EditorTool.Cover=>"Kéo vùng để che kín bằng màu đang chọn • Xuất PNG/JPEG để chia sẻ ảnh đã che.",_=>"Kéo để vẽ đối tượng • Chọn công cụ Chọn (V) để sửa lại."};
     }
     private void Tool_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:string tool}){_session?.Commit();SelectTool(Enum.Parse<EditorTool>(tool));Surface.Focus();}}
     private void SyncProperties()
     {
         if(Surface==null||StrokePicker==null||FontPicker==null)return;_syncProperties=true;
         try{
-            var a=Surface.Selected;DeleteAnnotationButton.IsEnabled=a!=null;PropertyTitle.Text=a==null?"Thuộc tính chú thích":a.Kind switch{AnnotationKind.Arrow=>"Mũi tên",AnnotationKind.Rectangle=>"Khung chữ nhật",AnnotationKind.Ellipse=>"Hình ellipse",AnnotationKind.Text=>"Chữ",AnnotationKind.Highlight=>"Highlight",_=>"Số bước"};
-            if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;SelectValue(StrokePicker,a.Stroke);SelectValue(FontPicker,a.FontSize);}
+            var a=Surface.Selected;DeleteAnnotationButton.IsEnabled=a!=null;PropertyTitle.Text=a==null?"Thuộc tính chú thích":a.Kind switch{AnnotationKind.Arrow=>"Mũi tên",AnnotationKind.Rectangle=>"Khung chữ nhật",AnnotationKind.Ellipse=>"Hình ellipse",AnnotationKind.Text=>"Chữ",AnnotationKind.Highlight=>"Highlight",AnnotationKind.Blur=>"Làm mờ",AnnotationKind.Pixelate=>"Pixel hóa",AnnotationKind.Cover=>"Che kín",_=>"Số bước"};
+            if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
+            if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
+            SelectValue(StrokePicker,Surface.StrokeSize);SelectValue(FontPicker,Surface.TextSize);
+            SyncAnnotationFeatures();
             foreach(var b in ColorPalette.Children.OfType<Button>())b.BorderThickness=new Thickness(b.Tag?.ToString()==Surface.InkColor?3:1);
-            TextProperties.Visibility=a?.Kind==AnnotationKind.Text?Visibility.Visible:Visibility.Collapsed;
-            StepProperties.Visibility=a?.Kind==AnnotationKind.Step?Visibility.Visible:Visibility.Collapsed;
+            TextProperties.Visibility=a?.Kind==AnnotationKind.Text&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
+            StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             if(a?.Kind==AnnotationKind.Text&&AnnotationText.Text!=a.Text)AnnotationText.Text=a.Text;
             if(a?.Kind==AnnotationKind.Step)StepNumber.Text=a.Number.ToString(CultureInfo.InvariantCulture);
             RestoreCropButton.IsEnabled=_session?.Document.Crop!=null;
         }finally{_syncProperties=false;}
     }
-    private static void SelectValue(ComboBox picker,double value){foreach(ComboBoxItem i in picker.Items)if(double.TryParse(i.Tag?.ToString(),out var v)&&Math.Abs(v-value)<.01){picker.SelectedItem=i;break;}}
-    private static double PickedValue(ComboBox picker,double fallback)=>picker.SelectedItem is ComboBoxItem i&&double.TryParse(i.Tag?.ToString(),out var v)?v:fallback;
+    private static void SelectValue(ComboBox picker,double value){
+        foreach(ComboBoxItem i in picker.Items)if(double.TryParse(i.Tag?.ToString(),NumberStyles.Float,CultureInfo.InvariantCulture,out var v)&&Math.Abs(v-value)<.01){picker.SelectedItem=i;return;}
+        var custom=new ComboBoxItem{Content=$"{value:0.#} px",Tag=value.ToString(CultureInfo.InvariantCulture)};picker.Items.Add(custom);picker.SelectedItem=custom;
+    }
+    private static double PickedValue(ComboBox picker,double fallback)=>picker.SelectedItem is ComboBoxItem i&&double.TryParse(i.Tag?.ToString(),NumberStyles.Float,CultureInfo.InvariantCulture,out var v)?v:fallback;
     private void Color_Click(object sender,RoutedEventArgs e)
     {
         if(sender is not Button {Tag:string color})return;Surface.InkColor=color;
-        if(_session!=null&&Surface.SelectedId is {} id)_session.Change(d=>d.Annotations.First(a=>a.Id==id).Color=color);
+        ChangeSelected(a=>a.Color=color);
         Surface.Refresh();SyncProperties();
     }
     private void Style_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(_syncProperties||Surface==null||StrokePicker==null||FontPicker==null)return;
         var stroke=PickedValue(StrokePicker,4);var font=PickedValue(FontPicker,28);Surface.StrokeSize=stroke;Surface.TextSize=font;
-        if(_session!=null&&Surface.SelectedId is {} id)_session.Change(d=>{var a=d.Annotations.First(a=>a.Id==id);a.Stroke=stroke;a.FontSize=font;});
+        ChangeSelected(a=>{a.Stroke=stroke;a.FontSize=font;});
         Surface.Refresh();
     }
     private void AnnotationText_Changed(object sender,TextChangedEventArgs e)
@@ -138,11 +148,12 @@ public partial class MainWindow
             e.Handled=true;return;
         }
         if(ctrl&&e.Key==Key.S){if(StepNumber.IsKeyboardFocusWithin)CommitStep();_session?.Commit();FlushEdits();e.Handled=true;return;}
-        if(typing||_session==null||_busy)return;
+        if(typing||Keyboard.FocusedElement is ComboBox or ComboBoxItem||_session==null||_busy)return;
         if(ctrl){
             if(e.Key==Key.Z){if(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))Redo_Click(sender,e);else Undo_Click(sender,e);e.Handled=true;}
             else if(e.Key==Key.Y){Redo_Click(sender,e);e.Handled=true;}
             else if(e.Key==Key.C){Copy_Click(sender,e);e.Handled=true;}
+            else if(e.Key==Key.A){Surface.SelectAll();e.Handled=true;}
             return;
         }
         if(Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))return;
@@ -150,7 +161,7 @@ public partial class MainWindow
         if(e.Key==Key.Delete){Surface.DeleteSelected();e.Handled=true;return;}
         double step=Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?10:1;
         if(e.Key is Key.Left or Key.Right or Key.Up or Key.Down){Surface.Nudge(e.Key==Key.Left?-step:e.Key==Key.Right?step:0,e.Key==Key.Up?-step:e.Key==Key.Down?step:0);e.Handled=true;return;}
-        EditorTool? tool=e.Key switch{Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Rectangle,Key.E=>EditorTool.Ellipse,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,_=>null};
+        EditorTool? tool=e.Key switch{Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Rectangle,Key.E=>EditorTool.Ellipse,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,Key.B=>EditorTool.Blur,Key.P=>EditorTool.Pixelate,Key.K=>EditorTool.Cover,_=>null};
         if(tool!=null){SelectTool(tool.Value);Surface.Focus();e.Handled=true;}
     }
 }

@@ -1,4 +1,4 @@
-# Checklist kiểm chứng Windows — Captovix V1.0.3
+# Checklist kiểm chứng Windows — Captovix V1.1.0
 
 Trạng thái ban đầu: **CHƯA CHẠY TRÊN WINDOWS THẬT**. Người kiểm thử điền Đạt/Không đạt, máy, GPU, OS, DPI, thiết bị âm thanh và đường dẫn bằng chứng. Không suy ra hiệu năng video từ kết quả build.
 
@@ -132,3 +132,18 @@ Các ô trên cần chạy bằng Windows thật; kiểm tra tĩnh hợp đồng
 - [ ] Máy V1.0.2 đã lưu nguồn chính thức: Publish V1.0.3, kiểm tra/tải/khởi động lại và xác nhận version, thư viện/chú thích.
 - [ ] Nguồn tùy chỉnh, AutoCheck=false hoặc nguồn rỗng đã lưu được giữ nguyên.
 - [ ] Cùng version báo mới nhất; mất mạng không chặn Editor.
+
+## V1.1 — Image Annotation
+
+- [ ] Máy V1.0.3: Publish V1.1.0 stable, kiểm tra/tải/apply/restart, thư viện cũ còn nguyên và Editor tối đa cửa sổ.
+- [ ] Mở sidecar V1.0, thêm 1 hiệu ứng/lưu, đóng mở lại; tài liệu schema 2 và các đối tượng cũ đều còn.
+- [ ] Blur/pixel/cover với nền PNG có alpha, vùng sát mép, vùng rộng qua mốc tile 512 px, crop đi qua vùng và zoom 25/100/200%.
+- [ ] PNG/JPEG/copy/thumbnail có vùng đã xử lý, không có tay nắm; Cover đè được text và vùng blur chồng lấp.
+- [ ] Shift/Ctrl+click, marquee, Ctrl+A; kéo/xóa/nudge/đổi preset/căn nhóm và undo/redo.
+- [ ] Click chọn không làm đối tượng tự bắt dính. Escape/mất capture chuột hủy kéo; click nội dung giữa khung có thể chọn đối tượng bên trong.
+- [ ] 8 tay nắm; Shift khóa hướng/tỷ lệ; chữ/số kéo góc; mũi tên đổi hai đầu; giới hạn cỡ chữ; DPI 100–200% trên nhiều màn hình.
+- [ ] Preset riêng lưu/xóa/mở lại; tên trùng/quá 20/bộ preset lỗi không ghi đè dữ liệu trước.
+- [ ] Khi focus ô nhập hoặc ComboBox, phím nhập/chọn không kích hoạt vẽ/nudge ngoài ý muốn.
+- [ ] Kiểm tra capture/video/updater hiện có sau các thao tác chỉnh sửa ảnh.
+
+Các kiểm tra Windows này chưa được thực thi trong môi trường Linux đóng gói.

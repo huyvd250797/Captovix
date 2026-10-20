@@ -31,6 +31,30 @@ internal static class Program
             Check(Pixels(surface.Flatten()).SequenceEqual(bytes),"Export is independent of viewport zoom");
             var arrow=new Annotation{Kind=AnnotationKind.Arrow,X1=0,Y1=0,X2=40,Y2=0};Check(EditorRenderer.Hit(arrow,new(20,1),3)&&!EditorRenderer.Hit(arrow,new(20,20),3),"Arrow hit testing follows the line, not its bounding box");
             Check(EditorRenderer.Bounds(new(){Kind=AnnotationKind.Text,Text="Hướng dẫn\nBước 1",FontSize=28}).Height>28,"Vietnamese multiline text has correct editable bounds");
+            var pattern=new byte[80*60*4];for(int y=0;y<60;y++)for(int x=0;x<80;x++){int i=(y*80+x)*4;pattern[i]=(byte)(x*3);pattern[i+1]=(byte)(y*4);pattern[i+2]=(byte)((x+y)%2*240);pattern[i+3]=255;}
+            var patterned=BitmapSource.Create(80,60,96,96,PixelFormats.Bgra32,null,pattern,80*4);patterned.Freeze();
+            foreach(var kind in new[]{AnnotationKind.Blur,AnnotationKind.Pixelate,AnnotationKind.Cover}){
+                var masked=new EditorDocument{OriginalWidth=80,OriginalHeight=60};var mask=new Annotation{Kind=kind,X1=10,Y1=10,X2=50,Y2=40,Color="#26364B",EffectSize=8};masked.Annotations.Add(mask);
+                var full=Pixels(EditorRenderer.Render(patterned,masked));var center=(20*80+20)*4;
+                Check(!full.AsSpan(center,3).SequenceEqual(pattern.AsSpan(center,3)),"Export changes protected source pixels: "+kind);
+                Check(full.AsSpan(0,4).SequenceEqual(pattern.AsSpan(0,4)),"Export leaves pixels outside mask untouched: "+kind);
+                var again=Pixels(EditorRenderer.Render(patterned,EditorDocument.Deserialize(masked.Serialize())));Check(full.SequenceEqual(again),"Mask export is stable after sidecar roundtrip/cache reuse: "+kind);
+                masked.Crop=new(16,12,32,24);var cropped=Pixels(EditorRenderer.Render(patterned,masked));bool matches=true;
+                for(int row=0;row<24;row++)matches&=cropped.AsSpan(row*32*4,32*4).SequenceEqual(full.AsSpan(((row+12)*80+16)*4,32*4));
+                Check(matches,"Cropping does not shift the mask pixel grid: "+kind);
+                var maskSurface=new EditorSurface();maskSurface.Load(patterned,new(masked));maskSurface.SetZoom(.25);
+                Check(Pixels(maskSurface.Flatten()).SequenceEqual(cropped),"Mask export is independent of canvas zoom: "+kind);
+                maskSurface.SelectAll();maskSurface.Nudge(1,0);Check(maskSurface.SelectedIds.Count==1&&mask.X1==11,"Selection and nudge include mask objects: "+kind);
+                Check(Pixels(patterned).SequenceEqual(pattern),"Masks never mutate the original bitmap: "+kind);
+            }
+            var overlap=new EditorDocument{OriginalWidth=80,OriginalHeight=60};
+            overlap.Annotations.Add(new(){Kind=AnnotationKind.Cover,X1=10,Y1=10,X2=50,Y2=40,Color="#26364B"});
+            overlap.Annotations.Add(new(){Kind=AnnotationKind.Blur,X1=10,Y1=10,X2=50,Y2=40});
+            overlap.Annotations.Add(new(){Kind=AnnotationKind.Text,X1=15,Y1=15,Text="Private",Color="#FFFFFF"});
+            var covered=Pixels(EditorRenderer.Render(patterned,overlap));int secure=(20*80+20)*4;
+            Check(covered[secure]==75&&covered[secure+1]==54&&covered[secure+2]==38&&covered[secure+3]==255,"Solid covers dominate overlapping filters and text");
+            var outline=new Annotation{Kind=AnnotationKind.Rectangle,X1=10,Y1=10,X2=50,Y2=40};
+            Check(!EditorRenderer.Hit(outline,new(30,25),2)&&EditorRenderer.Hit(outline,new(10,25),2),"Outline hit testing permits selection through empty rectangle interiors");
             foreach(var kind in Enum.GetValues<AnnotationKind>()){
                 var sample=new EditorDocument{OriginalWidth=64,OriginalHeight=48};sample.Annotations.Add(new(){Kind=kind,X1=12,Y1=12,X2=52,Y2=38,Text="Chữ",FontSize=16});
                 Check(EditorRenderer.Render(source,sample).PixelWidth==64,"Render tool: "+kind);

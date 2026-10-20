@@ -1,4 +1,4 @@
-# Captovix V1.0.3 architecture
+# Captovix V1.1.0 architecture
 
 ## Single Editor and window state
 
@@ -41,3 +41,9 @@ A persisted editor-resume selection reopens after restart. Backup creation does 
 ## Installer recovery (1.0.2)
 
 The wrapper no longer forwards application arguments through Setup.exe's trailing EXE_ARGS positional. Velopack 1.2.161's parser panics on this path (upstream #1039). Supported named options only are used: installto, log, verbose. Core Setup is visible, so the user sees its actual progress, errors and prerequisite UI. Bootstrap exposes three phases and rotates a dedicated setup-core.log in the user's data/Logs directory. The app-only install suppression argument has been removed from Program.Main. A visible setup may launch the app before the outer Finish page; the Finish action checks the app mutex to avoid duplicate-launch warnings. Old NSIS removal remains gated on core success and installed file checks, with no recursive deletion of the data root.
+
+## Image Annotation (1.1)
+
+EditorDocument accepts schema 1 and 2, promotes loaded schema 1 in memory and writes schema 2 on the next edit save. Blur/Pixelate/Cover append enum kinds, with bounded EffectSize. RedactionPixels is a platform-independent, separable CPU blur/block average with opaque outputs. RedactionRenderer converts source to BGRA32, processes 512-pixel tiles with blur halos/block-aligned pixel tiles, and retains at most 32 MiB/64 cached masks per source bitmap. Large masks process in tiles without an additional full-mask working buffer. During interactive mask transforms the canvas shows opaque drafts; flatten/export always compute final pixels. Redactions are composited above normal annotations and solid Cover patches above all filters.
+
+AnnotationEditing provides multi-object layout/resize/snap/clamp transforms without WPF dependencies. EditorSurface maintains selection IDs separate from document state and snapshots geometry per gesture; selection is not undo history, geometry changes are. Presets include six immutable built-ins and up to twenty custom styles saved atomically in annotation-presets.json. UpdateBackup includes that file from V1.1.

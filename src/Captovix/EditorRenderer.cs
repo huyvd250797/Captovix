@@ -14,12 +14,16 @@ public static class EditorRenderer
         if(a.Kind==AnnotationKind.Step){var r=a.FontSize*.8;return new(a.X1-r,a.Y1-r,r*2,r*2);}
         return new(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
     }
-    public static void Draw(DrawingContext dc,BitmapSource source,EditorDocument doc)
+    public static AnnotationBox Box(Annotation a){var b=Bounds(a);return new(b.X,b.Y,b.Width,b.Height);}
+    public static void Draw(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
         var view=doc.Viewport;
         dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));
         dc.DrawImage(source,new Rect(0,0,doc.OriginalWidth,doc.OriginalHeight));
-        foreach(var a in doc.Annotations)DrawAnnotation(dc,a);
+        foreach(var a in doc.Annotations.Where(a=>!a.IsRedaction))DrawAnnotation(dc,a);
+        // Masks cover all annotations. Solid covers always dominate overlapping filters.
+        foreach(var a in doc.Annotations.Where(a=>a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
+            RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true);
         dc.Pop();
     }
     public static void DrawAnnotation(DrawingContext dc,Annotation a)
@@ -56,7 +60,12 @@ public static class EditorRenderer
     }
     public static bool Hit(Annotation a,Point p,double tolerance)
     {
-        if(a.Kind!=AnnotationKind.Arrow){var r=Bounds(a);r.Inflate(tolerance,tolerance);return r.Contains(p);}
+        if(a.Kind!=AnnotationKind.Arrow){
+            var r=Bounds(a);r.Inflate(tolerance,tolerance);if(!r.Contains(p))return false;
+            if(a.Kind==AnnotationKind.Rectangle){var inside=Bounds(a);inside.Inflate(-Math.Min(inside.Width/2,tolerance+a.Stroke/2),-Math.Min(inside.Height/2,tolerance+a.Stroke/2));return !inside.Contains(p);}
+            if(a.Kind==AnnotationKind.Ellipse){var b=Bounds(a);var rx=b.Width/2;var ry=b.Height/2;var dx=p.X-(b.Left+rx);var dy=p.Y-(b.Top+ry);var pad=tolerance+a.Stroke/2;var outside=dx*dx/Math.Pow(rx+pad,2)+dy*dy/Math.Pow(ry+pad,2);var innerX=rx-pad;var innerY=ry-pad;return outside<=1&&(innerX<=0||innerY<=0||dx*dx/(innerX*innerX)+dy*dy/(innerY*innerY)>=1);}
+            return true;
+        }
         var start=new Point(a.X1,a.Y1);var end=new Point(a.X2,a.Y2);var d=end-start;
         if(d.LengthSquared<.01)return (p-start).Length<=tolerance;
         var t=Math.Clamp(Vector.Multiply(p-start,d)/d.LengthSquared,0,1);return (p-(start+d*t)).Length<=tolerance+a.Stroke;
