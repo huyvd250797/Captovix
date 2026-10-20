@@ -4,3 +4,5 @@ artifacts/
 prerequisites/
 .vs/
 *.user
+
+*_wpftmp.csproj

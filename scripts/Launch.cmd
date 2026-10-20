@@ -1,6 +1,6 @@
 @echo off
 cd /d "%~dp0"
-if not exist "CaptureFoundation.exe" (
+if not exist "Captovix.exe" (
  echo Extract the full portable ZIP before running.
  pause
  exit /b 1
@@ -10,4 +10,4 @@ if errorlevel 1 (
  echo Visual C++ Runtime may be missing. Run Install.cmd or Setup.exe first.
  pause
 )
-start "" "%~dp0CaptureFoundation.exe"
+start "" "%~dp0Captovix.exe"

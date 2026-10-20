@@ -1,30 +1,17 @@
-# Validation record — Capture Foundation 0.1.0
+# Validation — Captovix V1.0.3
 
-Ngày đóng gói: 19/10/2026.
+Ngày đóng gói: 20/10/2026. Source đầu vào V1.0.2 đã bàn giao. Phạm vi sửa: version/nhãn, update-source.json, lựa chọn file đóng gói và tài liệu phát hành. Không thay engine capture, schema thư viện hoặc cơ chế apply.
 
-## Đã chạy trong môi trường build Linux
+## Đã kiểm tra
 
-- .NET SDK 10.0.100; target net10.0-windows, x64, EnableWindowsTargeting.
-- C# và WPF/XAML build Release: **0 lỗi, 0 cảnh báo** ở lần build sạch trước publish cuối.
-- Publish Windows x64 self-contained thành công; đi kèm Microsoft.NETCore.App và Microsoft.WindowsDesktop.App **10.0.13**.
-- ScreenRecorderLib **7.0.1** được đưa vào payload x64.
-- **12/12** kiểm tra hình học đạt: clipping, reverse drag, vùng ngoài desktop, màn hình gốc âm X/Y, composition qua hai màn hình, pixel khi khác scale, căn chẵn H.264.
-- XML của project, XAML, DPI manifest hợp lệ; kiểm tra liên kết 23 event handler của UI.
-- Bộ cài Windows được biên dịch bằng NSIS 3.09 trong môi trường Linux. Có publish payload, Microsoft VC++ x64 redistributable và uninstaller. Đây là kiểm chứng tạo bộ cài, không phải kết quả đã cài/chạy trên Windows.
-- VC++ redistributable được tải trực tiếp từ URL Microsoft; có Authenticode certificate của Microsoft. Chưa xác nhận chuỗi tin cậy/chạy installer trong Windows ở môi trường này. Script rebuild/cài portable kiểm tra Authenticode trên Windows trước khi thực thi bản tải về.
+- Cross-build/publish C#/WPF Windows x64 thành công. .NET self-contained 10.0.13; ScreenRecorderLib 7.0.1; Velopack SDK/CLI 1.2.161.
+- 12 geometry, 38 editor/history/migration, 40 update state/config/backup và 10 installer static contract checks đạt (100 checks).
+- Các checks settings xác nhận default được đọc, cấu hình riêng được ưu tiên, nguồn rỗng đã lưu giữ tắt nguồn và cấu hình lỗi không tự đổi publisher.
+- Gói mặc định chứa SourceKind=GitHub, SourceUrl=https://github.com/huyvd250797/captovix-releases, AutoCheck=true.
+- Sau khi tạo gói, chạy riêng 9 SDK integration checks với nupkg thật (UpdateChecks nhận đường dẫn gói), gồm download/SHA-256 và từ chối AppId/hash/version không hợp lệ; xác minh ZIP/hash/size và default trong nupkg trước bàn giao.
 
-## Chưa kiểm chứng runtime — cần Windows thật
+## Giới hạn
 
-Không có Windows desktop thật trong phiên xây dựng. Chưa chứng nhận:
+Chưa chạy WPF/NSIS/CoreSetup.exe/Update.exe trên Windows thật trong môi trường đóng gói. Kiểm tra geometry/settings và installer contract không thay thế kiểm thử cài–gỡ, restart, capture, DPI/âm thanh bằng Windows desktop. Xem WINDOWS-TEST-CHECKLIST.md. Chưa tự đăng Release lên GitHub; chủ app phải Publish gói V1.0.3 trước khi máy V1.0.2 thấy cập nhật.
 
-- App khởi động, tải mixed native recording engine trên máy đích.
-- Chụp đúng pixel, overlay qua nhiều màn hình/DPI khác nhau.
-- Hình/âm đúng và đồng bộ trong MP4; pause/resume, thời lượng, FPS thực tế.
-- GPU encoding và nhiều GPU, nội dung HDR, thay đổi độ phân giải/thiết bị giữa phiên.
-- Hành vi cài đặt, nâng quyền VC Runtime, tạo shortcut, gỡ app, giao diện ở độ scale lớn.
-
-Thực hiện `WINDOWS-TEST-CHECKLIST.md` và lưu diagnostics/log/file mẫu trước khi kết luận các ca trên Đạt. Không coi build sạch là bằng chứng đạt runtime.
-
-## Phạm vi
-
-Đây là V0.1 kiểm chứng engine và khung Editor, chưa có công cụ chú thích/cắt video. Không gán các tính năng trong mockup tương lai thành tính năng đã triển khai.
+Nguồn riêng đã lưu không bị ghi đè. Không có Authenticode HuyVo, tự rollback hoặc private feed. Portable chỉ kiểm tra và mở trang tải thủ công.

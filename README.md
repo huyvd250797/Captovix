@@ -1,104 +1,140 @@
-# Capture Foundation — V0.1.0
+# Captovix V1.0.3 — Default Update Source
 
-Ứng dụng Windows kiểm chứng chụp ảnh/quay màn hình, do HuyVo định hướng sản phẩm. Tên **Capture Foundation** là tên kỹ thuật tạm thời, chưa phải tên thương hiệu đã tra cứu.
+Ứng dụng Windows x64 chụp ảnh, quay màn hình và chú thích ảnh trong **một cửa sổ Editor**. Cấu hình chụp/quay nằm ngay trong Editor. © 2026 HuyVo. All rights reserved.
 
-## Cách dùng nhanh
+## Bắt đầu
 
-**Cách thuận tiện: chạy `Capture-Foundation-v0.1.0-Setup.exe`.** Bộ cài có sẵn runtime .NET, tạo shortcut Desktop/Start Menu và mục gỡ cài đặt. Không cần Visual Studio hay .NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài đi kèm thành phần chính thức của Microsoft và Windows sẽ hỏi quyền quản trị để cài nó. Không tắt Windows Defender hoặc bảo vệ hệ thống.
+**Khuyên dùng:** chạy `Captovix-v1.0.3-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
 
-**Không bắt buộc cài app:** giải nén đầy đủ gói Portable vào một thư mục, chạy `Launch.cmd` hoặc `CaptureFoundation.exe`. Cần Microsoft Visual C++ Runtime x64 đã có trên máy. Nếu thiếu, chạy `Install.cmd` trong thư mục Portable hoặc dùng Setup.exe. `Install.cmd` cần Internet lần đầu nếu phải tải VC Runtime, kiểm tra chữ ký Microsoft rồi mới chạy. Cách này chép app vào thư mục Programs của người dùng và tạo shortcut Desktop; bản Setup.exe còn có Start Menu và trình gỡ cài đặt.
+**Portable:** giải nén toàn bộ `Captovix-v1.0.3-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
 
-Máy đích: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiểm thử trên máy thực tế. Windows N/KN cần Media Feature Pack. Không có bản x86/ARM64 ở V0.1. Không dùng Vercel/Netlify để chạy app Windows này.
+Máy mục tiêu: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiểm thử thực tế. Windows N/KN cần Media Feature Pack. App chưa có bản x86/ARM64 hoặc chứng thư ký mã thương mại. Không tắt Windows Defender hay cơ chế bảo vệ của máy.
 
-## V0.1 làm được gì?
+## Sửa lỗi cài đặt V1.0.2
 
-- Một cửa sổ Editor, cấu hình chụp/quay ngay bên trong; không có màn hình Capture độc lập.
-- Chụp PNG: kéo chọn vùng, chọn cửa sổ, hoặc toàn bộ một màn hình đang chọn.
-- Quay MP4/H.264 từ cùng các nguồn; mic và tiếng máy có thể bật/tắt độc lập, dùng thiết bị mặc định Windows tại lúc bắt đầu.
-- Kích thước theo nguồn, 15/30/60 FPS cấu hình, bitrate mục tiêu 8 Mbps; có tùy chọn mã hóa GPU. Đây là cấu hình yêu cầu, không phải cam kết hiệu năng thực tế.
-- Vùng đi qua nhiều màn hình được chia/cắt và ghép theo tọa độ pixel vật lý. Cả tọa độ âm và màn hình xếp trên/dưới được xử lý trong thuật toán.
-- Thanh điều khiển quay tạm thời: đồng hồ, tạm dừng/tiếp tục, kết thúc. Có yêu cầu Windows loại thanh này khỏi ảnh quay; nếu API không xác nhận, thông báo và kéo thanh ra ngoài vùng quay.
-- Danh sách ảnh/video chung; ảnh có thumbnail, video có thẻ VIDEO. Xem ảnh vừa khung/100% pixel; xem và tua video.
-- Copy ảnh, xuất PNG/JPEG/MP4, nhập file, đổi tên và xóa có xác nhận.
-- Lưu lịch sử/cấu hình trên máy. File chụp/quay chỉ được nhận vào lịch sử khi engine xác nhận hoàn tất. File `pending` sau lỗi được giữ riêng để chẩn đoán.
-- Báo cáo JSON thông tin OS, runtime, màn hình, DPI, phím tắt đã đăng ký và vùng chọn gần nhất.
+- Bỏ đối số ứng dụng sau `--` làm CoreSetup.exe panic `EXE_ARGS` rồi đứng chờ.
+- Cửa sổ cài lõi hiện tiến trình/lỗi, bootstrap hiện 3 giai đoạn; ghi log vào `%LOCALAPPDATA%\HuyVo\Captovix\Logs\setup-core.log` và giữ log lần trước.
+- Kiểm tra app đã mở trước khi bấm Hoàn tất để tránh cảnh báo mở trùng.
+- Có thể đi thẳng **V1.0.0 → V1.0.2**, không cần cài V1.0.1. Nếu bộ cài V1.0.1 cũ còn kẹt, kết thúc CoreSetup.exe đúng lần cài đó rồi đóng bộ cài trước khi chạy bản mới.
+- Chi tiết: [INSTALLER-RECOVERY.md](docs/INSTALLER-RECOVERY.md). Bản V1.0.3 gắn sẵn URL phát hành, không cần nhập nguồn khi cài mới.
 
-## Thao tác
+## Chức năng cập nhật giữ từ V1.0.1
 
-1. Chọn **Vùng chọn**, **Cửa sổ** hoặc **Toàn màn hình**. Với cửa sổ/màn hình, chọn nguồn trong danh sách kế bên; dùng ↻ để làm mới.
-2. Chọn trễ 0/3/5 giây, con trỏ; với video chọn thêm mic/tiếng máy/FPS/GPU.
-3. Nhấn **Chụp ảnh** hoặc **Quay màn hình**. Editor ẩn khi chọn vùng và capture.
-4. Kéo chọn vùng, thả chuột để xác nhận; Esc hoặc chuột phải để hủy.
-5. Khi quay, dùng thanh điều khiển hoặc phím tắt. Sau khi kết thúc, chờ hoàn tất MP4; Editor hiện lại và chọn nội dung mới.
-6. Chọn nội dung cũ ở trái, copy hoặc xuất file. Nút **Báo cáo máy & màn hình** ở phải giúp ghi nhận máy kiểm thử.
+- Mục **Cập nhật ứng dụng** trong Editor và nút **Cập nhật** ở thanh trạng thái; không tạo màn hình cấu hình riêng.
+- Kiểm tra thủ công hoặc mỗi 24 giờ; phiên bản mới/nội dung thay đổi; tải nền, tiến trình, hủy, thử lại và hoãn.
+- Bản Setup dùng Velopack để áp dụng gói sau khi chọn **Khởi động lại để cập nhật**. Không tự đóng app hoặc tự cài khi khởi động.
+- Chặn áp dụng lúc capture; lưu chú thích, thư viện, thiết lập và sao lưu JSON/Edits trước khi thoát. Giữ media gốc và mở lại nội dung đang chọn.
+- Chấp nhận nguồn GitHub Releases công khai hoặc thư mục HTTPS. Kiểm tra AppId, stable/newer, kích thước và SHA-256 của gói.
+- Bộ cài chuyển từ NSIS V1.0 sang Velopack ở `%LOCALAPPDATA%\HuyVo.Captovix`; thư mục dữ liệu hiện có được giữ lại.
+- **Nguồn phát hành mặc định:** `https://github.com/huyvd250797/captovix-releases`. Cài mới rồi bấm **Cập nhật → Kiểm tra cập nhật**; không cần nhập URL. Cấu hình riêng đã lưu được ưu tiên. Nếu trước đây đã lưu nguồn rỗng để tắt nguồn, cần cấu hình lại một lần. Xem [hướng dẫn phát hành](docs/UPDATE-GUIDE.md).
 
-| Phím tắt | Thao tác |
+## Chức năng Editor giữ từ V1.0
+
+- Tên hiển thị, file chạy, icon và bộ cài đổi thành **Captovix**.
+- Khi mở app, Editor mặc định **tối đa cửa sổ (Maximized)**: tận dụng vùng làm việc, vẫn có thanh tiêu đề/nút Windows. Đây không phải chế độ ẩn toàn bộ viền/taskbar.
+- Sau capture, khôi phục đúng trạng thái cửa sổ trước khi chụp/quay, giữ Maximized nếu đang dùng.
+- Chú thích ảnh: mũi tên, khung chữ nhật, ellipse, chữ nhiều dòng, highlight trong suốt, số bước tự tăng.
+- Chọn/di chuyển đối tượng; kéo hai tay nắm để sửa đầu mũi tên hoặc kích thước khung/ellipse/highlight. Thay màu, nét, cỡ chữ/số, nội dung chữ hoặc số thứ tự ở bảng thuộc tính.
+- Crop không phá ảnh gốc; khôi phục đầy đủ khung ảnh bất kỳ lúc nào. Chú thích ngoài vùng crop vẫn được giữ để lấy lại sau.
+- Undo/redo tối đa 100 thao tác trong lượt mở ảnh hiện tại. Lịch sử undo không được ghi xuống đĩa và khởi tạo lại khi đổi ảnh/mở lại app; bản chú thích cuối cùng vẫn được lưu.
+- Tự lưu chú thích/crop thành tài liệu riêng; mở lại vẫn sửa được từng đối tượng. Thumbnail cập nhật theo bản đã chỉnh.
+- Copy/xuất PNG hoặc JPEG bao gồm chú thích và crop, độc lập mức zoom. Không cho xuất đè các file gốc đang quản lý trong thư viện. JPEG dùng nền trắng cho vùng trong suốt.
+- Kiểm tra hash/kích thước ảnh gốc khi mở bản chú thích. Nếu dữ liệu không khớp hoặc bị lỗi, giữ bản sao `.invalid-*` và thông báo, không áp lớp chú thích lên ảnh khác.
+- Tiếp nhận lịch sử/cấu hình từ V0.1 khi Captovix chưa có thư viện.
+
+## Cách chỉnh sửa ảnh
+
+1. Chụp ảnh mới hoặc bấm **Mở file** để nhập ảnh/video.
+2. Chọn ảnh ở danh sách trái. Thanh công cụ ảnh sẽ xuất hiện.
+3. Chọn công cụ, kéo trên ảnh để vẽ. Với **Chữ**, click vị trí rồi nhập nội dung ở bảng thuộc tính bên phải; `Ctrl+Enter` để hoàn tất.
+4. Với **Bước**, click để đặt số tự tăng; có thể sửa số trong bảng thuộc tính.
+5. Dùng **Chọn** để click đối tượng, kéo di chuyển hoặc sửa thuộc tính. Delete chỉ xóa đối tượng đang chọn.
+6. Dùng **Crop**, kéo và thả vùng muốn giữ để áp dụng ngay. Undo hoặc **Khôi phục khung ảnh gốc** để lấy lại.
+7. Chờ nhãn **Đã lưu**. Thao tác vẽ/di chuyển tự lưu sau khoảng 0,55 giây; nhập chữ được gom theo nhịp dừng gõ khoảng 0,7 giây rồi tự lưu. `Ctrl+S` lưu ngay.
+8. Chọn **Copy ảnh** hoặc **Xuất file** để lấy ảnh hoàn chỉnh. Ảnh gốc luôn lưu riêng.
+
+Bảng cấu hình chụp/quay mặc định thu gọn để dành vùng chỉnh sửa; mở mục **Thiết lập chụp & quay** để thay nguồn, con trỏ, thời gian chờ, mic/tiếng máy, FPS và mã hóa GPU.
+
+## Phím tắt
+
+| Phím | Thao tác |
 |---|---|
-| Ctrl + Shift + 1 | Chụp theo cấu hình |
-| Ctrl + Shift + 2 | Bắt đầu quay |
-| Ctrl + Shift + 3 | Kết thúc quay |
-| Ctrl + Shift + 4 | Tạm dừng/tiếp tục quay |
+| Ctrl+Shift+1 | Chụp theo cấu hình |
+| Ctrl+Shift+2 | Bắt đầu quay |
+| Ctrl+Shift+3 | Kết thúc quay |
+| Ctrl+Shift+4 | Tạm dừng/tiếp tục quay |
+| Ctrl+Z / Ctrl+Y hoặc Ctrl+Shift+Z | Undo / redo chú thích |
+| Ctrl+S | Lưu phần chỉnh sửa |
+| Ctrl+C | Copy ảnh đã chỉnh, khi không đang nhập chữ |
+| V / A / R / E | Chọn / Mũi tên / Khung / Ellipse |
+| T / H / N / C | Chữ / Highlight / Số bước / Crop |
+| Delete | Xóa đối tượng đang chọn |
+| Phím mũi tên / Shift+mũi tên | Di chuyển đối tượng 1 / 10 pixel gốc |
+| Esc | Hủy thao tác kéo đang thực hiện, về công cụ Chọn |
 
-App phải đang chạy để nhận phím tắt. Nếu trùng app khác, trạng thái sẽ báo; dùng nút Editor thay thế. V0.1 chưa có biểu tượng tray hoặc tự chạy cùng Windows. Đóng cửa sổ là thoát app khi không capture. Đang quay thì yêu cầu đóng sẽ kết thúc ghi trước; cần đóng lại sau khi lưu xong.
+Khi đang gõ trong ô chữ, các phím sửa văn bản vẫn dành cho ô chữ. Phím tắt capture toàn hệ thống chỉ hoạt động khi app đang chạy; nếu trùng app khác, Editor thông báo. Hãy thả chuột hoàn tất nét vẽ trước khi dùng lệnh chỉnh sửa bằng bàn phím.
 
-## Dữ liệu và cài đặt
+## Chụp và quay kế thừa V0.1
 
-- App cài tại `%LOCALAPPDATA%\Programs\CaptureFoundation`.
-- Dữ liệu tại `%LOCALAPPDATA%\HuyVo\CaptureFoundation`.
-- `Media\`: ảnh/video gốc.
-- `library.json`: lịch sử; `settings.json`: cấu hình. V0.1 dùng JSON ghi nguyên tử để giữ nền tảng đơn giản, sẽ chuyển SQLite khi mở rộng quản lý ở bản sau.
-- `errors.log`, `recorder.log`, `diagnostics-*.json`: thông tin kiểm tra lỗi trên máy.
-- Gỡ bản Setup không xóa media/cấu hình. Muốn dọn toàn bộ, sao lưu trước rồi xóa thư mục dữ liệu thủ công.
-- File ảnh/video không được gửi lên server. Không cần tài khoản hoặc database online. Báo cáo chẩn đoán chỉ được ghi ra máy, không tự gửi đi.
+- Chụp vùng/cửa sổ/toàn bộ một màn hình đang chọn; ảnh gốc PNG.
+- Kéo vùng có thể đi qua nhiều màn hình; thuật toán dùng pixel vật lý, hỗ trợ tọa độ X/Y âm.
+- Video MP4/H.264 theo kích thước nguồn, cấu hình 15/30/60 FPS và bitrate mục tiêu 8 Mbps, tùy chọn mã hóa GPU.
+- Mic và tiếng máy bật/tắt độc lập, dùng thiết bị mặc định Windows khi bắt đầu. Dùng tai nghe khi thu cả hai để giảm vọng âm.
+- Thanh điều khiển quay tạm thời có pause/resume/stop. Windows được yêu cầu loại thanh này khỏi bản quay; khả năng thực tế phụ thuộc hệ thống và cần kiểm thử.
+- Có xem/tua video, nhập file, tìm kiếm, đổi tên, xóa có xác nhận và xuất MP4.
+- Quay video là nén mất dữ liệu, không phải lossless. Vùng video cần kích thước chẵn, có thể bỏ tối đa một hàng/cột ở cạnh phải/dưới.
 
-## Giới hạn V0.1 và trạng thái kiểm chứng
+## Nâng cấp từ V0.1
 
-**Đây là bản kiểm chứng nền tảng, chưa phải bản production đã chứng nhận chạy tốt trên mọi máy Windows.** Đã cross-build Windows x64, kiểm tra XAML/C# và các test hình học trong môi trường Linux. Chưa có phiên Windows desktop thật trong môi trường bàn giao để xác nhận end-to-end mic, loopback, nhiều màn hình, DPI, giao diện và bộ cài. Xem `docs/VALIDATION.md` và thực hiện `docs/WINDOWS-TEST-CHECKLIST.md` trên máy Windows.
+Đóng Capture Foundation cũ trước khi cài/mở Captovix. Khi chưa có thư viện Captovix, app nhập bản sao lịch sử và cấu hình từ `%LOCALAPPDATA%\HuyVo\CaptureFoundation`.
 
-- V0.1 chưa có mũi tên/chữ/highlight/crop ảnh; chưa có cắt, ghép, chú thích video. Editor ở đây là khung xem/quản lý media và cấu hình, đúng phạm vi foundation; mockup trước là hướng thiết kế cho các bản hoàn thiện.
-- Chưa hỗ trợ HDR/tone mapping, chụp cuộn, webcam, OCR hoặc tự cập nhật.
-- Toàn màn hình là toàn bộ màn hình đã chọn. Muốn lấy nhiều màn hình, dùng kéo vùng đi qua các màn hình; hiệu quả ghép qua nhiều GPU cần kiểm thử.
-- PNG giữ pixel gốc; video H.264 là nén mất dữ liệu, không phải lossless. Vùng video được làm chẵn kích thước, có thể bỏ tối đa một hàng/cột ở cạnh phải/dưới. Cửa sổ thay đổi kích thước trong lúc quay cần kiểm thử riêng.
-- Màn hình HDR có thể sai màu; nên kiểm thử SDR trước. Nội dung được ứng dụng/Windows bảo vệ, màn hình UAC/secure desktop, cửa sổ thu nhỏ có thể không capture được. App không vượt các giới hạn này.
-- Không có chọn từng thiết bị âm thanh, giảm ồn, chống vọng hoặc tự chuyển thiết bị giữa phiên. Dùng tai nghe khi thu cả mic và tiếng máy để giảm vọng.
-- Nếu crash/mất điện trước khi hoàn tất, file MP4 `pending` có thể không phát được; app không cam kết cứu bản quay đó. Không hiển thị file `pending` như bản thành công.
-- Setup/app hiện chưa có chứng thư ký mã thương mại. Việc Windows báo nhà phát hành chưa xác minh cần được đánh giá theo chính sách máy; không tắt tính năng bảo vệ.
-- Danh sách dài tải ảnh thu nhỏ khi mở app; tối ưu hàng nghìn media nằm ở bản sau.
+**Ảnh/video cũ tiếp tục được tham chiếu tại đường dẫn cũ, không bị chép lại hoặc di chuyển. Không xóa thư mục dữ liệu CaptureFoundation nếu còn muốn dùng các nội dung đó.** App mới tạo nội dung tại thư mục Captovix. Có thể gỡ chương trình V0.1; bộ gỡ cũ chỉ xóa app, giữ dữ liệu. Nên sao lưu cả hai thư mục dữ liệu khi chuyển sang máy khác.
+
+Lịch sử đã có trong Captovix không bị ghi đè khi mở app lần sau. Phiên bản này không đồng bộ thư viện liên tục giữa hai app.
+
+## Lưu trữ và riêng tư
+
+- App cài: `%LOCALAPPDATA%\HuyVo.Captovix`.
+- Dữ liệu mới: `%LOCALAPPDATA%\HuyVo\Captovix`.
+- `Media\`: file gốc; `Edits\`: lớp chú thích/crop JSON; `Thumbnails\`: ảnh thu nhỏ của bản chỉnh.
+- `library.json`, `settings.json`: lịch sử và cấu hình. Chưa dùng SQLite.
+- `update-settings.json`: nguồn phát hành, tùy chọn và lần kiểm tra gần nhất.
+- `Backups/before-update-*.zip`: metadata và JSON/Edits trước cập nhật; không chứa media.
+- `editor-resume.json`: nội dung cần mở lại sau cập nhật, được xóa sau khi đọc thành công.
+- Dữ liệu được ghi qua file tạm rồi thay thế trong cùng thư mục. File chụp/quay chỉ đưa vào lịch sử khi engine xác nhận hoàn tất. File `.pending.*` sau lỗi không được coi là bản quay thành công.
+- App hoạt động offline, không đăng nhập và không gửi ảnh/video lên server. Nút báo cáo chẩn đoán chỉ tạo file trên máy, không tự gửi.
+- Gỡ Captovix giữ dữ liệu. Xóa một nội dung trong Editor sẽ xóa file gốc và bản chú thích sau xác nhận.
+
+## Trạng thái kiểm chứng và giới hạn
+
+Đã cross-build Windows x64 và chạy kiểm tra logic ở Linux. Không có Windows desktop thật trong phiên xây dựng để xác nhận UI, clipboard, kết quả render PNG/JPEG, bộ cài, capture, DPI và âm thanh end-to-end. Bộ kiểm tra WPF renderer dành Windows được kèm trong source và workflow, đã biên dịch nhưng chưa chạy tại môi trường bàn giao. Xem `docs/VALIDATION.md` và `docs/WINDOWS-TEST-CHECKLIST.md`.
+
+Chưa có cắt/ghép/chú thích video (lộ trình V1.2), HDR/tone mapping, webcam, OCR, chụp cuộn, lựa chọn từng thiết bị âm thanh, tray. Chưa có rollback dữ liệu tự động, xác thực nguồn private, rollout theo nhóm hoặc kiểm tra chữ ký nhà phát hành của gói. Portable kiểm tra và mở trang tải thủ công; cập nhật trong app cần bản Setup. Nguồn cập nhật đã gắn sẵn; phải phát hành gói có phiên bản cao hơn để app nhận cập nhật. Nội dung bảo vệ và secure desktop/UAC có thể không capture được. Không cam kết phục hồi MP4 đang ghi nếu mất điện/crash. FPS thực tế phụ thuộc GPU/CPU/nguồn chụp, không được suy ra từ giá trị cấu hình. Export ảnh giới hạn 100 triệu pixel để tránh cấp phát bộ nhớ quá lớn.
 
 ## Build source trên Windows
 
-Cần .NET **10 SDK**, NSIS **3** (để tạo `.exe` installer), Internet để restore NuGet và tải VC Runtime. Dùng PowerShell tại thư mục source:
+Cần .NET 10 SDK, Internet cho NuGet và Velopack CLI đã pin trong `.config/dotnet-tools.json`; NSIS 3 để tạo bộ cài chuyển đổi. Chạy tại thư mục source:
 
 ```powershell
 .\Build.cmd
-# Chỉ tạo app portable, không yêu cầu NSIS:
+# Chỉ tạo portable:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build-Windows.ps1 -SkipInstaller
 ```
 
-Kết quả ở `artifacts`: `win-x64\`, ZIP portable, Setup.exe. Gói source không bao gồm runtime nhị phân; gói portable và Setup đã có bản chạy sẵn. SDK không bắt buộc đúng patch nhưng cần dòng 10.0. Runtime self-contained được pin `10.0.13`; cập nhật patch khi bảo trì.
-
-Build trực tiếp:
+Script chạy kiểm tra hình học, editor/history/migration, updater và Windows renderer/document, sau đó publish app self-contained. Velopack đóng gói feed/gói full, còn NSIS bọc Setup để chuyển V1.0 và kèm prerequisite offline. Kết quả ở `artifacts\`: thư mục `win-x64`, ZIP Portable, Setup.exe và Update-Packages.zip. `-SkipInstaller` bỏ bước bọc NSIS; Setup thô lúc đó không xử lý gỡ NSIS V1.0. Dùng bản Setup đầy đủ để chuyển đổi. Khi tạo Setup lần đầu, script tải VC++ Runtime từ Microsoft và kiểm tra chữ ký trước khi đóng gói. Runtime .NET được pin 10.0.13; cập nhật patch khi bảo trì.
 
 ```powershell
 dotnet run --project tests/GeometryChecks/GeometryChecks.csproj -c Release
-dotnet publish src/CaptureFoundation/CaptureFoundation.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64 -o artifacts/win-x64
+dotnet run --project tests/EditorCoreChecks/EditorCoreChecks.csproj -c Release
+dotnet run --project tests/EditorWindowsChecks/EditorWindowsChecks.csproj -c Release -p:Platform=x64
 ```
 
-Workflow `.github/workflows/windows-build.yml` có thể build trên GitHub Actions sau khi đưa source vào repo. Workflow chỉ kiểm tra build/test tự động, không thay thế kiểm thử màn hình/âm thanh trên máy có desktop.
+`.github/workflows/windows-build.yml` build và chạy các kiểm tra trên Windows sau khi đưa source vào repo. Không thay thế kiểm thử màn hình/âm thanh bằng máy desktop thật.
 
-## Cấu trúc source
+## Công nghệ
 
-- `src/CaptureFoundation/MainWindow.*`: Editor, cấu hình và luồng capture.
-- `CaptureEngine.cs`: adapter ScreenRecorderLib 7.0.1; Desktop Duplication, Windows Graphics Capture cho cửa sổ, Media Foundation/WASAPI.
-- `RegionPicker.cs`, `Native.cs`, `Geometry.cs`: lớp chọn vùng, Win32 và pixel nhiều màn hình.
-- `MediaStore.cs`: file media, thumbnail, lịch sử và cấu hình.
-- `RecordingBar.cs`: điều khiển quay tạm thời.
-- `installer/`: NSIS installer; `scripts/`: build, portable launcher và cài theo người dùng.
-- `tests/GeometryChecks/`: test clipping, tọa độ âm, cross-monitor, căn chẵn H.264.
-- `docs/`: kết quả build và checklist Windows.
+C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, ScreenRecorderLib 7.0.1 (Desktop Duplication/Windows Graphics Capture/Media Foundation/WASAPI), tài liệu chú thích JSON, Velopack 1.2.161 cho cập nhật và NSIS bootstrap cho lần cài/chuyển đổi đầu tiên. Giấy phép thành phần bên thứ ba nằm trong `licenses/` và `THIRD-PARTY-NOTICES.txt`.
 
 ## Phiên bản tiếp theo
 
-**V1.0 — Unified Editor:** hoàn thiện ổn định theo kết quả V0.1, thêm chú thích ảnh cơ bản, undo/redo và lưu dữ liệu chỉnh sửa tách khỏi bản gốc. Sau đó V1.1 hoàn thiện công cụ ảnh, V1.2 chỉnh sửa video.
-
-© 2026 HuyVo. All rights reserved. Thành phần bên thứ ba theo giấy phép riêng trong `THIRD-PARTY-NOTICES.txt`.
+**V1.1 — Image Annotation:** hoàn thiện công cụ ảnh, preset, căn chỉnh và trải nghiệm thao tác theo phản hồi thực tế. **V1.2 — Recording & Video Tools:** công cụ cắt video và hoàn thiện luồng ghi hình/âm thanh.

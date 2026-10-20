@@ -1,0 +1,56 @@
+using Captovix;
+int count=0;
+void Check(bool ok,string description){count++;if(!ok)throw new Exception("FAIL: "+description);Console.WriteLine("PASS: "+description);}
+void Reject(Action action,string description){try{action();}catch(InvalidDataException){Check(true,description);return;}throw new Exception("FAIL: accepted "+description);}
+EditorDocument New()=>new(){OriginalWidth=1920,OriginalHeight=1080,SourceHash="SOURCE-HASH"};
+var session=new EditorSession(New());
+session.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Arrow,X1=10,Y1=20,X2=300,Y2=250}));
+Check(session.Document.Annotations.Count==1&&session.CanUndo&&session.Dirty,"Adding an annotation is undoable and dirty");
+var id=session.Document.Annotations[0].Id;
+session.Change(d=>d.Annotations[0].Translate(20,-10));
+Check(session.Document.Annotations[0].X1==30&&session.Document.Annotations[0].Y2==240,"Moving changes both endpoints");
+session.Undo();Check(session.Document.Annotations[0].X1==10,"Undo movement restores original coordinates");
+session.Undo();Check(session.Document.Annotations.Count==0&&session.CanRedo,"Undo creation removes only the overlay");
+session.Redo();session.Redo();Check(session.Document.Annotations[0].Id==id&&session.Document.Annotations[0].X1==30,"Redo restores stable object identity and position");
+session.Undo();session.Change(d=>d.Annotations[0].Color="#EA5362");Check(!session.CanRedo,"A new action after undo clears the abandoned redo branch");
+session.Begin();session.Document.Annotations[0].Color="#008B92";session.Cancel();Check(session.Document.Annotations[0].Color=="#EA5362","Cancel restores the pre-gesture state");
+session.MarkSaved();Check(!session.Dirty,"Successful save clears dirty state");
+session.Undo();Check(session.Dirty,"Undo after save requires persistence");
+var doc=New();doc.Annotations.Add(new(){Kind=AnnotationKind.Text,X1=100,Y1=150,Text="Hướng dẫn bước 1\nDòng thứ hai",FontSize=36});
+var original=doc.Annotations[0].Copy();
+Check(doc.ApplyCrop(new(80,100,400,300)),"Crop accepts a valid physical-pixel region");
+Check(doc.Viewport==new PixelRect(80,100,400,300),"Crop records the correct viewport");
+Check(doc.Annotations[0].X1==original.X1&&doc.Annotations[0].Y1==original.Y1,"Crop never rewrites original annotation coordinates");
+Check(doc.OriginalWidth==1920&&doc.OriginalHeight==1080,"Crop preserves original image dimensions");
+Check(doc.ApplyCrop(new(100,120,900,800))&&doc.Viewport==new PixelRect(100,120,380,280),"Repeated crop intersects the current viewport");
+var json=doc.Serialize();var reopened=EditorDocument.Deserialize(json);reopened.Validate(1920,1080,"SOURCE-HASH");
+Check(reopened.Annotations[0].Text=="Hướng dẫn bước 1\nDòng thứ hai"&&reopened.Annotations[0].FontSize==36,"JSON roundtrip preserves Vietnamese multiline text and style");
+Check(reopened.Crop==doc.Crop&&reopened.Annotations[0].Id==doc.Annotations[0].Id,"Reopen restores crop and editable identity");
+Reject(()=>reopened.Validate(1920,1080,"DIFFERENT-HASH"),"Mismatched original content is rejected");
+Reject(()=>reopened.Validate(1280,720,"SOURCE-HASH"),"Mismatched original dimensions are rejected");
+var invalid=New();invalid.Crop=new(-1,0,50,50);Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Out-of-bounds persisted crop is rejected");
+invalid=New();invalid.Version=2;Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Unknown future document versions are not overwritten blindly");
+invalid=New();invalid.Annotations.Add(new(){Color="not-a-color"});Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Invalid colors cannot enter rendering");
+invalid=New();invalid.Annotations.Add(new(){X1=double.NaN});Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Non-finite coordinates are rejected");
+invalid=New();invalid.Annotations.Add(new(){FontSize=0});Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Invalid font size is rejected");
+invalid=New();var duplicate=new Annotation();invalid.Annotations.Add(duplicate);invalid.Annotations.Add(duplicate.Copy());Reject(()=>invalid.Validate(1920,1080,"SOURCE-HASH"),"Duplicate object IDs are rejected");
+doc=New();Check(doc.NextStep()==1,"Step numbering starts at one");doc.Annotations.Add(new(){Kind=AnnotationKind.Step,Number=7});Check(doc.NextStep()==8,"Step numbering continues after the largest existing number");
+session=new(New());session.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Text,Text="a"}));
+session.Begin();session.Document.Annotations[0].Text="ab";session.Document.Annotations[0].Text="abc";session.Commit();session.Undo();Check(session.Document.Annotations[0].Text=="a","A text edit transaction undoes as one meaningful action");
+session.Change(d=>d.ApplyCrop(new(10,20,500,400)));session.Undo();Check(session.Document.Crop==null,"Undo crop restores full image viewport");session.Redo();Check(session.Document.Viewport==new PixelRect(10,20,500,400),"Redo crop restores exact bounds");
+session.Change(d=>d.Annotations.Clear());session.Undo();Check(session.Document.Annotations.Count==1,"Undo deletion restores annotation content");
+var before=session.Document.Serialize();session.Change(d=>{});session.Undo();Check(session.Document.Serialize()!=before,"A no-op does not create an empty undo entry");
+var folder=Path.Combine(Path.GetTempPath(),"Captovix-Core-"+Guid.NewGuid().ToString("N"));
+try{
+ var legacy=Path.Combine(folder,"legacy");var current=Path.Combine(folder,"current");Directory.CreateDirectory(legacy);Directory.CreateDirectory(Path.Combine(legacy,"Media"));
+ var originalPath=Path.Combine(legacy,"Media","sample.png");File.WriteAllText(originalPath,"original-bytes");
+ var history="[{\"Id\":\"example\",\"FilePath\":"+System.Text.Json.JsonSerializer.Serialize(originalPath)+",\"Title\":\"Ảnh cũ\"}]";File.WriteAllText(Path.Combine(legacy,"library.json"),history);File.WriteAllText(Path.Combine(legacy,"settings.json"),"{\"Fps\":30}");
+ Check(DataMigration.ImportLegacy(current,legacy),"V0.1 metadata migrates on first start");
+ Check(File.ReadAllText(Path.Combine(current,"library.json"))==history,"Migration preserves media paths and Unicode titles");
+ Check(File.Exists(Path.Combine(current,"settings.json")),"Migration preserves capture settings");
+ Check(File.ReadAllText(originalPath)=="original-bytes"&&!Directory.Exists(Path.Combine(current,"Media")),"Migration does not modify or duplicate original media");
+ File.WriteAllText(Path.Combine(current,"library.json"),"[]");Check(!DataMigration.ImportLegacy(current,legacy)&&File.ReadAllText(Path.Combine(current,"library.json"))=="[]","Repeated launches never overwrite an existing Captovix library");
+ var invalidSource=Path.Combine(folder,"bad");Directory.CreateDirectory(invalidSource);File.WriteAllText(Path.Combine(invalidSource,"library.json"),"{}");var destination=Path.Combine(folder,"bad-destination");
+ Reject(()=>DataMigration.ImportLegacy(destination,invalidSource),"Invalid legacy metadata is rejected before creating new library");Check(!File.Exists(Path.Combine(destination,"library.json")),"Failed migration leaves the target library untouched");
+}finally{if(Directory.Exists(folder))Directory.Delete(folder,true);}
+Console.WriteLine($"{count} editor/history/migration checks passed.");

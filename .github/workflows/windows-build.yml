@@ -1,4 +1,4 @@
-name: Windows x64 build
+name: Captovix Windows build
 on:
   workflow_dispatch:
   push:
@@ -14,11 +14,21 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Build and package
+      - name: Install NSIS
         shell: pwsh
-        run: ./scripts/Build-Windows.ps1 -SkipInstaller
-      - name: Upload portable
+        run: choco install nsis --yes --no-progress
+      - name: Build, test and package
+        shell: pwsh
+        env:
+          CAPTOVIX_UPDATE_URL: ${{ vars.CAPTOVIX_UPDATE_URL }}
+          CAPTOVIX_UPDATE_KIND: ${{ vars.CAPTOVIX_UPDATE_KIND }}
+        run: |
+          $kind = if ($env:CAPTOVIX_UPDATE_KIND) { $env:CAPTOVIX_UPDATE_KIND } else { 'GitHub' }
+          ./scripts/Build-Windows.ps1 -UpdateSource $env:CAPTOVIX_UPDATE_URL -UpdateKind $kind
+      - name: Upload build artifacts (does not publish a release)
         uses: actions/upload-artifact@v4
         with:
-          name: Capture-Foundation-v0.1.0-Windows-x64
-          path: artifacts/Capture-Foundation-v0.1.0-Portable-Windows-x64.zip
+          name: Captovix-Windows-x64
+          path: |
+            artifacts/Captovix-*.exe
+            artifacts/Captovix-*.zip

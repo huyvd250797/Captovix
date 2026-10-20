@@ -1,4 +1,4 @@
-using CaptureFoundation;
+using Captovix;
 int checks=0;
 void Check(bool condition,string description){checks++;if(!condition)throw new Exception("FAIL: "+description);Console.WriteLine("PASS: "+description);}
 var screens=new[]{("LEFT",new PixelRect(-1920,0,1920,1080)),("MAIN",new PixelRect(0,0,2560,1440))};

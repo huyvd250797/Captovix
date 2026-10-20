@@ -1,4 +1,4 @@
-# Checklist kiểm chứng Windows — V0.1.0
+# Checklist kiểm chứng Windows — Captovix V1.0.3
 
 Trạng thái ban đầu: **CHƯA CHẠY TRÊN WINDOWS THẬT**. Người kiểm thử điền Đạt/Không đạt, máy, GPU, OS, DPI, thiết bị âm thanh và đường dẫn bằng chứng. Không suy ra hiệu năng video từ kết quả build.
 
@@ -60,4 +60,75 @@ Nguồn âm thanh:
 Mô tả thực tế, độ lệch âm hình nếu có:
 File mẫu / báo cáo diagnostics / recorder.log:
 
-Chỉ nâng V1.0 sau khi các ca capture/DPI/âm thanh cốt lõi đạt trên máy mục tiêu hoặc có giới hạn đã thống nhất.
+Chỉ kết luận bản chạy ổn định sau khi các ca capture/DPI/âm thanh cốt lõi đạt trên máy mục tiêu hoặc có giới hạn đã ghi nhận.
+
+## Bổ sung Unified Editor V1.0
+
+Tất cả ca dưới đây CHƯA được chạy trên Windows desktop trong phiên bàn giao.
+
+| Mã | Thao tác | Kết quả cần đạt | Thực tế |
+|---|---|---|---|
+| UI-01 | Mở app mới, đóng/mở lại | Cửa sổ luôn mở Maximized, có titlebar và nút Windows | Chưa chạy |
+| UI-02 | Chụp/quay từ Editor maximized | Sau capture Editor vẫn maximized | Chưa chạy |
+| UI-03 | Thu cửa sổ về Normal rồi chụp | Trở lại Normal theo lựa chọn hiện tại; lần khởi động app mới vẫn Maximized | Chưa chạy |
+| EDIT-01 | Vẽ đủ 6 loại chú thích | Hiển thị đúng; từng đối tượng còn chọn/sửa được | Chưa chạy |
+| EDIT-02 | Chọn, kéo, kéo tay nắm | Đối tượng/đầu mũi tên/khung di chuyển đúng ở các zoom | Chưa chạy |
+| EDIT-03 | Sửa chữ tiếng Việt nhiều dòng | Nội dung và cỡ/màu đúng, gõ không tạo đối tượng ngoài ý muốn | Chưa chạy |
+| EDIT-04 | Click đặt nhiều số bước, sửa số | Tự tăng đúng, giá trị 1–9999 | Chưa chạy |
+| EDIT-05 | Undo/redo vẽ, kéo, sửa, xóa | Hoàn tác/làm lại đúng từng thao tác, không đổi ảnh gốc | Chưa chạy |
+| EDIT-06 | Crop nối tiếp rồi khôi phục khung ảnh | Không lệch tọa độ chú thích; vùng ngoài crop lấy lại được | Chưa chạy |
+| EDIT-07 | Đổi ảnh rồi mở lại; đóng/mở app | Crop/chữ/đối tượng đã lưu vẫn sửa được, không chỉ là ảnh phẳng | Chưa chạy |
+| EDIT-08 | Copy/xuất PNG/JPEG ở zoom 25%,100%,200% | Kích thước và chú thích xuất giống nhau, không có tay nắm/viền chọn | Chưa chạy |
+| EDIT-09 | Xuất vào đường dẫn ảnh gốc trong thư viện | App yêu cầu đường dẫn khác, không ghi đè ảnh gốc | Chưa chạy |
+| EDIT-10 | Tạm ngừng gõ 2 giây | Nhãn Đã lưu; mở lại có đủ chữ | Chưa chạy |
+| EDIT-11 | Chặn quyền ghi thư mục Edits, thử lưu/chuyển ảnh | Báo lỗi, giữ nội dung trong Editor, không đóng/chuyển mất chỉnh sửa | Chưa chạy |
+| EDIT-12 | Sửa file gốc bên ngoài rồi mở lại | Không áp nhầm chú thích, giữ .invalid backup và có cảnh báo | Chưa chạy |
+| MIG-01 | Có dữ liệu V0.1, mở Captovix lần đầu | Lịch sử/cấu hình được nhập; file media cũ không di chuyển/sửa | Chưa chạy |
+| MIG-02 | Có dữ liệu Captovix rồi mở lại | Không ghi đè bằng thư viện cũ | Chưa chạy |
+
+Chạy kiểm tra renderer tự động trên Windows: `dotnet run --project tests/EditorWindowsChecks/EditorWindowsChecks.csproj -c Release -p:Platform=x64`.
+
+
+## V1.0.1 — Update Foundation (kiểm thử bổ sung bắt buộc trên Windows)
+
+- [ ] Đóng V1.0, cài Setup V1.0.1, xác nhận một mục Captovix mới trong Apps & Features, shortcut mở bản 1.0.1. Thử cả đường cài V1.0 mặc định và có khoảng trắng.
+- [ ] Bộ cài chặn khi V1.0/V1.0.1/Capture Foundation đang mở; không buộc tắt bản đang quay.
+- [ ] Ảnh/video/chú thích/settings V1.0 vẫn còn; hash media không đổi. Lịch sử V0.1 còn mở được ở đường cũ.
+- [ ] Nếu cài Velopack lỗi/hủy prerequisite, V1.0 chưa bị gỡ. Nếu gỡ V1.0 lỗi, bản mới còn mở được và có thông báo.
+- [ ] Máy sạch thiếu VC++: thành phần Microsoft có hỏi UAC; từ chối không báo cài thành công. Máy có VC++: app không đòi admin cho bản cài per-user.
+- [ ] Editor Maximized khi mở và sau update; capture rồi khôi phục trạng thái cửa sổ.
+- [ ] Chưa có nguồn: trạng thái rõ ràng, không truy vấn URL giả. Nhập nguồn HTTPS/GitHub hợp lệ và lưu.
+- [ ] Tắt/tăng thời gian kiểm tra mỗi ngày; không tự tải/cài. Nguồn mới được kiểm tra độc lập; nút thủ công dùng được.
+- [ ] Mất mạng, URL404, JSON sai, GitHub giới hạn request: thông báo trong panel và vẫn dùng app; không khóa capture.
+- [ ] Nguồn thử riêng có V1.0.2 stable: thấy version/notes. Cùng version/thấp hơn/beta/AppId khác không được áp dụng.
+- [ ] Tải nền trong khi sửa ảnh/quay; cancel/retry/hoãn; ấn nhiều lần không tạo hai tác vụ.
+- [ ] SHA-256/kích thước sai không chuyển Ready. Không tự áp dụng cache khi đóng/mở app.
+- [ ] Đang quay: không áp dụng bản mới; chờ finalize MP4. Không có video pending được báo thành công.
+- [ ] Ready: sửa chữ ngay trước khi bấm restart; bản mới mở lại đúng ảnh và chữ vừa lưu. Metadata/Edits backup đọc được, media hash không đổi.
+- [ ] Giả lập ổ đầy/không ghi được data hoặc Backups: app không thoát và không gọi áp dụng.
+- [ ] Tải xong rồi đóng app: mở lại không tự cập nhật. Kiểm tra/tải lại có kiểm tra integrity, sau đó restart mới áp dụng.
+- [ ] Bản mới lỗi/locked file: xem hành vi và log Velopack, không khẳng định rollback metadata tự động.
+- [ ] Portable mở nguồn tải thủ công; không có Apply. Install.cmd chỉ chuẩn bị runtime, không cài vào Programs.
+- [ ] Gỡ bản Velopack bằng Windows Settings: binaries/shortcut được gỡ, data root còn nguyên.
+
+Nguồn test V1.0.2 chỉ dùng repository thử nghiệm, không publish lên stable của người dùng. Đánh dấu kèm OS, ngày, phiên bản, URL nguồn thử và log khi bàn giao QA. Những ô trên chưa được chạy trong môi trường Linux tạo gói.
+
+
+## V1.0.2 — Installer Recovery
+
+- [ ] Đóng đúng CoreSetup.exe bị kẹt từ V1.0.1 trước khi chạy bản mới.
+- [ ] Cài trực tiếp V1.0.0 → V1.0.2: không còn EXE_ARGS panic, có cửa sổ tiến trình lõi, hoàn tất và mở V1.0.2.
+- [ ] Thử máy sạch, máy có V1.0.1 hoàn tất, và đường cài có khoảng trắng/tài khoản Unicode.
+- [ ] Log mới ở HuyVo/Captovix/Logs/setup-core.log, log lần trước được giữ.
+- [ ] Hủy/thất bại core setup không gỡ V1.0; sau thành công gỡ đúng NSIS cũ, giữ dữ liệu và shortcut bản mới.
+- [ ] Khi app đã tự mở, nút Hoàn tất không hiện cảnh báo app đang chạy/mở bản thứ hai.
+- [ ] Nâng V1.0.1 → V1.0.2 qua nguồn thử riêng; app vẫn mặc định Maximized, chú thích và media cũ còn nguyên.
+
+Các ô trên cần chạy bằng Windows thật; kiểm tra tĩnh hợp đồng lệnh không thay thế kiểm thử cài đặt.
+
+## V1.0.3 — Default Update Source
+
+- [ ] Máy sạch: cài V1.0.3, mở Cập nhật thấy đúng nguồn huyvd250797/captovix-releases; không phải nhập URL.
+- [ ] Máy V1.0.2 đã lưu nguồn chính thức: Publish V1.0.3, kiểm tra/tải/khởi động lại và xác nhận version, thư viện/chú thích.
+- [ ] Nguồn tùy chỉnh, AutoCheck=false hoặc nguồn rỗng đã lưu được giữ nguyên.
+- [ ] Cùng version báo mới nhất; mất mạng không chặn Editor.

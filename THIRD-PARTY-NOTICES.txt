@@ -1,4 +1,4 @@
-Capture Foundation 0.1.0 — Third-party notices
+Captovix 1.0.2 — Third-party notices
 
 App source: Copyright 2026 HuyVo. All rights reserved.
 
@@ -41,3 +41,7 @@ Distributed as its unmodified Microsoft installer; subject to Microsoft license 
 NSIS installer system
 https://nsis.sourceforge.io/License
 Installer is produced with NSIS 3; NSIS source is not part of the app.
+
+Velopack 1.2.161 (SDK and packaging/updater)
+https://github.com/velopack/velopack
+MIT License: see licenses/Velopack-LICENSE.txt.
