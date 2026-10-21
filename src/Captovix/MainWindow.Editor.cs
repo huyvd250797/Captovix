@@ -148,6 +148,7 @@ public partial class MainWindow
     private void Viewport_Changed(object sender,SizeChangedEventArgs e){if(_fitMode&&_session!=null)FitImage();}
     private void Editor_KeyDown(object sender,KeyEventArgs e)
     {
+        if(_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))return;
         var ctrl=Keyboard.Modifiers.HasFlag(ModifierKeys.Control);var typing=Keyboard.FocusedElement is TextBoxBase;
         if(ViewportKey(e,typing))return;
         if(Surface.IsMouseCaptured&&e.Key!=Key.Escape){

@@ -1,3 +1,24 @@
+# Nghiệm thu Capture Workflow V1.5 (máy Windows thật)
+
+Các mục sau chưa được chạy bằng cross-build Linux. Kiểm tra trước khi phát hành rộng:
+
+- [ ] Cài mới V1.5 tại D:\Captovix\Captovix; mở thủ công Editor phóng to; mặc định X thoát và không có autorun.
+- [ ] Upgrade bản V1.4 giữ ảnh, sidecar schema 4, preset chú thích, nguồn cập nhật mặc định; đọc được ảnh đã xoay/crop/style.
+- [ ] Nhấp biểu tượng khay mở Editor; menu chuột phải chạy đủ 5 chế độ và preset; ẩn Editor/menu trước ảnh; Restart Explorer khôi phục biểu tượng; notification click mở đúng ảnh.
+- [ ] Bật đóng xuống khay rồi X, mở lại từ tray hoặc shortcut lần hai; menu Thoát chấm dứt process và giải phóng hotkey. Tắt tùy chọn rồi X thoát.
+- [ ] 5 phím mặc định, đổi phím/tắt phím/lưu/mở lại; thử trùng nội bộ, trùng +2/+3/+4, F12, Win key và xung đột app khác. Thất bại khôi phục phím cũ; ô nhập phím không khởi động capture.
+- [ ] Chụp vùng màn hình tọa độ âm, hai màn hình 100/150/200%; chụp lại sau restart. Hủy vùng mới không thay vùng cũ. Rút màn hình/đổi DPI/độ phân giải buộc chọn lại; đổi topology trong đếm ngược phải hủy an toàn.
+- [ ] Cửa sổ: chọn lại mỗi lần chụp; đóng/thu nhỏ cửa sổ khi đếm ngược không chụp mục tiêu khác. Quay cửa sổ hiện có vẫn hoạt động.
+- [ ] Delay 0/3/5: Esc ở vùng/cửa sổ/countdown; chụp liên tiếp/tray/hotkey không tạo phiên song song; file hủy không đưa vào history.
+- [ ] Preset: lưu/áp dụng/xóa, tên trống/trùng/quá dài, tối đa 20, màn hình không còn; preset cửa sổ không dùng HWND cũ. Giữ riêng preset chú thích.
+- [ ] Mở Editor sau ảnh; lưu nền không đổi tài liệu đang chỉnh; bật/tắt autocopy độc lập; khóa clipboard hoặc Do Not Disturb không mất ảnh. Khởi động lại thấy ảnh đã chụp nền.
+- [ ] Autorun bật/lưu/đăng xuất vào lại: mở Editor hoặc tray đúng lựa chọn, không tự capture; mở shortcut thủ công vẫn vào Editor. Tắt/lưu bỏ HKCU Run; gỡ cài đặt không để lại autorun. Kiểm tra đường dẫn có dấu cách.
+- [ ] Thoát khi chụp/countdown hủy an toàn; thoát khi quay dừng và lưu MP4, đủ mic/âm thanh máy; +2/+3/+4 vẫn hoạt động.
+- [ ] Cấu hình JSON hỏng/schema 99 được giữ nguyên; Khôi phục mặc định tạo backup rồi lưu mới. Thử thư mục dữ liệu read-only báo lỗi không giả thành công.
+- [ ] Update V1.4 → V1.5 bằng feed thật; restart giữ dữ liệu và tray/hotkeys không cản đóng app. V1.5 → bản thử cao hơn: lỗi apply giữ app dùng được; backup có capture-workflow.json. Không publish bản thử lên kênh stable.
+
+## Checklist các phiên bản trước
+
 # Checklist kiểm chứng Windows — Captovix V1.2.0
 
 Trạng thái ban đầu: **CHƯA CHẠY TRÊN WINDOWS THẬT**. Người kiểm thử điền Đạt/Không đạt, máy, GPU, OS, DPI, thiết bị âm thanh và đường dẫn bằng chứng. Không suy ra hiệu năng video từ kết quả build.

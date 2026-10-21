@@ -24,14 +24,14 @@ foreach ($folder in @($payload,$releases)) {
 if ($PreviousReleases) { Copy-Item (Join-Path (Resolve-Path $PreviousReleases).Path '*.nupkg') $releases -Force }
 dotnet run --project tests/InstallerContractChecks/InstallerContractChecks.csproj -c Release -- $projectRoot
 if ($LASTEXITCODE -ne 0) { throw 'Installer argument regression checks failed.' }
-foreach ($check in @('GeometryChecks','EditorCoreChecks','AnnotationChecks','AdvancedAnnotationChecks','ImageAppearanceChecks','ViewportChecks','UpdateChecks','EditorWindowsChecks')) {
+foreach ($check in @('CaptureWorkflowChecks','GeometryChecks','EditorCoreChecks','AnnotationChecks','AdvancedAnnotationChecks','ImageAppearanceChecks','ViewportChecks','UpdateChecks','EditorWindowsChecks')) {
     dotnet run --project "tests/$check/$check.csproj" -c Release -p:Platform=x64
     if ($LASTEXITCODE -ne 0) { throw "$check failed." }
 }
 dotnet publish src/Captovix/Captovix.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64 -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o $payload
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 Copy-Item docs,licenses -Destination $payload -Recurse -Force
-Copy-Item README.md,CHANGELOG.md,THIRD-PARTY-NOTICES.txt -Destination $payload -Force
+Copy-Item README.md,CHANGELOG.md,ROADMAP.md,THIRD-PARTY-NOTICES.txt -Destination $payload -Force
 Copy-Item scripts/Install-Local.ps1,scripts/Install.cmd,scripts/Launch.cmd -Destination $payload -Force
 if ($UpdateSource) {
     $uri = [uri]$UpdateSource

@@ -1,21 +1,21 @@
-# Validation — Captovix V1.4.0
+# Validation — Captovix V1.5.0
 
-Source đầu vào: Captovix-v1.3.0-Source.zip do Boss cung cấp. SDK 10.0.100, runtime Windows 10.0.13, Velopack SDK/CLI 1.2.161 và ScreenRecorderLib 7.0.1 giữ nguyên.
+Source đầu vào: Captovix-v1.4.0-Source(1).zip do Boss cung cấp. C# .NET 10 WPF x64, SDK 10.0.100, runtime Windows 10.0.13, Velopack SDK/CLI 1.2.161 và ScreenRecorderLib 7.0.1 giữ nguyên.
 
-## Kiểm tra đã chạy
+## Kiểm thử logic
 
-GeometryChecks 12; EditorCoreChecks 38; AnnotationChecks 76; AdvancedAnnotationChecks 49; ImageAppearanceChecks 61; ViewportChecks 48; UpdateChecks core 41; InstallerContractChecks 25: tổng 350 logic/tĩnh. Sau đóng gói có 9 ca SDK trên nupkg thực tế, tổng 359.
+Geometry 12; EditorCore 38; Annotation 76; AdvancedAnnotation 49; ImageAppearance 61; Viewport 48; Update core 41; InstallerContract 25; CaptureWorkflow 53: tổng 403 ca logic/tĩnh. UpdateChecks chạy thêm 9 ca SDK trên nupkg thực tế sau đóng gói, tổng 412.
 
-ImageAppearanceChecks kiểm tra identity/crop translation, 16 tổ hợp xoay/lật, inverse mapping, resize, rotate sau flip, các neo canvas, clipping và hit exclusion, tổng kích thước khung/bóng, JSON schema 1–4, undo/redo/reset, giới hạn cấp phát và 2000 trường hợp ma trận ngẫu nhiên. Các ca viewport tiếp tục có 4000 crop resize ngẫu nhiên.
+Workflow kiểm tra opt-in mặc định, roundtrip cấu hình/phím/preset/vùng, bảo vệ file hỏng/schema mới, tên/giới hạn preset, trùng phím/phím dành riêng, phím Windows không hợp lệ, topology/monitor identity/DPI/âm tọa độ, xung đột đăng ký và rollback, gate đồng thời, quoting/giới hạn autorun và backup workflow. Image/viewport giữ kiểm tra 2000 ma trận và 4000 crop ngẫu nhiên.
 
-Cross-build app và EditorWindowsChecks, publish win-x64 self-contained, biên dịch NSIS. Harness Windows mở rộng để kiểm tra pixel xoay/lật, alpha nền/bóng, kích thước xuất, inspector resize/aspect/reset và phối hợp inline text. Harness chỉ biên dịch tại Linux, chưa thực thi WPF.
+## Build và đóng gói
 
-Kiểm tra gói: phiên bản/AppId/hash/size/feed, URL cập nhật mặc định, DLL payload giống nupkg/Portable, ZIP CRC và whitelist release assets; bản Setup canonical giống file standalone. Không tự Publish GitHub Release.
+Cross-build app và EditorWindowsChecks, publish win-x64 self-contained, đóng gói Velopack và biên dịch bộ cài NSIS. Harness WPF thêm kiểm tra cấu hình workflow trong cùng Editor, mặc định và preset riêng; chỉ biên dịch trên Linux, chưa thực thi WPF.
 
-## Chưa kiểm chứng trên Windows thật
+Kiểm tra gói: phiên bản/AppId/hash/size/feed, URL mặc định, DLL payload giống nupkg/Portable, ZIP CRC và whitelist release assets, Setup canonical giống standalone. Source có README, CHANGELOG, ROADMAP và checklist Windows. Không tự đăng GitHub Release.
 
-Chưa chạy chuột/focus/IME khi xoay/lật, renderer WPF, clipboard/JPEG, bộ cài ở D, update restart hoặc capture/audio/DPI end-to-end. Build/logic không thay các kiểm tra này. Xem WINDOWS-TEST-CHECKLIST.md trước dùng rộng.
+## Giới hạn kiểm chứng
 
-## Giới hạn
+Chưa chạy cài đặt/update restart, tray và Explorer restart, hotkey thật/foreground/focus, clipboard/thông báo, đăng nhập Windows/autorun, overlay chụp thật, screen/audio/DPI end-to-end. Các ca logic dùng adapter giả cho đăng ký hotkey và không chứng minh Win32 đã hoạt động trên máy người dùng. Cần chạy docs/WINDOWS-TEST-CHECKLIST.md trước phát hành rộng.
 
-Schema 4 không mở ngược bằng app V1.3 trở xuống. Canvas nhỏ cắt phần ngoài khung nhưng giữ dữ liệu nguồn. Shadow là bóng mềm của khung chữ nhật. Đầu ra tối đa 32.768 px mỗi chiều và 100 triệu pixel. Chú thích giữ trong tọa độ ảnh gốc; resize không thêm chi tiết ảnh. Cấu hình chưa Áp dụng chưa nằm trong tài liệu. Không có chứng thư Authenticode của HuyVo. Video giữ tính năng hiện tại.
+V1.5 giữ schema ảnh 4 và dữ liệu ảnh/chú thích cũ. Cấu hình workflow có schema 1 riêng; không downgrading bằng ghi đè cấu hình mới. Chưa ký chứng thư Authenticode. Chưa thêm xử lý video nâng cao/chụp cuộn/OCR/cloud.

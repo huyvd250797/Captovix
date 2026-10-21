@@ -6,10 +6,11 @@ namespace Captovix;
 public partial class App : Application
 {
     private Mutex? _singleInstance;
+    public static bool StartedAutomatically {get;set;}
     protected override void OnStartup(StartupEventArgs e)
     {
         _singleInstance = new Mutex(true, "Local\\HuyVo.Captovix", out bool first);
-        if (!first) { MessageBox.Show("Captovix đang mở. Hãy chọn cửa sổ app trên taskbar."); Shutdown(); return; }
+        if (!first) { CaptureTray.RestoreExisting(); Shutdown(); return; }
         DispatcherUnhandledException += (_, a) => {
             Log(a.Exception); MessageBox.Show("Có lỗi: " + a.Exception.Message + "\nBáo cáo lỗi được lưu trong thư mục dữ liệu của app.", "Captovix"); a.Handled = true;
         };

@@ -131,6 +131,15 @@ internal static class Program
             inlineSession.Undo();Check(inlineSession.Document.Appearance.ResizeWidth==40,"Resize inspector creates one undo transaction");uiSurface.Refresh();
             Invoke("ApplyAppearance",(Action<ImageAppearance>)(_=>{}),true);
             Check(!inlineSession.Document.Appearance.HasEdits&&inlineSession.Document.Annotations.Count==1,"Reset appearance keeps the editable annotation layer");
+            Invoke("RenderWorkflow");
+            Check(window.FindName("WorkflowPanel") is System.Windows.Controls.StackPanel,"Workflow configuration is part of the single Editor");
+            Check(((System.Windows.Controls.StackPanel)window.FindName("HotkeyRows")).Children.Count==5,"Five photo hotkey editors are generated");
+            Check(((System.Windows.Controls.ComboBox)window.FindName("AfterPhotoPicker")).SelectedIndex==0,"After-capture defaults to opening Editor");
+            Check(((System.Windows.Controls.CheckBox)window.FindName("CloseToTrayToggle")).IsChecked==false&&((System.Windows.Controls.CheckBox)window.FindName("StartWindowsToggle")).IsChecked==false,"Tray closing and autorun are opt-in");
+            Check(((System.Windows.Controls.ComboBox)window.FindName("CapturePresetPicker")).Items.Count==3,"Capture presets are populated independently of annotation presets");
+            Check(window.FindName("PresetPicker")!=window.FindName("CapturePresetPicker"),"Capture and annotation preset controls remain distinct");
+            Check(!((System.Windows.Controls.Button)window.FindName("CancelCaptureButton")).IsEnabled,"Cancel is unavailable while idle");
+            Check(inlineSession.Document.Annotations.Count==1,"Rendering workflow configuration preserves edited image objects");
             window.Close();
             Console.WriteLine($"{count} Windows renderer/document checks passed. Screen/audio capture remains a manual test.");return 0;
         }catch(Exception ex){Console.Error.WriteLine(ex);return 1;}

@@ -15,15 +15,17 @@ public sealed class RegionPicker : Window
     private readonly Action _move;
     private static Native.POINT? _start;
     private static PixelRect _current;
-    public static Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays)
+    public static async Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation=default)
     {
+        cancellation.ThrowIfCancellationRequested();
         var done = new TaskCompletionSource<PixelRect?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var windows = new List<RegionPicker>(); _start = null;
         void Finish(PixelRect? rect) { if(done.Task.IsCompleted)return; foreach(var w in windows)w.Close();done.TrySetResult(rect); }
         void Move() { foreach(var w in windows)w.Draw(); }
         foreach(var d in displays)windows.Add(new(d,Finish,Move));
         foreach(var w in windows)w.Show();
-        return done.Task;
+        using var registration=cancellation.Register(()=>System.Windows.Application.Current.Dispatcher.BeginInvoke(()=>Finish(null)));
+        return await done.Task;
     }
     private RegionPicker(DisplayInfo d,Action<PixelRect?> finish,Action move)
     {

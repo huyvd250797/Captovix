@@ -38,13 +38,13 @@ public partial class MainWindow : Window
     }
     private void Initialize()
     {
+        if(_loaded)return;
         RefreshSources();var s=_store.LoadSettings();SourceMode.SelectedIndex=Math.Clamp(s.SourceMode,0,2);
         DelayPicker.SelectedIndex=s.Delay==5?2:s.Delay==3?1:0;FpsPicker.SelectedIndex=s.Fps==60?2:s.Fps==15?0:1;
         CursorToggle.IsChecked=s.Cursor;MicToggle.IsChecked=s.Mic;SystemToggle.IsChecked=s.SystemAudio;HardwareToggle.IsChecked=s.Hardware;
         DisplayPicker.SelectedItem=_displays.FirstOrDefault(d=>d.Device==s.Display)??_displays.FirstOrDefault();
         _loaded=true;var hwnd=new WindowInteropHelper(this).Handle;HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);
-        for(int i=1;i<=4;i++)if(Native.RegisterHotKey(hwnd,i,0x4006,(uint)(0x30+i)))_hotkeys.Add(i);
-        if(_hotkeys.Count<4)SetStatus("Một số phím tắt đang bị ứng dụng khác sử dụng. Các nút trong Editor vẫn hoạt động.");
+        InitializeCaptureWorkflow();
         InitializeUpdates();
         if(_store.StartupWarning!=null)MessageBox.Show(this,_store.StartupWarning,"Kiểm tra dữ liệu cũ",MessageBoxButton.OK,MessageBoxImage.Warning);
     }
@@ -57,55 +57,69 @@ public partial class MainWindow : Window
     }
     private nint WindowMessage(nint hwnd,int msg,nint w,nint l,ref bool handled)
     {
+        if(HandleWorkflowMessage(msg,w,l)){handled=true;return 0;}
         if(msg==0x312){handled=true;switch((int)w){case 1:if(!_busy)_=CaptureAsync(false);break;case 2:if(!_busy)_=CaptureAsync(true);break;case 3:StopRecording();break;case 4:_bar?.PauseFromHotkey();break;}}
         if(msg==0x7E&&!_busy)Dispatcher.BeginInvoke(RefreshSources);
         return 0;
     }
     private AppSettings Settings()=>new(){SourceMode=SourceMode.SelectedIndex,Delay=int.Parse(((ComboBoxItem)DelayPicker.SelectedItem).Tag.ToString()!),Fps=int.Parse(((ComboBoxItem)FpsPicker.SelectedItem).Tag.ToString()!),Cursor=CursorToggle.IsChecked==true,Mic=MicToggle.IsChecked==true,SystemAudio=SystemToggle.IsChecked==true,Hardware=HardwareToggle.IsChecked==true,Display=(DisplayPicker.SelectedItem as DisplayInfo)?.Device??""};
-    private async Task CaptureAsync(bool video)
+    private bool _recordingActive;
+    private async Task CaptureAsync(bool video,PhotoAction action=PhotoAction.Current)
     {
-        if(_busy||_updateApplying)return;Surface.CancelInteraction();if(!FlushEdits())return;var previousWindowState=WindowState;SetBusy(true);VideoPreview.Pause();_playing=false;
-        _captureCancellation=new();var cancellation=_captureCancellation.Token;
-        string? working=null;bool success=false;
+        if(_busy||_updateApplying||!_captureGate.TryEnter())return;
+        var previousWindowState=WindowState;var wasVisible=IsVisible;bool success=false,showAfter=video,failed=false;string? finalStatus=null;
+        SetBusy(true);
         try {
-            var s=Settings();_store.SaveSettings(s);RefreshSources();
+            Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();_playing=false;
+            _captureCancellation=new();var cancellation=_captureCancellation.Token;RegisterCaptureEscape();
+            var s=Settings();if(!video){if(action is PhotoAction.Region or PhotoAction.Repeat)s.SourceMode=0;else if(action==PhotoAction.Window)s.SourceMode=1;else if(action==PhotoAction.Display)s.SourceMode=2;}
+            _store.SaveSettings(Settings());
+            var options=_workflow.Clone();options.Background=AfterPhotoPicker.SelectedIndex==1;options.AutoCopy=AutoCopyPhoto.IsChecked==true;
+            if(!_workflowReadOnly)SaveWorkflow(options);
+            showAfter=video||!options.Background||_tray?.Ready!=true;
+            RefreshSources();var topology=CaptureWorkflowStore.Topology(WorkflowDisplays());
             var display=DisplayPicker.SelectedItem as DisplayInfo??throw new InvalidOperationException("Không tìm thấy màn hình.");
-            var window=s.SourceMode==1?WindowPicker.SelectedItem as WindowInfo:null;
-            if(s.SourceMode==1&&window==null)throw new InvalidOperationException("Hãy mở và chọn một cửa sổ trong danh sách nguồn.");
-            PixelRect region=display.Bounds;
-            Hide();await Task.Delay(220,cancellation);
-            if(s.SourceMode==0){var chosen=await RegionPicker.PickAsync(_displays);if(chosen==null)return;region=chosen.Value;_lastRegion=region;}
-            else if(window!=null){if(!Native.GetWindowRect(window.Handle,out var wr))throw new InvalidOperationException("Không đọc được kích thước cửa sổ.");region=wr.Pixels;}
-            if(video)region=region.Even();
-            if(region.IsEmpty)throw new InvalidOperationException("Vùng chọn quá nhỏ.");
-            if(s.Delay>0){Show();for(var n=s.Delay;n>0;n--){SetStatus($"Bắt đầu sau {n} giây…");await Task.Delay(1000,cancellation);}Hide();await Task.Delay(220,cancellation);}
-            var final=_store.NewPath(video);working=Path.Combine(_store.Root,Path.GetFileNameWithoutExtension(final)+".pending"+(video?".mp4":".png"));
-            // Pending files are never inserted into history until the engine reports completion.
+            WindowInfo? window=null;PixelRect region=display.Bounds;
+            _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);Hide();await Task.Delay(220,cancellation);
+            if(s.SourceMode==0){
+                if(action==PhotoAction.Repeat&&CaptureWorkflowStore.CanRepeat(_workflow.LastRegion,WorkflowDisplays()))region=_workflow.LastRegion!.Bounds;
+                else{if(action==PhotoAction.Repeat)_tray?.Notify("Bố trí màn hình/DPI đã thay đổi hoặc chưa có vùng cũ. Hãy chọn vùng mới.");var chosen=await RegionPicker.PickAsync(_displays,cancellation);if(chosen==null)return;region=chosen.Value;}
+            }else if(s.SourceMode==1){
+                window=video?WindowPicker.SelectedItem as WindowInfo:await CapturePrompts.PickWindowAsync(cancellation);
+                if(window==null)return;
+                if(!Native.IsWindow(window.Handle)||Native.IsIconic(window.Handle)||!Native.GetWindowRect(window.Handle,out var wr))throw new InvalidOperationException("Cửa sổ đã đóng hoặc thu nhỏ. Hãy chọn lại.");region=wr.Pixels;
+            }
+            if(video)region=region.Even();if(region.IsEmpty)throw new InvalidOperationException("Vùng chọn quá nhỏ.");
+            await CapturePrompts.CountdownAsync(s.Delay,cancellation);await Task.Delay(220,cancellation);
+            var now=Native.Displays().Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity));if(CaptureWorkflowStore.Topology(now)!=topology)throw new InvalidOperationException("Màn hình hoặc DPI đã thay đổi trong phiên chụp. Hãy thử chọn lại.");
+            if(window!=null){var current=Native.Windows().FirstOrDefault(w=>w.Handle==window.Handle&&w.ProcessId==window.ProcessId);if(current==null||!Native.GetWindowRect(window.Handle,out var wr))throw new InvalidOperationException("Cửa sổ mục tiêu không còn khả dụng. Hãy chọn lại.");region=video?wr.Pixels.Even():wr.Pixels;}
+            cancellation.ThrowIfCancellationRequested();var final=_store.NewPath(video);var working=Path.Combine(_store.Root,Path.GetFileNameWithoutExtension(final)+".pending"+(video?".mp4":".png"));
             _engine=new();_engine.Status+=status=>Dispatcher.BeginInvoke(()=>SetStatus("Capture engine · "+status));
             var req=new CaptureRequest(video,region,window,_displays,s.Cursor,s.Mic,s.SystemAudio,s.Fps,s.Hardware);
-            await _engine.StartAsync(req,working);
-            var clock=Stopwatch.StartNew();
-            if(video){
-                _bar=new(()=>_engine?.TogglePause(),StopRecording,display);_bar.Show();
-                if(!_bar.ExcludedFromCapture)SetStatus("Windows chưa xác nhận ẩn thanh điều khiển khỏi bản quay. Có thể kéo thanh ra ngoài vùng quay.");
-            }
-            var actual=await _engine.Completion.WaitAsync(video?TimeSpan.FromDays(1):TimeSpan.FromSeconds(20));clock.Stop();
+            await _engine.StartAsync(req,working).WaitAsync(cancellation);var clock=Stopwatch.StartNew();
+            if(video){_recordingActive=true;ReleaseCaptureEscape();_bar=new(()=>_engine?.TogglePause(),StopRecording,display);_bar.Show();if(!_bar.ExcludedFromCapture)SetStatus("Windows chưa xác nhận ẩn thanh điều khiển khỏi bản quay.");}
+            var actual=await _engine.Completion.WaitAsync(video?TimeSpan.FromDays(1):TimeSpan.FromSeconds(20),video?CancellationToken.None:cancellation);clock.Stop();
             if(!File.Exists(actual)||new FileInfo(actual).Length==0)throw new IOException("Engine chưa tạo được file hoàn chỉnh.");
             File.Move(actual,final);
             var item=new MediaItem{FilePath=final,Title=(video?"Video ":"Ảnh ")+DateTime.Now.ToString("dd-MM HH:mm:ss"),IsVideo=video,Width=region.Width,Height=region.Height,Source=window?.Title??(s.SourceMode==0?$"Vùng chọn · {region}":display.Label),Microphone=video&&s.Mic,SystemAudio=video&&s.SystemAudio,Fps=video?s.Fps:0,Seconds=video?clock.Elapsed.TotalSeconds:0};
             if(!video){var image=MediaStore.LoadImage(final);item.Width=image.PixelWidth;item.Height=image.PixelHeight;}
-            _store.Add(item);SearchBox.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);success=true;
-        }catch(OperationCanceledException){SetStatus("Đã hủy phiên capture.");}
-        catch(Exception e){App.Log(e);Show();Activate();MessageBox.Show(this,$"Không thể {(video?"quay màn hình":"chụp ảnh")}.\n\n{e.Message}\n\nNếu lỗi engine/DLL: chạy Install.cmd để cài Visual C++ Runtime. Với Windows N/KN, cài Media Feature Pack. Có thể tắt Mã hóa GPU rồi thử lại.","Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);}
+            _store.Add(item);success=true;finalStatus="● Đã lưu nội dung trên máy.";
+            if(!video&&s.SourceMode==0){_lastRegion=region;var updated=_workflow.Clone();updated.LastRegion=new(region,topology);if(!_workflowReadOnly)try{SaveWorkflow(updated);}catch(Exception ex){App.Log(ex);finalStatus+=" Chưa lưu được vùng chụp lại.";}}
+            if(!video&&options.AutoCopy)try{Clipboard.SetImage(MediaStore.LoadImage(final));finalStatus+=" Đã copy ảnh.";}catch(Exception ex){App.Log(ex);finalStatus+=" Clipboard đang bận; ảnh đã được lưu, có thể copy trong Editor.";}
+            if(showAfter){SearchBox.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);}
+            else{_notificationItem=item.Id;_tray?.Notify(item.Title+" · "+finalStatus+" Nhấp thông báo để mở ảnh.");}
+        }catch(OperationCanceledException){finalStatus="Đã hủy phiên capture.";}
+        catch(Exception e){failed=true;App.Log(e);Show();Activate();MessageBox.Show(this,$"Không thể {(video?"quay màn hình":"chụp ảnh")}.\n\n{e.Message}\n\nNếu lỗi engine/DLL: chạy Install.cmd để cài Visual C++ Runtime. Với Windows N/KN, cài Media Feature Pack.","Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);}
         finally {
-            try{_engine?.Stop();_engine?.Dispose();}catch(Exception e){App.Log(e);}_engine=null;_bar?.Finish();_bar=null;_stopping=false;
-            // Retain failed/pending recordings for diagnosis, never silently report them as successful.
-            _captureCancellation?.Dispose();_captureCancellation=null;
-            Show();WindowState=previousWindowState==WindowState.Minimized?WindowState.Maximized:previousWindowState;Activate();SetBusy(false);SetStatus(success?"● Đã lưu nội dung trên máy.":"● Sẵn sàng · Phiên đã hủy hoặc chưa hoàn thành.");
+            try{_engine?.Stop();_engine?.Dispose();}catch(Exception e){App.Log(e);}_engine=null;_bar?.Finish();_bar=null;_stopping=false;_recordingActive=false;
+            ReleaseCaptureEscape();_captureCancellation?.Dispose();_captureCancellation=null;
+            if((success&&showAfter)||failed||(!success&&wasVisible)||_tray?.Ready!=true){Show();WindowState=previousWindowState==WindowState.Minimized?WindowState.Maximized:previousWindowState;Activate();}
+            SetBusy(false);SetStatus(finalStatus??"● Sẵn sàng · Phiên đã hủy hoặc chưa hoàn thành.");_captureGate.Exit();
+            if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);
         }
     }
     private void StopRecording(){if(_engine==null||_stopping)return;_stopping=true;SetStatus("Đang hoàn tất file MP4…");_engine.Stop();}
-    private void SetBusy(bool busy){_busy=busy;CaptureButton.IsEnabled=RecordButton.IsEnabled=ConfigPanel.IsEnabled=!busy;RenderUpdateUi();}
+    private void SetBusy(bool busy){_busy=busy;CaptureButton.IsEnabled=RecordButton.IsEnabled=ConfigPanel.IsEnabled=WorkflowPanel.IsEnabled=!busy;CancelCaptureButton.IsEnabled=busy;RenderUpdateUi();}
     private void SetStatus(string text)=>StatusText.Text=text;
     private void Capture_Click(object sender,RoutedEventArgs e)=>_=CaptureAsync(false);
     private void Record_Click(object sender,RoutedEventArgs e)=>_=CaptureAsync(true);
@@ -196,10 +210,12 @@ public partial class MainWindow : Window
     private void TestGuide_Click(object sender,RoutedEventArgs e){var p=Path.Combine(AppContext.BaseDirectory,"docs","WINDOWS-TEST-CHECKLIST.md");if(File.Exists(p))Process.Start(new ProcessStartInfo("notepad.exe",$"\"{p}\""){UseShellExecute=true});else MessageBox.Show(this,"Xem docs/WINDOWS-TEST-CHECKLIST.md trong gói source. Kiểm tra chụp vùng/cửa sổ/toàn màn hình, scale 100–200%, màn hình phụ tọa độ âm và quay mic + tiếng máy.","Kiểm thử Captovix V"+VersionInfo.Current);}
     private void Window_Closing(object? sender,CancelEventArgs e)
     {
-        if(_busy){e.Cancel=true;if(_engine==null)_captureCancellation?.Cancel();else StopRecording();SetStatus("Đang kết thúc phiên capture. Hãy đóng app sau khi file được lưu.");return;}
-        Surface.CancelInteraction();if(!FlushEdits()){e.Cancel=true;return;}
+        if(_busy){e.Cancel=true;_exitRequested=true;CancelCapture();SetStatus("Đang hoàn tất phiên và thoát Captovix…");return;}
+        Surface.CancelInteraction();if(!FlushEdits()){e.Cancel=true;_exitRequested=false;return;}
         try{if(_loaded){_store.SaveSettings(Settings());_store.Save();}}
         catch(Exception ex){App.Log(ex);e.Cancel=true;MessageBox.Show(this,"Chưa lưu được cấu hình/thư viện. Hãy kiểm tra thư mục dữ liệu trước khi đóng.\n"+ex.Message,"Captovix");return;}
+        if(!_exitRequested&&!_updateApplying&&_workflow.CloseToTray&&_tray?.Ready==true){e.Cancel=true;Hide();_tray.Notify("Captovix đang chạy nền. Nhấp biểu tượng để mở Editor; chọn Thoát để đóng hoàn toàn.");return;}
+        SuspendWorkflow();
         _updateUiClosed=true;_updateCheckTimer.Stop();_updateCancellation?.Cancel();_saveTimer.Stop();_videoTimer.Stop();VideoPreview.Close();var hwnd=new WindowInteropHelper(this).Handle;foreach(var i in _hotkeys)Native.UnregisterHotKey(hwnd,i);
     }
 }

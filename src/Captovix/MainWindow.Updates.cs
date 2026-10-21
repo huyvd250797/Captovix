@@ -142,11 +142,11 @@ public partial class MainWindow
             _store.Save(); _store.SaveSettings(Settings()); UpdateSettingsStore.Save(App.DataRoot, _updateSettings);
             MediaStore.AtomicWrite(Path.Combine(App.DataRoot, "editor-resume.json"), System.Text.Json.JsonSerializer.Serialize(Selected?.Id));
             UpdateBackup.Create(App.DataRoot, VersionInfo.Current, _updates.Release!.Version);
-            _updateApplying = true; VideoPreview.Close(); _videoTimer.Stop();
+            _updateApplying = true; SuspendWorkflow(); VideoPreview.Close(); _videoTimer.Stop();
             return true;
         });
         // ApplyUpdatesAndRestart normally exits the process. A failure leaves the Editor usable.
-        _updateApplying = false; _videoTimer.Start(); RenderUpdateUi();
+        _updateApplying = false; if(_workflowSuspended)ResumeWorkflow(); _videoTimer.Start(); RenderUpdateUi();
     }
 
     private void RestoreEditorAfterUpdate()

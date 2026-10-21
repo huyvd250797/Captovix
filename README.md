@@ -1,14 +1,39 @@
-# Captovix V1.4.0 — Image Transform & Styling
+# Captovix V1.5.0 — Capture Workflow
 
 Ứng dụng Windows x64 chụp ảnh, quay màn hình và chú thích ảnh trong **một cửa sổ Editor**. Cấu hình chụp/quay nằm ngay trong Editor. © 2026 HuyVo. All rights reserved.
 
 ## Bắt đầu
 
-**Khuyên dùng:** chạy `Captovix-v1.4.0-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
+**Khuyên dùng:** chạy `Captovix-v1.5.0-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
 
-**Portable:** giải nén toàn bộ `Captovix-v1.4.0-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
+**Portable:** giải nén toàn bộ `Captovix-v1.5.0-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
 
 Máy mục tiêu: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiểm thử thực tế. Windows N/KN cần Media Feature Pack. App chưa có bản x86/ARM64 hoặc chứng thư ký mã thương mại. Không tắt Windows Defender hay cơ chế bảo vệ của máy.
+
+## Capture Workflow V1.5
+
+Mở **Thiết lập chụp, preset & phím tắt** ngay trong Editor. Cấu hình ảnh và quay vẫn dùng chung một cửa sổ Editor phóng to. Các hộp chọn cửa sổ/vùng và đếm ngược chỉ xuất hiện trong phiên capture.
+
+- **Chụp nền:** chọn `Lưu nền + thông báo`; ảnh PNG vẫn được ghi vào thư viện. Nhấp thông báo để mở đúng ảnh. Có thể bật `Tự copy ảnh` độc lập. Nếu clipboard bận, ảnh vẫn được giữ và có thể copy trong Editor. Nếu Windows chưa tạo được biểu tượng khay, app mở Editor sau khi chụp để luôn có cách truy cập.
+- **Khay hệ thống:** nhấp biểu tượng để mở Editor; nhấp phải để chụp theo cấu hình, vùng, cửa sổ, màn hình, chụp lại vùng, dùng preset hoặc thoát. Windows có thể đặt biểu tượng trong vùng biểu tượng ẩn. Thông báo có thể bị Windows/Do Not Disturb ẩn; ảnh vẫn lưu trong Nội dung.
+- **Phím ảnh mặc định:** Ctrl+Shift+1 theo cấu hình; +5 chọn vùng; +6 chọn cửa sổ; +7 chụp màn hình đang cấu hình; +8 chụp lại vùng. Đổi phím hoặc bỏ chọn từng dòng trong `Phím tắt & chạy nền`, rồi **Lưu cấu hình Workflow**. Nhấn Tab để sang dòng khác. Khi đang nhập phím, hotkey tạm ngừng đăng ký để không kích hoạt capture; rời ô sẽ đăng ký lại cấu hình đã lưu. Phím xung đột sẽ báo rõ; các nút chụp vẫn dùng được. Không dùng F12; phím quay +2/+3/+4 giữ nguyên.
+- **Chụp lại vùng:** chỉ lưu vùng sau khi chụp thành công, theo pixel vật lý. Thay màn hình, vị trí, độ phân giải hoặc DPI sẽ yêu cầu chọn lại. Không ghi nhớ HWND cửa sổ: mỗi lần chụp ảnh cửa sổ đều chọn lại từ danh sách đang mở.
+- **Preset chụp:** có Hướng dẫn / Chụp nhanh / Báo cáo; chọn và bấm Áp dụng, hoặc gọi trực tiếp từ menu khay. Cấu hình chế độ, màn hình, trễ, con trỏ, hành động sau chụp và copy; nhập tên rồi Lưu preset mới. Tối đa 20 tên riêng; có thể xóa preset. Preset chụp tách biệt với preset chú thích/màu ảnh. Màn hình trong preset bị tháo sẽ báo chọn màn hình mới.
+- **Chạy nền:** `Đóng xuống khay` và `Khởi động cùng Windows` đều **tắt mặc định**. Chọn và Lưu cấu hình để bật. `Ẩn vào khay khi Windows khởi động` chỉ áp dụng khi app được mở bằng cơ chế autorun; mở app thủ công luôn vào Editor phóng to. Không tự chụp khi khởi động. Menu khay → Thoát để đóng hoàn toàn.
+- **Hủy:** Esc khi chọn vùng/cửa sổ/đếm ngược; nếu Esc toàn cục bị app khác chiếm, dùng Esc trong overlay hoặc menu khay → Hủy phiên. Video đã bắt đầu phải dừng và hoàn tất MP4; không cắt file ngang. Bấm chụp liên tiếp không tạo nhiều phiên đồng thời.
+- Ảnh mới được lưu trước khi tự copy/thông báo. Chụp nền giữ nguyên tài liệu đang chỉnh; mở Editor sau chụp sẽ chọn ảnh mới. Đóng/thoát lưu chú thích trước. Update dừng tray/hotkey trước restart và phục hồi nếu restart thất bại.
+
+Tùy chọn ảnh sau chụp được dùng ngay khi chụp và lưu cùng phiên; thay đổi hotkey/khởi động/chế độ đóng cần bấm **Lưu cấu hình Workflow**. Cấu hình tại `%LOCALAPPDATA%\HuyVo\Captovix\capture-workflow.json`; bản lỗi hoặc schema mới được giữ nguyên, không tự ghi đè. **Khôi phục mặc định** sao lưu file trước rồi tạo cấu hình mới, đồng thời tắt autorun. Gỡ cài đặt xóa đăng ký autorun do Captovix tạo và giữ dữ liệu ảnh/chú thích.
+
+Autorun dùng HKCU Run (không cần quyền quản trị); Windows/Task Manager có thể trì hoãn hoặc vô hiệu hóa. Đường dẫn portable cần giữ nguyên; dùng bộ cài để cập nhật trong app. Thay nơi cài đặt phải gỡ bản cũ trước theo hướng dẫn hiện có.
+
+## Phát hành V1.5.0
+
+- Máy đã cài bản có updater: giải nén `Captovix-v1.5.0-Update-Packages.zip`, tải **5 asset bên trong** (trừ README-PUBLISH.txt) lên GitHub Release ổn định tag `v1.5.0` của `huyvd250797/captovix-releases`. Không tải chỉ một ZIP làm asset updater, không dùng Source code ZIP.
+- Năm asset: `HuyVo.Captovix-1.5.0-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không sửa nội dung feed/hash sau khi build.
+- Trên app cũ: Kiểm tra cập nhật → Tải bản cập nhật → Khởi động lại để cập nhật. Nếu chưa đăng release thì app cũ chưa thấy V1.5.0. Source URL mặc định đã giữ nguyên, không cần nhập lại.
+- Cài thủ công bằng `Captovix-v1.5.0-Setup.exe`: thoát Captovix hoàn toàn bằng menu khay trước. Giữ đường dẫn cũ; vẫn cho chọn thư mục cài mới khi máy chưa có bản quản lý.
+- Source ZIP dùng cho phát triển; Portable ZIP để chạy giải nén; Setup EXE để cài nhiều máy. Bản build chưa ký chứng thư Authenticode, có thể gặp cảnh báo Windows.
 
 ## Image Transform & Styling V1.4
 
@@ -173,6 +198,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build-Windows.ps1 
 Script chạy kiểm tra hình học, editor/history/migration, updater và Windows renderer/document, sau đó publish app self-contained. Velopack đóng gói feed/gói full, còn NSIS bọc Setup để chuyển V1.0 và kèm prerequisite offline. Kết quả ở `artifacts\`: thư mục `win-x64`, ZIP Portable, Setup.exe và Update-Packages.zip. `-SkipInstaller` bỏ bước bọc NSIS; Setup thô lúc đó không xử lý gỡ NSIS V1.0. Dùng bản Setup đầy đủ để chuyển đổi. Khi tạo Setup lần đầu, script tải VC++ Runtime từ Microsoft và kiểm tra chữ ký trước khi đóng gói. Runtime .NET được pin 10.0.13; cập nhật patch khi bảo trì.
 
 ```powershell
+dotnet run --project tests/CaptureWorkflowChecks/CaptureWorkflowChecks.csproj -c Release
 dotnet run --project tests/GeometryChecks/GeometryChecks.csproj -c Release
 dotnet run --project tests/EditorCoreChecks/EditorCoreChecks.csproj -c Release
 dotnet run --project tests/AdvancedAnnotationChecks/AdvancedAnnotationChecks.csproj -c Release
@@ -187,4 +213,4 @@ C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, ScreenRecorderLib 7.0.1 (Desktop Dupli
 
 ## Phiên bản tiếp theo
 
-**V1.5 — Capture Workflow:** cải thiện luồng chụp, khay hệ thống, phím tắt cấu hình, chụp lại vùng và preset chụp. Tiếp tục ưu tiên ảnh; công cụ video chuyển sang V2.0.
+**V1.6 — Library & Export:** lọc/sắp xếp nội dung, đặt tên và xuất hàng loạt ảnh, preset xuất. Chưa triển khai trong V1.5. Tiếp tục ưu tiên ảnh; công cụ video chuyển sang V2.0.

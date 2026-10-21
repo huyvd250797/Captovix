@@ -9,7 +9,8 @@ public static class Program
     {
         // Must precede WPF, the single-instance mutex and all user-data access.
         // Pending updates only apply after the user explicitly chooses Restart.
-        VelopackApp.Build().SetAutoApplyOnStartup(false).Run();
+        VelopackApp.Build().SetAutoApplyOnStartup(false).OnBeforeUninstallFastCallback(_=>StartupRegistration.RemoveOwned()).Run();
+        App.StartedAutomatically=args.Contains("--captovix-autostart",StringComparer.Ordinal);
         var app = new App();
         app.InitializeComponent();
         app.Run();

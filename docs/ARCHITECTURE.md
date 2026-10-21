@@ -1,8 +1,8 @@
-# Captovix V1.2.0 architecture
+# Captovix V1.5.0 architecture
 
 ## Single Editor and window state
 
-MainWindow owns capture configuration, media browser, image surface, video playback and property panels. RegionPicker and RecordingBar are transient capture controls. Startup WindowState is Maximized. Capture saves the previous state before hiding the Editor and restores it afterward, rather than forcing Normal.
+MainWindow owns capture configuration, media browser, image surface, video playback and property panels. RegionPicker, CapturePrompts and RecordingBar are transient capture controls. Startup WindowState is Maximized. Capture saves the previous state before hiding the Editor and restores it when opening the Editor afterward; background photo capture retains the active edited document.
 
 ## Image document and coordinate system
 
@@ -53,3 +53,13 @@ AnnotationEditing provides multi-object layout/resize/snap/clamp transforms with
 EditorViewportMath centralizes clamped wheel scaling, cursor-anchored zoom offsets and DIP-based pan. MainWindow.Viewport maps canvas/ScrollViewer coordinates after layout, handles Space capture/release/deactivation and keeps pan out of document history. CropGeometry provides integer source-pixel creation, clamp/resize/move and overflow-safe validation. EditorSurface keeps CropDraft outside EditorDocument until an explicit apply; moving/resizing a draft never writes sidecar state. Crop applies through one EditorSession transaction and leaves annotation coordinates unchanged. Schema remains 2.
 
 NSIS bootstrap adds a directory page and validates paths before any install work (also in silent mode). It passes chosen INSTDIR via the supported --installto option, rejects nonempty fresh targets/data-folder overlap and requires a fixed local writable volume. Existing managed roots are detected through Velopack's HKCU uninstall InstallLocation, a bootstrap setting and the legacy default path, verifying Update.exe/current/Captovix.exe. Automatic relocation is deliberately not implemented; uninstall-then-install preserves external user data and avoids conflicting registry/shortcut registrations.
+
+## Capture Workflow (1.5)
+
+CaptureWorkflow.cs is platform independent: schema-1 configuration/validation and atomic storage, capture presets, physical-region topology fingerprints, hotkey transaction adapter and single-owner gate. It does not change image schema 4. MainWindow.CaptureWorkflow.cs integrates controls into the existing Editor and owns lifecycle, preset application, capture dispatch and keyboard bindings. CaptureWorkflowNative.cs provides Shell_NotifyIconW, HKCU Run registration and temporary window/countdown prompts.
+
+The gate is acquired before flushing edits to prevent reentrant capture from a modal save prompt. A successful engine completion precedes moving pending media, saving library history, storing last-region, then copying/notifying. Background capture does not select the new item or unload the active image. Failure/cancellation restores prior visibility; absence of a usable tray forces the Editor visible. HWND is never stored in presets. A window is selected fresh and validated with its process ID before engine start. Screen layout, monitor interface identity, bounds and DPI are fingerprinted and rechecked after countdown.
+
+Five photo hotkeys have editable chords and fixed action IDs; recording IDs 2/3/4 remain reserved. Duplicate/unsupported input is rejected before registration. Startup permits best-effort registration with warnings; edited bindings use rollback on external conflicts. While a hotkey textbox has focus, global bindings are released so the key can be entered locally. Committing workflow preferences handles hotkey registration, owned HKCU Run value and atomic JSON; file failures attempt to restore previous live keys and Run value and report recovery failures.
+
+Close-to-tray and autorun default off. Manual launch always opens the maximized Editor. Only the fixed autorun argument permits startup hidden when opted in; there is no capture-on-start argument. The second-instance broadcast restores a hidden Editor. Explicit tray Exit bypasses close-to-tray and waits for active video completion. Apply update saves and backs up state before suspending tray/hotkeys; failed apply recreates them. The early Velopack uninstall hook removes only the owned autorun registration and leaves user media/settings.
