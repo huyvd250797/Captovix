@@ -10,9 +10,11 @@ public partial class MainWindow
     private string? _appearanceKey;
     private void SyncImageAppearance()
     {
-        if(ImageStylePanel==null)return;ImageStylePanel.IsEnabled=_session!=null;
-        if(_session==null){_appearanceKey=null;return;}
-        var d=_session.Document;var s=d.Appearance;var l=Surface.Layout!;
+        if(ImageStylePanel==null)return;
+        var layout=Surface.Layout;var ready=_session!=null&&ReferenceEquals(_session,Surface.Session)&&layout!=null;
+        ImageStylePanel.IsEnabled=ready;
+        if(!ready){_appearanceKey=null;OutputSummary.Text="";return;}
+        var d=_session!.Document;var s=d.Appearance;var l=layout!;
         OutputSummary.Text=$"Đầu ra {l.Width} × {l.Height} px · xoay {s.QuarterTurns*90}°";
         var key=(_activeItem?.Id??d.SourceHash)+d.Viewport+JsonSerializer.Serialize(s);if(key==_appearanceKey)return;_appearanceKey=key;_syncImage=true;
         try{

@@ -1,14 +1,11 @@
-# Captovix V1.5.0 — Capture Workflow
+# Captovix V1.5.1 — Editor Switch Fix
 
-- Khay hệ thống: chụp ảnh, preset, mở Editor, hủy/dừng phiên, thoát hoàn toàn.
-- Cấu hình 5 phím tắt ảnh trong Editor; tắt/đổi phím, phát hiện trùng và báo xung đột Windows, khôi phục phím trước khi đổi thất bại.
-- Chụp lại vùng thành công gần nhất với kiểm tra màn hình, tọa độ vật lý, độ phân giải và DPI.
-- Preset chụp riêng: chế độ, màn hình, trễ, con trỏ, mở Editor/lưu nền, tự copy. Cửa sổ luôn chọn lại khi chụp ảnh.
-- Lưu ảnh trước, tự copy tùy chọn, thông báo mở đúng ảnh; clipboard lỗi không làm mất file. Đếm ngược và chọn vùng/cửa sổ có thể hủy bằng Esc.
-- Đóng xuống khay / khởi động Windows tùy chọn, mặc định tắt. Mở thủ công vào Editor phóng to; không tự chụp khi đăng nhập.
-- Lưu cấu hình atomic riêng, bảo vệ file hỏng/schema mới và sao lưu trước khôi phục. Metadata workflow được đưa vào backup trước update.
-- Giữ các tính năng chỉnh ảnh V1.4, chọn đường dẫn cài đặt và nguồn cập nhật GitHub mặc định.
+- Sửa NullReferenceException khi chuyển giữa các ảnh: UnloadEditor đã xóa canvas nhưng callback VisualChanged còn đọc Layout qua phiên chỉnh sửa cũ.
+- Dọn session trước khi canvas phát sự kiện unload; callback chỉ đọc layout khi session/canvas khớp và có ảnh, xóa thông tin kích thước/zoom khi rỗng.
+- Bảng thuộc tính ảnh cũng xử lý trạng thái thiếu layout, không dùng dữ liệu ảnh cũ trong lúc chuyển.
+- Bổ sung 11 ca hồi quy WPF: surface trống với session cũ, unload lặp, chuyển ảnh khác kích thước, lưu chỉnh sửa, tách sự kiện session cũ, 30 vòng đổi ảnh, bỏ chọn và chọn ảnh mới.
+- Giữ ảnh gốc, sidecar schema 4, thư viện, cấu hình workflow và nguồn cập nhật GitHub. Không reset dữ liệu để sửa lỗi.
 
-Kiểm thử UI Windows/tray, chụp thật, clipboard, nhiều màn hình/DPI, autorun và cài đặt/update cần chạy trên Windows theo docs/WINDOWS-TEST-CHECKLIST.md. Không xem cross-build là đã kiểm thử máy thật.
+Phạm vi kiểm chứng: build/publish Windows x64 và test logic/SDK có thể chạy tại Linux. Bộ hồi quy WPF đã bổ sung và biên dịch; chưa thực thi trên Windows thật. Cần nghiệm thu chuyển ảnh theo WINDOWS-TEST-CHECKLIST.md.
 
-Phiên bản tiếp theo dự kiến: V1.6 — Library & Export. Video nâng cao dành cho V2.0.
+Phiên bản kế tiếp: V1.6 — Image Fidelity. Rà capture→file→preview→clipboard→export để giữ đúng pixel nguồn, Actual Pixels, PNG gốc và nhiều màn hình/DPI. V1.7 tiếp tục Shapes & Stroke Studio; V1.8 nâng Object Control & Layers.

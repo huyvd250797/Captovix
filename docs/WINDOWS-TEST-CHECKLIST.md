@@ -1,3 +1,13 @@
+# Nghiệm thu hotfix V1.5.1 — Editor Switch Fix
+
+- [ ] Update V1.5.0 → V1.5.1; giữ ảnh gốc, chú thích, thư viện, hotkey/preset, nguồn update.
+- [ ] Chạy `dotnet run --project tests/EditorWindowsChecks -c Release -p:Platform=x64` trên Windows; kiểm tra các ca lifecycle mới.
+- [ ] Mở ảnh A (có crop/rotate/viền/chữ), chuyển sang ảnh B khác kích thước rồi quay lại A, lặp nhanh 30 vòng; không hiện NullReferenceException, kích thước/crop/style/chú thích đúng từng ảnh.
+- [ ] Đang nhập chữ rồi chuyển ảnh: phần đã nhập được lưu; quay lại vẫn sửa được.
+- [ ] Chuyển ảnh → video → ảnh; bỏ chọn ảnh, xóa ảnh được chọn, chọn ảnh mới chụp/nhập; trạng thái rỗng không đọc layout cũ.
+- [ ] Zoom, undo/redo, export/copy sau chuyển ảnh; không lẫn dữ liệu tài liệu cũ.
+- [ ] Thoát/mở lại giữ chỉnh sửa. Xem errors.log theo timestamp mới để phân biệt log V1.5.0 đã lưu từ trước.
+
 # Nghiệm thu Capture Workflow V1.5 (máy Windows thật)
 
 Các mục sau chưa được chạy bằng cross-build Linux. Kiểm tra trước khi phát hành rộng:

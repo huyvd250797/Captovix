@@ -1,14 +1,22 @@
-# Captovix V1.5.0 — Capture Workflow
+# Captovix V1.5.1 — Capture Workflow · Editor Switch Fix
 
 Ứng dụng Windows x64 chụp ảnh, quay màn hình và chú thích ảnh trong **một cửa sổ Editor**. Cấu hình chụp/quay nằm ngay trong Editor. © 2026 HuyVo. All rights reserved.
 
 ## Bắt đầu
 
-**Khuyên dùng:** chạy `Captovix-v1.5.0-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
+**Cài thủ công:** giải nén `Captovix-v1.5.1-Update-Packages.zip`, chạy `HuyVo.Captovix-win-Setup.exe` rồi mở shortcut Captovix. Bộ cài cho chọn thư mục, kèm .NET runtime; không cần SDK/Visual Studio trên máy dùng. Microsoft VC++ Runtime có thể cần quyền quản trị nếu máy chưa có.
 
-**Portable:** giải nén toàn bộ `Captovix-v1.5.0-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
+**Portable:** script build vẫn có thể tạo bản portable khi cần; lần bàn giao này chỉ có Update-Packages và Source, không kèm file portable riêng.
 
 Máy mục tiêu: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiểm thử thực tế. Windows N/KN cần Media Feature Pack. App chưa có bản x86/ARM64 hoặc chứng thư ký mã thương mại. Không tắt Windows Defender hay cơ chế bảo vệ của máy.
+
+## Bản vá V1.5.1
+
+Sửa lỗi NullReferenceException khi chuyển ảnh tại `InitializeEditor → EditorSurface.Refresh → UnloadEditor`. Phiên và canvas được dọn theo thứ tự nhất quán; readout/bảng thuộc tính không đọc layout rỗng. Không xóa ảnh, reset thư viện hay reset JSON để sửa lỗi này.
+
+Chỉ bàn giao hai file: **Update-Packages.zip** và **Source.zip**. Bộ cài nằm bên trong Update-Packages dưới tên `HuyVo.Captovix-win-Setup.exe`; nếu cần cài thủ công, giải nén và chạy file đó. Không có Setup/Portable tách riêng trong lần bàn giao này.
+
+Sau khi cập nhật, thử chọn ảnh A → B → A nhiều lần; thử ảnh có crop/viền/chú thích, bỏ chọn và chọn ảnh mới. Kiểm tra lỗi mới trong `%LOCALAPPDATA%\HuyVo\Captovix\errors.log` theo thời gian phát sinh; log lỗi trước cập nhật vẫn được giữ. Các ca UI cần nghiệm thu trên Windows thật.
 
 ## Capture Workflow V1.5
 
@@ -27,12 +35,12 @@ Tùy chọn ảnh sau chụp được dùng ngay khi chụp và lưu cùng phiê
 
 Autorun dùng HKCU Run (không cần quyền quản trị); Windows/Task Manager có thể trì hoãn hoặc vô hiệu hóa. Đường dẫn portable cần giữ nguyên; dùng bộ cài để cập nhật trong app. Thay nơi cài đặt phải gỡ bản cũ trước theo hướng dẫn hiện có.
 
-## Phát hành V1.5.0
+## Phát hành V1.5.1
 
-- Máy đã cài bản có updater: giải nén `Captovix-v1.5.0-Update-Packages.zip`, tải **5 asset bên trong** (trừ README-PUBLISH.txt) lên GitHub Release ổn định tag `v1.5.0` của `huyvd250797/captovix-releases`. Không tải chỉ một ZIP làm asset updater, không dùng Source code ZIP.
-- Năm asset: `HuyVo.Captovix-1.5.0-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không sửa nội dung feed/hash sau khi build.
-- Trên app cũ: Kiểm tra cập nhật → Tải bản cập nhật → Khởi động lại để cập nhật. Nếu chưa đăng release thì app cũ chưa thấy V1.5.0. Source URL mặc định đã giữ nguyên, không cần nhập lại.
-- Cài thủ công bằng `Captovix-v1.5.0-Setup.exe`: thoát Captovix hoàn toàn bằng menu khay trước. Giữ đường dẫn cũ; vẫn cho chọn thư mục cài mới khi máy chưa có bản quản lý.
+- Máy đã cài bản có updater: giải nén `Captovix-v1.5.1-Update-Packages.zip`, tải **5 asset bên trong** (trừ README-PUBLISH.txt) lên GitHub Release ổn định tag `v1.5.1` của `huyvd250797/captovix-releases`. Không tải chỉ một ZIP làm asset updater, không dùng Source code ZIP.
+- Năm asset: `HuyVo.Captovix-1.5.1-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không sửa nội dung feed/hash sau khi build.
+- Trên app cũ: Kiểm tra cập nhật → Tải bản cập nhật → Khởi động lại để cập nhật. Nếu chưa đăng release thì app cũ chưa thấy V1.5.1. Source URL mặc định đã giữ nguyên, không cần nhập lại.
+- Cài thủ công bằng `HuyVo.Captovix-win-Setup.exe` sau khi giải nén Update-Packages: thoát Captovix hoàn toàn bằng menu khay trước. Giữ đường dẫn cũ; vẫn cho chọn thư mục cài mới khi máy chưa có bản quản lý.
 - Source ZIP dùng cho phát triển; Portable ZIP để chạy giải nén; Setup EXE để cài nhiều máy. Bản build chưa ký chứng thư Authenticode, có thể gặp cảnh báo Windows.
 
 ## Image Transform & Styling V1.4
@@ -213,4 +221,4 @@ C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, ScreenRecorderLib 7.0.1 (Desktop Dupli
 
 ## Phiên bản tiếp theo
 
-**V1.6 — Library & Export:** lọc/sắp xếp nội dung, đặt tên và xuất hàng loạt ảnh, preset xuất. Chưa triển khai trong V1.5. Tiếp tục ưu tiên ảnh; công cụ video chuyển sang V2.0.
+**V1.6 — Image Fidelity:** kiểm chứng ảnh chụp giữ đúng pixel nguồn, Actual Pixels, PNG gốc, copy/xuất không resize ngầm và nhiều màn hình/DPI. Sau đó V1.7 Shapes & Stroke Studio (nhiều shape, màu viền/nền và kiểu nét), V1.8 Object Control & Layers (chọn/kéo/resize/xoay/layer). Roadmap chuyên sâu ảnh đến V1.20 nằm trong ROADMAP.md; video tạm hoãn.

@@ -21,13 +21,25 @@ public partial class MainWindow
         _saveTimer.Tick+=(_,_)=>{_saveTimer.Stop();if(_session?.InTransaction==true||_inlineId!=null)return;FlushEdits(false);};
         _textTimer.Tick+=(_,_)=>{_textTimer.Stop();_session?.Commit();};
         Surface.SelectionChanged+=SyncProperties;
-        Surface.VisualChanged+=()=>{if(_session is {} s){var v=s.Document.Viewport;ImageSizeLabel.Text=$"{Surface.Layout!.Width} × {Surface.Layout.Height} px · {s.Document.Annotations.Count} chú thích";RestoreCropButton.IsEnabled=s.Document.Crop!=null;}ZoomLabel.Text=$"{Surface.Zoom*VisualTreeHelper.GetDpi(this).DpiScaleX*100:F0}%";};
+        Surface.VisualChanged+=UpdateEditorReadout;
         Surface.TextRequested+=BeginInlineText;
         Surface.VisualChanged+=PositionInlineText;
         Surface.CropFinished+=()=>{SelectTool(EditorTool.Select);FitImage();};
         InitializeViewport();
         InitializeAnnotationFeatures();
         SelectTool(EditorTool.Select);
+    }
+    private void UpdateEditorReadout()
+    {
+        // Refresh also fires while a surface is being cleared or replaced.
+        // Only read dimensions from a complete, matching document/surface pair.
+        if(_session is {} session&&ReferenceEquals(session,Surface.Session)&&Surface.Original!=null&&Surface.Layout is {} layout){
+            ImageSizeLabel.Text=$"{layout.Width} × {layout.Height} px · {session.Document.Annotations.Count} chú thích";
+            RestoreCropButton.IsEnabled=session.Document.Crop!=null;
+            ZoomLabel.Text=$"{Surface.Zoom*VisualTreeHelper.GetDpi(this).DpiScaleX*100:F0}%";
+        }else{
+            ImageSizeLabel.Text="";ZoomLabel.Text="—";RestoreCropButton.IsEnabled=false;
+        }
     }
     private void Session_Changed()
     {
@@ -46,7 +58,10 @@ public partial class MainWindow
     private void UnloadEditor()
     {
         EndInlineText(false);_textTimer.Stop();_saveTimer.Stop();if(_session!=null)_session.Changed-=Session_Changed;
-        _spaceHeld=false;EndPan();Surface.Load(null,null);_session=null;_activeItem=null;UndoButton.IsEnabled=RedoButton.IsEnabled=false;
+        _spaceHeld=false;EndPan();Surface.CancelInteraction();
+        // Load raises callbacks synchronously. Release the old session first so
+        // every subscriber sees the same empty state while the canvas unloads.
+        _session=null;_activeItem=null;Surface.Load(null,null);UndoButton.IsEnabled=RedoButton.IsEnabled=false;
     }
     private void OpenImage(MediaItem item)
     {

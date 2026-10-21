@@ -11,7 +11,7 @@ internal static class Program
     private static byte[] Pixels(BitmapSource bitmap){var bytes=new byte[bitmap.PixelWidth*bitmap.PixelHeight*4];bitmap.CopyPixels(bytes,bitmap.PixelWidth*4,0);return bytes;}
     [STAThread] private static int Main()
     {
-        string? originalFile=null;MediaItem? item=null;
+        string? originalFile=null;MediaItem? item=null;string? lifecycleRoot=null;var lifecycleItems=new List<MediaItem>();
         try{
             var pixels=Enumerable.Repeat((byte)255,64*48*4).ToArray();int blue=(10*64+10)*4;pixels[blue]=255;pixels[blue+1]=pixels[blue+2]=0;
             var source=BitmapSource.Create(64,48,96,96,PixelFormats.Bgra32,null,pixels,64*4);source.Freeze();
@@ -140,9 +140,37 @@ internal static class Program
             Check(window.FindName("PresetPicker")!=window.FindName("CapturePresetPicker"),"Capture and annotation preset controls remain distinct");
             Check(!((System.Windows.Controls.Button)window.FindName("CancelCaptureButton")).IsEnabled,"Cancel is unavailable while idle");
             Check(inlineSession.Document.Annotations.Count==1,"Rendering workflow configuration preserves edited image objects");
+            // Regression for the 1.5.0 stack trace: VisualChanged fires with
+            // a stale MainWindow session while the surface has no layout.
+            uiSurface.Load(null,null);
+            Check(((System.Windows.Controls.TextBlock)window.FindName("ImageSizeLabel")).Text==""&&((System.Windows.Controls.TextBlock)window.FindName("ZoomLabel")).Text=="—","Cleared surface tolerates a stale window session and clears image/zoom readouts");
+            Check(!((System.Windows.Controls.Button)window.FindName("RestoreCropButton")).IsEnabled&&!((System.Windows.Controls.StackPanel)window.FindName("ImageStylePanel")).IsEnabled,"Empty surface disables crop restore and appearance controls");
+            uiSurface.Load(patterned,inlineSession);
+            Check(((System.Windows.Controls.TextBlock)window.FindName("ImageSizeLabel")).Text.StartsWith("80 × 60"),"Reload restores readout from the matching document layout");
+            Invoke("UnloadEditor");Invoke("UnloadEditor");
+            Check(uiSurface.Session==null&&uiSurface.Original==null&&typeof(MainWindow).GetField("_session",flags)!.GetValue(window)==null,"Repeated unload is safe and clears both document owners");
+            lifecycleRoot=Path.Combine(Path.GetTempPath(),"Captovix-Lifecycle-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(lifecycleRoot);
+            MediaItem Fixture(BitmapSource bitmap,string name){var path=Path.Combine(lifecycleRoot,name+".png");var enc=new PngBitmapEncoder();enc.Frames.Add(BitmapFrame.Create(bitmap));using(var f=File.Create(path))enc.Save(f);var media=new MediaItem{Id=Guid.NewGuid().ToString("N"),Title=name,FilePath=path,Width=bitmap.PixelWidth,Height=bitmap.PixelHeight};lifecycleItems.Add(media);return media;}
+            var first=Fixture(source,"first");var second=Fixture(patterned,"second");
+            var rows=new System.Collections.ObjectModel.ObservableCollection<MediaItem>{first,second};var list=(System.Windows.Controls.ListBox)window.FindName("MediaList");list.ItemsSource=rows;list.SelectedItem=first;
+            var firstSession=(EditorSession)typeof(MainWindow).GetField("_session",flags)!.GetValue(window)!;
+            firstSession.Change(d=>{d.Crop=new(2,2,40,30);d.Annotations.Add(new(){Kind=AnnotationKind.Rectangle,X1=4,Y1=4,X2=24,Y2=20});d.Appearance.Padding=4;});
+            list.SelectedItem=second;
+            Check(uiSurface.Session?.Document.OriginalWidth==80&&uiSurface.Layout?.Width==80,"Actual ListBox image-to-image transition opens the new image without a null layout failure");
+            Check(File.Exists(DocumentStore.EditPath(first.Id)),"Switching commits the edited prior image sidecar");
+            var readout=((System.Windows.Controls.TextBlock)window.FindName("ImageSizeLabel")).Text;
+            firstSession.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Step,X1=5,Y1=5}));
+            Check(((System.Windows.Controls.TextBlock)window.FindName("ImageSizeLabel")).Text==readout,"An unloaded session cannot update the new document UI");
+            bool switching=true;for(var n=0;n<30;n++){list.SelectedItem=first;switching&=uiSurface.Layout?.Width==48&&uiSurface.Session?.Document.Annotations.Count==1;list.SelectedItem=second;switching&=uiSurface.Layout?.Width==80&&uiSurface.Session?.Document.Annotations.Count==0;}
+            Check(switching,"Thirty image-switch roundtrips retain separate crop/style/annotation state");
+            list.SelectedItem=null;
+            Check(uiSurface.Session==null&&uiSurface.Layout==null&&((System.Windows.Controls.StackPanel)window.FindName("EmptyState")).Visibility==Visibility.Visible,"Clearing the library selection safely unloads the image");
+            rows.Add(Fixture(tiny,"new-capture"));list.SelectedItem=rows[^1];
+            Check(uiSurface.Layout?.Width==4&&uiSurface.Layout?.Height==3,"Selecting a newly added capture/import row after an empty selection opens correctly");
+            Check(MediaStore.LoadImage(first.FilePath).PixelWidth==64&&MediaStore.LoadImage(second.FilePath).PixelWidth==80,"Switching edited media leaves both original image dimensions intact");
             window.Close();
             Console.WriteLine($"{count} Windows renderer/document checks passed. Screen/audio capture remains a manual test.");return 0;
         }catch(Exception ex){Console.Error.WriteLine(ex);return 1;}
-        finally{if(item!=null)DocumentStore.Delete(item);if(originalFile!=null)File.Delete(originalFile);}
+        finally{foreach(var media in lifecycleItems)DocumentStore.Delete(media);if(lifecycleRoot!=null&&Directory.Exists(lifecycleRoot))Directory.Delete(lifecycleRoot,true);if(item!=null)DocumentStore.Delete(item);if(originalFile!=null)File.Delete(originalFile);}
     }
 }
