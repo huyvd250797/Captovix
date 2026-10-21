@@ -1,4 +1,4 @@
-# Captovix V1.5.0 architecture
+# Captovix V1.6.1 architecture
 
 ## Single Editor and window state
 
@@ -22,7 +22,7 @@ Files live in local per-user app data. MediaStore uses JSON metadata/settings, i
 
 ## Capture and packaging
 
-Existing pixel-native display/window capture pipeline remains based on ScreenRecorderLib, Desktop Duplication/WGC, Media Foundation and WASAPI. PerMonitorV2 and physical pixel geometry are retained. Successful native completion precedes committing pending capture files. Installer is a per-user NSIS migration bootstrap around Velopack Setup, with a self-contained .NET payload and offline Microsoft VC++ Runtime prerequisite. Bootstrap installs the new app successfully at LocalAppData/HuyVo.Captovix before invoking the registered, recognized NSIS V1.0 uninstaller. The old generated owned-file uninstaller retains user data. It recreates shortcuts via the stable Update.exe start command. Velopack owns installation, uninstall and future updates; user data remain outside the installation root.
+Desktop photos (region/full display) now use DesktopPhotoCapture with Win32 GDI BitBlt, top-down 32-bit DIB and opaque SDR8 PNG. No scaling or even alignment. Independent window photos and video retain ScreenRecorderLib, Desktop Duplication/WGC, Media Foundation and WASAPI. PerMonitorV2 and physical pixel geometry are retained. Successful native completion precedes committing pending capture files. Installer is a per-user NSIS migration bootstrap around Velopack Setup, with a self-contained .NET payload and offline Microsoft VC++ Runtime prerequisite. Bootstrap installs the new app successfully at LocalAppData/HuyVo.Captovix before invoking the registered, recognized NSIS V1.0 uninstaller. The old generated owned-file uninstaller retains user data. It recreates shortcuts via the stable Update.exe start command. Velopack owns installation, uninstall and future updates; user data remain outside the installation root.
 
 ## Validation boundary
 
@@ -63,3 +63,11 @@ The gate is acquired before flushing edits to prevent reentrant capture from a m
 Five photo hotkeys have editable chords and fixed action IDs; recording IDs 2/3/4 remain reserved. Duplicate/unsupported input is rejected before registration. Startup permits best-effort registration with warnings; edited bindings use rollback on external conflicts. While a hotkey textbox has focus, global bindings are released so the key can be entered locally. Committing workflow preferences handles hotkey registration, owned HKCU Run value and atomic JSON; file failures attempt to restore previous live keys and Run value and report recovery failures.
 
 Close-to-tray and autorun default off. Manual launch always opens the maximized Editor. Only the fixed autorun argument permits startup hidden when opted in; there is no capture-on-start argument. The second-instance broadcast restores a hidden Editor. Explicit tray Exit bypasses close-to-tray and waits for active video completion. Apply update saves and backs up state before suspending tray/hotkeys; failed apply recreates them. The early Velopack uninstall hook removes only the owned autorun registration and leaves user media/settings.
+
+## Image Fidelity (1.6)
+
+ImageFidelity contains platform-independent BGRA transforms, alpha composition, DPI/zoom math and capture size guards. EditorRenderer uses exact pixel copy for integral unit-scale orthogonal layouts; frame and annotation layers are rasterized separately, then composited. Resized previews/thumbnails and user-requested resize retain WPF high-quality rendering. Odd centered canvas offsets are floored to physical integer pixels to avoid accidental half-pixel sampling.
+
+ImageTransfer owns BGRA8 conversion, PNG encoding, clipboard PNG/Bitmap and atomic export with decoded dimension verification. Output metadata is 96 DPI, file pixel dimensions come from document layout. Screen capture completion validates decoded size before commit; window capture records the native extent without forcing GetWindowRect border dimensions. MainWindow readouts distinguish original/output dimensions and physical zoom; monitor DPI changes preserve chosen physical magnification or recalculate fit.
+
+FidelityWindowsProbe is a separate explicit diagnostic process entered after Velopack hooks but before normal Editor/mutex initialization. It requires user SDR confirmation, uses a real pattern/window/full-display capture for each observed monitor, checks clipboard and renderer, and writes local JSON. It never changes Windows display scaling or claims a missing scale has passed. Linux tests simulate coordinate math only. The diagnostic is not automatic capture on app startup.

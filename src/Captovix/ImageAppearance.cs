@@ -73,7 +73,9 @@ public sealed class ImageLayout
         Width=fw+left+right;Height=fh+top+bottom;
         if(Width>32768||Height>32768||(long)Width*Height>100_000_000)throw new InvalidDataException("Ảnh đầu ra vượt 32.768 px mỗi chiều hoặc 100 triệu pixel. Hãy giảm kích thước/khung.");
         Frame=new(left,top,fw,fh);Canvas=new(left+inset,top+inset,cw,ch);
-        double ox=Canvas.X+(cw-ImageWidth)*(s.Anchor%3)/2d,oy=Canvas.Y+(ch-ImageHeight)*(s.Anchor/3)/2d;
+        // A half-pixel center offset blurs an otherwise unscaled screenshot.
+        // Odd spare pixels are assigned to the right/bottom, keeping all anchors pixel-aligned.
+        double ox=Canvas.X+Math.Floor((cw-ImageWidth)*(s.Anchor%3)/2d),oy=Canvas.Y+Math.Floor((ch-ImageHeight)*(s.Anchor/3)/2d);
         ImagePoint Map(double x,double y){double u=x-view.X,v=y-view.Y;var p=s.QuarterTurns switch{1=>new ImagePoint(view.Height-v,u),2=>new(view.Width-u,view.Height-v),3=>new(v,view.Width-u),_=>new(u,v)};
             if(s.FlipHorizontal)p=p with{X=natural.Width-p.X};if(s.FlipVertical)p=p with{Y=natural.Height-p.Y};return new(ox+p.X*ImageWidth/natural.Width,oy+p.Y*ImageHeight/natural.Height);}
         var zero=Map(view.X,view.Y);var xUnit=Map(view.X+1d,view.Y);var yUnit=Map(view.X,view.Y+1d);

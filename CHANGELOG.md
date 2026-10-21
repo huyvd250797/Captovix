@@ -1,5 +1,31 @@
 # Changelog
 
+## V1.6.1 — Exact Desktop Capture Hotfix
+
+- Sửa chụp vùng/toàn màn hình bị engine hạ kích thước lẻ về chẵn (ví dụ 1467×386 → 1466×386).
+- Dùng Win32 GDI BitBlt cho ảnh desktop SDR, DIB top-down 32-bit đúng pixel; không resize, không bù cột giả. Ghép vùng các màn hình theo tọa độ vật lý, phần không có màn hình để đen.
+- Giữ tùy chọn con trỏ với hotspot; giải phóng DC, bitmap, icon sau chụp. Ảnh PNG opaque SDR8, metadata 96 DPI không thay số pixel.
+- Chụp cửa sổ riêng và quay video tiếp tục backend hiện có. HDR/màu rộng và nội dung được bảo vệ chưa được hỗ trợ/đánh giá.
+- Chỉ hiển thị hướng dẫn runtime khi gặp lỗi nạp DLL; lỗi khác chỉ rõ errors.log.
+- Probe Windows thêm ảnh rộng lẻ, cao lẻ, cả hai lẻ, 1×1 và hồi quy 1467×386. Chưa chạy probe trên Windows trong môi trường build.
+- Không đổi schema, URL update, dữ liệu hay đường dẫn cài đặt. Giữ sửa lỗi chuyển ảnh V1.5.1.
+
+## 1.6.0 — Image Fidelity
+
+- Readout riêng cho kích thước gốc, đầu ra xuất/copy và zoom vật lý. Actual Pixels giữ 1 pixel đầu ra = 1 pixel màn hình, bù scale Windows.
+- Giữ mức zoom vật lý khi Editor chuyển màn hình; fit tự tính lại. Zoom không tham gia công thức file đầu ra.
+- Crop/xoay 90°/lật và canvas pixel-aligned không resize dùng nhánh copy BGRA8 trực tiếp; chỉ chú thích/hiệu ứng được render rồi ghép riêng. Vùng không chỉnh không phải đi qua resampling WPF.
+- Canh nguyên pixel cho canvas dư lẻ để tránh đặt ảnh tại nửa pixel. Bố cục giữa có thể lệch nửa pixel so với cách nội suy trước; không thay tọa độ đối tượng lưu trong tài liệu.
+- Chuẩn hóa output PNG và clipboard PNG/Bitmap ở 96 DPI metadata, giữ số pixel. Xuất file qua temporary/validate kích thước rồi thay đích. JPEG vẫn lossy 95%, ghép trắng phần trong suốt, không tự đổi W×H.
+- Ảnh chụp màn hình/vùng có kích thước trả về khác pixel yêu cầu sẽ báo lỗi và giữ pending, không tự resize để che sai lệch. Chụp cửa sổ ghi nhận native extent thực tế thay vì kéo giãn theo invisible frame bounds.
+- Thêm kiểm chứng SDR tương tác trên Windows: renderer/PNG/clipboard, mẫu pixel và kích thước full-display trên từng monitor; ghi JSON theo DPI và tọa độ thật. Có script tổng hợp scale còn thiếu.
+- Giữ bản vá chuyển ảnh V1.5.1, dữ liệu ảnh/chú thích schema 4 và cấu hình cập nhật/tray/hotkey.
+
+Trạng thái: đã triển khai source/build và 525 kiểm tra logic/tĩnh; 9 kiểm tra SDK gói thật sau đóng gói. Bộ WPF/PNG đã biên dịch, chưa thực thi trên Windows trong môi trường Linux này. Chưa nghiệm thu matrix capture thật 100/125/150/175/200%, monitor âm hoặc kéo Editor giữa monitor. HDR/wide gamut và giữ 16-bit/profile màu không thuộc cam kết SDR8 của bản này.
+
+Tiếp theo V1.7 — Shapes & Stroke Studio: nhiều shape (rectangle/bo góc/ellipse/tam giác/đa giác/ngôi sao...), màu viền và nền riêng, opacity, độ dày, nét liền/đứt/chấm/đứt-chấm, preset; vẽ xong vẫn chọn/kéo/resize và lưu sửa lại được. V1.8 sau đó nâng điều khiển đối tượng và bảng layer.
+
+
 ## 1.5.1 — Editor Switch Fix
 
 - Sửa NullReferenceException khi chuyển giữa các ảnh: UnloadEditor đã xóa canvas nhưng callback VisualChanged còn đọc Layout qua phiên chỉnh sửa cũ.

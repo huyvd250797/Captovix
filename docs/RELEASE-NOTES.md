@@ -1,11 +1,7 @@
-# Captovix V1.5.1 — Editor Switch Fix
+# Captovix V1.6.1 — Exact Desktop Capture Hotfix
 
-- Sửa NullReferenceException khi chuyển giữa các ảnh: UnloadEditor đã xóa canvas nhưng callback VisualChanged còn đọc Layout qua phiên chỉnh sửa cũ.
-- Dọn session trước khi canvas phát sự kiện unload; callback chỉ đọc layout khi session/canvas khớp và có ảnh, xóa thông tin kích thước/zoom khi rỗng.
-- Bảng thuộc tính ảnh cũng xử lý trạng thái thiếu layout, không dùng dữ liệu ảnh cũ trong lúc chuyển.
-- Bổ sung 11 ca hồi quy WPF: surface trống với session cũ, unload lặp, chuyển ảnh khác kích thước, lưu chỉnh sửa, tách sự kiện session cũ, 30 vòng đổi ảnh, bỏ chọn và chọn ảnh mới.
-- Giữ ảnh gốc, sidecar schema 4, thư viện, cấu hình workflow và nguồn cập nhật GitHub. Không reset dữ liệu để sửa lỗi.
+Sửa lỗi chụp vùng rộng/cao lẻ bị thiếu 1 pixel: 1467×386 phải giữ nguyên 1467×386. Ảnh vùng/toàn màn hình lấy pixel desktop bằng GDI BitBlt thay vì engine ép chẵn. Không scale nội suy hay thêm cột giả để khớp kích thước. Hỗ trợ tọa độ màn hình âm và tùy chọn con trỏ, giữ pipeline SDR8 PNG.
 
-Phạm vi kiểm chứng: build/publish Windows x64 và test logic/SDK có thể chạy tại Linux. Bộ hồi quy WPF đã bổ sung và biên dịch; chưa thực thi trên Windows thật. Cần nghiệm thu chuyển ảnh theo WINDOWS-TEST-CHECKLIST.md.
+Giữ quay video, chụp cửa sổ, thư viện, dữ liệu, sửa chuyển ảnh V1.5.1 và URL cập nhật. Thông báo DLL/runtime chỉ hiện đúng loại lỗi. Cài qua update hoặc setup trong Update-Packages; source không phải gói update.
 
-Phiên bản kế tiếp: V1.6 — Image Fidelity. Rà capture→file→preview→clipboard→export để giữ đúng pixel nguồn, Actual Pixels, PNG gốc và nhiều màn hình/DPI. V1.7 tiếp tục Shapes & Stroke Studio; V1.8 nâng Object Control & Layers.
+Build/test logic thực hiện trên Linux, chưa xác minh GDI, clipboard, installer/update và ma trận DPI trên Windows thật. HDR/màu rộng chưa đánh giá. Bản tiếp theo V1.7 sẽ thêm hình dạng và thuộc tính viền/nền/nét với đối tượng sửa được sau khi vẽ.

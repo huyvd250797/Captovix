@@ -16,6 +16,7 @@ public sealed class MediaItem : INotifyPropertyChanged
     public string FilePath {get;set;}="";
     public DateTimeOffset Created {get;set;}=DateTimeOffset.Now;
     public bool IsVideo {get;set;}
+    public CapturePixelEvidence? Capture {get;set;}
     public int Width {get;set;}
     public int Height {get;set;}
     public string Source {get;set;}="";

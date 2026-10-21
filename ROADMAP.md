@@ -1,6 +1,6 @@
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Ngày lập: 21/10/2026. Nền hiện tại: V1.5.1 Capture Workflow — Editor Switch Fix. Bản vá sửa lỗi unload/layout khi chuyển ảnh; đã build và bổ sung hồi quy WPF, còn chờ chạy UI Windows thực tế. Các mốc V1.6–V1.20 dưới đây là kế hoạch đề xuất, chưa triển khai.
+Cập nhật: 21/10/2026. V1.6.1 sửa lỗi kích thước lẻ bằng backend ảnh desktop GDI SDR8, đang chờ xác minh Windows. Nền hiện tại V1.6.1 Image Fidelity đã triển khai source, test logic, công cụ Windows và build. **Chưa nghiệm thu Windows thật**: renderer/PNG/clipboard, capture tại 100/125/150/175/200%, monitor âm và kéo Editor giữa màn hình. Không đánh dấu hoàn thành các tiêu chí này khi chưa có report thực tế. V1.7–V1.20 là kế hoạch, chưa triển khai. Bản vá lifecycle V1.5.1 được giữ nguyên.
 
 ## 1. Định hướng mới
 
@@ -32,7 +32,7 @@ Ví dụ nghiệm thu: vẽ rectangle nền vàng nhạt, viền đỏ nét đ�
 
 ## 4. Roadmap tổng thể
 
-Tất cả mốc sau ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
+V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; các mốc từ V1.7 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật và dữ liệu | Điều kiện hoàn thành | Phụ thuộc/thứ tự |
 |---|---|---|---|---|---|
@@ -117,7 +117,7 @@ Chỉ hai file theo yêu cầu Boss:
 
 Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
 
-Đề xuất bản tiếp theo: V1.6 Image Fidelity. Sau đó V1.7 Shapes & Stroke Studio và V1.8 Object Control & Layers để đáp ứng trực tiếp yêu cầu ảnh rõ, nhiều shape, sửa màu/nền/nét và di chuyển đối tượng.
+Bản tiếp theo: V1.7 Shapes & Stroke Studio; bổ sung nhiều shape, màu viền/nền độc lập, opacity, độ dày, nét liền/đứt/chấm và preset; đối tượng tiếp tục sửa sau vẽ. Sau đó V1.8 Object Control & Layers để đáp ứng trực tiếp yêu cầu ảnh rõ, nhiều shape, sửa màu/nền/nét và di chuyển đối tượng.
 
 ## 10. Nguồn tham khảo chính thức
 

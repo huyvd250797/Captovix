@@ -1,15 +1,19 @@
-# Validation — Captovix V1.5.1
+# Validation — Captovix V1.6.1
 
-Source nền: Captovix-v1.5.0-Source.zip. .NET SDK 10.0.100, Windows runtime 10.0.13, ScreenRecorderLib 7.0.1, Velopack SDK/CLI 1.2.161 giữ nguyên. Không đổi schema ảnh/capture workflow.
+Nền: Captovix-v1.6.0-Source.zip. Giữ .NET SDK 10.0.100, Windows runtime 10.0.13, Velopack SDK/CLI 1.2.161, ScreenRecorderLib 7.0.1; schema ảnh 4, URL cập nhật và hotfix chuyển ảnh V1.5.1.
 
-## Nguyên nhân và thay đổi
+## Đã chạy trên Linux
 
-UnloadEditor gọi Surface.Load(null,null) trước khi gán _session=null. Load phát VisualChanged đồng bộ; callback cũ dùng _session để suy đoán Surface.Layout khác null và dereference null. V1.5.1 dọn phiên trước khi clear surface, đồng thời guard cặp session/layout/ảnh trong readout và bảng appearance. Không nuốt exception để che lỗi và không reset dữ liệu.
+ImageFidelity 122, CaptureWorkflow 53, Geometry 30, EditorCore 38, Annotation 76, AdvancedAnnotation 49, ImageAppearance 61, Viewport 48, Update core 41, InstallerContract 25: **543 kiểm tra logic/tĩnh**. Geometry thêm 18 kiểm tra vùng ảnh lẻ/chẵn/1 pixel, tọa độ âm và qua màn hình, giữ diện tích và mép ảnh. Đây là kiểm tra mô hình, không chạy GDI trên Linux.
 
-## Kiểm chứng
+Cross-build ứng dụng WPF, FidelityWindowsChecks và EditorWindowsChecks thành công. Publish self-contained Windows x64; compile NSIS wrapper. Tính năng mới: ảnh desktop qua GDI BitBlt không qua engine căn chẵn, pixel alpha opaque SDR8; thông báo lỗi runtime có điều kiện.
 
-Bộ logic/tĩnh giữ 403 ca; SDK trên nupkg thực tế thêm 9 ca, tổng 412. Build app và harness WPF, publish win-x64 self-contained, compile NSIS, kiểm tra package/feed/hash/size/CRC, DLL và URL mặc định. Đây không phải kết luận UI Windows đã chạy thành công.
+Thêm **9 kiểm tra SDK trên nupkg thực tế** (hash/package/version/channel), tổng **552**. Kiểm tra CRC ZIP, version/AppId/feed SHA1/SHA256/size và DLL giữa payload/nupkg; URL nguồn phát hành giữ nguyên. Chưa đăng GitHub Release.
 
-Bổ sung 11 ca Windows regression trong EditorWindowsChecks: chính trạng thái stale-session/empty-layout của lỗi báo về; readout/property rỗng; reload/unload lặp; chuyển hai ảnh khác kích thước qua ListBox thật; lưu sidecar; detach session cũ; 30 vòng đổi ảnh; bỏ chọn; chọn row mới; giữ kích thước ảnh gốc. Harness chỉ biên dịch trên Linux; chưa thực thi WPF/chuột/clipboard/video/tray hoặc installer/updater Windows thật. Checklist Windows đi kèm để nghiệm thu.
+## Chưa chạy trên Windows
 
-Giới hạn: chưa chạy end-to-end bản vá trên máy Boss. Chưa publish GitHub Release. Chưa ký Authenticode. Không triển khai V1.6 trong hotfix này.
+Không có Windows host/VM. Chưa chạy native GDI, cursor/hotspot, Clipboard, installer/update/restart, WPF renderer/PNG, monitor âm hay DPI thực tế. Không đánh dấu nghiệm thu các mức 100/125/150/175/200%.
+
+Probe Windows dùng cùng CaptureEngine/backend desktop mới. Ngoài mẫu 256×192 và full-display/window, thêm các mẫu 255×192, 256×191, 255×191, 1×1 so mọi byte BGRA, cùng hồi quy kích thước 1467×386 khi màn hình đủ lớn. Phải chạy chức năng Kiểm chứng SDR để có report thật; gói này không chứa report đạt Windows.
+
+Cần kiểm tra thêm vùng sát mép/qua màn hình ở DPI khác nhau, bật/tắt cursor, không rò handle khi chụp liên tục, đổi ảnh/editor, crop/rotate/copy/export, cập nhật giữ dữ liệu và đường dẫn D:\Captovix\Captovix. Protected content/secure desktop có thể không chụp được. HDR/wide gamut/ICC/16-bit chưa đánh giá. GDI lấy hình desktop đang hiển thị; chụp cửa sổ độc lập vẫn dùng backend cũ.

@@ -13,8 +13,17 @@ public sealed class CaptureEngine : IDisposable
     public Task<string> Completion => _complete?.Task??Task.FromException<string>(new InvalidOperationException("Chưa bắt đầu ghi hình."));
     public async Task StartAsync(CaptureRequest request,string path)
     {
-        if(_recorder!=null)throw new InvalidOperationException("Một phiên ghi hình đang hoạt động.");
+        if(_complete!=null)throw new InvalidOperationException("Một phiên ghi hình đang hoạt động.");
         _complete=new(TaskCreationOptions.RunContinuationsAsynchronously);_started=new(TaskCreationOptions.RunContinuationsAsynchronously);
+        // Photos of the desktop use native GDI pixels. The video engine rounds
+        // source and output rectangles to even sizes, including Screenshot mode.
+        if(!request.Video && request.Window==null){
+            try{
+                Status?.Invoke("Chụp pixel màn hình");
+                await Task.Run(()=>DesktopPhotoCapture.Save(request.Region,request.Displays,request.Cursor,path));
+                _complete.TrySetResult(path);_started.TrySetResult();return;
+            }catch(Exception ex){_complete.TrySetException(ex);_started.TrySetException(ex);throw;}
+        }
         var options=RecorderOptions.Default;
         options.SourceOptions=new SourceOptions();
         if(request.Window is { } window) {

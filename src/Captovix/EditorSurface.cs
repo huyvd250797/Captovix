@@ -20,6 +20,9 @@ public sealed class EditorSurface : FrameworkElement
     public double TextSize {get;set;}=28;
     public int EffectSize {get;set;}=24;
     public double Zoom {get;private set;}=1;
+    public double DisplayScale {get;private set;}=1;
+    public double PhysicalZoom=>ImageFidelity.PhysicalZoom(Zoom,DisplayScale);
+    public void SetDisplayScale(double value){_=ImageFidelity.ActualZoom(value);DisplayScale=value;Refresh();}
     public bool IsInteracting=>Dragging;
     public ImageLayout? Layout=>Session==null?null:new ImageLayout(Session.Document.Viewport,Session.Document.Appearance);
     private double InteractionScale=>Zoom*(Layout?.ScaleMin??1);
@@ -42,7 +45,7 @@ public sealed class EditorSurface : FrameworkElement
     private int _pointBudget;
     private Rect? _draft;
     private HashSet<string> _selectionBefore=[];
-    public EditorSurface(){Focusable=true;ClipToBounds=true;Cursor=Cursors.Arrow;RenderOptions.SetBitmapScalingMode(this,BitmapScalingMode.HighQuality);}
+    public EditorSurface(){UseLayoutRounding=true;SnapsToDevicePixels=true;Focusable=true;ClipToBounds=true;Cursor=Cursors.Arrow;RenderOptions.SetBitmapScalingMode(this,BitmapScalingMode.HighQuality);}
     public void Load(BitmapSource? source,EditorSession? session)
     {
         CancelInteraction();CropDraft=null;Original=source;Session=session;_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();CropDraftChanged?.Invoke();
@@ -50,6 +53,7 @@ public sealed class EditorSurface : FrameworkElement
     public void SetZoom(double zoom){Zoom=Math.Clamp(zoom,.02,8);Refresh();}
     public void Refresh()
     {
+        RenderOptions.SetBitmapScalingMode(this,ImageFidelity.IsIntegerZoom(PhysicalZoom)?BitmapScalingMode.NearestNeighbor:BitmapScalingMode.HighQuality);
         var v=Layout;if(v!=null){Width=v.Width*Zoom;Height=v.Height*Zoom;}else{Width=Height=1;}
         if(Session!=null)_selected.UnionWith(AnnotationEditing.ExpandGroups(Session.Document,_selected));
         _selected.RemoveWhere(id=>Session?.Document.Annotations.Any(a=>a.Id==id)!=true);

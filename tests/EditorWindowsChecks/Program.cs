@@ -168,6 +168,15 @@ internal static class Program
             rows.Add(Fixture(tiny,"new-capture"));list.SelectedItem=rows[^1];
             Check(uiSurface.Layout?.Width==4&&uiSurface.Layout?.Height==3,"Selecting a newly added capture/import row after an empty selection opens correctly");
             Check(MediaStore.LoadImage(first.FilePath).PixelWidth==64&&MediaStore.LoadImage(second.FilePath).PixelWidth==80,"Switching edited media leaves both original image dimensions intact");
+            Check(((System.Windows.Controls.TextBlock)window.FindName("OriginalSizeLabel")).Text.Contains("4 × 3")&&((System.Windows.Controls.TextBlock)window.FindName("ImageSizeLabel")).Text.StartsWith("4 × 3"),"Original and export dimensions are separate readouts");
+            typeof(MainWindow).GetField("_actualPixels",flags)!.SetValue(window,true);typeof(MainWindow).GetField("_fitMode",flags)!.SetValue(window,false);uiSurface.SetDisplayScale(1);uiSurface.SetZoom(1);
+            double previousDpi=1;bool exactZoom=true;
+            foreach(var dpi in new[]{1.25,1.5,1.75,2,1d}){Invoke("OnDpiChanged",new DpiScale(previousDpi,previousDpi),new DpiScale(dpi,dpi));exactZoom&=Math.Abs(uiSurface.PhysicalZoom-1)<1e-9;previousDpi=dpi;}
+            Check(exactZoom,"Simulated Editor DPI events preserve Actual Pixels across 100/125/150/175/200%");
+            typeof(MainWindow).GetField("_actualPixels",flags)!.SetValue(window,false);uiSurface.SetZoom(2);bool freeZoom=true;
+            foreach(var dpi in new[]{2d,1.75,1.5,1.25,1}){Invoke("OnDpiChanged",new DpiScale(previousDpi,previousDpi),new DpiScale(dpi,dpi));freeZoom&=Math.Abs(uiSurface.PhysicalZoom-2)<1e-9;previousDpi=dpi;}
+            Check(freeZoom,"Simulated Editor DPI events preserve a chosen physical zoom without changing output");
+            Check(uiSurface.Flatten().PixelWidth==4&&uiSurface.Flatten().PixelHeight==3,"Editor monitor transitions do not change exported pixel dimensions");
             window.Close();
             Console.WriteLine($"{count} Windows renderer/document checks passed. Screen/audio capture remains a manual test.");return 0;
         }catch(Exception ex){Console.Error.WriteLine(ex);return 1;}

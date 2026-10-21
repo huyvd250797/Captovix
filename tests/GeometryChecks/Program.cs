@@ -19,4 +19,13 @@ var mixed=new[]{("100%",new PixelRect(0,0,1920,1080)),("150%",new PixelRect(1920
 var m=CaptureGeometry.Split(new(1850,200,300,400),mixed);
 Check(m[0].Crop.Width==70&&m[1].Crop.Width==230,"Mixed DPI geometry does not multiply by logical scale twice");
 Check(m.Sum(x=>x.Crop.Width*x.Crop.Height)==300*400,"Physical pixel area is conserved");
+// Photo source rectangles must never use H264 even alignment.
+foreach(var size in new[]{(1467,386),(1466,387),(1467,387),(1,1),(255,192),(256,191)}){
+    var region=new PixelRect(-31,-27,size.Item1,size.Item2);
+    var monitors=new[]{("NEG",new PixelRect(-1920,-1080,1920,2160)),("MAIN",new PixelRect(0,-1080,2560,2160))};
+    var parts=CaptureGeometry.Split(region,monitors);
+    Check(parts.Sum(p=>(long)p.Crop.Width*p.Crop.Height)==(long)region.Width*region.Height,$"Photo {size}: exact odd/even area across negative origin");
+    Check(parts.All(p=>p.X>=0&&p.Y>=0&&p.X+p.Crop.Width<=region.Width&&p.Y+p.Crop.Height<=region.Height),$"Photo {size}: source destinations inside requested canvas");
+    Check(parts.Max(p=>p.X+p.Crop.Width)==region.Width&&parts.Max(p=>p.Y+p.Crop.Height)==region.Height,$"Photo {size}: rightmost and bottommost pixels retained");
+}
 Console.WriteLine($"{checks} geometry checks passed. Real Windows DPI validation remains pending.");

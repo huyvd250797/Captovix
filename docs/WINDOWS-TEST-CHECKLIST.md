@@ -1,3 +1,7 @@
+# V1.6 — Image Fidelity
+
+Thực hiện matrix trong WINDOWS-FIDELITY-MATRIX.md và hướng dẫn IMAGE-FIDELITY.md. Trạng thái bàn giao: CHƯA nghiệm thu Windows thật; không lấy cross-build/unit tests thay thế. Kiểm chứng SDR có nút trong Editor và report trên máy, lặp đủ 100/125/150/175/200%, monitor âm và kéo Editor giữa màn hình.
+
 # Nghiệm thu hotfix V1.5.1 — Editor Switch Fix
 
 - [ ] Update V1.5.0 → V1.5.1; giữ ảnh gốc, chú thích, thư viện, hotkey/preset, nguồn update.

@@ -100,16 +100,18 @@ public partial class MainWindow : Window
             if(video){_recordingActive=true;ReleaseCaptureEscape();_bar=new(()=>_engine?.TogglePause(),StopRecording,display);_bar.Show();if(!_bar.ExcludedFromCapture)SetStatus("Windows chưa xác nhận ẩn thanh điều khiển khỏi bản quay.");}
             var actual=await _engine.Completion.WaitAsync(video?TimeSpan.FromDays(1):TimeSpan.FromSeconds(20),video?CancellationToken.None:cancellation);clock.Stop();
             if(!File.Exists(actual)||new FileInfo(actual).Length==0)throw new IOException("Engine chưa tạo được file hoàn chỉnh.");
+            BitmapSource? capturedImage=null;
+            if(!video){capturedImage=MediaStore.LoadImage(actual);ImageFidelity.ValidateCapture(region,capturedImage.PixelWidth,capturedImage.PixelHeight,window!=null);}
             File.Move(actual,final);
             var item=new MediaItem{FilePath=final,Title=(video?"Video ":"Ảnh ")+DateTime.Now.ToString("dd-MM HH:mm:ss"),IsVideo=video,Width=region.Width,Height=region.Height,Source=window?.Title??(s.SourceMode==0?$"Vùng chọn · {region}":display.Label),Microphone=video&&s.Mic,SystemAudio=video&&s.SystemAudio,Fps=video?s.Fps:0,Seconds=video?clock.Elapsed.TotalSeconds:0};
-            if(!video){var image=MediaStore.LoadImage(final);item.Width=image.PixelWidth;item.Height=image.PixelHeight;}
+            if(capturedImage!=null){item.Width=capturedImage.PixelWidth;item.Height=capturedImage.PixelHeight;item.Capture=new(region.Width,region.Height,item.Width,item.Height,window!=null?"Window capture (native output bounds)":"GDI BitBlt · physical pixels · SDR8");}
             _store.Add(item);success=true;finalStatus="● Đã lưu nội dung trên máy.";
             if(!video&&s.SourceMode==0){_lastRegion=region;var updated=_workflow.Clone();updated.LastRegion=new(region,topology);if(!_workflowReadOnly)try{SaveWorkflow(updated);}catch(Exception ex){App.Log(ex);finalStatus+=" Chưa lưu được vùng chụp lại.";}}
-            if(!video&&options.AutoCopy)try{Clipboard.SetImage(MediaStore.LoadImage(final));finalStatus+=" Đã copy ảnh.";}catch(Exception ex){App.Log(ex);finalStatus+=" Clipboard đang bận; ảnh đã được lưu, có thể copy trong Editor.";}
+            if(!video&&options.AutoCopy)try{ImageTransfer.Copy(MediaStore.LoadImage(final));finalStatus+=" Đã copy ảnh.";}catch(Exception ex){App.Log(ex);finalStatus+=" Clipboard đang bận; ảnh đã được lưu, có thể copy trong Editor.";}
             if(showAfter){SearchBox.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);}
             else{_notificationItem=item.Id;_tray?.Notify(item.Title+" · "+finalStatus+" Nhấp thông báo để mở ảnh.");}
         }catch(OperationCanceledException){finalStatus="Đã hủy phiên capture.";}
-        catch(Exception e){failed=true;App.Log(e);Show();Activate();MessageBox.Show(this,$"Không thể {(video?"quay màn hình":"chụp ảnh")}.\n\n{e.Message}\n\nNếu lỗi engine/DLL: chạy Install.cmd để cài Visual C++ Runtime. Với Windows N/KN, cài Media Feature Pack.","Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);}
+        catch(Exception e){failed=true;App.Log(e);Show();Activate();var hint=e is DllNotFoundException or BadImageFormatException?"\n\nKhông nạp được thư viện native. Chạy Install.cmd để kiểm tra Visual C++ Runtime.":"\n\nChi tiết được lưu tại %LOCALAPPDATA%\\HuyVo\\Captovix\\errors.log.";MessageBox.Show(this,$"Không thể {(video?"quay màn hình":"chụp ảnh")}.\n\n{e.Message}{hint}","Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);}
         finally {
             try{_engine?.Stop();_engine?.Dispose();}catch(Exception e){App.Log(e);}_engine=null;_bar?.Finish();_bar=null;_stopping=false;_recordingActive=false;
             ReleaseCaptureEscape();_captureCancellation?.Dispose();_captureCancellation=null;
@@ -150,26 +152,20 @@ public partial class MainWindow : Window
     private void Copy_Click(object sender,RoutedEventArgs e)
     {
         if(_session==null||!PrepareCropForExport())return;_session.Commit();
-        try{Clipboard.SetImage(Surface.Flatten());FlushEdits(false);SetStatus("Đã copy ảnh gồm chú thích và vùng crop.");}
+        try{ImageTransfer.Copy(Surface.Flatten());FlushEdits(false);SetStatus($"Đã copy {Surface.Layout!.Width} × {Surface.Layout.Height} px · PNG + Bitmap gồm chú thích/crop. App nhận quyết định cách dán.");}
         catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không copy được ảnh");}
     }
     private void Export_Click(object sender,RoutedEventArgs e)
     {
         if(Selected is not { } i)return;_session?.Commit();
         var filename=string.Concat(i.Title.Select(c=>Path.GetInvalidFileNameChars().Contains(c)?'_':c));
-        var save=new SaveFileDialog{FileName=filename,Filter=i.IsVideo?"MP4 video|*.mp4":"PNG image|*.png|JPEG image|*.jpg",AddExtension=true};
+        var save=new SaveFileDialog{Title=i.IsVideo?"Xuất video":"Xuất theo kích thước đầu ra · PNG lossless / JPEG 95% có mất mát",FileName=filename,Filter=i.IsVideo?"MP4 video|*.mp4":"PNG image|*.png|JPEG image|*.jpg",AddExtension=true};
         if(save.ShowDialog(this)!=true||!PrepareCropForExport())return;
         try{
             var destination=Path.GetFullPath(save.FileName);
             if(_store.Items.Any(item=>string.Equals(Path.GetFullPath(item.FilePath),destination,StringComparison.OrdinalIgnoreCase))){MessageBox.Show(this,"Hãy chọn tên hoặc thư mục xuất khác để giữ nguyên file gốc trong thư viện.","Giữ ảnh/video gốc");return;}
             if(!i.IsVideo){
-                var bitmap=Surface.Flatten();BitmapEncoder encoder;
-                if(save.FilterIndex==2){
-                    var visual=new DrawingVisual();using(var dc=visual.RenderOpen()){dc.DrawRectangle(Brushes.White,null,new Rect(0,0,bitmap.PixelWidth,bitmap.PixelHeight));dc.DrawImage(bitmap,new Rect(0,0,bitmap.PixelWidth,bitmap.PixelHeight));}
-                    var flattened=new RenderTargetBitmap(bitmap.PixelWidth,bitmap.PixelHeight,96,96,PixelFormats.Pbgra32);flattened.Render(visual);bitmap=flattened;
-                    encoder=new JpegBitmapEncoder{QualityLevel=95};
-                }else encoder=new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(bitmap));using var f=File.Create(save.FileName);encoder.Save(f);
+                var bitmap=Surface.Flatten();ImageTransfer.Save(bitmap,save.FileName,save.FilterIndex==2);
                 FlushEdits(false);
             }else File.Copy(i.FilePath,save.FileName,true);
             SetStatus("Đã xuất file: "+save.FileName);
@@ -204,8 +200,18 @@ public partial class MainWindow : Window
     private void Diagnostics_Click(object sender,RoutedEventArgs e)
     {
         RefreshSources();var file=Path.Combine(App.DataRoot,$"diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}.json");
-        var data=new{App="Captovix "+VersionInfo.Current,Date=DateTimeOffset.Now,OS=RuntimeInformation.OSDescription,Runtime=RuntimeInformation.FrameworkDescription,Architecture=RuntimeInformation.ProcessArchitecture.ToString(),DpiMode="PerMonitorV2",Displays=_displays,LastRegion=_lastRegion,Hotkeys=_hotkeys,PendingFiles=Directory.GetFiles(_store.Root,"*.pending.*"),RuntimeVerification="Chưa tự động kết luận. Ghi kết quả máy thật theo docs/WINDOWS-TEST-CHECKLIST.md."};
+        var data=new{App="Captovix "+VersionInfo.Current,Date=DateTimeOffset.Now,OS=RuntimeInformation.OSDescription,Runtime=RuntimeInformation.FrameworkDescription,Architecture=RuntimeInformation.ProcessArchitecture.ToString(),DpiMode="PerMonitorV2",Displays=_displays,LastRegion=_lastRegion,SelectedCapture=Selected?.Capture,Hotkeys=_hotkeys,PendingFiles=Directory.GetFiles(_store.Root,"*.pending.*"),RuntimeVerification="Chưa tự động kết luận. Ghi kết quả máy thật theo docs/WINDOWS-TEST-CHECKLIST.md."};
         File.WriteAllText(file,JsonSerializer.Serialize(data,new JsonSerializerOptions{WriteIndented=true}));Process.Start(new ProcessStartInfo("notepad.exe",$"\"{file}\""){UseShellExecute=true});SetStatus("Đã tạo báo cáo máy và tọa độ màn hình.");
+    }
+    private Process? _fidelityProcess;
+    private async void FidelityCheck_Click(object sender,RoutedEventArgs e)
+    {
+        if(_busy||_updateApplying)return;Surface.CancelInteraction();if(!FlushEdits())return;SetBusy(true);SetStatus("Đang chạy kiểm chứng SDR; đóng cửa sổ kiểm chứng hoặc Hủy để kết thúc.");
+        try{
+            _fidelityProcess=Process.Start(new ProcessStartInfo(Environment.ProcessPath!){UseShellExecute=false,ArgumentList={"--fidelity-check"}})??throw new InvalidOperationException("Không mở được tiến trình kiểm chứng.");
+            await _fidelityProcess.WaitForExitAsync();SetStatus("Đã kết thúc tiến trình kiểm chứng. Xem report trong FidelityChecks nếu đã chạy phép thử.");
+        }catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa chạy được kiểm chứng SDR");}
+        finally{_fidelityProcess?.Dispose();_fidelityProcess=null;SetBusy(false);if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);}
     }
     private void TestGuide_Click(object sender,RoutedEventArgs e){var p=Path.Combine(AppContext.BaseDirectory,"docs","WINDOWS-TEST-CHECKLIST.md");if(File.Exists(p))Process.Start(new ProcessStartInfo("notepad.exe",$"\"{p}\""){UseShellExecute=true});else MessageBox.Show(this,"Xem docs/WINDOWS-TEST-CHECKLIST.md trong gói source. Kiểm tra chụp vùng/cửa sổ/toàn màn hình, scale 100–200%, màn hình phụ tọa độ âm và quay mic + tiếng máy.","Kiểm thử Captovix V"+VersionInfo.Current);}
     private void Window_Closing(object? sender,CancelEventArgs e)

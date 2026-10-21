@@ -34,11 +34,14 @@ public partial class MainWindow
         // Refresh also fires while a surface is being cleared or replaced.
         // Only read dimensions from a complete, matching document/surface pair.
         if(_session is {} session&&ReferenceEquals(session,Surface.Session)&&Surface.Original!=null&&Surface.Layout is {} layout){
+            OriginalSizeLabel.Text=$"Gốc: {Surface.Original.PixelWidth} × {Surface.Original.PixelHeight} px";
             ImageSizeLabel.Text=$"{layout.Width} × {layout.Height} px · {session.Document.Annotations.Count} chú thích";
+            ImageFidelityHint.Text=ImageFidelity.CanCopyPixels(layout)?"PNG/Copy: giữ pixel vùng không chỉnh. Vừa khung chỉ đổi cách xem.":"Xuất/Copy có resize theo thiết lập; zoom chỉ đổi cách xem.";
             RestoreCropButton.IsEnabled=session.Document.Crop!=null;
-            ZoomLabel.Text=$"{Surface.Zoom*VisualTreeHelper.GetDpi(this).DpiScaleX*100:F0}%";
+            ZoomLabel.Text=$"{Surface.PhysicalZoom*100:0.#}%";
+            ZoomLabel.ToolTip=$"Zoom hiển thị đầu ra · Windows scale {Surface.DisplayScale*100:0.#}% · không đổi file ảnh";
         }else{
-            ImageSizeLabel.Text="";ZoomLabel.Text="—";RestoreCropButton.IsEnabled=false;
+            OriginalSizeLabel.Text=ImageSizeLabel.Text=ImageFidelityHint.Text="";ZoomLabel.Text="—";RestoreCropButton.IsEnabled=false;
         }
     }
     private void Session_Changed()
@@ -68,7 +71,7 @@ public partial class MainWindow
         var bitmap=MediaStore.LoadImage(item.FilePath);var session=DocumentStore.Load(item,bitmap,out var warning);
         _activeItem=item;_session=session;session.Changed+=Session_Changed;
         ImageScroll.Visibility=ImageTools.Visibility=ZoomTools.Visibility=EditorProperties.Visibility=Visibility.Visible;
-        Surface.Load(bitmap,session);SelectTool(EditorTool.Select);_fitMode=true;
+        Surface.SetDisplayScale(VisualTreeHelper.GetDpi(this).DpiScaleX);Surface.Load(bitmap,session);SelectTool(EditorTool.Select);_fitMode=true;
         Dispatcher.BeginInvoke(FitImage,DispatcherPriority.Loaded);
         if(warning!=null){SetStatus("Bản chú thích cũ chưa được áp dụng; đã giữ bản sao.");MessageBox.Show(this,warning,"Kiểm tra dữ liệu chỉnh sửa",MessageBoxButton.OK,MessageBoxImage.Warning);}
     }
@@ -148,17 +151,20 @@ public partial class MainWindow
     private void Redo_Click(object sender,RoutedEventArgs e){Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Redo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
     private void FitImage()
     {
-        _fitMode=true;_actualPixels=false;if(_session==null)return;var v=Surface.Layout!;
+        _fitMode=true;_actualPixels=false;if(_session==null||Surface.Layout is not {} v)return;
         Surface.SetZoom(Math.Min(Math.Max(40,ImageScroll.ActualWidth-65)/v.Width,Math.Max(40,ImageScroll.ActualHeight-65)/v.Height));
     }
     private void Fit_Click(object sender,RoutedEventArgs e)=>FitImage();
-    private void Actual_Click(object sender,RoutedEventArgs e){ZoomAtCenter(1/VisualTreeHelper.GetDpi(this).DpiScaleX);_actualPixels=true;}
+    private void Actual_Click(object sender,RoutedEventArgs e){ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;}
     private void ZoomOut_Click(object sender,RoutedEventArgs e)=>ZoomAtCenter(Surface.Zoom/1.25);
     private void ZoomIn_Click(object sender,RoutedEventArgs e)=>ZoomAtCenter(Surface.Zoom*1.25);
     protected override void OnDpiChanged(DpiScale oldDpi,DpiScale newDpi)
     {
-        base.OnDpiChanged(oldDpi,newDpi);if(Surface==null||_session==null)return;
-        Dispatcher.BeginInvoke(()=>{if(_actualPixels)Surface.SetZoom(1/newDpi.DpiScaleX);else if(_fitMode)FitImage();else Surface.Refresh();},DispatcherPriority.Loaded);
+        base.OnDpiChanged(oldDpi,newDpi);if(Surface==null)return;
+        var physical=Surface.PhysicalZoom;Surface.SetDisplayScale(newDpi.DpiScaleX);if(_session==null)return;
+        if(_actualPixels)Surface.SetZoom(ImageFidelity.ActualZoom(newDpi.DpiScaleX));
+        else if(!_fitMode)Surface.SetZoom(physical/newDpi.DpiScaleX);
+        var session=_session;Dispatcher.BeginInvoke(()=>{if(!ReferenceEquals(_session,session))return;if(_fitMode)FitImage();else Surface.Refresh();},DispatcherPriority.Loaded);
     }
     private void Viewport_Changed(object sender,SizeChangedEventArgs e){if(_fitMode&&_session!=null)FitImage();}
     private void Editor_KeyDown(object sender,KeyEventArgs e)

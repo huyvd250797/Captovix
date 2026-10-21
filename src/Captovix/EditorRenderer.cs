@@ -22,11 +22,14 @@ public static class EditorRenderer
         var view=doc.Viewport;
         dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));
         dc.DrawImage(source,new Rect(0,0,doc.OriginalWidth,doc.OriginalHeight));
+        DrawOverlays(dc,source,doc,draftIds);dc.Pop();
+    }
+    private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
+    {
         foreach(var a in doc.Annotations.Where(a=>!a.IsRedaction))DrawAnnotation(dc,a);
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
         foreach(var a in doc.Annotations.Where(a=>a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
             RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true);
-        dc.Pop();
     }
     public static void DrawAnnotation(DrawingContext dc,Annotation a)
     {
@@ -92,12 +95,29 @@ public static class EditorRenderer
     }
     public static BitmapSource Render(BitmapSource source,EditorDocument doc,int maxWidth=0)
     {
+        if(source.PixelWidth!=doc.OriginalWidth||source.PixelHeight!=doc.OriginalHeight)throw new InvalidOperationException("Kích thước ảnh gốc không khớp tài liệu; không tự scale nguồn.");
         var layout=new ImageLayout(doc.Viewport,doc.Appearance);
+        if(maxWidth==0&&ImageFidelity.CanCopyPixels(layout))return RenderExact(source,doc,layout);
         double scale=maxWidth>0?Math.Min(1,(double)maxWidth/layout.Width):1;
         int width=Math.Max(1,(int)Math.Round(layout.Width*scale)),height=Math.Max(1,(int)Math.Round(layout.Height*scale));
         var visual=new DrawingVisual();RenderOptions.SetBitmapScalingMode(visual,BitmapScalingMode.HighQuality);
         using(var dc=visual.RenderOpen()){dc.PushTransform(new ScaleTransform(scale,scale));Compose(dc,source,doc);dc.Pop();}
         var bitmap=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);bitmap.Render(visual);bitmap.Freeze();return bitmap;
+    }
+    private static BitmapSource RenderExact(BitmapSource source,EditorDocument doc,ImageLayout layout)
+    {
+        // Keep untouched source pixels out of WPF's premultiplied resampling path.
+        byte[]? frame=null;var style=doc.Appearance;
+        if(!style.Transparent||style.BorderWidth>0||style.Shadow){var visual=new DrawingVisual();using(var dc=visual.RenderOpen())DrawFrame(dc,layout,style);var rendered=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);rendered.Render(visual);frame=ImageTransfer.Bgra(rendered);}
+        var pixels=ImageFidelity.CopyPixels(ImageTransfer.Bgra(source),source.PixelWidth,source.PixelHeight,doc.Viewport,layout,frame);
+        if(doc.Annotations.Count>0){
+            var overlay=new DrawingVisual();using(var dc=overlay.RenderOpen()){
+                dc.PushClip(new RectangleGeometry(RectOf(layout.Canvas)));dc.PushTransform(new MatrixTransform(LayoutMatrix(layout)));
+                dc.PushClip(new RectangleGeometry(new Rect(doc.Viewport.X,doc.Viewport.Y,doc.Viewport.Width,doc.Viewport.Height)));DrawOverlays(dc,source,doc);dc.Pop();dc.Pop();dc.Pop();
+            }
+            var bitmap=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);bitmap.Render(overlay);var bytes=new byte[checked(layout.Width*layout.Height*4)];bitmap.CopyPixels(bytes,checked(layout.Width*4),0);ImageFidelity.OverlayPremultiplied(pixels,bytes);
+        }
+        return ImageTransfer.Bitmap(layout.Width,layout.Height,pixels);
     }
     public static bool Hit(Annotation a,Point p,double tolerance)
     {

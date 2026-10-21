@@ -107,7 +107,7 @@ public partial class MainWindow
         if(id!=null&&_store.Items.FirstOrDefault(i=>i.Id==id) is {} item){SearchBox.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);}
     }
     private void RequestExit(){_exitRequested=true;if(_busy){CancelCapture();return;}Close();if(IsVisible)_exitRequested=false;}
-    private void CancelCapture(){if(_recordingActive)StopRecording();else _captureCancellation?.Cancel();}
+    private void CancelCapture(){if(_fidelityProcess!=null){try{_fidelityProcess.CloseMainWindow();}catch(Exception ex){App.Log(ex);}return;}if(_recordingActive)StopRecording();else _captureCancellation?.Cancel();}
     private void RegisterCaptureEscape(){_escapeRegistered=Native.RegisterHotKey(new WindowInteropHelper(this).Handle,990,0x4000,0x1B);}
     private void ReleaseCaptureEscape(){if(_escapeRegistered)Native.UnregisterHotKey(new WindowInteropHelper(this).Handle,990);_escapeRegistered=false;}
     private void CancelCapture_Click(object sender,RoutedEventArgs e)=>CancelCapture();
@@ -127,7 +127,7 @@ public partial class MainWindow
         Add("Mở Editor",()=>ShowEditor(),!_busy);
         foreach(var action in Enum.GetValues<PhotoAction>())Add(ActionName(action),()=>_=CaptureAsync(false,action),!_busy&&!_updateApplying);
         var presets=new MenuItem{Header="Preset chụp",IsEnabled=!_busy&&!_updateApplying};foreach(var preset in _workflow.Presets){var item=new MenuItem{Header=preset.Name};item.Click+=(_,_)=>{menu.IsOpen=false;Dispatcher.BeginInvoke(()=>{try{ApplyPreset(preset);_=CaptureAsync(false);}catch(Exception e){_tray?.Notify(e.Message);}});};presets.Items.Add(item);}menu.Items.Add(presets);
-        if(_busy)Add(_recordingActive?"Dừng và lưu video":"Hủy phiên chụp",CancelCapture);
+        if(_busy)Add(_fidelityProcess!=null?"Hủy kiểm chứng SDR":_recordingActive?"Dừng và lưu video":"Hủy phiên chụp",CancelCapture);
         menu.Items.Add(new Separator());Add("Thoát Captovix",RequestExit);_tray?.Foreground();menu.IsOpen=true;
     }
     private IReadOnlyList<WorkflowDisplay> WorkflowDisplays()=>_displays.Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity)).ToArray();

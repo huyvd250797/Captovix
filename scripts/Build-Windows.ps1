@@ -24,7 +24,7 @@ foreach ($folder in @($payload,$releases)) {
 if ($PreviousReleases) { Copy-Item (Join-Path (Resolve-Path $PreviousReleases).Path '*.nupkg') $releases -Force }
 dotnet run --project tests/InstallerContractChecks/InstallerContractChecks.csproj -c Release -- $projectRoot
 if ($LASTEXITCODE -ne 0) { throw 'Installer argument regression checks failed.' }
-foreach ($check in @('CaptureWorkflowChecks','GeometryChecks','EditorCoreChecks','AnnotationChecks','AdvancedAnnotationChecks','ImageAppearanceChecks','ViewportChecks','UpdateChecks','EditorWindowsChecks')) {
+foreach ($check in @('ImageFidelityChecks','CaptureWorkflowChecks','GeometryChecks','EditorCoreChecks','AnnotationChecks','AdvancedAnnotationChecks','ImageAppearanceChecks','ViewportChecks','UpdateChecks','EditorWindowsChecks','FidelityWindowsChecks')) {
     dotnet run --project "tests/$check/$check.csproj" -c Release -p:Platform=x64
     if ($LASTEXITCODE -ne 0) { throw "$check failed." }
 }
@@ -32,7 +32,7 @@ dotnet publish src/Captovix/Captovix.csproj -c Release -r win-x64 --self-contain
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 Copy-Item docs,licenses -Destination $payload -Recurse -Force
 Copy-Item README.md,CHANGELOG.md,ROADMAP.md,THIRD-PARTY-NOTICES.txt -Destination $payload -Force
-Copy-Item scripts/Install-Local.ps1,scripts/Install.cmd,scripts/Launch.cmd -Destination $payload -Force
+Copy-Item scripts/Install-Local.ps1,scripts/Install.cmd,scripts/Launch.cmd,scripts/Summarize-Fidelity.ps1 -Destination $payload -Force
 if ($UpdateSource) {
     $uri = [uri]$UpdateSource
     if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https' -or $uri.UserInfo -or $uri.Query -or $uri.Fragment) { throw 'UpdateSource must be HTTPS without credentials/query/fragment.' }

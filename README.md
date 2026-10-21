@@ -1,14 +1,50 @@
-# Captovix V1.5.1 — Capture Workflow · Editor Switch Fix
+# Captovix V1.6.1 — Image Fidelity
+
+### V1.6.1 — Bản vá chụp ảnh kích thước lẻ
+
+Vùng 1467×386 phải tạo PNG 1467×386. Ảnh vùng/toàn màn hình dùng Win32 GDI BitBlt lấy pixel desktop SDR; không dùng Screenshot mode vốn ép chẵn của ScreenRecorderLib. Chụp cửa sổ và video giữ backend cũ. Hiệu năng/màu HDR, các cửa sổ bảo vệ, máy Windows thực tế vẫn cần kiểm chứng.
+
+**Cập nhật:** giải nén Update-Packages, đăng 5 release assets lên GitHub Release `v1.6.1` rồi bấm Kiểm tra cập nhật trong app. Hoặc thoát Captovix ở khay hệ thống, chạy `HuyVo.Captovix-win-Setup.exe` trong ZIP. Giữ nguyên đường dẫn cài hiện tại (kể cả `D:\Captovix\Captovix`); không cần gỡ app hoặc xóa ảnh. ZIP Source chỉ dành cho phát triển.
+
+**Kiểm tra sau cài:** thử vùng 1467×386, 1466×387, 1467×387, 1×1; bật/tắt con trỏ; chụp sát mép và qua hai màn hình. Chạy chức năng Kiểm chứng SDR để lưu report, rồi thử từng mức Windows scale. Log: `%LOCALAPPDATA%\HuyVo\Captovix\errors.log`. Bản vá này chưa được chạy chụp/installer trên Windows thật tại nơi build.
 
 Ứng dụng Windows x64 chụp ảnh, quay màn hình và chú thích ảnh trong **một cửa sổ Editor**. Cấu hình chụp/quay nằm ngay trong Editor. © 2026 HuyVo. All rights reserved.
 
 ## Bắt đầu
 
-**Cài thủ công:** giải nén `Captovix-v1.5.1-Update-Packages.zip`, chạy `HuyVo.Captovix-win-Setup.exe` rồi mở shortcut Captovix. Bộ cài cho chọn thư mục, kèm .NET runtime; không cần SDK/Visual Studio trên máy dùng. Microsoft VC++ Runtime có thể cần quyền quản trị nếu máy chưa có.
+**Cài thủ công:** giải nén `Captovix-v1.6.1-Update-Packages.zip`, chạy `HuyVo.Captovix-win-Setup.exe` rồi mở shortcut Captovix. Bộ cài cho chọn thư mục, kèm .NET runtime; không cần SDK/Visual Studio trên máy dùng. Microsoft VC++ Runtime có thể cần quyền quản trị nếu máy chưa có.
 
 **Portable:** script build vẫn có thể tạo bản portable khi cần; lần bàn giao này chỉ có Update-Packages và Source, không kèm file portable riêng.
 
 Máy mục tiêu: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiểm thử thực tế. Windows N/KN cần Media Feature Pack. App chưa có bản x86/ARM64 hoặc chứng thư ký mã thương mại. Không tắt Windows Defender hay cơ chế bảo vệ của máy.
+
+## Image Fidelity V1.6
+
+Dưới canvas có **Gốc**, **Xuất / Copy** và **Zoom** riêng. Actual Pixels đặt 1 pixel đầu ra bằng 1 pixel màn hình; nếu Windows scale 150% thì zoom nội bộ được bù, không tự resize file. Vừa khung có thể trông mềm vì nội suy preview; không làm file bị nhỏ đi. Khi đã chọn resize trong Ảnh & khung, đầu ra dùng kích thước đó và UI hiển thị rõ có resize.
+
+Crop, xoay 90°, lật và đặt canvas không resize giữ nguyên pixel BGRA8 vùng không chỉnh sửa. Chú thích render riêng rồi ghép; PNG/copy dùng cùng ảnh đầu ra, không dùng thumbnail. Canvas có khoảng dư lẻ được canh nguyên pixel (giữa lệch tối đa nửa pixel so với cách cũ) để tránh blur do vị trí 0,5 pixel. Ảnh gốc không bị ghi đè. Explicit resize vẫn có nội suy theo yêu cầu; không quảng cáo nguồn 1080p phóng lớn là chi tiết 4K thật.
+
+PNG và clipboard PNG chuẩn hóa 96 DPI metadata, không thay số pixel. Clipboard có PNG giữ alpha và Bitmap tương thích; ứng dụng nhận có thể chọn format, nén/resize khi dán. JPEG 95% có mất mát, nền trong suốt ghép trắng; ưu tiên PNG cho chữ nhỏ. Pipeline này là SDR 8-bit BGRA, không cam kết giữ HDR, wide gamut, profile ICC hoặc 16-bit. Không tự tăng độ nét/AI upscale.
+
+### Kiểm chứng trên Windows thật
+
+Môi trường tạo bản này là Linux. Unit tests và cross-build không thay capture, WPF, clipboard hay test nhiều màn hình thực tế. **V1.6 đang chờ nghiệm thu Windows**, không ghi đã đạt matrix chỉ từ tính toán DPI.
+
+Trong Editor mở **Máy và màn hình → Kiểm chứng ảnh SDR trên máy này**. Tắt HDR trước; xác nhận dialog. Phép thử dùng clipboard, hiển thị ảnh mẫu, chụp mẫu và kiểm tra kích thước từng màn hình. Dùng Esc để hủy. Kết quả nằm tại `%LOCALAPPDATA%\HuyVo\Captovix\FidelityChecks\<lượt chạy>\report.json`, kèm ảnh mẫu và kết quả render; không tự gửi ra ngoài. Full-desktop test chỉ kiểm tra kích thước, file thử được xóa khi hoàn tất. Nếu probe bị kết thúc đột ngột có thể còn pending.
+
+Chạy lại khi Windows ở **100%, 125%, 150%, 175%, 200%**. Mỗi report chỉ chứng minh DPI đã quan sát ở lượt đó. Thử monitor phụ bên trái/trên (tọa độ âm). Script `Summarize-Fidelity.ps1` trong thư mục app/source `scripts` đọc các report pass của 1.6.1 để báo scale còn thiếu và monitor âm; exit 2 nếu matrix thiếu. Chưa có report thật trong gói bàn giao.
+
+Thử kéo chính Editor qua các monitor ở Actual Pixels và zoom tự chọn, rồi crop/xoay/copy/xuất và so pixel. Probe di chuyển cửa sổ mẫu, chưa thay thế kiểm tra thao tác Editor. Chi tiết và mẫu ghi kết quả: `docs/IMAGE-FIDELITY.md`, `docs/WINDOWS-FIDELITY-MATRIX.md`.
+
+### Chạy kiểm tra từ source (Windows)
+
+```powershell
+dotnet run --project tests/ImageFidelityChecks -c Release
+dotnet run --project tests/FidelityWindowsChecks -c Release -p:Platform=x64
+dotnet run --project tests/EditorWindowsChecks -c Release -p:Platform=x64
+```
+
+FidelityWindowsChecks kiểm tra renderer/PNG không cần capture. Muốn capture/clipboard thật phải dùng probe tương tác trong app. Các giá trị DPI mô phỏng trong test không được coi là đã test Windows Scale thật.
 
 ## Bản vá V1.5.1
 
@@ -35,11 +71,11 @@ Tùy chọn ảnh sau chụp được dùng ngay khi chụp và lưu cùng phiê
 
 Autorun dùng HKCU Run (không cần quyền quản trị); Windows/Task Manager có thể trì hoãn hoặc vô hiệu hóa. Đường dẫn portable cần giữ nguyên; dùng bộ cài để cập nhật trong app. Thay nơi cài đặt phải gỡ bản cũ trước theo hướng dẫn hiện có.
 
-## Phát hành V1.5.1
+## Phát hành V1.6.1
 
-- Máy đã cài bản có updater: giải nén `Captovix-v1.5.1-Update-Packages.zip`, tải **5 asset bên trong** (trừ README-PUBLISH.txt) lên GitHub Release ổn định tag `v1.5.1` của `huyvd250797/captovix-releases`. Không tải chỉ một ZIP làm asset updater, không dùng Source code ZIP.
-- Năm asset: `HuyVo.Captovix-1.5.1-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không sửa nội dung feed/hash sau khi build.
-- Trên app cũ: Kiểm tra cập nhật → Tải bản cập nhật → Khởi động lại để cập nhật. Nếu chưa đăng release thì app cũ chưa thấy V1.5.1. Source URL mặc định đã giữ nguyên, không cần nhập lại.
+- Máy đã cài bản có updater: giải nén `Captovix-v1.6.1-Update-Packages.zip`, tải **5 asset bên trong** (trừ README-PUBLISH.txt) lên GitHub Release ổn định tag `v1.6.1` của `huyvd250797/captovix-releases`. Không tải chỉ một ZIP làm asset updater, không dùng Source code ZIP.
+- Năm asset: `HuyVo.Captovix-1.6.1-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không sửa nội dung feed/hash sau khi build.
+- Trên app cũ: Kiểm tra cập nhật → Tải bản cập nhật → Khởi động lại để cập nhật. Nếu chưa đăng release thì app cũ chưa thấy V1.6.1. Source URL mặc định đã giữ nguyên, không cần nhập lại.
 - Cài thủ công bằng `HuyVo.Captovix-win-Setup.exe` sau khi giải nén Update-Packages: thoát Captovix hoàn toàn bằng menu khay trước. Giữ đường dẫn cũ; vẫn cho chọn thư mục cài mới khi máy chưa có bản quản lý.
 - Source ZIP dùng cho phát triển; Portable ZIP để chạy giải nén; Setup EXE để cài nhiều máy. Bản build chưa ký chứng thư Authenticode, có thể gặp cảnh báo Windows.
 
@@ -217,8 +253,8 @@ dotnet run --project tests/EditorWindowsChecks/EditorWindowsChecks.csproj -c Rel
 
 ## Công nghệ
 
-C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, ScreenRecorderLib 7.0.1 (Desktop Duplication/Windows Graphics Capture/Media Foundation/WASAPI), tài liệu chú thích JSON, Velopack 1.2.161 cho cập nhật và NSIS bootstrap cho lần cài/chuyển đổi đầu tiên. Giấy phép thành phần bên thứ ba nằm trong `licenses/` và `THIRD-PARTY-NOTICES.txt`.
+C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, GDI BitBlt cho ảnh desktop SDR, ScreenRecorderLib 7.0.1 (Desktop Duplication/Windows Graphics Capture/Media Foundation/WASAPI), tài liệu chú thích JSON, Velopack 1.2.161 cho cập nhật và NSIS bootstrap cho lần cài/chuyển đổi đầu tiên. Giấy phép thành phần bên thứ ba nằm trong `licenses/` và `THIRD-PARTY-NOTICES.txt`.
 
 ## Phiên bản tiếp theo
 
-**V1.6 — Image Fidelity:** kiểm chứng ảnh chụp giữ đúng pixel nguồn, Actual Pixels, PNG gốc, copy/xuất không resize ngầm và nhiều màn hình/DPI. Sau đó V1.7 Shapes & Stroke Studio (nhiều shape, màu viền/nền và kiểu nét), V1.8 Object Control & Layers (chọn/kéo/resize/xoay/layer). Roadmap chuyên sâu ảnh đến V1.20 nằm trong ROADMAP.md; video tạm hoãn.
+**V1.7 — Shapes & Stroke Studio:** thêm nhiều shape, màu viền/nền và opacity riêng, độ dày, nét liền/đứt/chấm/đứt-chấm, preset shape. Vẽ xong vẫn chọn, kéo, resize, đổi style và lưu để sửa lại. V1.8 tiếp tục nâng điều khiển đối tượng/layer; video tạm hoãn. Xem ROADMAP.md cho kế hoạch đến V1.20.
