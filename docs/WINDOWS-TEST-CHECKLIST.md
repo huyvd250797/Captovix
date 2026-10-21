@@ -168,3 +168,26 @@ Chưa thực thi các ca Windows này trong môi trường đóng gói Linux.
 - Trên máy chưa cài hoặc sau khi gỡ bản managed: xóa/chọn một thư mục kiểm thử trống, nhập D:\Captovix\Captovix khi chưa tồn tại → cài thành công, app/Update.exe/shortcut đúng vị trí.
 - Lặp lại với thư mục có sẵn nhưng trống, có dấu/khoảng trắng, gốc ổ, thư mục có dữ liệu, quyền ghi thiếu và chồng lấn vùng dữ liệu.
 - Đã cài tại C: chọn D khi chưa gỡ phải hướng dẫn gỡ, không tự di chuyển; sau khi gỡ phải cài được tại D và ảnh cũ còn nguyên.
+
+## V1.3 — Advanced Annotation
+
+1. Tạo chữ tiếng Việt/nhiều dòng, double-click/F2, Ctrl+Enter, Escape, click ra ngoài, Ctrl+S, đổi ảnh, copy/xuất và đóng app khi còn gõ. Xác nhận nội dung cuối đúng, một lần hoàn tất undo một bước, Esc không đổi tài liệu.
+2. Callout: kéo theo bốn hướng, sửa chữ dài, đổi màu/cỡ/nét, kéo đuôi sang bốn cạnh/vào hộp, resize/move ở các mức zoom và crop. Không tràn chữ ra ngoài hộp.
+3. Freehand: nét ngang/dọc/chéo/chấm, Esc hủy, mất capture hủy, zoom rồi select theo nét, move/resize/duplicate, lưu/mở lại và xuất. Thử nét dài đạt giới hạn; bộ nhớ không tăng không giới hạn.
+4. Nhóm nhiều loại: click/Shift chọn/marquee/Ctrl+A, move/resize/align/delete/duplicate/ungroup; undo/redo rồi mở lại. Bản sao phải độc lập với nhóm gốc.
+5. Các lệnh trước/sau và Alt+click lớp dưới phải nhất quán với ảnh xuất; thử vùng che cùng callout/nét vẽ.
+6. Chia đều ngang/dọc với kích thước khác nhau và nhóm; ít hơn 3 hoặc không đủ chỗ không thay đổi; hai đầu giữ nguyên.
+7. Mở file schema 1/2, sửa rồi lưu thành schema 3, đóng/mở lại. So sánh ảnh gốc, JSON và PNG/JPEG. Thử cập nhật từ 1.2.1 và xác nhận nguồn mặc định/dữ liệu/bộ cài ổ D.
+
+Cross-build không thay cho thực thi các thao tác này trên Windows.
+
+## V1.4 — Image Transform & Styling
+
+1. Xoay 0/90/180/270 rồi lật ngang/dọc ở ảnh không đối xứng có chữ, callout, nét và mask. Click/drag/resize/Alt+click phải khớp vị trí sau xoay. Đuôi và điểm nét đi theo hình.
+2. Double-click/F2 sửa chữ tiếng Việt nhiều dòng ở 16 tổ hợp xoay/lật; Escape/Ctrl+Enter/click ngoài/đóng app/copy/xuất. Không lạc vị trí hoặc mất nội dung.
+3. Resize giữ/bỏ tỷ lệ; kiểm tra số pixel đầu ra PNG/JPEG, 100%, zoom/pan và thumbnail. Xoay sau resize phải đổi rộng/cao; crop số vẫn dùng pixel gốc.
+4. Canvas lớn/nhỏ với cả 9 neo; phần tràn bị cắt nhưng khôi phục canvas phải lấy lại đủ ảnh/chú thích. Không tạo annotation trên đệm/viền/khoảng canvas trống.
+5. Viền 0/1/128 px, đệm 0/512 px; nền trong suốt/màu; mẫu Sáng/Tối/Bỏ kiểu; bóng các dấu offset và blur 0/80. Bóng không bị cắt ở cạnh đầu ra.
+6. PNG alpha đúng, JPEG ghép trắng, clipboard/thumbnail cùng bố cục. Vùng che luôn phủ trên chữ/nét ở mọi tổ hợp biến đổi.
+7. Nhập số sai, màu sai, kích thước vượt giới hạn: không thay tài liệu. Reset/undo/redo/mở lại phải khôi phục toàn bộ cấu hình và giữ ảnh gốc.
+8. Mở sidecar schema 1/2/3, sửa rồi lưu schema 4; nâng cấp từ V1.3, kiểm tra backup/URL phát hành, thư mục D và khởi động maximized.

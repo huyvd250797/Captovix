@@ -99,8 +99,8 @@ public partial class MainWindow
         for(int i=0;i<4;i++)if(!int.TryParse(inputs[i],NumberStyles.Integer,CultureInfo.InvariantCulture,out values[i])){SetStatus("Crop: hãy nhập tọa độ và kích thước bằng số nguyên.");return false;}
         if(!Surface.SetCropDraft(new(values[0],values[1],values[2],values[3]))){SetStatus("Crop cần ít nhất 2 × 2 px và nằm trong khung ảnh/crop hiện tại.");return false;}return true;
     }
-    private bool ApplyCropFromFields()=>PreviewCropFields()&&Surface.ApplyCropDraft();
-    private bool PrepareCropForExport()=>_session==null||Surface.Tool!=EditorTool.Crop||ApplyCropFromFields();
+    private bool ApplyCropFromFields(){if(!PreviewCropFields())return false;if(Surface.ApplyCropDraft())return true;SetStatus("Chưa áp dụng crop: kiểm tra giới hạn kích thước đầu ra/khung ảnh.");return false;}
+    private bool PrepareCropForExport(){EndInlineText(true);return _session==null||Surface.Tool!=EditorTool.Crop||ApplyCropFromFields();}
     private void PreviewCrop_Click(object sender,RoutedEventArgs e)=>PreviewCropFields();
     private void ApplyCrop_Click(object sender,RoutedEventArgs e)=>ApplyCropFromFields();
     private void CancelCrop_Click(object sender,RoutedEventArgs e){Surface.CancelInteraction();SelectTool(EditorTool.Select);Surface.Focus();}

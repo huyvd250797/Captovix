@@ -8,11 +8,11 @@ bool Near(double a,double b)=>Math.Abs(a-b)<.00001;
 AnnotationBox Bounds(Annotation a)=>new(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
 EditorDocument Doc()=>new(){OriginalWidth=200,OriginalHeight=100,SourceHash="hash"};
 var legacy=EditorDocument.Deserialize("""{"Version":1,"OriginalWidth":200,"OriginalHeight":100,"SourceHash":"hash","Annotations":[{"Kind":"Arrow","X1":1,"Y1":2,"X2":10,"Y2":20}]}""");
-legacy.Validate(200,100,"hash");Check(legacy.Version==2&&legacy.Annotations[0].EffectSize==24,"V1 sidecars migrate without losing existing geometry or styles");
+legacy.Validate(200,100,"hash");Check(legacy.Version==4&&legacy.Annotations[0].EffectSize==24,"V1 sidecars migrate without losing existing geometry or styles");
 foreach(var kind in new[]{AnnotationKind.Blur,AnnotationKind.Pixelate,AnnotationKind.Cover}){
     var doc=Doc();doc.Annotations.Add(new(){Kind=kind,X1=10,Y1=12,X2=80,Y2=40,EffectSize=40});
     var reopened=EditorDocument.Deserialize(doc.Serialize());reopened.Validate(200,100,"hash");
-    Check(reopened.Version==2&&reopened.Annotations[0].Kind==kind&&reopened.Annotations[0].Copy().EffectSize==40,"Redaction roundtrip and copy: "+kind);
+    Check(reopened.Version==4&&reopened.Annotations[0].Kind==kind&&reopened.Annotations[0].Copy().EffectSize==40,"Redaction roundtrip and copy: "+kind);
 }
 foreach(int size in new[]{0,3,65,int.MaxValue}){var d=Doc();d.Annotations.Add(new(){EffectSize=size});Reject(()=>d.Validate(200,100,"hash"),"Reject effect size "+size);}
 var invalid=Doc();invalid.Annotations.Add(new(){X1=double.PositiveInfinity});Reject(()=>invalid.Validate(200,100,"hash"),"Reject nonfinite mask coordinates");

@@ -1,10 +1,14 @@
-# Captovix V1.2.1 — Installer Path Fix
+# Captovix V1.4.0 — Image Transform & Styling
 
-- Sửa lỗi bộ cài từ chối thư mục mới chưa tồn tại, bao gồm D:\Captovix\Captovix.
-- Thay lệnh NSIS GetFullPathName trong bước xác thực bằng Win32 GetFullPathNameW, chuẩn hóa trước khi tạo thư mục và không yêu cầu thư mục tồn tại.
-- Giữ kiểm tra ổ cục bộ cố định, quyền ghi, thư mục trống và vùng dữ liệu riêng. Tách thông báo để thấy đúng nguyên nhân nếu một kiểm tra khác không đạt.
-- Giữ các tính năng Image Editor UX của V1.2.0, nguồn cập nhật và AppId/schema dữ liệu.
+- Xoay trái/phải 90°, lật ngang/dọc theo ảnh đang hiển thị.
+- Resize ảnh theo pixel, giữ tỷ lệ hoặc nhập riêng rộng/cao; khôi phục cỡ gốc theo crop/xoay hiện tại.
+- Canvas riêng với 9 vị trí đặt ảnh. Canvas nhỏ hơn ảnh cắt phần vượt khung, không xóa dữ liệu gốc.
+- Thêm khoảng đệm, viền, màu nền hoặc nền trong suốt; bóng đổ mềm của khung với độ mềm/lệch/đậm.
+- Mẫu khung Sáng/Tối/Bỏ kiểu. Xem kích thước đầu ra gồm canvas, đệm, viền và bóng.
+- Ảnh/chú thích gốc giữ nguyên tọa độ. Preview, thao tác chuột, inline text, thumbnail, copy và xuất ảnh dùng cùng phép biến đổi; hỗ trợ undo/redo và lưu mở lại.
+- PNG/clipboard giữ trong suốt; JPEG ghép nền trắng ở phần trong suốt. Giới hạn đầu ra 32.768 px mỗi chiều và 100 triệu pixel.
+- Schema 4 mở chú thích schema 1/2/3; không mở ngược file đã lưu bằng app V1.3 trở xuống. Giữ cơ chế backup trước cập nhật.
 
-Để chuyển bản đã cài từ C sang D: đóng app, gỡ Captovix qua Windows Settings, chạy Setup này và chọn D:\Captovix\Captovix. Thư viện ảnh/video giữ tại vị trí hiện có. Nếu V1.2.0 bị chặn trước khi cài, chỉ cần đóng bộ cài cũ và chạy bản này.
+Mở ảnh → bảng bên phải → Ảnh & khung · V1.4. Các trường số/màu áp dụng khi bấm nút Áp dụng của từng nhóm; xoay/lật và preset áp dụng ngay. Bộ cài giữ chức năng chọn thư mục (kể cả D:\Captovix\Captovix), nguồn GitHub mặc định và Editor mở phóng to. Video giữ nguyên tính năng hiện tại.
 
-Chưa thực thi trên Windows thật trong môi trường đóng gói. Kèm harness NSIS kiểm tra chuẩn hóa thư mục mới và checklist Windows.
+Đã chạy kiểm tra logic/tĩnh/SDK và biên dịch Windows x64; chưa chạy UI/render/bộ cài trên Windows thật trong môi trường đóng gói.

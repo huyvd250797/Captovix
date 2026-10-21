@@ -1,20 +1,34 @@
-# Captovix V1.2.1 — Installer Path Fix
+# Captovix V1.4.0 — Image Transform & Styling
 
 Ứng dụng Windows x64 chụp ảnh, quay màn hình và chú thích ảnh trong **một cửa sổ Editor**. Cấu hình chụp/quay nằm ngay trong Editor. © 2026 HuyVo. All rights reserved.
 
 ## Bắt đầu
 
-**Khuyên dùng:** chạy `Captovix-v1.2.1-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
+**Khuyên dùng:** chạy `Captovix-v1.4.0-Setup.exe`, hoàn tất cài đặt rồi mở shortcut **Captovix**. Bộ cài đã kèm .NET runtime; không cần Visual Studio/.NET SDK trên máy người dùng. Nếu thiếu Microsoft Visual C++ Runtime x64, bộ cài chạy thành phần chính thức của Microsoft; bước đó có thể cần quyền quản trị.
 
-**Portable:** giải nén toàn bộ `Captovix-v1.2.1-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
+**Portable:** giải nén toàn bộ `Captovix-v1.4.0-Portable-Windows-x64.zip`, chạy `Launch.cmd` hoặc `Captovix.exe`. Không chạy trực tiếp trong ZIP. Máy cần VC++ Runtime x64. `Install.cmd` chỉ cài VC++ Runtime nếu thiếu rồi mở bản Portable tại thư mục giải nén; không chép app thành bản cài đặt. Muốn cập nhật trong app, dùng Setup.exe. Script kiểm tra chữ ký Microsoft của bản runtime tải về. Internet chỉ cần cho bước tải prerequisite nếu máy còn thiếu.
 
 Máy mục tiêu: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiểm thử thực tế. Windows N/KN cần Media Feature Pack. App chưa có bản x86/ARM64 hoặc chứng thư ký mã thương mại. Không tắt Windows Defender hay cơ chế bảo vệ của máy.
 
-## Sửa lỗi V1.2.1 — Installer Path Fix
+## Image Transform & Styling V1.4
+
+- Mở ảnh, mở **Ảnh & khung · V1.4** ở bảng thuộc tính bên phải.
+- Xoay/lật, đổi kích thước ảnh/canvas; viền/nền/đệm/bóng và mẫu Sáng/Tối.
+- Ảnh gốc và chú thích tiếp tục chỉnh được, không bị ghép phẳng khi áp dụng các thay đổi.
+- Hướng dẫn: [IMAGE-TRANSFORM-STYLING.md](docs/IMAGE-TRANSFORM-STYLING.md).
+- Schema 4 đọc file cũ 1/2/3. Không dùng app V1.3 trở xuống để mở lại file đã lưu bởi V1.4; giữ backup Edits nếu cần quay lại.
+
+## Advanced Annotation V1.3
+
+- Sửa chữ tại ảnh, callout, vẽ tự do; nhân bản, nhóm, sắp xếp trước/sau, chia đều khoảng cách.
+- Hướng dẫn và phím tắt: [ADVANCED-ANNOTATION.md](docs/ADVANCED-ANNOTATION.md).
+- Schema 3 đọc được file cũ; không mở ngược tài liệu mới đã lưu bằng app V1.2 trở xuống. Giữ bản sao Edits trước khi nâng cấp thủ công nếu cần quay lại.
+
+## Sửa lỗi thư mục cài đặt (giữ từ V1.2.1)
 
 - Sửa bước chuẩn hóa đường dẫn để chấp nhận thư mục chưa tồn tại, ví dụ `D:\Captovix\Captovix`. Bộ cài tự tạo thư mục sau khi kiểm tra an toàn.
 - Phân biệt thông báo sai đường dẫn, loại ổ đĩa và trùng thư mục dữ liệu.
-- V1.2.0 nếu chưa cài được: đóng bộ cài cũ, chạy Setup V1.2.1; không cần cài các phiên bản trung gian.
+- V1.2.0 nếu chưa cài được: đóng bộ cài cũ, chạy Setup V1.3.0; không cần cài các phiên bản trung gian.
 
 ## Mới trong V1.2 — Image Editor UX
 
@@ -24,7 +38,7 @@ Máy mục tiêu: Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần kiể
 - Setup có trang chọn thư mục cài, có thể chọn ổ D/E và thư mục riêng có quyền ghi.
 - Xem [IMAGE-EDITOR-UX.md](docs/IMAGE-EDITOR-UX.md) và [INSTALL-LOCATION.md](docs/INSTALL-LOCATION.md).
 
-Muốn chuyển bản đã cài ở ổ C sang ổ khác: gỡ Captovix trong Windows Settings (dữ liệu được giữ), chạy Setup V1.2.1 và chọn thư mục mới. Cập nhật trong app giữ thư mục cài hiện tại. Đổi thư mục cài không di chuyển ảnh/video.
+Muốn chuyển bản đã cài ở ổ C sang ổ khác: gỡ Captovix trong Windows Settings (dữ liệu được giữ), chạy Setup V1.3.0 và chọn thư mục mới. Cập nhật trong app giữ thư mục cài hiện tại. Đổi thư mục cài không di chuyển ảnh/video.
 
 ## Mới trong V1.1 — Image Annotation
 
@@ -36,7 +50,7 @@ Muốn chuyển bản đã cài ở ổ C sang ổ khác: gỡ Captovix trong Wi
 - Giữ undo/redo, tự lưu, ảnh gốc và URL cập nhật mặc định.
 - Hướng dẫn đầy đủ: [IMAGE-ANNOTATION.md](docs/IMAGE-ANNOTATION.md).
 
-Chia sẻ ảnh PNG/JPEG qua **Copy ảnh/Xuất file**. **Che kín** phù hợp khi cần ẩn hoàn toàn; ảnh gốc và tài liệu chỉnh sửa vẫn được giữ để sửa lại. Tài liệu mới dùng schema 2, đọc được dữ liệu V1.0 nhưng không nên mở ngược bằng app V1.0 sau khi lưu mới.
+Chia sẻ ảnh PNG/JPEG qua **Copy ảnh/Xuất file**. **Che kín** phù hợp khi cần ẩn hoàn toàn; ảnh gốc và tài liệu chỉnh sửa vẫn được giữ để sửa lại. Tài liệu mới dùng schema 4, đọc được dữ liệu V1.0 nhưng không nên mở ngược bằng app V1.0 sau khi lưu mới.
 
 ## Sửa lỗi cài đặt V1.0.2
 
@@ -144,7 +158,7 @@ Lịch sử đã có trong Captovix không bị ghi đè khi mở app lần sau.
 
 Đã cross-build Windows x64 và chạy kiểm tra logic ở Linux. Không có Windows desktop thật trong phiên xây dựng để xác nhận UI, clipboard, kết quả render PNG/JPEG, bộ cài, capture, DPI và âm thanh end-to-end. Bộ kiểm tra WPF renderer dành Windows được kèm trong source và workflow, đã biên dịch nhưng chưa chạy tại môi trường bàn giao. Xem `docs/VALIDATION.md` và `docs/WINDOWS-TEST-CHECKLIST.md`.
 
-Chưa có cắt/ghép/chú thích video (lộ trình V1.2), HDR/tone mapping, webcam, OCR, chụp cuộn, lựa chọn từng thiết bị âm thanh, tray. Chưa có rollback dữ liệu tự động, xác thực nguồn private, rollout theo nhóm hoặc kiểm tra chữ ký nhà phát hành của gói. Portable kiểm tra và mở trang tải thủ công; cập nhật trong app cần bản Setup. Nguồn cập nhật đã gắn sẵn; phải phát hành gói có phiên bản cao hơn để app nhận cập nhật. Nội dung bảo vệ và secure desktop/UAC có thể không capture được. Không cam kết phục hồi MP4 đang ghi nếu mất điện/crash. FPS thực tế phụ thuộc GPU/CPU/nguồn chụp, không được suy ra từ giá trị cấu hình. Export ảnh giới hạn 100 triệu pixel để tránh cấp phát bộ nhớ quá lớn.
+Chưa có cắt/ghép/chú thích video (lộ trình V2.0), HDR/tone mapping, webcam, OCR, chụp cuộn, lựa chọn từng thiết bị âm thanh, tray. Chưa có rollback dữ liệu tự động, xác thực nguồn private, rollout theo nhóm hoặc kiểm tra chữ ký nhà phát hành của gói. Portable kiểm tra và mở trang tải thủ công; cập nhật trong app cần bản Setup. Nguồn cập nhật đã gắn sẵn; phải phát hành gói có phiên bản cao hơn để app nhận cập nhật. Nội dung bảo vệ và secure desktop/UAC có thể không capture được. Không cam kết phục hồi MP4 đang ghi nếu mất điện/crash. FPS thực tế phụ thuộc GPU/CPU/nguồn chụp, không được suy ra từ giá trị cấu hình. Export ảnh giới hạn 100 triệu pixel để tránh cấp phát bộ nhớ quá lớn.
 
 ## Build source trên Windows
 
@@ -161,6 +175,7 @@ Script chạy kiểm tra hình học, editor/history/migration, updater và Wind
 ```powershell
 dotnet run --project tests/GeometryChecks/GeometryChecks.csproj -c Release
 dotnet run --project tests/EditorCoreChecks/EditorCoreChecks.csproj -c Release
+dotnet run --project tests/AdvancedAnnotationChecks/AdvancedAnnotationChecks.csproj -c Release
 dotnet run --project tests/EditorWindowsChecks/EditorWindowsChecks.csproj -c Release -p:Platform=x64
 ```
 
@@ -172,4 +187,4 @@ C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, ScreenRecorderLib 7.0.1 (Desktop Dupli
 
 ## Phiên bản tiếp theo
 
-**V1.3 — Advanced Annotation:** sửa chữ trên ảnh, callout/vẽ tự do, nhóm/nhân bản và sắp xếp lớp. Tiếp tục ưu tiên ảnh; công cụ video chuyển sang V2.0.
+**V1.5 — Capture Workflow:** cải thiện luồng chụp, khay hệ thống, phím tắt cấu hình, chụp lại vùng và preset chụp. Tiếp tục ưu tiên ảnh; công cụ video chuyển sang V2.0.

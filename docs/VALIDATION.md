@@ -1,29 +1,21 @@
-# Validation — Captovix V1.2.1
+# Validation — Captovix V1.4.0
 
-## Installer Path Fix — 20/10/2026
+Source đầu vào: Captovix-v1.3.0-Source.zip do Boss cung cấp. SDK 10.0.100, runtime Windows 10.0.13, Velopack SDK/CLI 1.2.161 và ScreenRecorderLib 7.0.1 giữ nguyên.
 
-- Confirmed NSIS v3.08 GetFullPathName checks existence and can clear the output for a nonexistent destination. Replaced destination normalization with Win32 GetFullPathNameW (lexical, no existence check).
-- InstallerContractChecks: 25 static checks passed, including 8 new regressions. These do not execute the Windows installer.
-- InstallerPathChecks.nsi: compiled developer-only harness for 12 Windows path cases, including D:\Captovix\Captovix, a dynamically named missing nested folder, Vietnamese/spaces/trailing separator/parent segments and root/relative/UNC rejection. Not executed on Windows here.
-- WPF publish and NSIS installer compilation completed. Real Velopack package checked with UpdateChecks (core plus SDK integration); package hashes/sizes/version/source and archive contents verified before delivery.
-- No Editor behavior changes from V1.2.0. Windows wizard/custom D destination/write access/upgrade/uninstall still require a real Windows run. Static checks cannot prove those runtime operations.
+## Kiểm tra đã chạy
 
-The previous V1.2.0 validation record follows for context.
+GeometryChecks 12; EditorCoreChecks 38; AnnotationChecks 76; AdvancedAnnotationChecks 49; ImageAppearanceChecks 61; ViewportChecks 48; UpdateChecks core 41; InstallerContractChecks 25: tổng 350 logic/tĩnh. Sau đóng gói có 9 ca SDK trên nupkg thực tế, tổng 359.
 
-# Validation — Captovix V1.2.0
+ImageAppearanceChecks kiểm tra identity/crop translation, 16 tổ hợp xoay/lật, inverse mapping, resize, rotate sau flip, các neo canvas, clipping và hit exclusion, tổng kích thước khung/bóng, JSON schema 1–4, undo/redo/reset, giới hạn cấp phát và 2000 trường hợp ma trận ngẫu nhiên. Các ca viewport tiếp tục có 4000 crop resize ngẫu nhiên.
 
-Source đầu vào: Captovix-v1.1.0-Source(1).zip do người dùng cung cấp. Ngày đóng gói: 20/10/2026.
+Cross-build app và EditorWindowsChecks, publish win-x64 self-contained, biên dịch NSIS. Harness Windows mở rộng để kiểm tra pixel xoay/lật, alpha nền/bóng, kích thước xuất, inspector resize/aspect/reset và phối hợp inline text. Harness chỉ biên dịch tại Linux, chưa thực thi WPF.
 
-## Logic / build
+Kiểm tra gói: phiên bản/AppId/hash/size/feed, URL cập nhật mặc định, DLL payload giống nupkg/Portable, ZIP CRC và whitelist release assets; bản Setup canonical giống file standalone. Không tự Publish GitHub Release.
 
-- GeometryChecks 12; EditorCoreChecks 38; AnnotationChecks 76; ViewportChecks 48; UpdateChecks core 41; InstallerContractChecks 17. Tổng 232 checks logic/tĩnh đã chạy.
-- ViewportChecks bao gồm zoom/pan bounds/anchor, crop rounding/validation/8 handles/ratio, 4000 randomized resize cases và giao dịch crop một bước undo.
-- InstallerContractChecks là kiểm tra tĩnh, không chạy Windows installer. NSIS compilation xác nhận cú pháp/nguồn đóng gói.
-- EditorWindowsChecks bổ sung API pending crop/apply/cancel/export và tiếp tục renderer/preset/annotation checks; chỉ cross-build, không chạy WPF tại đây.
-- Sau khi tạo nupkg, chạy thêm 9 SDK integration checks với bản cài mô phỏng 1.1.0 để phát hiện/tải/xác minh 1.2.0; kiểm tra hash/size/default source/ZIP trước bàn giao.
+## Chưa kiểm chứng trên Windows thật
+
+Chưa chạy chuột/focus/IME khi xoay/lật, renderer WPF, clipboard/JPEG, bộ cài ở D, update restart hoặc capture/audio/DPI end-to-end. Build/logic không thay các kiểm tra này. Xem WINDOWS-TEST-CHECKLIST.md trước dùng rộng.
 
 ## Giới hạn
 
-Chưa có Windows desktop trong môi trường đóng gói: chưa chạy zoom/pan/crop bằng chuột thật, WPF render/clipboard, wizard thư mục/cài D/gỡ hoặc Update.exe. Cần thực hiện WINDOWS-TEST-CHECKLIST.md trước triển khai rộng. Không tự Publish Release GitHub.
-
-Đổi đường dẫn app dùng Setup sau khi gỡ bản managed cũ; updater không tự di chuyển thư mục. Thư viện ảnh/video giữ ở vị trí hiện có. Schema vẫn 2. Bộ cài chưa có Authenticode của HuyVo.
+Schema 4 không mở ngược bằng app V1.3 trở xuống. Canvas nhỏ cắt phần ngoài khung nhưng giữ dữ liệu nguồn. Shadow là bóng mềm của khung chữ nhật. Đầu ra tối đa 32.768 px mỗi chiều và 100 triệu pixel. Chú thích giữ trong tọa độ ảnh gốc; resize không thêm chi tiết ảnh. Cấu hình chưa Áp dụng chưa nằm trong tài liệu. Không có chứng thư Authenticode của HuyVo. Video giữ tính năng hiện tại.

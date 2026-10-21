@@ -67,9 +67,39 @@ internal static class Program
             cropSurface.StartCrop();cropSurface.SetCropDraft(new(5,5,20,20));cropSurface.ClearCropDraft();
             Check(cropSurface.CropDraft==null&&cropSession.Document.Crop==null,"Cancel pending crop leaves image unmodified");
             foreach(var kind in Enum.GetValues<AnnotationKind>()){
-                var sample=new EditorDocument{OriginalWidth=64,OriginalHeight=48};sample.Annotations.Add(new(){Kind=kind,X1=12,Y1=12,X2=52,Y2=38,Text="Chữ",FontSize=16});
+                var sample=new EditorDocument{OriginalWidth=64,OriginalHeight=48};var shape=new Annotation{Kind=kind,X1=12,Y1=8,X2=52,Y2=44,TailX=20,TailY=48,Text="Chữ",FontSize=16};if(kind==AnnotationKind.Freehand){shape.AddPoint(12,8);shape.AddPoint(52,44);}sample.Annotations.Add(shape);
                 Check(EditorRenderer.Render(source,sample).PixelWidth==64,"Render tool: "+kind);
             }
+            var freehand=new Annotation{Kind=AnnotationKind.Freehand,Color="#FF0000",Stroke=4};freehand.AddPoint(10,20);freehand.AddPoint(60,20);freehand.AddPoint(60,50);
+            Check(EditorRenderer.Hit(freehand,new(30,20),2)&&!EditorRenderer.Hit(freehand,new(30,40),2),"Freehand hits actual segments instead of empty bounding-box interiors");
+            var strokeDoc=new EditorDocument{OriginalWidth=80,OriginalHeight=60};strokeDoc.Annotations.Add(freehand);
+            var strokeBytes=Pixels(EditorRenderer.Render(patterned,strokeDoc));int strokePixel=(20*80+30)*4;
+            Check(strokeBytes[strokePixel+2]>230&&strokeBytes[strokePixel]<30,"Freehand is present in full-resolution export");
+            var note=new Annotation{Kind=AnnotationKind.Callout,X1=10,Y1=5,X2=65,Y2=41,TailX=30,TailY=58,Text="Ghi chú",FontSize=12};
+            Check(EditorRenderer.CalloutGeometry(note).FillContains(new Point(30,52))&&EditorRenderer.Hit(note,new(30,52),1),"Callout tail is drawn and selectable");
+            Check(EditorRenderer.Bounds(note).Bottom>=58,"Callout selection bounds include the pointer");
+            strokeDoc.Annotations.Add(note);var rendered=Pixels(EditorRenderer.Render(patterned,strokeDoc));
+            Check(rendered.SequenceEqual(Pixels(EditorRenderer.Render(patterned,EditorDocument.Deserialize(strokeDoc.Serialize())))),"Callout and stroke export roundtrip is pixel-stable");
+            AnnotationEditing.Group(strokeDoc,[freehand.Id,note.Id]);var groupedSurface=new EditorSurface();var groupedSession=new EditorSession(strokeDoc);groupedSurface.Load(patterned,groupedSession);groupedSurface.SelectIds([freehand.Id]);
+            Check(groupedSurface.SelectedIds.Count==2,"Selecting a member on the surface expands its group");
+            double oldTail=note.TailX;groupedSurface.Nudge(1,0);Check(freehand.Points[0].X==11&&note.TailX==oldTail+1,"Group nudge moves stroke points and callout pointer together");
+            groupedSession.Undo();Check(groupedSession.Document.Annotations[0].Points[0].X==10&&groupedSession.Document.Annotations[1].TailX==oldTail,"Group movement has one complete undo");
+            var tinyBytes=new byte[4*3*4];for(int y=0;y<3;y++)for(int x=0;x<4;x++){int n=(y*4+x)*4;tinyBytes[n]=(byte)(x*50);tinyBytes[n+1]=(byte)(y*80);tinyBytes[n+2]=100;tinyBytes[n+3]=255;}
+            var tiny=BitmapSource.Create(4,3,96,96,PixelFormats.Bgra32,null,tinyBytes,4*4);tiny.Freeze();
+            for(int q=0;q<4;q++)for(int fx=0;fx<2;fx++)for(int fy=0;fy<2;fy++){
+                var transformDoc=new EditorDocument{OriginalWidth=4,OriginalHeight=3,Appearance=new(){QuarterTurns=q,FlipHorizontal=fx==1,FlipVertical=fy==1}};
+                var result=EditorRenderer.Render(tiny,transformDoc);var resultPixels=Pixels(result);var layout=new ImageLayout(transformDoc.Viewport,transformDoc.Appearance);bool equal=true;
+                for(int y=0;y<3;y++)for(int x=0;x<4;x++){var rotatedCenter=layout.ToOutput(x+.5,y+.5);int target=((int)Math.Floor(rotatedCenter.Y)*result.PixelWidth+(int)Math.Floor(rotatedCenter.X))*4;equal&=resultPixels.AsSpan(target,4).SequenceEqual(tinyBytes.AsSpan((y*4+x)*4,4));}
+                Check(equal,$"Actual rendered pixel orientation: {q}/{fx}/{fy}");
+            }
+            var styledDoc=new EditorDocument{OriginalWidth=4,OriginalHeight=3,Appearance=new(){Padding=2,BorderWidth=1,BorderColor="#FF0000",Transparent=false,BackgroundColor="#123456"}};
+            var styledBitmap=EditorRenderer.Render(tiny,styledDoc);var styledPixels=Pixels(styledBitmap);int backgroundPixel=(1*styledBitmap.PixelWidth+1)*4;
+            Check(styledBitmap.PixelWidth==10&&styledBitmap.PixelHeight==9,"Export dimensions include exact border and padding");
+            Check(styledPixels[backgroundPixel]==0x56&&styledPixels[backgroundPixel+1]==0x34&&styledPixels[backgroundPixel+2]==0x12,"Canvas background color is rendered in exported pixels");
+            styledDoc.Appearance.Transparent=true;styledPixels=Pixels(EditorRenderer.Render(tiny,styledDoc));Check(styledPixels[backgroundPixel+3]==0,"PNG composition retains transparent padding");
+            styledDoc.Appearance.Shadow=true;styledDoc.Appearance.ShadowBlur=8;styledDoc.Appearance.ShadowX=-4;styledDoc.Appearance.ShadowY=6;
+            var shadowBitmap=EditorRenderer.Render(tiny,styledDoc);Check(shadowBitmap.PixelWidth==26&&shadowBitmap.PixelHeight==25&&Pixels(shadowBitmap).Where((v,index)=>index%4==3).Any(a=>a>0&&a<255),"Soft frame shadow is exported with alpha and full bounds");
+            Check(Pixels(tiny).SequenceEqual(tinyBytes),"Presentation recipe never changes original bitmap bytes");
             originalFile=Path.Combine(Path.GetTempPath(),"Captovix-"+Guid.NewGuid().ToString("N")+".png");var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(source));using(var f=File.Create(originalFile))encoder.Save(f);
             item=new(){Id=Guid.NewGuid().ToString("N"),FilePath=originalFile};var session=DocumentStore.Load(item,source,out _);session.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Step,X1=20,Y1=20}));DocumentStore.Save(item,session,source);
             Check(!session.Dirty&&File.Exists(DocumentStore.EditPath(item.Id)),"Document saves as a sidecar and clears dirty state");
@@ -77,7 +107,31 @@ internal static class Program
             DocumentStore.Delete(item);Check(!File.Exists(DocumentStore.EditPath(item.Id)),"Sidecar cleanup removes the selected item only");
             var app=new App();app.InitializeComponent();var window=new MainWindow();
             Check(window.WindowState==WindowState.Maximized,"Editor starts maximized");
-            Check(window.Title.Contains("Captovix")&&window.Title.Contains("V"+VersionInfo.Current),"Window identity matches the app version");window.Close();
+            Check(window.Title.Contains("Captovix")&&window.Title.Contains("V"+VersionInfo.Current),"Window identity matches the app version");
+            var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+            object? Invoke(string name,params object[] values)=>typeof(MainWindow).GetMethod(name,flags)!.Invoke(window,values);
+            var inlineSession=new EditorSession(new(){OriginalWidth=80,OriginalHeight=60});var textObject=new Annotation{Kind=AnnotationKind.Text,X1=10,Y1=10,Text="Trước",FontSize=16};inlineSession.Document.Annotations.Add(textObject);
+            typeof(MainWindow).GetField("_session",flags)!.SetValue(window,inlineSession);
+            var uiSurface=(EditorSurface)window.FindName("Surface");uiSurface.Load(patterned,inlineSession);uiSurface.SelectIds([textObject.Id]);
+            var input=(System.Windows.Controls.TextBox)window.FindName("InlineText");
+            Invoke("BeginInlineText");input.Text="Bỏ phần nhập";Invoke("EndInlineText",false);
+            Check(inlineSession.Document.Annotations[0].Text=="Trước"&&!inlineSession.CanUndo,"Inline Escape preserves document and history");
+            Invoke("BeginInlineText");input.Text="Sau\nTiếng Việt";Invoke("EndInlineText",true);
+            Check(inlineSession.Document.Annotations[0].Text=="Sau\nTiếng Việt"&&inlineSession.CanUndo,"Inline completion writes the multiline buffer");
+            inlineSession.Undo();Check(inlineSession.Document.Annotations[0].Text=="Trước"&&!inlineSession.CanUndo,"A complete inline edit is exactly one undo entry");inlineSession.Redo();
+            Invoke("BeginInlineText");input.Text="Lưu phần đang gõ";Invoke("FlushEdits",false);
+            Check(inlineSession.Document.Annotations[0].Text=="Lưu phần đang gõ"&&input.Visibility==Visibility.Collapsed,"Save preparation commits an active inline buffer");
+            Invoke("BeginInlineText");input.Text="Xuất phần đang gõ";Check((bool)Invoke("PrepareCropForExport")!&&inlineSession.Document.Annotations[0].Text=="Xuất phần đang gõ","Export preparation includes the latest inline text");
+            Action<ImageAppearance> styleChange=s=>{s.QuarterTurns=1;s.ResizeWidth=40;s.ResizeHeight=80;s.CanvasWidth=60;s.CanvasHeight=90;s.Padding=5;s.BorderWidth=2;s.Transparent=false;};
+            Invoke("ApplyAppearance",styleChange,false);
+            Check(uiSurface.Layout!.Width==74&&uiSurface.Layout.Height==104&&inlineSession.Document.Annotations[0].X1==10,"MainWindow transform changes output dimensions without moving source annotations");
+            var resizeWidth=(System.Windows.Controls.TextBox)window.FindName("ResizeW");var resizeHeight=(System.Windows.Controls.TextBox)window.FindName("ResizeH");resizeWidth.Text="20";
+            Check(resizeHeight.Text=="40","Resize inspector preserves current image aspect ratio");
+            Invoke("ApplyResize_Click",window,new RoutedEventArgs());Check(inlineSession.Document.Appearance.ResizeWidth==20&&inlineSession.Document.Appearance.ResizeHeight==40,"Resize inspector applies numeric output dimensions");
+            inlineSession.Undo();Check(inlineSession.Document.Appearance.ResizeWidth==40,"Resize inspector creates one undo transaction");uiSurface.Refresh();
+            Invoke("ApplyAppearance",(Action<ImageAppearance>)(_=>{}),true);
+            Check(!inlineSession.Document.Appearance.HasEdits&&inlineSession.Document.Annotations.Count==1,"Reset appearance keeps the editable annotation layer");
+            window.Close();
             Console.WriteLine($"{count} Windows renderer/document checks passed. Screen/audio capture remains a manual test.");return 0;
         }catch(Exception ex){Console.Error.WriteLine(ex);return 1;}
         finally{if(item!=null)DocumentStore.Delete(item);if(originalFile!=null)File.Delete(originalFile);}

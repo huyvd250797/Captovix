@@ -1,5 +1,36 @@
 # Captovix changelog
 
+## 1.4.0 — Image Transform & Styling
+
+- Xoay trái/phải 90°, lật ngang/dọc theo ảnh đang hiển thị.
+- Resize ảnh theo pixel, giữ tỷ lệ hoặc nhập riêng rộng/cao; khôi phục cỡ gốc theo crop/xoay hiện tại.
+- Canvas riêng với 9 vị trí đặt ảnh. Canvas nhỏ hơn ảnh cắt phần vượt khung, không xóa dữ liệu gốc.
+- Thêm khoảng đệm, viền, màu nền hoặc nền trong suốt; bóng đổ mềm của khung với độ mềm/lệch/đậm.
+- Mẫu khung Sáng/Tối/Bỏ kiểu. Xem kích thước đầu ra gồm canvas, đệm, viền và bóng.
+- Ảnh/chú thích gốc giữ nguyên tọa độ. Preview, thao tác chuột, inline text, thumbnail, copy và xuất ảnh dùng cùng phép biến đổi; hỗ trợ undo/redo và lưu mở lại.
+- PNG/clipboard giữ trong suốt; JPEG ghép nền trắng ở phần trong suốt. Giới hạn đầu ra 32.768 px mỗi chiều và 100 triệu pixel.
+- Schema 4 mở chú thích schema 1/2/3; không mở ngược file đã lưu bằng app V1.3 trở xuống. Giữ cơ chế backup trước cập nhật.
+
+Mở ảnh → bảng bên phải → Ảnh & khung · V1.4. Các trường số/màu áp dụng khi bấm nút Áp dụng của từng nhóm; xoay/lật và preset áp dụng ngay. Bộ cài giữ chức năng chọn thư mục (kể cả D:\Captovix\Captovix), nguồn GitHub mặc định và Editor mở phóng to. Video giữ nguyên tính năng hiện tại.
+
+Đã chạy kiểm tra logic/tĩnh/SDK và biên dịch Windows x64; chưa chạy UI/render/bộ cài trên Windows thật trong môi trường đóng gói.
+
+
+## 1.3.0 — Advanced Annotation
+
+- Sửa chữ trực tiếp trên ảnh: công cụ T, double-click chữ/callout hoặc F2. Enter xuống dòng, Ctrl+Enter hoàn tất, Escape hủy phần đang nhập. Có thể sửa qua bảng thuộc tính.
+- Callout (Q): kéo hộp chú thích, nhập chữ trực tiếp, kéo tay nắm tại đầu đuôi để đổi điểm chỉ. Chữ tự xuống dòng trong hộp, nội dung vượt chiều cao được cắt trong ảnh xuất; kéo tăng hộp để hiển thị đủ.
+- Vẽ tự do (F): nét nhiều điểm, chọn/kéo/đổi kích thước, đổi màu/nét, lưu/mở lại và xuất PNG/JPEG.
+- Nhân bản Ctrl+D; nhóm Ctrl+G; bỏ nhóm Ctrl+Shift+G. Chọn một thành viên sẽ chọn cả nhóm; nhóm phẳng, gộp các nhóm đã chọn; bản sao có mã nhóm độc lập.
+- Đưa lên/xuống một lớp hoặc trước/sau cùng. Ctrl+] / Ctrl+[; thêm Shift để tới đầu/cuối. Thứ tự được lưu và hoàn tác; vùng che vẫn phủ trên chú thích.
+- Chia đều khoảng cách ngang/dọc của ít nhất ba đối tượng hoặc nhóm. Giữ hai đầu, tính khoảng trống theo kích thước thực tế và giữ nguyên bố cục bên trong nhóm.
+- Undo/redo cho các thao tác mới; giữ tối đa 100 bước và giới hạn bộ nhớ lịch sử. Định dạng chú thích schema 3 đọc được schema 1/2; bản cũ không đọc được file mới đã lưu.
+
+Giữ cơ chế cập nhật có URL mặc định, bộ cài chọn ổ/thư mục đã sửa V1.2.1 và dữ liệu ảnh/video tại nơi hiện có. Mở Editor mặc định phóng to. Video giữ chức năng hiện tại.
+
+Đã chạy kiểm tra logic/SDK, cross-build WPF và biên dịch NSIS. Chưa chạy giao diện, bộ cài hoặc thiết bị chụp/quay trên Windows thật trong môi trường đóng gói.
+
+
 ## 1.2.1 — Installer Path Fix
 
 - Sửa lỗi bộ cài từ chối thư mục mới chưa tồn tại, bao gồm D:\Captovix\Captovix.
