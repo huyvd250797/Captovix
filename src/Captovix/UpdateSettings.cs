@@ -5,6 +5,10 @@ using System.IO;
 namespace Captovix;
 public sealed class UpdateSettings
 {
+    public const string PublisherRepository="https://github.com/huyvd250797/captovix-releases";
+    public const string StableFeed=PublisherRepository+"/releases/latest/download";
+    public string ResolvedFeed()=>SourceKind=="GitHub"?NormalizeUrl()+"/releases/latest/download":NormalizeUrl();
+    public string ReleasePage(){var url=NormalizeUrl();if(SourceKind=="GitHub")return url+"/releases/latest";return new Uri(url).Host.Equals("github.com",StringComparison.OrdinalIgnoreCase)&&url.EndsWith("/releases/latest/download",StringComparison.OrdinalIgnoreCase)?url[..^9]:url;}
     public string SourceKind { get; set; } = "GitHub";
     public string SourceUrl { get; set; } = "";
     public bool AutoCheck { get; set; } = true;
@@ -52,6 +56,7 @@ public static class UpdateSettingsStore
         {
             var s = JsonSerializer.Deserialize<UpdateSettings>(File.ReadAllText(selected)) ?? throw new InvalidDataException("Empty configuration.");
             if (s.IsConfigured) s.SourceUrl = s.NormalizeUrl();
+            if(s.SourceKind=="GitHub"&&s.SourceUrl.Equals(UpdateSettings.PublisherRepository,StringComparison.OrdinalIgnoreCase)){s.SourceKind="Https";s.SourceUrl=UpdateSettings.StableFeed;s.LastCheckUtc=null;s.LastCheckedSource="";}
             return s;
         }
         catch (Exception)
@@ -65,6 +70,7 @@ public static class UpdateSettingsStore
     {
         Directory.CreateDirectory(root);
         var path = Path.Combine(root, "update-settings.json");
+        if(File.Exists(path)&&!File.Exists(path+".pre-v1.11.1.bak"))File.Copy(path,path+".pre-v1.11.1.bak");
         var temp = path + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(settings, Json));
         File.Move(temp, path, true);

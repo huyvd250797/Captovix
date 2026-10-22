@@ -16,6 +16,7 @@ public static class ShapeStudio
     }
     public static void CopyStyle(Annotation from,Annotation to)
     {
+        to.Shadow=from.Shadow.Copy();
         to.FillColor=from.FillColor;to.FillEnabled=from.FillEnabled;to.StrokeEnabled=from.StrokeEnabled;
         to.StrokeOpacity=from.StrokeOpacity;to.FillOpacity=from.FillOpacity;to.Dash=from.Dash;to.CornerRadius=from.CornerRadius;to.StarPoints=from.StarPoints;to.StarInset=from.StarInset;to.Tip=from.Tip;to.DoubleArrow=from.DoubleArrow;to.ArrowHeadSize=from.ArrowHeadSize;
     }

@@ -1,3 +1,18 @@
+# Nghiệm thu V1.11.1 — chưa đánh dấu đạt
+
+- [ ] Mở MainWindow một lần, maximized, không NullReference trước/during InitializeComponent.
+- [ ] Chạy StudioReliabilityWindowsChecks và các harness WPF kế thừa qua Build.cmd.
+- [ ] Từ v1.9 và v1.11: đọc nguồn stable/hiện version 1.11.1; feed mới nằm ngoài 10 releases đầu vẫn nhận; thử offline/404/thiếu gói/hash sai không báo mới nhất.
+- [ ] Cài Setup mới và cập nhật managed app ở D:\Captovix\Captovix; giữ thư viện, phím tắt và chú thích; kiểm tra download/restart/cancel.
+- [ ] Xóa ảnh đầu/giữa/cuối, ảnh đang mở/ảnh khác, video; khôi phục nguyên byte; lỗi quyền/file đang khóa không mất metadata.
+- [ ] Ctrl+wheel zoom theo chuột; wheel cuộn dọc không zoom; Shift+wheel ngang; kiểm tra mixed-DPI 100–200%, monitor âm.
+- [ ] Nhập số nhanh, xóa tạm nội dung, nhập sai/đúng, đổi ảnh/công cụ/selection ngay; live edit không áp sang ảnh/đối tượng khác, Undo theo lần chỉnh.
+- [ ] Viền chụp màu/dày 1/4/128; auto-copy có viền, gốc đúng pixel, xuất tăng 2*dày và sửa/bỏ viền được.
+- [ ] Bảng Viền/Nền trong suốt và màu tùy chọn; shape/text/callout giữ màu riêng, clear không thành màu đen.
+- [ ] Chọn mẫu vuông/bo góc/nét đứt/mũi tên, sao lưu/mở lại/bỏ; chuyển mẫu khi đang chọn đối tượng rồi vẽ tiếp đúng công cụ.
+- [ ] Bóng 9 ô, nhất là ô dưới giữa: bóng thẳng xuống; tâm halo; copy/paste/duplicate/Undo/reopen; crop biên, ảnh 4K/8K nhiều đối tượng.
+- [ ] Giữ các kiểm tra privacy/protected sampling, IME và clipboard thực tế của V1.11 bên dưới.
+
 # V1.6 — Image Fidelity
 
 Thực hiện matrix trong WINDOWS-FIDELITY-MATRIX.md và hướng dẫn IMAGE-FIDELITY.md. Trạng thái bàn giao: CHƯA nghiệm thu Windows thật; không lấy cross-build/unit tests thay thế. Kiểm chứng SDR có nút trong Editor và report trên máy, lặp đủ 100/125/150/175/200%, monitor âm và kéo Editor giữa màn hình.

@@ -10,7 +10,7 @@ public static partial class EditorRenderer
     public static Point LocalPoint(Annotation a,Point p){var b=LocalBox(a);var q=ObjectControl.RotatePoint(new(p.X,p.Y),new(b.CenterX,b.CenterY),-a.Rotation);return new(q.X,q.Y);}
     public static void DrawAnnotation(DrawingContext dc,Annotation a)
     {
-        if(!a.Visible)return;
+        if(!a.Visible)return;DrawObjectShadow(dc,a);
         if(Math.Abs(a.Rotation)<1e-9){DrawLocalAnnotation(dc,a);return;}
         dc.PushTransform(ObjectTransform(a));try{DrawLocalAnnotation(dc,a);}finally{dc.Pop();}
     }

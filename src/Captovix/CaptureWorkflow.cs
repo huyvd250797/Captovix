@@ -13,8 +13,17 @@ public sealed record CaptureHotkey(PhotoAction Action, bool Enabled, uint Modifi
 public sealed record CapturePreset(string Id,string Name,int Mode,string Display,int Delay,bool Cursor,bool Background,bool AutoCopy);
 public sealed record WorkflowDisplay(string Device,PixelRect Bounds,uint DpiX,uint DpiY,string Identity="");
 public sealed record SavedCaptureRegion(PixelRect Bounds,string Topology);
+public sealed class CapturePhotoStyle
+{
+    public int Version {get;set;}=1;
+    public bool BorderEnabled {get;set;}
+    public int BorderWidth {get;set;}=2;
+    public string BorderColor {get;set;}="#26364B";
+    public void Validate(){if(Version!=1||BorderWidth<1||BorderWidth>128||BorderColor is not {Length:7}||BorderColor[0]!='#'||!BorderColor.AsSpan(1).ToString().All(Uri.IsHexDigit))throw new InvalidDataException("Viền chụp cần màu #RRGGBB và độ dày 1–128 px.");}
+}
 public sealed class CaptureWorkflowSettings
 {
+    public CapturePhotoStyle PhotoStyle {get;set;}=new();
     public int SchemaVersion {get;set;}=1;
     public bool CloseToTray {get;set;}
     public bool StartWithWindows {get;set;}
@@ -31,6 +40,7 @@ public static class CaptureWorkflowStore
     public const string FileName="capture-workflow.json";
     public static void Validate(CaptureWorkflowSettings value)
     {
+        if(value.PhotoStyle==null)throw new InvalidDataException("Thiếu cấu hình trình bày ảnh chụp.");value.PhotoStyle.Validate();
         if(value.SchemaVersion!=1)throw new InvalidDataException("Phiên bản cấu hình chụp chưa được hỗ trợ.");
         if(value.Hotkeys==null||value.Hotkeys.Count!=6||value.Hotkeys.Select(h=>h.Action).Distinct().Count()!=6||value.Hotkeys.Any(h=>!Enum.IsDefined(h.Action)))throw new InvalidDataException("Danh sách phím tắt không hợp lệ.");
         var used=new HashSet<(uint,uint)>{(6,0x32),(6,0x33),(6,0x34)};
@@ -51,6 +61,7 @@ public static class CaptureWorkflowStore
     public static void Save(string root,CaptureWorkflowSettings value)
     {
         Validate(value);Directory.CreateDirectory(root);var path=Path.Combine(root,FileName);var temp=path+"."+Guid.NewGuid().ToString("N")+".tmp";
+        if(File.Exists(path)&&!File.Exists(path+".pre-v1.11.1.bak"))File.Copy(path,path+".pre-v1.11.1.bak");
         if(File.Exists(path)&&!File.Exists(path+".pre-v1.9.bak"))File.Copy(path,path+".pre-v1.9.bak");
         try{File.WriteAllText(temp,JsonSerializer.Serialize(value,new JsonSerializerOptions{WriteIndented=true}));File.Move(temp,path,true);}finally{if(File.Exists(temp))File.Delete(temp);}
     }

@@ -53,6 +53,7 @@ public partial class MainWindow
                 var mods=Keyboard.Modifiers;if((mods&ModifierKeys.Windows)!=0){WorkflowStatus.Text="Không dùng phím Windows cho hotkey Captovix.";return;}uint m=((mods&ModifierKeys.Control)!=0?2u:0)|((mods&ModifierKeys.Alt)!=0?1u:0)|((mods&ModifierKeys.Shift)!=0?4u:0);if(!CaptureKeys.IsValid(m,vk)){WorkflowStatus.Text="Tổ hợp chưa hợp lệ. Dùng Ctrl/Alt + chữ, số hoặc dấu; ví dụ Ctrl + `. F12 dành riêng cho Windows.";return;}var draft=new CaptureHotkey(h.Action,true,m,vk);key.Tag=draft;key.Text=draft.Label;enabled.IsChecked=true;};
             row.Children.Add(enabled);row.Children.Add(key);HotkeyRows.Children.Add(row);_keyEditors[h.Action]=(enabled,key);
         }
+        SyncCaptureBorder();
         CaptureButton.ToolTip=_workflow.Hotkeys.First(h=>h.Action==PhotoAction.Current).Label;
     }
     private void PauseKeysForEditing()

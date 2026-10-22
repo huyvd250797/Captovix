@@ -1,8 +1,21 @@
-# Captovix V1.11.0 — Focus & Privacy
+# Captovix V1.11.1 — Update Reliability
 
 Ứng dụng Windows x64 chụp ảnh và chỉnh sửa trong một Editor, mở mặc định phóng to. Ưu tiên ảnh; giữ quay màn hình hiện có, chưa phát triển thêm Editor video. © 2026 HuyVo. All rights reserved.
 
-## Mới trong V1.11.0
+## Mới trong V1.11.1
+
+- Nguồn stable gắn sẵn, đọc feed trực tiếp không bị giới hạn 10 Releases; hiển thị phiên bản nguồn/URL và lỗi rõ ràng.
+- Xóa nội dung từ từng thumbnail, chuyển vào Trash và khôi phục lần xóa vừa rồi.
+- Ctrl+wheel zoom; wheel cuộn dọc; Shift+wheel cuộn ngang.
+- Cấu hình viền cho ảnh chụp mới, màu/dày sửa lại được; PNG gốc không đổi, kích thước xuất tăng theo viền ngoài.
+- Thuộc tính ảnh/đối tượng tự áp dụng; bảng màu Viền/Nền có Trong suốt.
+- Gallery hình/nét/đầu nối hiển thị màu đang dùng; ☆ lưu mẫu ngay trên tile.
+- Bóng riêng cho shape/callout và bóng toàn ảnh có lưới 9 hướng; ô giữa hàng dưới đổ thẳng xuống.
+
+Hướng dẫn đầy đủ: [docs/UPDATE-RELIABILITY.md](docs/UPDATE-RELIABILITY.md). Source và Update-Packages là hai file bàn giao; setup nằm trong Update-Packages. Chưa đăng GitHub, chưa thực thi ứng dụng/cài đặt trên Windows tại nơi build.
+
+## Kế thừa V1.11.0 — Focus & Privacy
+
 
 - **Kính phóng đại (M):** kéo vùng đặt kính tại chỗ, chỉnh 1.25–8×, chữ nhật hoặc ellipse, màu/dày viền và bật/tắt viền. Di chuyển kính để lấy vùng khác; hình ảnh bên trong giữ hướng của ảnh. Kính lấy ảnh gốc đã áp các vùng che đang bật, không lấy chữ/shape chú thích, không tạo thêm chi tiết thật.
 - **Spotlight (O):** giữ sáng vùng chọn, làm tối phần ngoài; chữ nhật/ellipse, màu và độ tối 0–100%. Nhiều vùng sáng được hợp lại; màu/độ tối lấy Spotlight trên cùng. Lớp nền spotlight luôn dưới các chú thích; dùng menu chuột phải sắp xếp các spotlight để chọn style chung.

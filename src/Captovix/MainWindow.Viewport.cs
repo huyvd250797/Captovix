@@ -37,7 +37,10 @@ public partial class MainWindow
     {
         if(_session==null||ImageScroll.Visibility!=Visibility.Visible)return;e.Handled=true;
         if(Surface.IsInteracting||_panActive)return;
-        ZoomAt(EditorViewportMath.WheelZoom(Surface.Zoom,e.Delta),e.GetPosition(ImageScroll));
+        var intent=EditorViewportMath.Intent(Keyboard.Modifiers.HasFlag(ModifierKeys.Control),Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+        if(intent==WheelIntent.Zoom)ZoomAt(EditorViewportMath.WheelZoom(Surface.Zoom,e.Delta),e.GetPosition(ImageScroll));
+        else if(intent==WheelIntent.HorizontalScroll)ImageScroll.ScrollToHorizontalOffset(EditorViewportMath.WheelOffset(ImageScroll.HorizontalOffset,e.Delta,ImageScroll.ScrollableWidth));
+        else ImageScroll.ScrollToVerticalOffset(EditorViewportMath.WheelOffset(ImageScroll.VerticalOffset,e.Delta,ImageScroll.ScrollableHeight));
     }
     private bool ViewportKey(KeyEventArgs e,bool typing)
     {

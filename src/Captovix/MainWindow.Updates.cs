@@ -71,6 +71,7 @@ public partial class MainWindow
         var stage = _updates?.Stage ?? UpdateStage.Idle;
         var working = _updates?.IsWorking == true;
         if (_updates != null) UpdateStatus.Text = _updates.Message;
+        UpdateSourceReadLabel.Text=_updates?.SourceVersion is {} found?$"Phiên bản nguồn: V{found}\nNguồn: {_updates.FeedDescription}":"Chưa đọc được phiên bản từ nguồn.";
         UpdateConfiguration.IsEnabled = !working && stage != UpdateStage.Ready;
         CheckUpdatesButton.IsEnabled = _updates != null && !working && stage != UpdateStage.Ready;
         DownloadUpdateButton.Visibility = stage == UpdateStage.Available && _updates?.CanApply == true ? Visibility.Visible : Visibility.Collapsed;
@@ -167,8 +168,7 @@ public partial class MainWindow
     {
         try
         {
-            var url = _updateSettings.NormalizeUrl();
-            if (_updateSettings.SourceKind == "GitHub") url += "/releases/latest";
+            var url = _updateSettings.ReleasePage();
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Exception ex) { App.Log(ex); MessageBox.Show(this, ex.Message, "Không mở được nguồn phát hành"); }

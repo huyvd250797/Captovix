@@ -1,3 +1,7 @@
+# V1.11.1 — Update Reliability
+
+Đọc releases.win.json từ URL stable được gắn sẵn, bỏ phụ thuộc GitHubSource giới hạn 10 Releases; chẩn đoán phiên bản/URL nguồn, lỗi feed/mạng/hash rõ ràng. Thêm xóa/khôi phục nội dung, Ctrl+wheel zoom, wheel dọc và Shift+wheel ngang; viền chụp không phá hủy, thuộc tính tự áp dụng, palette trong suốt, gallery mẫu có sao và bóng 9 hướng. Schema 10 đọc 1–9, backup trước khi ghi. Xem docs/UPDATE-RELIABILITY.md và docs/VALIDATION.md về phạm vi kiểm chứng, giới hạn và hướng dẫn phát hành.
+
 # V1.11.0 — Focus & Privacy (22/10/2026)
 
 - **Kính phóng đại (M):** kéo vùng đặt kính tại chỗ, chỉnh 1.25–8×, chữ nhật hoặc ellipse, màu/dày viền và bật/tắt viền. Di chuyển kính để lấy vùng khác; hình ảnh bên trong giữ hướng của ảnh. Kính lấy ảnh gốc đã áp các vùng che đang bật, không lấy chữ/shape chú thích, không tạo thêm chi tiết thật.

@@ -14,7 +14,7 @@ public static class UpdateBackup
         {
             using (var zip = ZipFile.Open(temp, ZipArchiveMode.Create))
             {
-                foreach (var name in new[] { "library.json", "settings.json", "update-settings.json", "editor-resume.json", "annotation-presets.json", "capture-workflow.json" })
+                foreach (var name in new[] { "library.json", "settings.json", "update-settings.json", "editor-resume.json", "annotation-presets.json", "capture-workflow.json", "style-favorites.json" })
                 {
                     var source = Path.Combine(root, name);
                     if (File.Exists(source)) zip.CreateEntryFromFile(source, name);

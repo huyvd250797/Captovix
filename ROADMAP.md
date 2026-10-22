@@ -1,3 +1,9 @@
+# V1.11.1 — Update Reliability
+
+Đã triển khai trong source: nguồn stable/hiện version nguồn/lỗi rõ ràng, xóa nội dung có Trash, điều khiển wheel mới, viền chụp, live properties, palette trong suốt, gallery có sao và bóng 9 hướng. Kết quả kiểm chứng và giới hạn Windows xem docs/VALIDATION.md.
+
+**Tiếp theo V1.12 — Selection & Pixel Editing:** chọn vùng chữ nhật/ellipse/lasso; cắt/copy/paste vùng ảnh thành lớp ảnh có thể di chuyển; tô màu, xóa vùng, Undo/Redo; giữ pixel gốc và phân biệt chọn vùng pixel với chọn đối tượng. Các mốc dài hạn bên dưới vẫn là kế hoạch. Video tiếp tục sau nhánh ảnh.
+
 # V1.11.0 — Focus & Privacy
 
 Đã triển khai kính 1.25–8×, spotlight hợp vùng, highlight opacity/hình vùng, mask ellipse/rotate và protected sampling theo tile, 5 preset, review trước chia sẻ. Schema 9 đọc 1–8, backup .pre-v1.11.bak. Logic/build đã kiểm tra trên Linux; kết quả render/input/cài đặt phải nghiệm thu Windows theo docs/FOCUS-PRIVACY.md.

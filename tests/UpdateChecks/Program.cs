@@ -18,6 +18,13 @@ try
         Reject(() => new UpdateSettings { SourceUrl = url }.NormalizeUrl(), "Reject invalid source " + url);
     Check(new UpdateSettings { SourceKind = "Https", SourceUrl = "https://downloads.example.com/captovix/" }.NormalizeUrl() == "https://downloads.example.com/captovix", "Static HTTPS folder");
     Reject(() => new UpdateSettings { SourceKind = "Https", SourceUrl = "https://example.com/releases.win.json" }.NormalizeUrl(), "Reject JSON URL instead of directory");
+    Check(new UpdateSettings{SourceUrl=UpdateSettings.PublisherRepository}.ResolvedFeed()==UpdateSettings.StableFeed,"GitHub source resolves directly to stable feed without release-list paging");
+    var migrate=Path.Combine(root,"migrate");Directory.CreateDirectory(migrate);UpdateSettingsStore.Save(migrate,new(){SourceUrl=UpdateSettings.PublisherRepository,AutoCheck=false});var migrated=UpdateSettingsStore.Load(migrate,"absent",out _);Check(migrated.SourceKind=="Https"&&migrated.SourceUrl==UpdateSettings.StableFeed&&!migrated.AutoCheck,"Migrate publisher source while preserving opt-out");
+    UpdateSettingsStore.Save(migrate,new(){SourceUrl="https://github.com/Custom/Publisher"});Check(UpdateSettingsStore.Load(migrate,"absent",out _).SourceUrl=="https://github.com/Custom/Publisher","Keep custom publisher unchanged");
+    Check(UpdateError.Explain(new HttpRequestException("missing",null,System.Net.HttpStatusCode.NotFound)).Contains("404"),"404 reports missing feed instead of latest version");
+    Check(UpdateError.Explain(new TimeoutException()).Contains("25"),"Timeout reports retryable source error");
+    Check(new UpdateSettings{SourceKind="Https",SourceUrl=UpdateSettings.StableFeed}.ReleasePage()==UpdateSettings.PublisherRepository+"/releases/latest","Portable release button opens a page instead of the feed directory redirect");
+    Check(new UpdateSettings{SourceKind="Https",SourceUrl="https://example.com/feed"}.ReleasePage()=="https://example.com/feed","Custom feed keeps its manual release target");
     var now = DateTimeOffset.UtcNow;
     Check(settings.ShouldAutoCheck(now), "First daily check");
     settings.LastCheckedSource = settings.SourceKey; settings.LastCheckUtc = now;
@@ -126,6 +133,16 @@ try
         rejected = false; try { await sdk.CheckAsync(); } catch { rejected = true; }
         Check(rejected, "Feed without SHA-256 is rejected");
     }
+    // The newest version is deliberately beyond the first ten feed entries.
+    var many=Path.Combine(root,"many");Directory.CreateDirectory(many);
+    var versions=Enumerable.Range(0,15).Select(n=>new {PackageId=VersionInfo.AppId,Version=n==14?"1.11.1":"1.0."+n,Type="Full",FileName="Captovix-"+n+"-full.nupkg",SHA256=new string('A',64),SHA1=new string('B',40),Size=100}).ToArray();
+    File.WriteAllText(Path.Combine(many,"releases.win.json"),JsonSerializer.Serialize(new{Assets=versions}));
+    var manyLocator=new TestVelopackLocator(VersionInfo.AppId,"1.9.0",Path.Combine(root,"many-packages"));
+    var backend=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl=UpdateSettings.StableFeed},manyLocator,"1.9.0",new SimpleFileSource(new DirectoryInfo(many)));
+    Check((await backend.CheckAsync())?.Version=="1.11.1"&&backend.SourceVersion=="1.11.1","Production SDK discovers stable version at feed position15");
+    Check(backend.FeedDescription==UpdateSettings.StableFeed,"Diagnostics show exact resolved stable endpoint");
+    var same=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl=UpdateSettings.StableFeed},manyLocator,"1.11.1",new SimpleFileSource(new DirectoryInfo(many)));var diagnosticSession=new UpdateSession(same);await diagnosticSession.CheckAsync();Check(diagnosticSession.Message.Contains("1.11.1")&&diagnosticSession.SourceVersion=="1.11.1","Up-to-date message displays actual source version");
+    File.WriteAllText(Path.Combine(many,"releases.win.json"),"{\"Assets\":[]}");await diagnosticSession.CheckAsync();Check(diagnosticSession.SourceVersion==null&&diagnosticSession.Message.Contains("Nguồn không có"),"Empty feed is an error rather than a false latest-version result");
     Console.WriteLine($"{passed} update checks passed.");
 }
 finally { Directory.Delete(root, true); }

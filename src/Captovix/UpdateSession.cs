@@ -1,3 +1,4 @@
+using System.Net.Http;
 namespace Captovix;
 
 public enum UpdateStage { Idle, Checking, Available, Downloading, Ready, Applying }
@@ -11,6 +12,17 @@ public interface IUpdateBackend
 }
 
 // All state transitions run on the calling (UI) context. The backend never touches WPF.
+public static class UpdateError
+{
+    public static string Explain(Exception ex)=>ex switch{
+        TimeoutException=>"Nguồn cập nhật phản hồi quá 25 giây; kiểm tra kết nối rồi thử lại.",
+        HttpRequestException h when h.StatusCode==System.Net.HttpStatusCode.NotFound=>"Không tìm thấy feed/gói cập nhật (404). Kiểm tra Release và các file đính kèm.",
+        HttpRequestException h when h.StatusCode==System.Net.HttpStatusCode.Forbidden=>"Nguồn từ chối truy cập (403); kiểm tra repo công khai hoặc giới hạn truy cập.",
+        HttpRequestException=>"Không kết nối được nguồn cập nhật; kiểm tra mạng/proxy rồi thử lại.",
+        System.IO.InvalidDataException=>ex.Message.Length>240?ex.Message[..240]:ex.Message,
+        _=>"Chưa kiểm tra được nguồn cập nhật. Chi tiết được ghi vào errors.log."};
+}
+
 public sealed class UpdateSession(IUpdateBackend backend)
 {
     public UpdateStage Stage { get; private set; }
@@ -19,6 +31,8 @@ public sealed class UpdateSession(IUpdateBackend backend)
     public int Progress { get; private set; }
     public bool IsWorking => Stage is UpdateStage.Checking or UpdateStage.Downloading or UpdateStage.Applying;
     public bool CanApply => backend.CanApply;
+    public string? SourceVersion=>(backend as IUpdateDiagnostics)?.SourceVersion;
+    public string FeedDescription=>(backend as IUpdateDiagnostics)?.FeedDescription??"";
     public event Action? Changed;
     public event Action<Exception>? Failed;
     private void Notify() => Changed?.Invoke();
@@ -31,9 +45,9 @@ public sealed class UpdateSession(IUpdateBackend backend)
         {
             Release = await backend.CheckAsync();
             Stage = Release == null ? UpdateStage.Idle : UpdateStage.Available;
-            Message = Release == null ? "Bạn đang dùng phiên bản mới nhất trên nguồn đã chọn." : $"Có phiên bản mới: V{Release.Version}.";
+            Message = Release == null ? (SourceVersion==null?"Nguồn không trả về bản cập nhật mới hơn.":$"Nguồn đã đọc: V{SourceVersion}. Bản đang dùng không thấp hơn phiên bản trên nguồn.") : $"Có phiên bản mới: V{Release.Version}.";
         }
-        catch (Exception ex) { Stage = UpdateStage.Idle; Message = "Chưa kiểm tra được. Kiểm tra kết nối và nguồn cập nhật rồi thử lại."; Failed?.Invoke(ex); }
+        catch (Exception ex) { Stage = UpdateStage.Idle; Message = UpdateError.Explain(ex); Failed?.Invoke(ex); }
         Notify();
     }
 

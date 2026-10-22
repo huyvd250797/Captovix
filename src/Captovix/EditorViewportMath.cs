@@ -1,7 +1,10 @@
 namespace Captovix;
 
+public enum WheelIntent { VerticalScroll,HorizontalScroll,Zoom }
 public static class EditorViewportMath
 {
+    public static WheelIntent Intent(bool control,bool shift)=>control?WheelIntent.Zoom:shift?WheelIntent.HorizontalScroll:WheelIntent.VerticalScroll;
+    public static double WheelOffset(double offset,int delta,double maximum)=>Math.Clamp(offset-delta/120d*48,0,Math.Max(0,maximum));
     public static double WheelZoom(double current,int delta)=>Math.Clamp(current*Math.Pow(1.2,Math.Clamp(delta/120d,-4,4)),.02,8);
     public static double AnchoredOffset(double currentOffset,double contentOrigin,double sourceAnchor,double newZoom,double viewportAnchor,double maximum)
         =>Math.Clamp(currentOffset+contentOrigin+sourceAnchor*newZoom-viewportAnchor,0,Math.Max(0,maximum));

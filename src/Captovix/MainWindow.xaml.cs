@@ -108,9 +108,10 @@ public partial class MainWindow : Window
             File.Move(actual,final);
             var item=new MediaItem{FilePath=final,Title=(video?"Video ":"Ảnh ")+DateTime.Now.ToString("dd-MM HH:mm:ss"),IsVideo=video,Width=region.Width,Height=region.Height,Source=window?.Title??(s.SourceMode==0?$"Vùng chọn · {region}":s.SourceMode==3?$"Phần tử · {region}":display.Label),Microphone=video&&s.Mic,SystemAudio=video&&s.SystemAudio,Fps=video?s.Fps:0,Seconds=video?clock.Elapsed.TotalSeconds:0};
             if(capturedImage!=null){item.Width=capturedImage.PixelWidth;item.Height=capturedImage.PixelHeight;item.Capture=new(region.Width,region.Height,item.Width,item.Height,window!=null?"Window capture (native output bounds)":"GDI BitBlt · physical pixels · SDR8");}
+            if(capturedImage!=null&&options.PhotoStyle.BorderEnabled){var framed=DocumentStore.Load(item,capturedImage,out _);framed.Change(d=>{d.Appearance.Padding=options.PhotoStyle.BorderWidth;d.Appearance.BorderWidth=options.PhotoStyle.BorderWidth;d.Appearance.BorderColor=options.PhotoStyle.BorderColor;});DocumentStore.Save(item,framed,capturedImage);}
             _store.Add(item);success=true;finalStatus="● Đã lưu nội dung trên máy.";
             if(!video&&s.SourceMode==0){_lastRegion=region;var updated=_workflow.Clone();updated.LastRegion=new(region,topology);if(!_workflowReadOnly)try{SaveWorkflow(updated);}catch(Exception ex){App.Log(ex);finalStatus+=" Chưa lưu được vùng chụp lại.";}}
-            if(!video&&options.AutoCopy)try{ImageTransfer.Copy(MediaStore.LoadImage(final));finalStatus+=" Đã copy ảnh.";}catch(Exception ex){App.Log(ex);finalStatus+=" Clipboard đang bận; ảnh đã được lưu, có thể copy trong Editor.";}
+            if(!video&&options.AutoCopy)try{var original=MediaStore.LoadImage(final);var edits=DocumentStore.Load(item,original,out _);ImageTransfer.Copy(EditorRenderer.Render(original,edits.Document));finalStatus+=" Đã copy ảnh.";}catch(Exception ex){App.Log(ex);finalStatus+=" Clipboard đang bận; ảnh đã được lưu, có thể copy trong Editor.";}
             if(showAfter){SearchBox.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);}
             else{_notificationItem=item.Id;_tray?.Notify(item.Title+" · "+finalStatus+" Nhấp thông báo để mở ảnh.");}
         }catch(OperationCanceledException){finalStatus="Đã hủy phiên capture.";}
@@ -184,13 +185,27 @@ public partial class MainWindow : Window
     }
     private void Rename_Click(object sender,RoutedEventArgs e){if(Selected==null)return;RenameBox.Text=Selected.Title;RenameBox.Visibility=Visibility.Visible;RenameBox.Focus();RenameBox.SelectAll();}
     private void Rename_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Escape)RenameBox.Visibility=Visibility.Collapsed;if(e.Key==Key.Enter&&Selected is { } i&&!string.IsNullOrWhiteSpace(RenameBox.Text)){i.Title=RenameBox.Text.Trim();_store.Save();MediaList.Items.Refresh();DocumentTitle.Text=i.Title;RenameBox.Visibility=Visibility.Collapsed;}}
-    private void Delete_Click(object sender,RoutedEventArgs e)
+    private TrashReceipt? _lastDeleted;
+    private void Delete_Click(object sender,RoutedEventArgs e){if(Selected is {} item)DeleteMedia(item);}
+    private void DeleteMediaTile_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:MediaItem item})DeleteMedia(item);e.Handled=true;}
+    private void DeleteMedia(MediaItem item)
     {
-        if(Selected is not { } i)return;
-        if(MessageBox.Show(this,$"Xóa '{i.Title}', file gốc và bản chú thích khỏi máy?","Xóa nội dung",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
-        if(!FlushEdits())return;VideoPreview.Stop();VideoPreview.Source=null;
-        try{File.Delete(i.FilePath);DocumentStore.Delete(i);UnloadEditor();_store.Items.Remove(i);_store.Save();}
-        catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không xóa được nội dung");}
+        if(_busy||_updateApplying)return;
+        if(MessageBox.Show(this,$"Chuyển '{item.Title}' cùng bản chú thích vào thùng rác Captovix?","Xóa nội dung",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
+        FlushAutoProperties();if(!FlushEdits())return;
+        if(ReferenceEquals(item,Selected)){VideoPreview.Stop();VideoPreview.Source=null;}
+        int index=_store.Items.IndexOf(item);bool active=ReferenceEquals(item,Selected);TrashReceipt? receipt=null;
+        try{
+            var edit=DocumentStore.EditPath(item.Id);var paths=new List<string>{item.FilePath,edit,DocumentStore.ThumbnailPath(item.Id)};if(Directory.Exists(Path.GetDirectoryName(edit)))paths.AddRange(Directory.EnumerateFiles(Path.GetDirectoryName(edit)!,Path.GetFileName(edit)+".*.bak"));
+            receipt=MediaTrash.Move(App.DataRoot,JsonSerializer.Serialize(item),paths);if(active)UnloadEditor();_store.Items.Remove(item);_store.Save();_lastDeleted=receipt;RestoreMediaButton.IsEnabled=true;
+            if(active)MediaList.SelectedItem=_store.Items.ElementAtOrDefault(Math.Max(0,Math.Min(index,_store.Items.Count-1)));SetStatus("Đã chuyển nội dung vào thùng rác · có thể khôi phục lần xóa vừa rồi.");
+        }catch(Exception ex){if(receipt!=null){try{MediaTrash.Restore(receipt);if(!_store.Items.Contains(item))_store.Items.Insert(Math.Clamp(index,0,_store.Items.Count),item);_store.Save();}catch(Exception rollback){App.Log(rollback);}}App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa xóa được nội dung");}
+    }
+    private void RestoreMedia_Click(object sender,RoutedEventArgs e)
+    {
+        if(_lastDeleted==null||_busy||_updateApplying)return;var receipt=_lastDeleted;MediaItem? item=null;bool restored=false;
+        try{item=JsonSerializer.Deserialize<MediaItem>(receipt.Metadata)??throw new InvalidDataException();if(_store.Items.Any(i=>i.Id==item.Id))throw new IOException("Nội dung đã có trong thư viện.");MediaTrash.Restore(receipt);restored=true;_store.Add(item);MediaList.SelectedItem=item;_lastDeleted=null;RestoreMediaButton.IsEnabled=false;SetStatus("Đã khôi phục nội dung và chú thích.");}
+        catch(Exception ex){if(restored){try{if(item!=null)_store.Items.Remove(item);MediaTrash.UndoRestore(receipt);}catch(Exception rollback){App.Log(rollback);}}App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa khôi phục được nội dung");}
     }
     private static void OpenFolder(string path)=>Process.Start(new ProcessStartInfo(path){UseShellExecute=true});
     private void Folder_Click(object sender,RoutedEventArgs e)=>OpenFolder(_store.Root);

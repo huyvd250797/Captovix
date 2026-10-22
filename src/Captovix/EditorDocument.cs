@@ -11,6 +11,7 @@ public sealed class Annotation
     public RegionShape RegionShape {get;set;}
     public double Magnification {get;set;}=2;
     public double FocusOpacity {get;set;}=30.58823529411765;
+    public ObjectShadow Shadow {get;set;}=new();
     public string FontFamily {get;set;}="Segoe UI";
     public bool Bold {get;set;}
     public bool Italic {get;set;}
@@ -66,14 +67,14 @@ public sealed class Annotation
     [JsonIgnore] public double Top=>Math.Min(Y1,Y2);
     [JsonIgnore] public double Width=>Math.Abs(X2-X1);
     [JsonIgnore] public double Height=>Math.Abs(Y2-Y1);
-    public Annotation Copy()=>new(){RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
+    public Annotation Copy()=>new(){Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
     public void Translate(double dx,double dy){X1+=dx;X2+=dx;Y1+=dy;Y2+=dy;if(Control is {} c)Control=new(c.X+dx,c.Y+dy);if(Kind==AnnotationKind.Callout){TailX+=dx;TailY+=dy;}for(int i=0;i<Points.Count;i++)Points[i]=new(Points[i].X+dx,Points[i].Y+dy);}
     public void AddPoint(double x,double y){if(Points.Count>=MaxPoints)return;Points.Add(new(x,y));if(Points.Count==1){X1=X2=x;Y1=Y2=y;}else{X1=Math.Min(X1,x);Y1=Math.Min(Y1,y);X2=Math.Max(X2,x);Y2=Math.Max(Y2,y);}}
 }
 
 public sealed class EditorDocument
 {
-    public int Version {get;set;}=9;
+    public int Version {get;set;}=10;
     public int OriginalWidth {get;set;}
     public int OriginalHeight {get;set;}
     public string SourceHash {get;set;}="";
@@ -88,7 +89,7 @@ public sealed class EditorDocument
     public EditorDocument Clone()=>Deserialize(Serialize());
     public void Validate(int width,int height,string hash)
     {
-        if(Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9))throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
+        if(Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10))throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
         if(OriginalWidth!=width||OriginalHeight!=height||SourceHash!=hash)throw new InvalidDataException("Ảnh gốc đã thay đổi. Bản chú thích cũ được giữ riêng, không tự gán lên ảnh khác.");
         if(Crop is {} c&&(c.IsEmpty||c.X<0||c.Y<0||c.Right>width||c.Bottom>height))throw new InvalidDataException("Vùng crop không hợp lệ.");
         if(Annotations==null||Annotations.Count>10000)throw new InvalidDataException("Số đối tượng vượt giới hạn tài liệu.");
@@ -98,7 +99,7 @@ public sealed class EditorDocument
                 throw new InvalidDataException("Dữ liệu đối tượng chú thích không hợp lệ.");
             if(a.Name==null||a.Name.Length>80||a.Name.Any(char.IsControl)||!double.IsFinite(a.Rotation)||Math.Abs(a.Rotation)>360)throw new InvalidDataException("Tên layer hoặc góc xoay không hợp lệ.");
             ShapeStudio.ValidateStyle(a);if(Version<8)TextStudio.MigrateLegacy(a);
-            TextStudio.Validate(a);FocusStudio.Validate(a);
+            TextStudio.Validate(a);FocusStudio.Validate(a);StudioStyle.Validate(a);
             if(a.GroupId!=null&&!Guid.TryParseExact(a.GroupId,"N",out _))throw new InvalidDataException("Mã nhóm chú thích không hợp lệ.");
             if(!double.IsFinite(a.TailX)||!double.IsFinite(a.TailY)||Math.Abs(a.TailX)>1000000||Math.Abs(a.TailY)>1000000)throw new InvalidDataException("Đuôi callout không hợp lệ.");
             if(a.Points==null||a.Points.Count>Annotation.MaxPoints||(totalPoints+=a.Points.Count)>100000||a.Points.Any(p=>!double.IsFinite(p.X)||!double.IsFinite(p.Y)||Math.Abs(p.X)>1000000||Math.Abs(p.Y)>1000000))throw new InvalidDataException("Nét vẽ vượt giới hạn hoặc không hợp lệ.");
@@ -109,7 +110,7 @@ public sealed class EditorDocument
         ConnectorStudio.Resolve(this);
         if(Appearance==null)throw new InvalidDataException("Thiếu cấu hình ảnh.");
         _=new ImageLayout(Viewport,Appearance);
-        Version=9;
+        Version=10;
     }
     private static bool ValidColor(string color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public bool ApplyCrop(PixelRect crop)

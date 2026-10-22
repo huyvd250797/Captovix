@@ -1,6 +1,6 @@
-Captovix V1.11.0 — Package validation, 22/10/2026
-
-Executed on Linux: 895 logic/static checks including 65 FocusPrivacyChecks; plus 9 real Velopack SDK full-package checks = 904.
-App plus 7 WPF test projects cross-build with 0 warnings/errors. WPF rendering/native mouse/clipboard/IME/DPI are NOT executed on this host. FocusPrivacyWindowsChecks contains compositing and secret-pixel differential tests that still require Windows execution.
-Self-contained Windows x64 publish, full nupkg and NSIS wrapper compile. Packaging verifies CRC, AppId/version, SHA1/SHA256/size feeds, published DLL/docs/runtime/config byte identity, both output ZIPs and unchanged capture/UIA/hotkey/update/install-path foundation against uploaded V1.10.0.
-No GitHub push/Release publish. Windows installation/custom root, update restart, rendering/export privacy, input, capture, DPI and HDR remain acceptance work. No broad privacy certification is claimed.
+Captovix 1.11.1
+Build: .NET10.0.13 Windows x64 self-contained; Velopack1.2.161; NSIS3.08 wrapper.
+Logic/static: 950 checks PASS. WPF app + 8 harness cross-built, not executed on Windows.
+Package integrity verified by scripts/Verify-Packages.py after packing: feed SHA1/SHA256/size, nupkg/source CRC, identity/runtime/config/docs, canonical installer and protected foundation comparison.
+Real package SDK integration: 9 additional checks required; external final verification report records actual result.
+Windows installation/update restart/input/render acceptance remains pending.

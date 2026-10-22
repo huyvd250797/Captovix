@@ -5,10 +5,13 @@ using Velopack.Locators;
 using Velopack.Sources;
 
 namespace Captovix;
-public sealed class VelopackUpdateBackend : IUpdateBackend
+public sealed class VelopackUpdateBackend : IUpdateBackend, IUpdateDiagnostics
 {
     private readonly IUpdateSource _source;
     private readonly IVelopackLocator _locator;
+    private readonly ReliableUpdateSource _snapshot;
+    public string? SourceVersion {get;private set;}
+    public string FeedDescription {get;}
     private readonly UpdateManager _manager;
     private readonly SemanticVersion _current;
     public bool CanApply => _manager.IsInstalled && !_manager.IsPortable && _manager.AppId == VersionInfo.AppId;
@@ -17,28 +20,28 @@ public sealed class VelopackUpdateBackend : IUpdateBackend
     public VelopackUpdateBackend(UpdateSettings settings, IVelopackLocator? locator = null, string? currentVersion = null, IUpdateSource? testSource = null)
     {
         var url = settings.NormalizeUrl();
-        _source = testSource ?? (settings.SourceKind == "GitHub" ? new GithubSource(url, null, false) : new SimpleWebSource(url));
+        FeedDescription=settings.ResolvedFeed();
+        _source = testSource ?? new SimpleWebSource(FeedDescription);
+        _snapshot=new(_source);
         _locator = locator ?? VelopackLocator.Current;
-        _manager = new(_source, new() { ExplicitChannel = VersionInfo.Channel, AllowVersionDowngrade = false }, _locator);
+        _manager = new(_snapshot, new() { ExplicitChannel = VersionInfo.Channel, AllowVersionDowngrade = false }, _locator);
         _current = SemanticVersion.Parse(currentVersion ?? VersionInfo.Current);
     }
 
     public async Task<UpdateRelease?> CheckAsync()
     {
-        if (CanApply)
-        {
-            var info = await _manager.CheckForUpdatesAsync().WaitAsync(TimeSpan.FromSeconds(25));
-            if (info == null) return null;
-            Validate(info.TargetFullRelease);
-            return Describe(info.TargetFullRelease, info);
+        SourceVersion=null;_snapshot.Snapshot=null;
+        var feed=await _source.GetReleaseFeed(_locator.Log,VersionInfo.AppId,VersionInfo.Channel,null,null).WaitAsync(TimeSpan.FromSeconds(25));
+        var latest=feed.Assets.Where(a=>a.PackageId==VersionInfo.AppId&&a.Type==VelopackAssetType.Full&&!a.Version.IsPrerelease).OrderByDescending(a=>a.Version).FirstOrDefault();
+        if(latest==null)throw new InvalidDataException("Nguồn không có gói Captovix stable cho kênh win. Kiểm tra releases.win.json và file .nupkg.");
+        ValidateMetadata(latest);SourceVersion=latest.Version.ToString();_snapshot.Snapshot=feed;
+        if(latest.Version<=_current)return null;
+        if(CanApply){
+            var info=await _manager.CheckForUpdatesAsync().WaitAsync(TimeSpan.FromSeconds(25));
+            if(info==null)throw new InvalidDataException("Feed có bản mới nhưng bộ cài chưa chọn được gói phù hợp. Kiểm tra AppId/kênh và bản cài đang chạy.");
+            Validate(info.TargetFullRelease);return Describe(info.TargetFullRelease,info);
         }
-        // Uninstalled/portable builds can inspect the feed without pretending to be installed.
-        var feed = await _source.GetReleaseFeed(_locator.Log, VersionInfo.AppId, VersionInfo.Channel, null, null).WaitAsync(TimeSpan.FromSeconds(25));
-        var latest = feed.Assets.Where(a => a.PackageId == VersionInfo.AppId && a.Type == VelopackAssetType.Full &&
-                a.Version > _current && !a.Version.IsPrerelease).OrderByDescending(a => a.Version).FirstOrDefault();
-        if (latest == null) return null;
-        Validate(latest);
-        return Describe(latest, latest);
+        Validate(latest);return Describe(latest,latest);
     }
 
     private static UpdateRelease Describe(VelopackAsset asset, object payload) =>
@@ -48,6 +51,11 @@ public sealed class VelopackUpdateBackend : IUpdateBackend
     {
         if (asset.PackageId != VersionInfo.AppId || asset.Type != VelopackAssetType.Full || asset.Version <= _current || asset.Version.IsPrerelease)
             throw new InvalidDataException("Gói không thuộc Captovix stable hoặc không phải phiên bản mới hơn.");
+        ValidateMetadata(asset);
+    }
+
+    private static void ValidateMetadata(VelopackAsset asset)
+    {
         if (string.IsNullOrWhiteSpace(asset.FileName) || asset.FileName.IndexOfAny(['/', '\\', ':']) >= 0 ||
             !asset.FileName.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase) || asset.Size <= 0 ||
             asset.SHA256?.Length != 64 || !asset.SHA256.All(Uri.IsHexDigit))

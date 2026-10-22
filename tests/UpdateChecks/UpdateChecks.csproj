@@ -7,5 +7,5 @@
     <Compile Include="../../src/Captovix/UpdateBackup.cs" Link="UpdateBackup.cs" />
     <Compile Include="../../src/Captovix/VersionInfo.cs" Link="VersionInfo.cs" />
     <Compile Include="../../src/Captovix/VelopackUpdateBackend.cs" Link="VelopackUpdateBackend.cs" />
-  </ItemGroup>
+  <Compile Include="../../src/Captovix/ReliableUpdateSource.cs"/></ItemGroup>
 </Project>
