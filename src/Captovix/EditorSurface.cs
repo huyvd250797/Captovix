@@ -56,6 +56,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public void Refresh()
     {
         RenderOptions.SetBitmapScalingMode(this,ImageFidelity.IsIntegerZoom(PhysicalZoom)?BitmapScalingMode.NearestNeighbor:BitmapScalingMode.HighQuality);
+        if(Session!=null)ConnectorStudio.Resolve(Session.Document);
         var v=Layout;if(v!=null){Width=v.Width*Zoom;Height=v.Height*Zoom;}else{Width=Height=1;}
         if(Session!=null)_selected.UnionWith(AnnotationEditing.ExpandGroups(Session.Document,_selected));
         _selected.RemoveWhere(id=>Session?.Document.Annotations.Any(a=>a.Id==id)!=true);
@@ -67,7 +68,7 @@ public sealed partial class EditorSurface : FrameworkElement
     private AnnotationBox SelectionBox()=>AnnotationEditing.Union(Session!.Document.Annotations.Where(a=>_selected.Contains(a.Id)).Select(EditorRenderer.Box));
     private Point[] Handles()=>ObjectHandles();
     private bool ShowHandle(int i)=>!(_selected.Count==1&&Selected?.Kind is AnnotationKind.Text or AnnotationKind.Step)||i%2==0;
-    private int HitHandle(Point p){if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return -1;if((RotationHandle()-p).Length<=10/InteractionScale)return 9;var handles=Handles();for(int i=0;i<handles.Length;i++)if(ShowHandle(i)&&(handles[i]-p).Length<=9/InteractionScale)return i;return -1;}
+    private int HitHandle(Point p){if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return -1;if(!(Selected is {} line&&ConnectorStudio.IsPath(line))&&(RotationHandle()-p).Length<=10/InteractionScale)return 9;var handles=Handles();for(int i=0;i<handles.Length;i++)if(ShowHandle(i)&&(handles[i]-p).Length<=9/InteractionScale)return i;return -1;}
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);dc.DrawRectangle(Brushes.Transparent,null,new Rect(0,0,ActualWidth,ActualHeight));if(Original==null||Session==null)return;var view=Session.Document.Viewport;
@@ -129,7 +130,9 @@ public sealed partial class EditorSurface : FrameworkElement
                 if(!additive&&!_selected.Contains(hit.Id))_selected.Clear();_selected.UnionWith(hitIds);_primary=hit.Id;
                 SelectionChanged?.Invoke();
                 if(e.ClickCount==2&&hit.Kind is AnnotationKind.Text or AnnotationKind.Callout){TextRequested?.Invoke();e.Handled=true;return;}
+                Session.Begin();
                 _originals=Session.Document.Annotations.Where(a=>_selected.Contains(a.Id)).Select(a=>a.Copy()).ToArray();_dragBounds=SelectionBox();PrepareObjectGesture();
+                if(_handle<0||_handle==9||_selected.Count>1)foreach(var original in _originals){if(original.StartAnchor is {} start&&!_selected.Contains(start.TargetId))original.StartAnchor=null;if(original.EndAnchor is {} end&&!_selected.Contains(end.TargetId))original.EndAnchor=null;}
                 Session.Begin();_action=_handle==9?DragAction.Rotate:_handle>=0?DragAction.Resize:DragAction.Move;
             }
         }else if(Tool==EditorTool.Crop){
@@ -141,7 +144,7 @@ public sealed partial class EditorSurface : FrameworkElement
             _pointBudget=100000-Session.Document.Annotations.Sum(a=>a.Points.Count);
             if(Session.Document.Annotations.Count>=10000||Tool==EditorTool.Freehand&&_pointBudget<1){e.Handled=true;return;}
             Session.Begin();var a=new Annotation{Kind=Tool==EditorTool.Shape?ShapeKind:Enum.Parse<AnnotationKind>(Tool.ToString()),X1=_start.X,Y1=_start.Y,X2=_start.X,Y2=_start.Y,Color=InkColor,Stroke=StrokeSize,FontSize=TextSize,EffectSize=EffectSize};
-            ShapeStudio.CopyStyle(ShapeDefaults,a);
+            ShapeStudio.CopyStyle(ShapeDefaults,a);BeginConnector(a);
             if(Tool==EditorTool.Step)a.Number=Session.Document.NextStep();if(Tool is EditorTool.Text or EditorTool.Callout)a.Text="Nhập nội dung";
             if(Tool==EditorTool.Freehand)a.AddPoint(_start.X,_start.Y);
             Session.Document.Annotations.Add(a);_selected.Clear();_selected.Add(a.Id);_primary=_createdId=a.Id;SelectionChanged?.Invoke();
@@ -171,7 +174,7 @@ public sealed partial class EditorSurface : FrameworkElement
             var end=p;
             if(shift&&ShapeStudio.IsLine(created.Kind))end=ConstrainArrow(_start,p);
             else if(shift){double side=Math.Min(Math.Abs(p.X-_start.X),Math.Abs(p.Y-_start.Y));end=new(_start.X+Math.Sign(p.X-_start.X)*side,_start.Y+Math.Sign(p.Y-_start.Y)*side);}
-            created.X2=end.X;created.Y2=end.Y;
+            created.X2=end.X;created.Y2=end.Y;if(ShapeStudio.IsLine(created.Kind))EndConnector(created,end);
             if(created.Kind==AnnotationKind.Callout){var v=Session.Document.Viewport;created.TailX=Math.Clamp(created.Left+created.Width*.2,v.X,v.Right);created.TailY=Math.Clamp(created.Top+created.Height+Math.Max(20,created.Height*.3),v.Y,v.Bottom);}
         }else if(_action==DragAction.Move){
             double dx=p.X-_start.X,dy=p.Y-_start.Y;
@@ -181,7 +184,7 @@ public sealed partial class EditorSurface : FrameworkElement
         }else if(_action==DragAction.Resize){ResizeObjectSelection(p,shift);}
         else if(_action==DragAction.Rotate){RotateObjectSelection(p,shift);}
 
-        InvalidateVisual();
+        ConnectorStudio.Resolve(Session.Document);InvalidateVisual();
     }
     private Point ConstrainArrow(Point start,Point end)
     {
@@ -226,6 +229,6 @@ public sealed partial class EditorSurface : FrameworkElement
     public void Nudge(double x,double y)
     {
         if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return;var ids=_selected.ToHashSet();var delta=Layout!.SourceDelta(x,y);var move=AnnotationEditing.ClampMove(SelectionBox(),Session.Document.Viewport,delta.X,delta.Y);
-        Session.Commit();Session.Change(d=>{foreach(var a in d.Annotations.Where(a=>ids.Contains(a.Id)))a.Translate(move.X,move.Y);});Refresh();SelectionChanged?.Invoke();
+        Session.Commit();Session.Change(d=>{ConnectorStudio.DetachForTransform(d,ids);foreach(var a in d.Annotations.Where(a=>ids.Contains(a.Id)))a.Translate(move.X,move.Y);});Refresh();SelectionChanged?.Invoke();
     }
 }

@@ -1,3 +1,14 @@
+# V1.9.0 — Arrows & Connectors (22/10/2026)
+
+- Route Straight/Elbow/Curve trên Arrow/Line; control point, anchor target ID/U/V, cập nhật endpoint trước commit; clone/remap/detach/delete/Undo.
+- Schema 7 và backup sidecar .pre-v1.9.bak; giữ capture/image fidelity và startup readiness guard V1.8.1.
+- Hỗ trợ OEM punctuation gồm Ctrl+OEM_3 (`), label chính xác, validate ngay lúc nhập; vẫn đăng ký global hotkey qua RegisterHotKey/MOD_NOREPEAT, xung đột phục hồi cấu hình cũ.
+- Action Element/SourceMode 3, UIA MTA helper process có timeout, highlight click-through, con lăn cha/con, giữ-kéo fallback; dọn hook/process/overlay khi hoàn tất/hủy.
+- Đưa nhóm, sắp xếp lớp, căn và chia đều khỏi inspector vào menu chuột phải canvas; khóa/ẩn/copy/export tại menu.
+- Bổ sung ConnectorChecks, ConnectorWindowsChecks và checklist Windows. Chỉ công bố test logic và cross-build; nghiệm thu desktop chưa chạy.
+
+## Lịch sử phiên bản trước
+
 ## V1.8.1 — Startup Recovery (22/10/2026)
 
 Sửa NullReferenceException tại SyncProperties khi ComboBox phát SelectionChanged trong InitializeComponent. Callback chỉ chạy sau khi hoàn tất dựng XAML và nối các thành phần Editor; chặn đồng bộ lồng nhau. Giữ schema 6, ảnh gốc, sidecar, preset, URL update và đường dẫn cài.

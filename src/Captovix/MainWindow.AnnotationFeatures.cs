@@ -24,7 +24,6 @@ public partial class MainWindow
         var filters=Surface.Tool is EditorTool.Blur or EditorTool.Pixelate or EditorTool.Cover||_session?.Document.Annotations.Any(a=>Surface.SelectedIds.Contains(a.Id)&&a.IsRedaction)==true;
         EffectProperties.Visibility=filters?Visibility.Visible:Visibility.Collapsed;
         EffectPicker.IsEnabled=Surface.Tool is EditorTool.Blur or EditorTool.Pixelate||_session?.Document.Annotations.Any(a=>Surface.SelectedIds.Contains(a.Id)&&a.Kind is AnnotationKind.Blur or AnnotationKind.Pixelate)==true;
-        AlignmentPanel.IsEnabled=Surface.SelectedIds.Count>0;
         MultiSelectionHint.Visibility=Surface.SelectedIds.Count>1?Visibility.Visible:Visibility.Collapsed;
     }
     private void ChangeSelected(Action<Annotation> change)

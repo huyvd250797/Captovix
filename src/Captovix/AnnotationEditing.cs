@@ -56,9 +56,11 @@ public static class AnnotationEditing
         if(!ObjectControl.CanEdit(doc,ids))return [];
         var all=ExpandGroups(doc,ids);var originals=doc.Annotations.Where(a=>all.Contains(a.Id)).ToArray();
         if(doc.Annotations.Count+originals.Length>10000||doc.Annotations.Sum(a=>a.Points.Count)+originals.Sum(a=>a.Points.Count)>100000)throw new InvalidOperationException("Nhân bản vượt giới hạn tài liệu.");
-        var groupMap=new Dictionary<string,string>();var result=new HashSet<string>();
+        var idMap=originals.ToDictionary(a=>a.Id,_=>Guid.NewGuid().ToString("N"));var groupMap=new Dictionary<string,string>();var result=new HashSet<string>();
         var delta=ClampMove(Union(originals.Select(bounds)),doc.Viewport,16,16);
-        foreach(var a in originals){var copy=a.Copy();copy.Id=Guid.NewGuid().ToString("N");
+        foreach(var a in originals){var copy=a.Copy();copy.Id=idMap[a.Id];
+            copy.StartAnchor=copy.StartAnchor is {} start&&idMap.TryGetValue(start.TargetId,out var startId)?start with{TargetId=startId}:null;
+            copy.EndAnchor=copy.EndAnchor is {} end&&idMap.TryGetValue(end.TargetId,out var endId)?end with{TargetId=endId}:null;
             if(copy.GroupId is {} group){if(!groupMap.ContainsKey(group))groupMap[group]=Guid.NewGuid().ToString("N");copy.GroupId=groupMap[group];}
             copy.Translate(delta.X,delta.Y);doc.Annotations.Add(copy);result.Add(copy.Id);
         }return result;
@@ -124,6 +126,8 @@ public static class AnnotationEditing
     public static void Transform(Annotation target,Annotation original,AnnotationBox from,AnnotationBox to)
     {
         target.Rotation=original.Rotation;
+        var control=original.Control??(ConnectorStudio.IsPath(original)&&original.Route!=ConnectorRoute.Straight?ConnectorStudio.Control(original):(AnnotationPoint?)null);
+        target.Control=control is {} c?new(to.X+(c.X-from.X)*to.Width/Math.Max(1,from.Width),to.Y+(c.Y-from.Y)*to.Height/Math.Max(1,from.Height)):null;
         var sx=to.Width/Math.Max(1,from.Width);var sy=to.Height/Math.Max(1,from.Height);
         target.X1=to.X+(original.X1-from.X)*sx;target.X2=to.X+(original.X2-from.X)*sx;
         target.Y1=to.Y+(original.Y1-from.Y)*sy;target.Y2=to.Y+(original.Y2-from.Y)*sy;

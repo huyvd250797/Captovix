@@ -8,6 +8,10 @@ public enum AnnotationKind { Arrow, Rectangle, Ellipse, Text, Highlight, Step, B
 public readonly record struct AnnotationPoint(double X,double Y);
 public sealed class Annotation
 {
+    public ConnectorRoute Route {get;set;}
+    public AnnotationPoint? Control {get;set;}
+    public ConnectorAnchor? StartAnchor {get;set;}
+    public ConnectorAnchor? EndAnchor {get;set;}
     public string Name {get;set;}="";
     public bool Locked {get;set;}
     public bool Visible {get;set;}=true;
@@ -46,14 +50,14 @@ public sealed class Annotation
     [JsonIgnore] public double Top=>Math.Min(Y1,Y2);
     [JsonIgnore] public double Width=>Math.Abs(X2-X1);
     [JsonIgnore] public double Height=>Math.Abs(Y2-Y1);
-    public Annotation Copy()=>new(){Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
-    public void Translate(double dx,double dy){X1+=dx;X2+=dx;Y1+=dy;Y2+=dy;if(Kind==AnnotationKind.Callout){TailX+=dx;TailY+=dy;}for(int i=0;i<Points.Count;i++)Points[i]=new(Points[i].X+dx,Points[i].Y+dy);}
+    public Annotation Copy()=>new(){Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
+    public void Translate(double dx,double dy){X1+=dx;X2+=dx;Y1+=dy;Y2+=dy;if(Control is {} c)Control=new(c.X+dx,c.Y+dy);if(Kind==AnnotationKind.Callout){TailX+=dx;TailY+=dy;}for(int i=0;i<Points.Count;i++)Points[i]=new(Points[i].X+dx,Points[i].Y+dy);}
     public void AddPoint(double x,double y){if(Points.Count>=MaxPoints)return;Points.Add(new(x,y));if(Points.Count==1){X1=X2=x;Y1=Y2=y;}else{X1=Math.Min(X1,x);Y1=Math.Min(Y1,y);X2=Math.Max(X2,x);Y2=Math.Max(Y2,y);}}
 }
 
 public sealed class EditorDocument
 {
-    public int Version {get;set;}=6;
+    public int Version {get;set;}=7;
     public int OriginalWidth {get;set;}
     public int OriginalHeight {get;set;}
     public string SourceHash {get;set;}="";
@@ -68,7 +72,7 @@ public sealed class EditorDocument
     public EditorDocument Clone()=>Deserialize(Serialize());
     public void Validate(int width,int height,string hash)
     {
-        if(Version is not (1 or 2 or 3 or 4 or 5 or 6))throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
+        if(Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7))throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
         if(OriginalWidth!=width||OriginalHeight!=height||SourceHash!=hash)throw new InvalidDataException("Ảnh gốc đã thay đổi. Bản chú thích cũ được giữ riêng, không tự gán lên ảnh khác.");
         if(Crop is {} c&&(c.IsEmpty||c.X<0||c.Y<0||c.Right>width||c.Bottom>height))throw new InvalidDataException("Vùng crop không hợp lệ.");
         if(Annotations==null||Annotations.Count>10000)throw new InvalidDataException("Số đối tượng vượt giới hạn tài liệu.");
@@ -84,9 +88,11 @@ public sealed class EditorDocument
             if(a.Kind==AnnotationKind.Freehand&&a.Points.Count==0||a.Kind!=AnnotationKind.Freehand&&a.Points.Count!=0)throw new InvalidDataException("Dữ liệu điểm không phù hợp công cụ.");
             if(a.Kind==AnnotationKind.Callout&&(a.Width<36||a.Height<36))throw new InvalidDataException("Hộp callout quá nhỏ.");
         }
+        var targets=Annotations.ToDictionary(a=>a.Id);foreach(var a in Annotations)ConnectorStudio.Validate(a,targets);
+        ConnectorStudio.Resolve(this);
         if(Appearance==null)throw new InvalidDataException("Thiếu cấu hình ảnh.");
         _=new ImageLayout(Viewport,Appearance);
-        Version=6;
+        Version=7;
     }
     private static bool ValidColor(string color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public bool ApplyCrop(PixelRect crop)
@@ -112,10 +118,10 @@ public sealed class EditorSession
     public event Action? Changed;
     public EditorSession(EditorDocument document,int historyCharBudget=8_000_000){Document=document;_historyCharBudget=Math.Max(1024,historyCharBudget);}
     private void TrimHistory(List<string> entries){long chars=entries.Sum(s=>(long)s.Length);while(entries.Count>1&&(entries.Count>100||chars>_historyCharBudget)){chars-=entries[0].Length;entries.RemoveAt(0);}}
-    public void Begin(){_before??=Document.Serialize();}
+    public void Begin(){ConnectorStudio.Resolve(Document);_before??=Document.Serialize();}
     public void Commit()
     {
-        if(_before==null)return;var before=_before;_before=null;
+        if(_before==null)return;ConnectorStudio.Resolve(Document);var before=_before;_before=null;
         if(before==Document.Serialize())return;
         _undo.Add(before);TrimHistory(_undo);_redo.Clear();Dirty=true;Changed?.Invoke();
     }

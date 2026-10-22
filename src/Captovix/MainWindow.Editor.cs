@@ -29,6 +29,7 @@ public partial class MainWindow
         InitializeObjectControl();
         InitializeShapeStudio();
         InitializeAnnotationFeatures();
+        InitializeCanvasMenu();
         // XAML raises selection events before later named controls exist.
         // Enable callbacks only after all editor subsystems have been wired.
         _editorReady=true;
@@ -94,7 +95,7 @@ public partial class MainWindow
         ToolHint.Text=tool switch{
             EditorTool.Select=>"Shift/Ctrl+click chọn nhiều • Alt+click chọn lớp dưới • Tay nắm tròn xoay • Shift khóa hướng/tỷ lệ/góc 15° • Con lăn zoom • Space kéo khung nhìn",
             EditorTool.Shape=>"Chọn hình và viền/nền ở bảng thuộc tính → kéo để vẽ • Shift giữ tỷ lệ • V để chọn và sửa lại.",
-            EditorTool.Line or EditorTool.Arrow=>"Kéo để vẽ • Shift khóa hướng mỗi 45° • V để sửa đầu mút; chỉnh kiểu nét và đầu mũi tên bên phải.",
+            EditorTool.Line or EditorTool.Arrow=>"Chọn thẳng/gấp khúc/cong bên phải • Kéo từ shape sang shape để nối • Kéo để vẽ • Shift khóa hướng mỗi 45° • V để sửa đầu mút; chỉnh kiểu nét và đầu mũi tên bên phải.",
             EditorTool.Text=>"Click trên ảnh để nhập chữ trực tiếp • Double-click chữ để sửa • Ctrl+Enter hoàn tất, Esc hủy.",
             EditorTool.Callout=>"Kéo hộp để tạo callout và nhập chữ • Chọn rồi kéo tay nắm ở đầu đuôi để đổi điểm chỉ • Double-click sửa chữ.",
             EditorTool.Freehand=>"Giữ chuột trái để vẽ tự do • Thả chuột kết thúc nét • Esc hủy nét đang vẽ.",

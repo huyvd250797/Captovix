@@ -53,17 +53,7 @@ public partial class MainWindow
     }
     private void InlineText_LostFocus(object sender,KeyboardFocusChangedEventArgs e){if(!InlineText.IsKeyboardFocusWithin)EndInlineText(true);}
     private void EditOnImage_Click(object sender,RoutedEventArgs e)=>BeginInlineText();
-    private void SyncAdvancedAnnotation()
-    {
-        if(DuplicateObjectButton==null)return;
-        bool active=_session!=null&&ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)&&Surface.Tool!=EditorTool.Crop;
-        DuplicateObjectButton.IsEnabled=OrderPanel.IsEnabled=active;
-        var units=_session==null?[]:AnnotationEditing.Units(_session.Document,Surface.SelectedIds);
-        GroupObjectButton.IsEnabled=active&&units.Length>1;
-        UngroupObjectButton.IsEnabled=active&&units.Any(u=>u.Any(a=>a.GroupId!=null));
-        DistributePanel.IsEnabled=active&&units.Length>=3;
-        SelectionSummary.Text=!active?"Chọn đối tượng để sắp xếp.":$"{Surface.SelectedIds.Count} đối tượng · {units.Length} phần tử/nhóm";
-    }
+    private void SyncAdvancedAnnotation()=>SyncConnectorTools();
     private void ObjectCommand(string command)
     {
         if(_session==null||Surface.Tool==EditorTool.Crop||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds))return;
@@ -77,7 +67,7 @@ public partial class MainWindow
             }else if(command=="Ungroup"){
                 _session.Change(d=>AnnotationEditing.Ungroup(d,ids));Surface.SelectIds(ids);
             }else if(command is "Horizontal" or "Vertical"){
-                bool changed=false;_session.Change(d=>changed=AnnotationEditing.Distribute(d,ids,command=="Horizontal",EditorRenderer.Box));
+                bool changed=false;_session.Change(d=>{changed=AnnotationEditing.Distribute(d,ids,command=="Horizontal",EditorRenderer.Box);if(changed)ConnectorStudio.DetachForTransform(d,ids);});
                 if(!changed)SetStatus("Chọn ít nhất 3 đối tượng/nhóm và để đủ khoảng trống giữa hai đầu để chia đều.");
             }else{
                 _session.Change(d=>AnnotationEditing.Reorder(d,ids,Enum.Parse<AnnotationOrder>(command)));

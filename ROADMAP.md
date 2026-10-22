@@ -1,3 +1,7 @@
+# V1.9.0 — Triển khai Arrows & Connectors
+
+22/10/2026: đã triển khai route/control/anchor, hotkey OEM và chụp phần tử UIA; chuyển các lệnh sắp xếp sang context menu. Logic/build được kiểm tra trên Linux, chờ nghiệm thu Windows thật theo docs/ARROWS-CAPTURE-WORKFLOW.md. Gấp khúc một trục và cong một control; không có auto-routing tránh vật cản. Element capture phụ thuộc provider, có window/manual fallback.
+
 ## V1.8.1 — Startup Recovery (22/10/2026)
 
 Sửa NullReferenceException tại SyncProperties khi ComboBox phát SelectionChanged trong InitializeComponent. Callback chỉ chạy sau khi hoàn tất dựng XAML và nối các thành phần Editor; chặn đồng bộ lồng nhau. Giữ schema 6, ảnh gốc, sidecar, preset, URL update và đường dẫn cài.
@@ -6,7 +10,7 @@ Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chư
 
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9–V1.20 là kế hoạch, chưa triển khai. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
+Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9 đã triển khai và chờ nghiệm thu Windows; V1.10–V1.20 là kế hoạch, chưa triển khai. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
 
 ## 1. Định hướng mới
 
@@ -38,7 +42,7 @@ Ví dụ nghiệm thu: vẽ rectangle nền vàng nhạt, viền đỏ nét đ�
 
 ## 4. Roadmap tổng thể
 
-V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.8 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, các mốc từ V1.9 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
+V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.8 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.9 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; các mốc từ V1.10 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật và dữ liệu | Điều kiện hoàn thành | Phụ thuộc/thứ tự |
 |---|---|---|---|---|---|
@@ -123,4 +127,4 @@ Chỉ hai file theo yêu cầu Boss:
 
 Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
 
-Bản tiếp theo: V1.9 — Arrows, Lines & Connectors. Mũi tên gấp khúc/cong, điểm điều khiển, connector bám shape theo ID. Giữ liên kết khi kéo/resize, lưu/mở, nhân bản/xóa và Undo; vẫn ưu tiên ảnh, video để sau.
+Bản tiếp theo: V1.10 — Text & Callout Studio. Font/kiểu chữ/căn dòng, padding, kiểu callout và chỉnh đuôi, step marker/tự đánh số; kiểm tra IME tiếng Việt, zoom/xoay/lưu/xuất không cắt chữ. Video vẫn để sau.

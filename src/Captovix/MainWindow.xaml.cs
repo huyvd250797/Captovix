@@ -39,7 +39,7 @@ public partial class MainWindow : Window
     private void Initialize()
     {
         if(_loaded)return;
-        RefreshSources();var s=_store.LoadSettings();SourceMode.SelectedIndex=Math.Clamp(s.SourceMode,0,2);
+        RefreshSources();var s=_store.LoadSettings();SourceMode.SelectedIndex=Math.Clamp(s.SourceMode,0,3);
         DelayPicker.SelectedIndex=s.Delay==5?2:s.Delay==3?1:0;FpsPicker.SelectedIndex=s.Fps==60?2:s.Fps==15?0:1;
         Surface.SnapEnabled=s.ObjectSnap;ObjectSnapToggle.IsChecked=s.ObjectSnap;
         CursorToggle.IsChecked=s.Cursor;MicToggle.IsChecked=s.Mic;SystemToggle.IsChecked=s.SystemAudio;HardwareToggle.IsChecked=s.Hardware;
@@ -73,7 +73,8 @@ public partial class MainWindow : Window
         try {
             Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();_playing=false;
             _captureCancellation=new();var cancellation=_captureCancellation.Token;RegisterCaptureEscape();
-            var s=Settings();if(!video){if(action is PhotoAction.Region or PhotoAction.Repeat)s.SourceMode=0;else if(action==PhotoAction.Window)s.SourceMode=1;else if(action==PhotoAction.Display)s.SourceMode=2;}
+            var s=Settings();if(!video){if(action is PhotoAction.Region or PhotoAction.Repeat)s.SourceMode=0;else if(action==PhotoAction.Window)s.SourceMode=1;else if(action==PhotoAction.Display)s.SourceMode=2;else if(action==PhotoAction.Element)s.SourceMode=3;}
+            if(video&&s.SourceMode==3)throw new InvalidOperationException("Chụp phần tử chỉ dành cho ảnh. Chọn vùng, cửa sổ hoặc toàn màn hình để quay.");
             _store.SaveSettings(Settings());
             var options=_workflow.Clone();options.Background=AfterPhotoPicker.SelectedIndex==1;options.AutoCopy=AutoCopyPhoto.IsChecked==true;
             if(!_workflowReadOnly)SaveWorkflow(options);
@@ -82,7 +83,8 @@ public partial class MainWindow : Window
             var display=DisplayPicker.SelectedItem as DisplayInfo??throw new InvalidOperationException("Không tìm thấy màn hình.");
             WindowInfo? window=null;PixelRect region=display.Bounds;
             _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);Hide();await Task.Delay(220,cancellation);
-            if(s.SourceMode==0){
+            if(s.SourceMode==3){var chosen=await ElementPicker.PickAsync(_displays,cancellation);if(chosen==null)return;region=chosen.Value;}
+            else if(s.SourceMode==0){
                 if(action==PhotoAction.Repeat&&CaptureWorkflowStore.CanRepeat(_workflow.LastRegion,WorkflowDisplays()))region=_workflow.LastRegion!.Bounds;
                 else{if(action==PhotoAction.Repeat)_tray?.Notify("Bố trí màn hình/DPI đã thay đổi hoặc chưa có vùng cũ. Hãy chọn vùng mới.");var chosen=await RegionPicker.PickAsync(_displays,cancellation);if(chosen==null)return;region=chosen.Value;}
             }else if(s.SourceMode==1){
@@ -104,7 +106,7 @@ public partial class MainWindow : Window
             BitmapSource? capturedImage=null;
             if(!video){capturedImage=MediaStore.LoadImage(actual);ImageFidelity.ValidateCapture(region,capturedImage.PixelWidth,capturedImage.PixelHeight,window!=null);}
             File.Move(actual,final);
-            var item=new MediaItem{FilePath=final,Title=(video?"Video ":"Ảnh ")+DateTime.Now.ToString("dd-MM HH:mm:ss"),IsVideo=video,Width=region.Width,Height=region.Height,Source=window?.Title??(s.SourceMode==0?$"Vùng chọn · {region}":display.Label),Microphone=video&&s.Mic,SystemAudio=video&&s.SystemAudio,Fps=video?s.Fps:0,Seconds=video?clock.Elapsed.TotalSeconds:0};
+            var item=new MediaItem{FilePath=final,Title=(video?"Video ":"Ảnh ")+DateTime.Now.ToString("dd-MM HH:mm:ss"),IsVideo=video,Width=region.Width,Height=region.Height,Source=window?.Title??(s.SourceMode==0?$"Vùng chọn · {region}":s.SourceMode==3?$"Phần tử · {region}":display.Label),Microphone=video&&s.Mic,SystemAudio=video&&s.SystemAudio,Fps=video?s.Fps:0,Seconds=video?clock.Elapsed.TotalSeconds:0};
             if(capturedImage!=null){item.Width=capturedImage.PixelWidth;item.Height=capturedImage.PixelHeight;item.Capture=new(region.Width,region.Height,item.Width,item.Height,window!=null?"Window capture (native output bounds)":"GDI BitBlt · physical pixels · SDR8");}
             _store.Add(item);success=true;finalStatus="● Đã lưu nội dung trên máy.";
             if(!video&&s.SourceMode==0){_lastRegion=region;var updated=_workflow.Clone();updated.LastRegion=new(region,topology);if(!_workflowReadOnly)try{SaveWorkflow(updated);}catch(Exception ex){App.Log(ex);finalStatus+=" Chưa lưu được vùng chụp lại.";}}

@@ -17,7 +17,7 @@ public partial class MainWindow
     private readonly Dictionary<PhotoAction,(CheckBox Enabled,TextBox Key)> _keyEditors=[];
     private string? _notificationItem;
     private bool _escapeRegistered,_editingCaptureKeys;
-    private static string ActionName(PhotoAction a)=>a switch{PhotoAction.Current=>"Theo cấu hình",PhotoAction.Region=>"Chọn vùng",PhotoAction.Window=>"Chọn cửa sổ",PhotoAction.Display=>"Toàn màn hình",_=>"Chụp lại vùng"};
+    private static string ActionName(PhotoAction a)=>a switch{PhotoAction.Current=>"Theo cấu hình",PhotoAction.Region=>"Chọn vùng",PhotoAction.Window=>"Chọn cửa sổ",PhotoAction.Display=>"Toàn màn hình",PhotoAction.Element=>"Phần tử / modal",_=>"Chụp lại vùng"};
     private void InitializeCaptureWorkflow()
     {
         _workflow=CaptureWorkflowStore.Load(App.DataRoot,out var warning);_workflowReadOnly=warning!=null;
@@ -49,8 +49,8 @@ public partial class MainWindow
             var row=new StackPanel{Orientation=Orientation.Horizontal};var enabled=new CheckBox{Content=ActionName(h.Action),IsChecked=h.Enabled,Width=150};
             var key=new TextBox{Text=h.Label,Tag=h,Width=230,IsReadOnly=true,ToolTip="Nhấn tổ hợp phím mới; bỏ chọn để tắt. F12 dành riêng cho Windows."};
             key.GotKeyboardFocus+=(_,_)=>PauseKeysForEditing();key.LostKeyboardFocus+=(_,_)=>RestoreKeysAfterEditing();
-            key.PreviewKeyDown+=(_,e)=>{e.Handled=true;var k=e.Key==Key.System?e.SystemKey:e.Key;if(k==Key.Tab){e.Handled=false;return;}if(k==Key.Escape)return;var vk=(uint)KeyInterop.VirtualKeyFromKey(k);if(k is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin)return;
-                var mods=Keyboard.Modifiers;if((mods&ModifierKeys.Windows)!=0){WorkflowStatus.Text="Không dùng phím Windows cho hotkey Captovix.";return;}uint m=((mods&ModifierKeys.Control)!=0?2u:0)|((mods&ModifierKeys.Alt)!=0?1u:0)|((mods&ModifierKeys.Shift)!=0?4u:0);var draft=new CaptureHotkey(h.Action,true,m,vk);key.Tag=draft;key.Text=draft.Label;enabled.IsChecked=true;};
+            key.PreviewKeyDown+=(_,e)=>{e.Handled=true;var k=e.Key==Key.System?e.SystemKey:e.Key==Key.ImeProcessed?e.ImeProcessedKey:e.Key==Key.DeadCharProcessed?e.DeadCharProcessedKey:e.Key;if(k==Key.Tab){e.Handled=false;return;}if(k==Key.Escape)return;var vk=(uint)KeyInterop.VirtualKeyFromKey(k);if(k is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin)return;
+                var mods=Keyboard.Modifiers;if((mods&ModifierKeys.Windows)!=0){WorkflowStatus.Text="Không dùng phím Windows cho hotkey Captovix.";return;}uint m=((mods&ModifierKeys.Control)!=0?2u:0)|((mods&ModifierKeys.Alt)!=0?1u:0)|((mods&ModifierKeys.Shift)!=0?4u:0);if(!CaptureKeys.IsValid(m,vk)){WorkflowStatus.Text="Tổ hợp chưa hợp lệ. Dùng Ctrl/Alt + chữ, số hoặc dấu; ví dụ Ctrl + `. F12 dành riêng cho Windows.";return;}var draft=new CaptureHotkey(h.Action,true,m,vk);key.Tag=draft;key.Text=draft.Label;enabled.IsChecked=true;};
             row.Children.Add(enabled);row.Children.Add(key);HotkeyRows.Children.Add(row);_keyEditors[h.Action]=(enabled,key);
         }
         CaptureButton.ToolTip=_workflow.Hotkeys.First(h=>h.Action==PhotoAction.Current).Label;
@@ -61,7 +61,7 @@ public partial class MainWindow
     }
     private void RestoreKeysAfterEditing()
     {
-        _editingCaptureKeys=false;if(_photoKeys==null||_workflowSuspended)return;var errors=_photoKeys.Start(_workflow.Hotkeys);var hwnd=new WindowInteropHelper(this).Handle;foreach(var id in new[]{2,3,4})if(Native.RegisterHotKey(hwnd,id,0x4006,(uint)(0x30+id)))_hotkeys.Add(id);
+        if(!_editingCaptureKeys)return;_editingCaptureKeys=false;if(_photoKeys==null||_workflowSuspended)return;var errors=_photoKeys.Start(_workflow.Hotkeys);var hwnd=new WindowInteropHelper(this).Handle;foreach(var id in new[]{2,3,4})if(!_hotkeys.Contains(id)&&Native.RegisterHotKey(hwnd,id,0x4006,(uint)(0x30+id)))_hotkeys.Add(id);
         if(errors.Count>0)WorkflowStatus.Text="Phím tắt chưa đăng ký được: "+string.Join(", ",errors);
     }
     private void SaveWorkflow(CaptureWorkflowSettings candidate,bool applySystem=false)
@@ -80,7 +80,7 @@ public partial class MainWindow
     {
         if(_busy)return;try{
             var candidate=_workflow.Clone();candidate.Background=AfterPhotoPicker.SelectedIndex==1;candidate.AutoCopy=AutoCopyPhoto.IsChecked==true;candidate.CloseToTray=CloseToTrayToggle.IsChecked==true;candidate.StartWithWindows=StartWindowsToggle.IsChecked==true;candidate.StartInTray=StartTrayToggle.IsChecked==true;
-            candidate.Hotkeys=_keyEditors.Select(k=>((CaptureHotkey)k.Value.Key.Tag) with{Enabled=k.Value.Enabled.IsChecked==true}).ToList();SaveWorkflow(candidate,true);RenderWorkflow();WorkflowStatus.Text="Đã lưu cấu hình, phím tắt và tùy chọn khởi động Windows.";
+            candidate.Hotkeys=_keyEditors.Select(k=>((CaptureHotkey)k.Value.Key.Tag) with{Enabled=k.Value.Enabled.IsChecked==true}).ToList();SaveWorkflow(candidate,true);RenderWorkflow();WorkflowStatus.Text="Đã lưu và đăng ký phím tắt với Windows. Phím chụp: "+_workflow.Hotkeys.First(h=>h.Action==PhotoAction.Current).Label+". Captovix cần đang chạy hoặc nằm ở khay hệ thống.";
         }catch(Exception ex){App.Log(ex);WorkflowStatus.Text=ex.Message;}
     }
     private void ResetWorkflow_Click(object sender,RoutedEventArgs e)
@@ -111,6 +111,7 @@ public partial class MainWindow
     private void RegisterCaptureEscape(){_escapeRegistered=Native.RegisterHotKey(new WindowInteropHelper(this).Handle,990,0x4000,0x1B);}
     private void ReleaseCaptureEscape(){if(_escapeRegistered)Native.UnregisterHotKey(new WindowInteropHelper(this).Handle,990);_escapeRegistered=false;}
     private void CancelCapture_Click(object sender,RoutedEventArgs e)=>CancelCapture();
+    private void ElementCapture_Click(object sender,RoutedEventArgs e)=>_=CaptureAsync(false,PhotoAction.Element);
     private void RepeatCapture_Click(object sender,RoutedEventArgs e)=>_=CaptureAsync(false,PhotoAction.Repeat);
     private bool HandleWorkflowMessage(int msg,nint w,nint l)
     {

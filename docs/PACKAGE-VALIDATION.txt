@@ -1,7 +1,8 @@
-V1.8.0 package validation — 22/10/2026
-700 logic/static checks passed on Linux; 9 real Velopack SDK package checks passed: 709 total.
-App and ObjectWindowsChecks/ShapeWindowsChecks/EditorWindowsChecks/FidelityWindowsChecks cross-built with 0 warnings/errors. Windows execution NOT performed.
-Self-contained win-x64 publish and NSIS wrapper compiled.
-Verified nupkg AppId/version/SHA1/SHA256/size/RELEASES, source-build/payload/nupkg DLL identity, documentation consistency, dependencies and default update URL.
-Verified capture/fidelity/updater/startup/install-path files and unload hotfix byte-identical to V1.7 baseline; desktop capture function retained.
-Both ZIP CRC/source content verified. No GitHub publishing. Windows mouse/render/DPI/capture/clipboard/install/update acceptance pending.
+Captovix V1.9.0 — Package validation, 22/10/2026
+
+Executed on Linux: 781 logic/static checks (81 ConnectorChecks, 700 inherited suites), plus 9 real Velopack SDK full-package checks = 790 checks.
+Actual child-process protocol tests cover normal output, timeout independent of pipe cancellation, helper termination, restart, malformed output and cancellation. These use a fixture process, not Windows UIA.
+App plus ConnectorWindowsChecks / EditorWindowsChecks / ObjectWindowsChecks / ShapeWindowsChecks / FidelityWindowsChecks cross-build with 0 warnings/errors. WPF tests are NOT executed here.
+Self-contained Windows x64 publish, Velopack full nupkg and NSIS migration wrapper compile. Full nupkg CRC / AppId / version / feed SHA1+SHA256+size / DLL consistency are checked. Source and Update ZIP CRC and file identity are checked by packaging verifier. UIAutomationClient/Types/Provider assemblies are bundled.
+Preserved capture engine, physical GDI capture, fidelity, image transfer, updater and install-path helper are compared byte-for-byte against uploaded V1.8.1 source. Startup readiness and unload guards are retained.
+No GitHub push/Release publish. No Windows execution: global hotkey delivery/conflicts, UIA apps/modal/grid, native hook input, DPI/negative monitors, GDI/clipboard, installation/custom path and update restart require Windows acceptance. HDR/wide gamut remains separate.

@@ -12,6 +12,7 @@ public sealed partial class EditorSurface
     {
         if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return [];
         if(_selected.Count==1&&Selected is {} single){
+            if(ConnectorStudio.IsPath(single)){var start=new Point(single.X1,single.Y1);var end=new Point(single.X2,single.Y2);var c=ConnectorStudio.Control(single);return single.Route==ConnectorRoute.Straight?[start,end]:[start,end,new(c.X,c.Y)];}
             if(ShapeStudio.IsLine(single.Kind))return [EditorRenderer.WorldPoint(single,new(single.X1,single.Y1)),EditorRenderer.WorldPoint(single,new(single.X2,single.Y2))];
             var b=EditorRenderer.LocalBox(single);var points=BoxHandles(b).Select(p=>EditorRenderer.WorldPoint(single,p)).ToArray();
             return single.Kind==AnnotationKind.Callout?[..points,EditorRenderer.WorldPoint(single,new(single.TailX,single.TailY))]:points;
@@ -30,7 +31,7 @@ public sealed partial class EditorSurface
         Point[] corners;if(_selected.Count==1&&Selected is {} a){var b=EditorRenderer.LocalBox(a);corners=new[]{new Point(b.X,b.Y),new(b.Right,b.Y),new(b.Right,b.Bottom),new(b.X,b.Bottom)}.Select(p=>EditorRenderer.WorldPoint(a,p)).ToArray();}
         else{var b=SelectionBox();corners=[new(b.X,b.Y),new(b.Right,b.Y),new(b.Right,b.Bottom),new(b.X,b.Bottom)];}
         var path=new StreamGeometry();using(var c=path.Open()){c.BeginFigure(corners[0],false,true);c.PolyLineTo(corners.Skip(1).ToArray(),true,false);}dc.DrawGeometry(null,pen,path);
-        if(canEdit){var top=new Point((corners[0].X+corners[1].X)/2,(corners[0].Y+corners[1].Y)/2);var rotate=RotationHandle();dc.DrawLine(new Pen(Brushes.DodgerBlue,1/InteractionScale),top,rotate);dc.DrawEllipse(Brushes.White,new Pen(Brushes.DodgerBlue,1/InteractionScale),rotate,5/InteractionScale,5/InteractionScale);}
+        if(canEdit&&!(Selected is {} line&&ConnectorStudio.IsPath(line))){var top=new Point((corners[0].X+corners[1].X)/2,(corners[0].Y+corners[1].Y)/2);var rotate=RotationHandle();dc.DrawLine(new Pen(Brushes.DodgerBlue,1/InteractionScale),top,rotate);dc.DrawEllipse(Brushes.White,new Pen(Brushes.DodgerBlue,1/InteractionScale),rotate,5/InteractionScale,5/InteractionScale);}
     }
     private void DrawSnapGuides(DrawingContext dc,PixelRect view)
     {
@@ -54,11 +55,18 @@ public sealed partial class EditorSurface
         if(_originals.Length==1){
             var original=_originals[0];var a=Session!.Document.Annotations.First(x=>x.Id==original.Id);var local=EditorRenderer.LocalPoint(original,p);var box=EditorRenderer.LocalBox(original);
             ObjectControl.RestoreGeometry(a,original);
-            if(original.Kind==AnnotationKind.Callout&&_handle==8){
+            if(ConnectorStudio.IsPath(original)){ResizeConnector(a,original,p,_handle);}
+            else if(original.Kind==AnnotationKind.Callout&&_handle==8){
                 // Move a world-space pointer while retaining a stable rotation pivot.
                 a.TailX=local.X;a.TailY=local.Y;var updated=EditorRenderer.LocalBox(a);var center=ObjectControl.RotatePoint(new(updated.CenterX,updated.CenterY),new(box.CenterX,box.CenterY),original.Rotation);a.Translate(center.X-updated.CenterX,center.Y-updated.CenterY);
             }else if(ShapeStudio.IsLine(original.Kind)){
                 var fixedPoint=_handle==0?new Point(original.X2,original.Y2):new Point(original.X1,original.Y1);var end=shift?ToConstrainedLocal(fixedPoint,local):local;
+                var world=EditorRenderer.WorldPoint(original,end);var found=ConnectToShapes?ConnectorStudio.FindAnchor(Session!.Document,new(world.X,world.Y),12/InteractionScale,a.Id):(null,new AnnotationPoint(world.X,world.Y));
+                if(found.Item1!=null){
+                    var start=EditorRenderer.WorldPoint(original,new(original.X1,original.Y1));var finish=EditorRenderer.WorldPoint(original,new(original.X2,original.Y2));
+                    a.X1=start.X;a.Y1=start.Y;a.X2=finish.X;a.Y2=finish.Y;a.Rotation=0;
+                    if(_handle==0){a.StartAnchor=found.Item1;a.X1=found.Item2.X;a.Y1=found.Item2.Y;}else{a.EndAnchor=found.Item1;a.X2=found.Item2.X;a.Y2=found.Item2.Y;}return;
+                }
                 if(_handle==0){a.X1=end.X;a.Y1=end.Y;}else{a.X2=end.X;a.Y2=end.Y;}
                 var updated=EditorRenderer.LocalBox(a);var center=ObjectControl.RotatePoint(new(updated.CenterX,updated.CenterY),new(box.CenterX,box.CenterY),original.Rotation);a.Translate(center.X-updated.CenterX,center.Y-updated.CenterY);
             }else{

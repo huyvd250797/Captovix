@@ -1,27 +1,17 @@
-## V1.8.1 — Startup Recovery (22/10/2026)
+# Captovix V1.9.0 — Trạng thái kiểm chứng
 
-Sửa NullReferenceException tại SyncProperties khi ComboBox phát SelectionChanged trong InitializeComponent. Callback chỉ chạy sau khi hoàn tất dựng XAML và nối các thành phần Editor; chặn đồng bộ lồng nhau. Giữ schema 6, ảnh gốc, sidecar, preset, URL update và đường dẫn cài.
+## Đã chạy trong môi trường Linux
 
-Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chưa thực thi Windows. Bộ hồi quy Windows gồm khởi tạo MainWindow thật, callback trước trạng thái sẵn sàng và đổi kiểu sau khởi tạo. Cần kiểm tra mở app trên máy Windows của Boss.
+- Các bộ test pure .NET: ConnectorChecks, ObjectControlChecks, ShapeStudioChecks, ImageFidelityChecks, CaptureWorkflowChecks, GeometryChecks, EditorCoreChecks, AnnotationChecks, AdvancedAnnotationChecks, ImageAppearanceChecks, ViewportChecks, UpdateChecks; InstallerContractChecks kiểm tra hợp đồng argument/install-path trong source.
+- ConnectorChecks có 81 kiểm tra, gồm giao thức tiến trình thật trên Linux với fixture: timeout, kill/restart, response lỗi và hủy. Fixture không giả làm kết quả đã test UIA Windows. Tổng logic/static 781; thêm 9 kiểm tra SDK gói thực tế = 790.
+- Cross-build ứng dụng net10.0-windows x64 và năm dự án WPF: ConnectorWindowsChecks, EditorWindowsChecks, ObjectWindowsChecks, ShapeWindowsChecks, FidelityWindowsChecks. Không thực thi các dự án Windows tại đây.
+- Self-contained publish, full nupkg Velopack, NSIS wrapper; kiểm tra CRC ZIP, package AppId/version, feed SHA1/SHA256/size và DLL đồng nhất với publish.
+- Tích hợp UpdateChecks với gói full thực tế qua SDK Velopack, bao gồm từ chối hash sai.
 
-# Validation — Captovix V1.8.0
+Số lượng và kết quả cụ thể được ghi trong docs/PACKAGE-VALIDATION.txt sau khi hoàn tất kiểm tra gói.
 
-Nền attachment Captovix-v1.7.0-Source(1).zip, đọc cục bộ (SHA256 fe4687ccf6fce49ec805909c09c31708874bddf986c7a692ab25f5170854022f). Giữ SDK .NET 10.0.100/runtime Windows 10.0.13, ScreenRecorderLib 7.0.1, Velopack SDK/CLI 1.2.161 và NSIS 3.08; annotation schema lên 6. Không reset dữ liệu hay đổi URL update.
+## Chưa chạy / không được coi đã đạt
 
-## Đã chạy trên Linux
+Khởi động và dùng WPF trên Windows, Ctrl+` toàn hệ thống/khay/xung đột thật, UIA browser/modal/grid và provider treo, low-level mouse hook nuốt click/cancel, mixed DPI và monitor âm, GDI/cursor/window capture, clipboard, cài D:\Captovix\Captovix, ký số prerequisite và updater restart trên desktop. Cần nghiệm thu theo checklist trước triển khai rộng. Không có môi trường Windows thật tại nơi build.
 
-ObjectControl 42, ShapeStudio 115, ImageFidelity 122, CaptureWorkflow 53, Geometry 30, EditorCore 38, Annotation 76, AdvancedAnnotation 49, ImageAppearance 61, Viewport 48, Update core 41, InstallerContract 25: **700 logic/static checks**. ObjectControl gồm migration 1–5, metadata copy/roundtrip/history, khóa/ẩn nhóm, các mutation guard, numeric transform, inverse/distance/bounds cho 2000 góc ngẫu nhiên, điểm neo resize, group rotation, snap/axis/bypass và 100 preview commit một Undo. Canvas candidates lọc nhóm bị khóa/ẩn bằng một lượt.
-
-App và ObjectWindowsChecks/ShapeWindowsChecks/EditorWindowsChecks/FidelityWindowsChecks cross-built. Publish self-contained win-x64 và biên dịch NSIS wrapper. SDK checks nupkg thật và ZIP/identity/hash/size/DLL/default URL xác minh sau đóng gói; kết quả cuối ở PACKAGE-VALIDATION.txt trong Source ZIP.
-
-## Chưa chạy trên Windows
-
-Không có Windows host/VM/native UI. Không chạy các bộ WPF trên Windows; chỉ compile, không tính vào 700. ObjectWindowsChecks bao gồm rotate/render/hit/hide/lock, pixel nền, export theo zoom, vùng che xoay và inspector Layers/frame/metadata/Undo. Các bộ cũ giữ kiểm tra shape, fidelity và lifecycle chuyển ảnh. Tất cả đều chưa thực thi tại đây.
-
-Chưa nghiệm thu chuột thật, layout, các mức DPI 100/125/150/175/200%, monitor âm/kéo Editor, GDI/cursor/clipboard, installer/update/restart và đường dẫn D. Không có report Windows đạt trong gói. V1.8 triển khai/build, CHỜ NGHIỆM THU WINDOWS. Chưa đăng GitHub Release.
-
-## Giới hạn
-
-SDR8, chưa đánh giá HDR/ICC/16-bit. Group có thành viên xoay chỉ resize đồng tỷ lệ, chữ/số qua font có giới hạn; một đối tượng dùng frame trước xoay, nhóm dùng AABB/góc tương đối. Ẩn layer loại khỏi file xuất, khóa chỉ ngăn chỉnh sửa. Mask xoay filter ROI world rồi clip. Tay nắm có thể bị cắt ở mép viewport, có ô góc để thao tác. Schema 6 không dùng ngược trên app cũ; khôi phục backup khi rollback. Không phát triển video hoặc connector trong V1.8.
-
-Đường/mũi tên ngang/dọc có W hoặc H bằng 0, dùng tâm thật của hai đầu mút; khung số cho đổi hướng/chiều này và từ chối đoạn dài dưới 2 px. Giữ tỷ lệ tắt ở đoạn có một chiều 0. Group vẫn dùng khung bao tối thiểu 1 px cho tay nắm.
+HDR/màu rộng, chụp cuộn, OCR, DOM/browser extension, auto-routing tránh shape, nhiều đỉnh tùy ý và Video Editor chưa thuộc phạm vi V1.9.0. Không đăng GitHub Release hoặc push source từ môi trường này.

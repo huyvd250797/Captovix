@@ -37,7 +37,7 @@ public partial class MainWindow
             _objectAspect=frame.Width>1e-9&&frame.Height>1e-9?frame.Width/frame.Height:0;ObjectX.Text=ObjectNumber(frame.X);ObjectY.Text=ObjectNumber(frame.Y);ObjectWidth.Text=ObjectNumber(frame.Width);ObjectHeight.Text=ObjectNumber(frame.Height);ObjectAngle.Text=objects.Length==1?ObjectNumber(objects[0].Rotation):"0";
             bool force=objects.Length>1&&objects.Any(a=>Math.Abs(a.Rotation)>1e-8)||objects.Length==1&&objects[0].Kind is AnnotationKind.Text or AnnotationKind.Step;
             if(force)ObjectKeepRatio.IsChecked=true;if(_objectAspect==0)ObjectKeepRatio.IsChecked=false;ObjectKeepRatio.IsEnabled=!force&&_objectAspect>0;
-            ObjectFrameHint.Text=objects.Length==1?"Khung trước xoay · pixel ảnh gốc. Góc là góc tuyệt đối; chữ/số giữ tỷ lệ theo cỡ chữ.":"Khung bao nhóm trong ảnh gốc. Góc là xoay thêm quanh tâm nhóm; nhóm có đối tượng xoay giữ tỷ lệ.";
+            ObjectFrameHint.Text=objects.Length==1&&ConnectorStudio.IsPath(objects[0])?"Đường cong/gấp khúc: khung bao theo pixel gốc; góc là xoay thêm và được áp vào tọa độ điểm. Đổi khung sẽ tháo các liên kết ngoài lựa chọn.":objects.Length==1?"Khung trước xoay · pixel ảnh gốc. Góc là góc tuyệt đối; chữ/số giữ tỷ lệ theo cỡ chữ.":"Khung bao nhóm trong ảnh gốc. Góc là xoay thêm quanh tâm nhóm; nhóm có đối tượng xoay giữ tỷ lệ.";
             ObjectFrameError.Text="";
         }finally{_syncLayers=false;}
     }

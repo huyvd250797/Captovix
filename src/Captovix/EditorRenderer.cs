@@ -10,6 +10,7 @@ public static partial class EditorRenderer
     public static FormattedText TextLayout(Annotation a,string? text=null,Brush? ink=null)=>new(text??a.Text,CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),a.FontSize,ink??Ink(a.Color),1.0);
     public static Rect LocalBounds(Annotation a)
     {
+        if(ConnectorStudio.IsPath(a)){var box=ConnectorStudio.Bounds(a);return new(box.X,box.Y,box.Width,box.Height);}
         if(ShapeStudio.IsLine(a.Kind))return new(a.Left,a.Top,a.Width,a.Height);
         if(a.Kind==AnnotationKind.Callout)return Rect.Union(new Rect(a.Left,a.Top,a.Width,a.Height),new Rect(a.TailX,a.TailY,1,1));
         if(a.Kind==AnnotationKind.Freehand)return new(a.Left-a.Stroke/2,a.Top-a.Stroke/2,Math.Max(1,a.Width)+a.Stroke,Math.Max(1,a.Height)+a.Stroke);
@@ -27,6 +28,7 @@ public static partial class EditorRenderer
     }
     private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
+        ConnectorStudio.Resolve(doc);
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction))DrawAnnotation(dc,a);
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
@@ -34,6 +36,7 @@ public static partial class EditorRenderer
     }
     private static void DrawLocalAnnotation(DrawingContext dc,Annotation a)
     {
+        if(ConnectorStudio.IsPath(a)){DrawConnector(dc,a);return;}
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind)){DrawStrokeShape(dc,a);return;}
         var brush=ShapeStudio.HasStroke(a.Kind)?ShapeInk(a.Color,a.StrokeOpacity):Ink(a.Color);var pen=new Pen(brush,a.Stroke){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};
         if(a.Kind==AnnotationKind.Freehand){if(!a.StrokeEnabled||a.StrokeOpacity<=0)return;pen=ShapePen(a);}
@@ -117,6 +120,7 @@ public static partial class EditorRenderer
     }
     private static bool HitLocal(Annotation a,Point p,double tolerance)
     {
+        if(ConnectorStudio.IsPath(a))return HitConnector(a,p,tolerance);
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind))return HitStrokeShape(a,p,tolerance);
         if(a.Kind==AnnotationKind.Freehand){for(int i=0;i<a.Points.Count;i++){var v=a.Points[i];var u=a.Points[Math.Max(0,i-1)];if(Distance(p,new(u.X,u.Y),new(v.X,v.Y))<=tolerance+a.Stroke/2)return true;}return false;}
         if(a.Kind==AnnotationKind.Callout)return CalloutGeometry(a).FillContains(p)||CalloutGeometry(a).StrokeContains(new Pen(Brushes.Black,tolerance*2+a.Stroke),p);

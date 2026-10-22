@@ -33,10 +33,11 @@ public static class ObjectControl
     public static void Rename(Annotation a,string name){name=name.Trim();if(name.Length>80||name.Any(char.IsControl))throw new ArgumentException("Tên layer tối đa 80 ký tự, không có ký tự điều khiển.");a.Name=name;}
     public static void RestoreGeometry(Annotation target,Annotation original)
     {
-        target.X1=original.X1;target.X2=original.X2;target.Y1=original.Y1;target.Y2=original.Y2;target.TailX=original.TailX;target.TailY=original.TailY;target.Points=[..original.Points];target.FontSize=original.FontSize;target.Rotation=original.Rotation;
+        target.Control=original.Control;target.Route=original.Route;target.StartAnchor=original.StartAnchor;target.EndAnchor=original.EndAnchor;target.X1=original.X1;target.X2=original.X2;target.Y1=original.Y1;target.Y2=original.Y2;target.TailX=original.TailX;target.TailY=original.TailY;target.Points=[..original.Points];target.FontSize=original.FontSize;target.Rotation=original.Rotation;
     }
     public static void Rotate(Annotation target,Annotation original,double delta,AnnotationPoint pivot,Func<Annotation,AnnotationBox> localBounds)
     {
+        if(ConnectorStudio.IsPath(original)){RestoreGeometry(target,original);var s=RotatePoint(ConnectorStudio.Start(original),pivot,delta);var e=RotatePoint(ConnectorStudio.End(original),pivot,delta);target.X1=s.X;target.Y1=s.Y;target.X2=e.X;target.Y2=e.Y;target.Control=RotatePoint(ConnectorStudio.Control(original),pivot,delta);target.Rotation=0;return;}
         RestoreGeometry(target,original);var b=localBounds(original);var center=new AnnotationPoint(b.CenterX,b.CenterY);var next=RotatePoint(center,pivot,delta);target.Translate(next.X-center.X,next.Y-center.Y);target.Rotation=Normalize(original.Rotation+delta);
     }
     public static void ResizeSingle(Annotation target,Annotation original,AnnotationBox localBox,AnnotationBox newBox,Func<Annotation,AnnotationBox>? actualBounds=null)
@@ -51,6 +52,7 @@ public static class ObjectControl
     {
         if(!CanEdit(doc,ids))throw new InvalidOperationException("Mở khóa và hiện toàn bộ lựa chọn trước khi chỉnh.");
         if(new[]{x,y,width,height,angle}.Any(v=>!double.IsFinite(v))||Math.Abs(x)>1000000||Math.Abs(y)>1000000||width<0||height<0||width>100000||height>100000||Math.Abs(angle)>360)throw new ArgumentException("Khung hoặc góc xoay không hợp lệ.");
+        ConnectorStudio.DetachForTransform(doc,ids);
         var objects=Members(doc,ids);var originals=objects.Select(a=>a.Copy()).ToArray();
         var frame=objects.Length==1?localBounds(originals[0]):AnnotationEditing.Union(originals.Select(a=>{var b=RotatedBounds(localBounds(a),a.Rotation);return SelectionBounds(b);}));
         bool line=objects.Length==1&&ShapeStudio.IsLine(objects[0].Kind);
@@ -59,10 +61,10 @@ public static class ObjectControl
         double sx=width/Math.Max(1,frame.Width),sy=height/Math.Max(1,frame.Height);
         if(objects.Length>1&&originals.Any(a=>Math.Abs(a.Rotation)>1e-8)&&Math.Abs(sx-sy)>1e-6)throw new ArgumentException("Nhóm có đối tượng xoay cần giữ tỷ lệ để tránh méo hình.");
         var next=new AnnotationBox(x,y,width,height);
-        if(line){
+        if(line&&!ConnectorStudio.IsPath(originals[0])){
             var a=objects[0];var old=originals[0];a.X1=old.X1<=old.X2?x:x+width;a.X2=old.X1<=old.X2?x+width:x;a.Y1=old.Y1<=old.Y2?y:y+height;a.Y2=old.Y1<=old.Y2?y+height:y;
         }else for(int i=0;i<objects.Length;i++)AnnotationEditing.Transform(objects[i],originals[i],frame,next);
-        if(objects.Length==1)objects[0].Rotation=Normalize(angle);
+        if(objects.Length==1){if(ConnectorStudio.IsPath(objects[0])){var snapshot=objects[0].Copy();Rotate(objects[0],snapshot,angle,new(next.CenterX,next.CenterY),localBounds);}else objects[0].Rotation=Normalize(angle);}
         else{
             var pivot=new AnnotationPoint(next.CenterX,next.CenterY);for(int i=0;i<objects.Length;i++){var snapshot=objects[i].Copy();Rotate(objects[i],snapshot,angle,pivot,localBounds);}
         }

@@ -1,0 +1,7 @@
+namespace Captovix;
+public static class CaptureKeys
+{
+    public static bool IsSupported(uint key)=>key is >=0x30 and <=0x39 or >=0x41 and <=0x5A or >=0x70 and <=0x87 or 0x2C or >=0xBA and <=0xC0 or >=0xDB and <=0xDF or 0xE2;
+    public static bool IsValid(uint modifiers,uint key)=>(modifiers&~7u)==0&&key!=0x7B&&IsSupported(key)&&((modifiers&3)!=0||key==0x2C||key is >=0x70 and <=0x87);
+    public static string KeyName(uint key)=>key switch{>=0x30 and <=0x39 or >=0x41 and <=0x5A=>((char)key).ToString(),>=0x70 and <=0x87=>$"F{key-0x6F}",0x2C=>"PrintScreen",0xBA=>";",0xBB=>"=",0xBC=>",",0xBD=>"-",0xBE=>".",0xBF=>"/",0xC0=>"`",0xDB=>"[",0xDC=>"\\",0xDD=>"]",0xDE=>"'",0xDF or 0xE2=>$"OEM {key:X2}",_=>$"VK {key:X2}"};
+}
