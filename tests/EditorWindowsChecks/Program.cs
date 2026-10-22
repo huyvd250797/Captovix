@@ -104,17 +104,33 @@ internal static class Program
             item=new(){Id=Guid.NewGuid().ToString("N"),FilePath=originalFile};var session=DocumentStore.Load(item,source,out _);session.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Step,X1=20,Y1=20}));DocumentStore.Save(item,session,source);
             Check(!session.Dirty&&File.Exists(DocumentStore.EditPath(item.Id)),"Document saves as a sidecar and clears dirty state");
             var loaded=DocumentStore.Load(item,source,out var warning);Check(warning==null&&loaded.Document.Annotations.Count==1,"Sidecar reopens as editable objects");
-            var legacySidecar=loaded.Document.Serialize().Replace("\"Version\": 5","\"Version\": 4");File.WriteAllText(DocumentStore.EditPath(item.Id),legacySidecar);
+            var legacySidecar=loaded.Document.Serialize().Replace("\"Version\": 6","\"Version\": 4");File.WriteAllText(DocumentStore.EditPath(item.Id),legacySidecar);
             var migrated=DocumentStore.Load(item,source,out warning);migrated.Change(d=>d.Annotations[0].Color="#123456");DocumentStore.Save(item,migrated,source);
-            Check(File.ReadAllText(DocumentStore.EditPath(item.Id)+".pre-v1.7.bak")==legacySidecar,"First schema-5 save retains the exact old sidecar before replacement");
-            Check(EditorDocument.Deserialize(File.ReadAllText(DocumentStore.EditPath(item.Id))).Version==5,"Sidecar migration writes current schema after making backup");
-            File.Delete(DocumentStore.EditPath(item.Id)+".pre-v1.7.bak");
+            Check(File.ReadAllText(DocumentStore.EditPath(item.Id)+".pre-v1.8.bak")==legacySidecar,"First schema-6 save retains the exact old sidecar before replacement");
+            Check(EditorDocument.Deserialize(File.ReadAllText(DocumentStore.EditPath(item.Id))).Version==6,"Sidecar migration writes current schema after making backup");
+            File.Delete(DocumentStore.EditPath(item.Id)+".pre-v1.8.bak");
             DocumentStore.Delete(item);Check(!File.Exists(DocumentStore.EditPath(item.Id)),"Sidecar cleanup removes the selected item only");
             var app=new App();app.InitializeComponent();var window=new MainWindow();
             Check(window.WindowState==WindowState.Maximized,"Editor starts maximized");
             Check(window.Title.Contains("Captovix")&&window.Title.Contains("V"+VersionInfo.Current),"Window identity matches the app version");
             var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
             object? Invoke(string name,params object[] values)=>typeof(MainWindow).GetMethod(name,flags)!.Invoke(window,values);
+            // Regression: real constructor above must survive XAML SelectionChanged.
+            var ready=typeof(MainWindow).GetField("_editorReady",flags)!;
+            Check((bool)ready.GetValue(window)!,"Editor is ready only after complete initialization");
+            ready.SetValue(window,false);
+            var titleField=typeof(MainWindow).GetField("PropertyTitle",flags)!;
+            var titleValue=titleField.GetValue(window);titleField.SetValue(window,null);
+            try{
+                Invoke("Style_Changed",window,new System.Windows.Controls.SelectionChangedEventArgs(System.Windows.Controls.Primitives.Selector.SelectionChangedEvent,Array.Empty<object>(),Array.Empty<object>()));
+                Invoke("SyncProperties");Invoke("UpdateEditorReadout");
+                Check(true,"Callbacks tolerate incomplete XAML initialization without accessing later controls");
+            }finally{titleField.SetValue(window,titleValue);ready.SetValue(window,true);}
+            var fontPicker=(System.Windows.Controls.ComboBox)window.FindName("FontPicker");
+            var startupSurface=(EditorSurface)window.FindName("Surface");
+            var fontChoice=fontPicker.Items.Cast<System.Windows.Controls.ComboBoxItem>().First(i=>i.Tag?.ToString()=="28");
+            fontPicker.SelectedItem=fontChoice;Invoke("SyncProperties");
+            Check(startupSurface.TextSize==28,"Style changes work after initialization and synchronize without recursive callbacks");
             var inlineSession=new EditorSession(new(){OriginalWidth=80,OriginalHeight=60});var textObject=new Annotation{Kind=AnnotationKind.Text,X1=10,Y1=10,Text="Trước",FontSize=16};inlineSession.Document.Annotations.Add(textObject);
             typeof(MainWindow).GetField("_session",flags)!.SetValue(window,inlineSession);
             var uiSurface=(EditorSurface)window.FindName("Surface");uiSurface.Load(patterned,inlineSession);uiSurface.SelectIds([textObject.Id]);

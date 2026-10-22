@@ -31,6 +31,7 @@ public sealed class MediaItem : INotifyPropertyChanged
 }
 public sealed class AppSettings
 {
+    public bool ObjectSnap {get;set;}=true;
     public int SourceMode {get;set;}
     public int Delay {get;set;}=0;
     public int Fps {get;set;}=30;

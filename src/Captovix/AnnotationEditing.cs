@@ -20,6 +20,7 @@ public static class AnnotationEditing
     // Multiple objects align to their union. A single object aligns to the crop/image viewport.
     public static void Align(EditorDocument doc,IReadOnlyCollection<string> ids,AnnotationAlignment alignment,Func<Annotation,AnnotationBox> bounds)
     {
+        if(!ObjectControl.CanEdit(doc,ids))return;
         var units=Units(doc,ids);if(units.Length==0)return;
         var view=doc.Viewport;var target=units.Length>1?Union(units.Select(u=>Union(u.Select(bounds)))):new AnnotationBox(view.X,view.Y,view.Width,view.Height);
         foreach(var unit in units){var b=Union(unit.Select(bounds));var dx=0d;var dy=0d;
@@ -45,12 +46,14 @@ public static class AnnotationEditing
     }
     public static string? Group(EditorDocument doc,IEnumerable<string> ids)
     {
+        if(!ObjectControl.CanEdit(doc,ids))return null;
         var all=ExpandGroups(doc,ids);if(all.Count<2)return null;
         var group=Guid.NewGuid().ToString("N");foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id)))a.GroupId=group;return group;
     }
-    public static void Ungroup(EditorDocument doc,IEnumerable<string> ids){var all=ExpandGroups(doc,ids);foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id)))a.GroupId=null;}
+    public static void Ungroup(EditorDocument doc,IEnumerable<string> ids){if(!ObjectControl.CanEdit(doc,ids))return;var all=ExpandGroups(doc,ids);foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id)))a.GroupId=null;}
     public static HashSet<string> Duplicate(EditorDocument doc,IEnumerable<string> ids,Func<Annotation,AnnotationBox> bounds)
     {
+        if(!ObjectControl.CanEdit(doc,ids))return [];
         var all=ExpandGroups(doc,ids);var originals=doc.Annotations.Where(a=>all.Contains(a.Id)).ToArray();
         if(doc.Annotations.Count+originals.Length>10000||doc.Annotations.Sum(a=>a.Points.Count)+originals.Sum(a=>a.Points.Count)>100000)throw new InvalidOperationException("Nhân bản vượt giới hạn tài liệu.");
         var groupMap=new Dictionary<string,string>();var result=new HashSet<string>();
@@ -63,6 +66,7 @@ public static class AnnotationEditing
     public static int Tier(Annotation a)=>a.IsRedaction?a.Kind==AnnotationKind.Cover?2:1:0;
     public static void Reorder(EditorDocument doc,IEnumerable<string> ids,AnnotationOrder order)
     {
+        if(!ObjectControl.CanEdit(doc,ids))return;
         var all=ExpandGroups(doc,ids);var result=new List<Annotation>();
         foreach(var tier in doc.Annotations.GroupBy(Tier).OrderBy(g=>g.Key)){
             var list=tier.ToList();
@@ -74,6 +78,7 @@ public static class AnnotationEditing
     }
     public static bool Distribute(EditorDocument doc,IEnumerable<string> ids,bool horizontal,Func<Annotation,AnnotationBox> bounds)
     {
+        if(!ObjectControl.CanEdit(doc,ids))return false;
         var units=Units(doc,ids).Select(u=>(Items:u,Box:Union(u.Select(bounds)))).OrderBy(u=>horizontal?u.Box.X:u.Box.Y).ToArray();
         if(units.Length<3)return false;
         var first=units[0].Box;var last=units[^1].Box;double low=horizontal?first.X:first.Y,high=horizontal?last.Right:last.Bottom;
@@ -118,6 +123,7 @@ public static class AnnotationEditing
     }
     public static void Transform(Annotation target,Annotation original,AnnotationBox from,AnnotationBox to)
     {
+        target.Rotation=original.Rotation;
         var sx=to.Width/Math.Max(1,from.Width);var sy=to.Height/Math.Max(1,from.Height);
         target.X1=to.X+(original.X1-from.X)*sx;target.X2=to.X+(original.X2-from.X)*sx;
         target.Y1=to.Y+(original.Y1-from.Y)*sy;target.Y2=to.Y+(original.Y2-from.Y)*sy;

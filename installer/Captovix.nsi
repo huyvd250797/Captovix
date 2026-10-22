@@ -1,11 +1,11 @@
-﻿; First-install/migration wrapper. Future updates are performed by Velopack.
+; First-install/migration wrapper. Future updates are performed by Velopack.
 Unicode true
 !include "MUI2.nsh"
 !include "x64.nsh"
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
 !ifndef APPVERSION
- !define APPVERSION "1.7.0"
+ !define APPVERSION "1.8.1"
 !endif
 !ifndef CORESETUP
  !define CORESETUP "..\artifacts\CoreSetup.exe"

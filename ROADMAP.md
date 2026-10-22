@@ -1,6 +1,12 @@
+## V1.8.1 — Startup Recovery (22/10/2026)
+
+Sửa NullReferenceException tại SyncProperties khi ComboBox phát SelectionChanged trong InitializeComponent. Callback chỉ chạy sau khi hoàn tất dựng XAML và nối các thành phần Editor; chặn đồng bộ lồng nhau. Giữ schema 6, ảnh gốc, sidecar, preset, URL update và đường dẫn cài.
+
+Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chưa thực thi Windows. Bộ hồi quy Windows gồm khởi tạo MainWindow thật, callback trước trạng thái sẵn sàng và đổi kiểu sau khởi tạo. Cần kiểm tra mở app trên máy Windows của Boss.
+
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Cập nhật: 21/10/2026. Nền V1.7.0 Shapes & Stroke Studio đã triển khai source và test logic/cross-build; chờ nghiệm thu Windows. Giữ hotfix V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.8–V1.20 là kế hoạch, chưa triển khai. Các tiêu chí capture/DPI Windows và WPF chỉ được đánh dấu đạt sau report thật.
+Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9–V1.20 là kế hoạch, chưa triển khai. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
 
 ## 1. Định hướng mới
 
@@ -32,7 +38,7 @@ Ví dụ nghiệm thu: vẽ rectangle nền vàng nhạt, viền đỏ nét đ�
 
 ## 4. Roadmap tổng thể
 
-V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, các mốc từ V1.8 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
+V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.8 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, các mốc từ V1.9 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật và dữ liệu | Điều kiện hoàn thành | Phụ thuộc/thứ tự |
 |---|---|---|---|---|---|
@@ -72,11 +78,11 @@ Polygon tự do/chỉnh từng đỉnh, eyedropper/màu gần đây và connecto
 
 ### V1.8 — Object Control & Layers
 
-Click chọn 1 đối tượng, Ctrl+click thêm/bớt, kéo khung chọn nhiều. Có cách chọn lớp nằm dưới; bảng layer cho chọn khi các object chồng khít. Rename/lock/hide/reorder có undo. Phân biệt khóa chỉnh sửa và ẩn khỏi ảnh xuất bằng biểu tượng/tooltip rõ.
+Đã triển khai: bảng Layers chọn lớp bị che, Ctrl/Shift chọn nhiều; rename/lock/hide, giữ duplicate/group/order/align/distribute. Khóa/ẩn theo nhóm, layer khóa vẫn xuất và layer ẩn bị loại khỏi xuất. Canvas bỏ qua đối tượng không chỉnh được; Layers cho mở khóa/hiện lại.
 
-Kéo bằng chuột, phím mũi tên nudge, modifier bước lớn, Shift giữ tỷ lệ, tay nắm rotate và ô nhập góc. X/Y/W/H theo pixel của canvas/ảnh gốc được ghi nhãn nhất quán; không dùng DIP khiến màn hình scale khác nhau cho giá trị khác nhau. Snap có toggle, chỉ gợi ý không giật đối tượng ngoài ý muốn.
+X/Y/W/H bằng pixel ảnh gốc và góc tuyệt đối cho một hình; nhóm dùng AABB/góc xoay thêm. Tay nắm tròn xoay, Shift 15°, resize góc và giữ tỷ lệ, nhóm có thành viên xoay không shear. Snap crop/peer có toggle lưu cấu hình và guide, Ctrl tạm bỏ snap. Input/renderer/hit dùng cùng hình học xoay.
 
-Giữ đầy đủ duplicate/group/ungroup/bring front/send back/align/distribute đã có, cải thiện hit testing và thao tác. Một thao tác kéo/resize/rotate phải undo một lần, không tạo hàng trăm bản lịch sử. Selection handles và guide không xuất vào PNG.
+Một gesture = một Undo; lưu metadata schema 6 và backup sidecar cũ. Vùng che xoay lọc pixel ở đích và giữ lớp bảo vệ. Selection handles/guide không xuất PNG. Bộ logic đã chạy, bộ Windows cross-build; chưa nghiệm thu tương tác/DPI/WPF thật. Xem OBJECT-CONTROL-LAYERS.md.
 
 ## 6. Giải thích hai loại đối tượng
 
@@ -117,4 +123,4 @@ Chỉ hai file theo yêu cầu Boss:
 
 Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
 
-Bản tiếp theo: V1.8 — Object Control & Layers. Tích hợp bảng layer chọn, đổi tên, khóa, ẩn và sắp xếp; nhập X/Y/W/H/góc xoay, thao tác nhóm/nhiều lựa chọn, snap và căn/chia đều chính xác. Giữ công cụ đã có và ưu tiên ảnh; video xử lý sau.
+Bản tiếp theo: V1.9 — Arrows, Lines & Connectors. Mũi tên gấp khúc/cong, điểm điều khiển, connector bám shape theo ID. Giữ liên kết khi kéo/resize, lưu/mở, nhân bản/xóa và Undo; vẫn ưu tiên ảnh, video để sau.

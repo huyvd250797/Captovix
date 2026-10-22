@@ -8,15 +8,16 @@ public static partial class EditorRenderer
 {
     public static Brush Ink(string color)=>new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
     public static FormattedText TextLayout(Annotation a,string? text=null,Brush? ink=null)=>new(text??a.Text,CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),a.FontSize,ink??Ink(a.Color),1.0);
-    public static Rect Bounds(Annotation a)
+    public static Rect LocalBounds(Annotation a)
     {
+        if(ShapeStudio.IsLine(a.Kind))return new(a.Left,a.Top,a.Width,a.Height);
         if(a.Kind==AnnotationKind.Callout)return Rect.Union(new Rect(a.Left,a.Top,a.Width,a.Height),new Rect(a.TailX,a.TailY,1,1));
         if(a.Kind==AnnotationKind.Freehand)return new(a.Left-a.Stroke/2,a.Top-a.Stroke/2,Math.Max(1,a.Width)+a.Stroke,Math.Max(1,a.Height)+a.Stroke);
         if(a.Kind==AnnotationKind.Text){var text=TextLayout(a);return new(a.X1,a.Y1,Math.Max(10,text.WidthIncludingTrailingWhitespace),Math.Max(a.FontSize,text.Height));}
         if(a.Kind==AnnotationKind.Step){var r=a.FontSize*.8;return new(a.X1-r,a.Y1-r,r*2,r*2);}
         return new(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
     }
-    public static AnnotationBox Box(Annotation a){var b=Bounds(a);return new(b.X,b.Y,b.Width,b.Height);}
+    public static AnnotationBox Box(Annotation a){var b=Bounds(a);return ObjectControl.SelectionBounds(new(b.X,b.Y,b.Width,b.Height));}
     public static void Draw(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
         var view=doc.Viewport;
@@ -26,12 +27,12 @@ public static partial class EditorRenderer
     }
     private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
-        foreach(var a in doc.Annotations.Where(a=>!a.IsRedaction))DrawAnnotation(dc,a);
+        foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction))DrawAnnotation(dc,a);
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
-        foreach(var a in doc.Annotations.Where(a=>a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
+        foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
             RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true);
     }
-    public static void DrawAnnotation(DrawingContext dc,Annotation a)
+    private static void DrawLocalAnnotation(DrawingContext dc,Annotation a)
     {
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind)){DrawStrokeShape(dc,a);return;}
         var brush=ShapeStudio.HasStroke(a.Kind)?ShapeInk(a.Color,a.StrokeOpacity):Ink(a.Color);var pen=new Pen(brush,a.Stroke){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};
@@ -114,11 +115,11 @@ public static partial class EditorRenderer
         }
         return ImageTransfer.Bitmap(layout.Width,layout.Height,pixels);
     }
-    public static bool Hit(Annotation a,Point p,double tolerance)
+    private static bool HitLocal(Annotation a,Point p,double tolerance)
     {
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind))return HitStrokeShape(a,p,tolerance);
         if(a.Kind==AnnotationKind.Freehand){for(int i=0;i<a.Points.Count;i++){var v=a.Points[i];var u=a.Points[Math.Max(0,i-1)];if(Distance(p,new(u.X,u.Y),new(v.X,v.Y))<=tolerance+a.Stroke/2)return true;}return false;}
         if(a.Kind==AnnotationKind.Callout)return CalloutGeometry(a).FillContains(p)||CalloutGeometry(a).StrokeContains(new Pen(Brushes.Black,tolerance*2+a.Stroke),p);
-        var bounds=Bounds(a);bounds.Inflate(tolerance,tolerance);return bounds.Contains(p);
+        var bounds=LocalBounds(a);bounds.Inflate(tolerance,tolerance);return bounds.Contains(p);
     }
 }

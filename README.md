@@ -1,4 +1,26 @@
-# Captovix V1.7.0 — Shapes & Stroke Studio
+## V1.8.1 — Startup Recovery (22/10/2026)
+
+Sửa NullReferenceException tại SyncProperties khi ComboBox phát SelectionChanged trong InitializeComponent. Callback chỉ chạy sau khi hoàn tất dựng XAML và nối các thành phần Editor; chặn đồng bộ lồng nhau. Giữ schema 6, ảnh gốc, sidecar, preset, URL update và đường dẫn cài.
+
+Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chưa thực thi Windows. Bộ hồi quy Windows gồm khởi tạo MainWindow thật, callback trước trạng thái sẵn sàng và đổi kiểu sau khởi tạo. Cần kiểm tra mở app trên máy Windows của Boss.
+
+# Captovix V1.8.0 — Object Control & Layers
+
+## Mới trong V1.8.0
+
+- **Layers:** danh sách theo thứ tự trước/sau; chọn đối tượng bị che, Ctrl/Shift chọn nhiều; đổi tên, khóa/mở khóa và ẩn/hiện. Khóa/ẩn một thành viên áp dụng cả nhóm; layer ẩn cũng không có trong PNG/Copy.
+- **Khung số:** X/Y/rộng/cao theo pixel ảnh gốc, giữ tỷ lệ và nhập góc. Với một đối tượng: khung trước xoay và góc tuyệt đối. Với nhóm: khung bao đang thấy và góc xoay thêm, sau khi áp dụng góc nhóm trở về 0.
+- **Tay nắm xoay:** vòng tròn nối với khung chọn, Shift theo nấc 15°. Kéo/resize một đối tượng đã xoay giữ đúng hướng, đầu mút và điểm neo. Nhóm có thành viên xoay dùng resize đồng tỷ lệ để tránh shear.
+- **Snap:** căn mép/tâm theo ảnh/crop và đối tượng đang hiện, có đường gợi ý; Ctrl khi kéo tạm bỏ snap. Nút bật/tắt lưu trong settings.json.
+- **Quản lý:** giữ group/duplicate/order/align/distribute, bỏ qua khóa/ẩn khi chọn trên canvas; chọn từ Layers để mở lại. Mỗi gesture hoặc lần Áp dụng là một Undo. Tên/khóa/ẩn/góc/nhóm giữ khi chuyển ảnh và mở lại.
+- Giữ 9 shape và style V1.7, GDI capture pixel lẻ V1.6.1, unload V1.5.1, URL updater và đường dẫn cài hiện tại.
+
+**Cách dùng:** mở ảnh → chọn layer hoặc V chọn trên ảnh → nhập khung/góc → Áp dụng hoặc Enter; Esc bỏ trường chưa áp dụng. Chọn vòng tròn trên khung để xoay. Chọn dòng layer rồi nhập tên và Enter để đổi tên. Hai nút bên phải dòng khóa/hiện; layer khóa vẫn xuất bình thường, layer ẩn không xuất. Chữ/số thay W/H qua cỡ chữ và giữ tỷ lệ; font vẫn giới hạn 8–240 px. Các giá trị đang gõ cần Áp dụng trước khi đổi lựa chọn.
+
+**Dữ liệu:** schema 6 đọc 1–5, mặc định hiện/mở khóa/góc 0/tên tự động. Lần lưu sidecar cũ đầu tiên giữ byte cũ ở `Edits/<id>.json.pre-v1.8.bak`. Giữ các backup V1.7 có sẵn. V1.7 trở xuống không đọc schema 6; thoát app và khôi phục bản backup tương ứng khi hạ cấp. Ảnh gốc được giữ riêng.
+
+**Kiểm chứng:** logic/math chạy trên Linux, các bộ WPF được cross-build. Chưa thực thi kéo chuột, hiển thị, WPF/clipboard/GDI/DPI/installer/update trên Windows thật; bản bàn giao chờ nghiệm thu Windows. Hướng dẫn và checklist: `docs/OBJECT-CONTROL-LAYERS.md`. Không tự đăng GitHub Release.
+
 
 ## Mới trong V1.7.0
 
@@ -19,7 +41,7 @@
 
 Vùng 1467×386 phải tạo PNG 1467×386. Ảnh vùng/toàn màn hình dùng Win32 GDI BitBlt lấy pixel desktop SDR; không dùng Screenshot mode vốn ép chẵn của ScreenRecorderLib. Chụp cửa sổ và video giữ backend cũ. Hiệu năng/màu HDR, các cửa sổ bảo vệ, máy Windows thực tế vẫn cần kiểm chứng.
 
-**Cập nhật:** giải nén Update-Packages, đăng 5 release assets lên GitHub Release `v1.7.0` rồi bấm Kiểm tra cập nhật trong app. Hoặc thoát Captovix ở khay hệ thống, chạy `HuyVo.Captovix-win-Setup.exe` trong ZIP. Giữ nguyên đường dẫn cài hiện tại (kể cả `D:\Captovix\Captovix`); không cần gỡ app hoặc xóa ảnh. ZIP Source chỉ dành cho phát triển.
+**Cập nhật:** giải nén Update-Packages, đăng 5 release assets lên GitHub Release `v1.8.1` rồi bấm Kiểm tra cập nhật trong app. Hoặc thoát Captovix ở khay hệ thống, chạy `HuyVo.Captovix-win-Setup.exe` trong ZIP. Giữ nguyên đường dẫn cài hiện tại (kể cả `D:\Captovix\Captovix`); không cần gỡ app hoặc xóa ảnh. ZIP Source chỉ dành cho phát triển.
 
 **Kiểm tra sau cài:** thử vùng 1467×386, 1466×387, 1467×387, 1×1; bật/tắt con trỏ; chụp sát mép và qua hai màn hình. Chạy chức năng Kiểm chứng SDR để lưu report, rồi thử từng mức Windows scale. Log: `%LOCALAPPDATA%\HuyVo\Captovix\errors.log`. Bản vá này chưa được chạy chụp/installer trên Windows thật tại nơi build.
 
@@ -27,7 +49,7 @@ Vùng 1467×386 phải tạo PNG 1467×386. Ảnh vùng/toàn màn hình dùng W
 
 ## Bắt đầu
 
-**Cài thủ công:** giải nén `Captovix-v1.7.0-Update-Packages.zip`, chạy `HuyVo.Captovix-win-Setup.exe` rồi mở shortcut Captovix. Bộ cài cho chọn thư mục, kèm .NET runtime; không cần SDK/Visual Studio trên máy dùng. Microsoft VC++ Runtime có thể cần quyền quản trị nếu máy chưa có.
+**Cài thủ công:** giải nén `Captovix-v1.8.1-Update-Packages.zip`, chạy `HuyVo.Captovix-win-Setup.exe` rồi mở shortcut Captovix. Bộ cài cho chọn thư mục, kèm .NET runtime; không cần SDK/Visual Studio trên máy dùng. Microsoft VC++ Runtime có thể cần quyền quản trị nếu máy chưa có.
 
 **Portable:** script build vẫn có thể tạo bản portable khi cần; lần bàn giao này chỉ có Update-Packages và Source, không kèm file portable riêng.
 
@@ -47,7 +69,7 @@ Môi trường tạo bản này là Linux. Unit tests và cross-build không tha
 
 Trong Editor mở **Máy và màn hình → Kiểm chứng ảnh SDR trên máy này**. Tắt HDR trước; xác nhận dialog. Phép thử dùng clipboard, hiển thị ảnh mẫu, chụp mẫu và kiểm tra kích thước từng màn hình. Dùng Esc để hủy. Kết quả nằm tại `%LOCALAPPDATA%\HuyVo\Captovix\FidelityChecks\<lượt chạy>\report.json`, kèm ảnh mẫu và kết quả render; không tự gửi ra ngoài. Full-desktop test chỉ kiểm tra kích thước, file thử được xóa khi hoàn tất. Nếu probe bị kết thúc đột ngột có thể còn pending.
 
-Chạy lại khi Windows ở **100%, 125%, 150%, 175%, 200%**. Mỗi report chỉ chứng minh DPI đã quan sát ở lượt đó. Thử monitor phụ bên trái/trên (tọa độ âm). Script `Summarize-Fidelity.ps1` trong thư mục app/source `scripts` đọc các report pass của 1.7.0 để báo scale còn thiếu và monitor âm; exit 2 nếu matrix thiếu. Chưa có report thật trong gói bàn giao.
+Chạy lại khi Windows ở **100%, 125%, 150%, 175%, 200%**. Mỗi report chỉ chứng minh DPI đã quan sát ở lượt đó. Thử monitor phụ bên trái/trên (tọa độ âm). Script `Summarize-Fidelity.ps1` trong thư mục app/source `scripts` đọc các report pass của 1.8.0 để báo scale còn thiếu và monitor âm; exit 2 nếu matrix thiếu. Chưa có report thật trong gói bàn giao.
 
 Thử kéo chính Editor qua các monitor ở Actual Pixels và zoom tự chọn, rồi crop/xoay/copy/xuất và so pixel. Probe di chuyển cửa sổ mẫu, chưa thay thế kiểm tra thao tác Editor. Chi tiết và mẫu ghi kết quả: `docs/IMAGE-FIDELITY.md`, `docs/WINDOWS-FIDELITY-MATRIX.md`.
 
@@ -86,11 +108,11 @@ Tùy chọn ảnh sau chụp được dùng ngay khi chụp và lưu cùng phiê
 
 Autorun dùng HKCU Run (không cần quyền quản trị); Windows/Task Manager có thể trì hoãn hoặc vô hiệu hóa. Đường dẫn portable cần giữ nguyên; dùng bộ cài để cập nhật trong app. Thay nơi cài đặt phải gỡ bản cũ trước theo hướng dẫn hiện có.
 
-## Phát hành V1.7.0
+## Phát hành V1.8.0
 
-- Máy đã cài bản có updater: giải nén `Captovix-v1.7.0-Update-Packages.zip`, tải **5 asset bên trong** (trừ README-PUBLISH.txt) lên GitHub Release ổn định tag `v1.7.0` của `huyvd250797/captovix-releases`. Không tải chỉ một ZIP làm asset updater, không dùng Source code ZIP.
-- Năm asset: `HuyVo.Captovix-1.7.0-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không sửa nội dung feed/hash sau khi build.
-- Trên app cũ: Kiểm tra cập nhật → Tải bản cập nhật → Khởi động lại để cập nhật. Nếu chưa đăng release thì app cũ chưa thấy V1.7.0. Source URL mặc định đã giữ nguyên, không cần nhập lại.
+- Máy đã cài bản có updater: giải nén `Captovix-v1.8.1-Update-Packages.zip`, tải **5 asset bên trong** (trừ README-PUBLISH.txt) lên GitHub Release ổn định tag `v1.8.1` của `huyvd250797/captovix-releases`. Không tải chỉ một ZIP làm asset updater, không dùng Source code ZIP.
+- Năm asset: `HuyVo.Captovix-1.8.0-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không sửa nội dung feed/hash sau khi build.
+- Trên app cũ: Kiểm tra cập nhật → Tải bản cập nhật → Khởi động lại để cập nhật. Nếu chưa đăng release thì app cũ chưa thấy V1.8.0. Source URL mặc định đã giữ nguyên, không cần nhập lại.
 - Cài thủ công bằng `HuyVo.Captovix-win-Setup.exe` sau khi giải nén Update-Packages: thoát Captovix hoàn toàn bằng menu khay trước. Giữ đường dẫn cũ; vẫn cho chọn thư mục cài mới khi máy chưa có bản quản lý.
 - Source ZIP dùng cho phát triển; Portable ZIP để chạy giải nén; Setup EXE để cài nhiều máy. Bản build chưa ký chứng thư Authenticode, có thể gặp cảnh báo Windows.
 
@@ -272,4 +294,4 @@ C#/.NET 10, WPF/XAML, Win32/PerMonitorV2, GDI BitBlt cho ảnh desktop SDR, Scre
 
 ## Phiên bản tiếp theo
 
-**V1.8 — Object Control & Layers:** bảng layer chọn/đổi tên/khóa/ẩn/sắp xếp đối tượng; nhập X/Y/W/H và góc xoay; cải thiện chọn nhiều, snap, group và căn/chia đều. Video tiếp tục hoãn. Xem ROADMAP.md cho kế hoạch đến V1.20.
+**V1.9 — Arrows, Lines & Connectors:** mũi tên gấp khúc/cong, điểm điều khiển, connector bám shape theo ID; cập nhật khi di chuyển/resize, xử lý khi xóa/nhân bản và giữ liên kết khi lưu/Undo. Video tiếp tục hoãn. Xem ROADMAP.md cho kế hoạch đến V1.20.

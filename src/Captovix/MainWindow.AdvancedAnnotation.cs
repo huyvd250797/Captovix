@@ -12,7 +12,7 @@ public partial class MainWindow
     private void BeginInlineText()
     {
         EndInlineText(true);
-        if(_session==null||Surface.Selected is not {} a||a.Kind is not (AnnotationKind.Text or AnnotationKind.Callout))return;
+        if(_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {} a||a.Kind is not (AnnotationKind.Text or AnnotationKind.Callout))return;
         _textTimer.Stop();_session.Commit();_saveTimer.Stop();
         if(Surface.Zoom<.5)ZoomAtCenter(.5);
         _inlineId=a.Id;InlineText.Text=a.Text;InlineText.Visibility=Visibility.Visible;PositionInlineText();
@@ -28,9 +28,10 @@ public partial class MainWindow
         var layout=Surface.Layout!;InlineCanvas.RenderTransform=new MatrixTransform(EditorRenderer.LayoutMatrix(layout,Surface.Zoom));
         var inverse=EditorRenderer.LayoutMatrix(layout);inverse.Invert();InlineCanvas.Clip=new RectangleGeometry(EditorRenderer.RectOf(layout.Canvas)){Transform=new MatrixTransform(inverse)};
         Canvas.SetLeft(InlineText,x);Canvas.SetTop(InlineText,y);
+        var frame=EditorRenderer.LocalBox(a);InlineText.RenderTransform=new RotateTransform(a.Rotation,frame.CenterX-x,frame.CenterY-y);
         InlineText.FontSize=a.FontSize;InlineText.Foreground=EditorRenderer.Ink(a.Color);
         InlineText.TextWrapping=callout?TextWrapping.Wrap:TextWrapping.NoWrap;
-        InlineText.Width=Math.Max(24,callout?Math.Max(1,a.Width-24):Math.Max(160,Math.Min(view.Right-x,Math.Max(160,EditorRenderer.Bounds(a).Width+40))));
+        InlineText.Width=Math.Max(24,callout?Math.Max(1,a.Width-24):Math.Max(160,Math.Min(view.Right-x,Math.Max(160,EditorRenderer.LocalBounds(a).Width+40))));
         InlineText.MaxHeight=Math.Max(24,callout?Math.Max(1,a.Height-24):Math.Max(24,view.Bottom-y));
     }
     private void EndInlineText(bool commit)
@@ -55,7 +56,7 @@ public partial class MainWindow
     private void SyncAdvancedAnnotation()
     {
         if(DuplicateObjectButton==null)return;
-        bool active=_session!=null&&Surface.SelectedIds.Count>0&&Surface.Tool!=EditorTool.Crop;
+        bool active=_session!=null&&ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)&&Surface.Tool!=EditorTool.Crop;
         DuplicateObjectButton.IsEnabled=OrderPanel.IsEnabled=active;
         var units=_session==null?[]:AnnotationEditing.Units(_session.Document,Surface.SelectedIds);
         GroupObjectButton.IsEnabled=active&&units.Length>1;
@@ -65,7 +66,7 @@ public partial class MainWindow
     }
     private void ObjectCommand(string command)
     {
-        if(_session==null||Surface.Tool==EditorTool.Crop||Surface.SelectedIds.Count==0)return;
+        if(_session==null||Surface.Tool==EditorTool.Crop||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds))return;
         EndInlineText(true);Surface.CancelInteraction();_session.Commit();var ids=Surface.SelectedIds.ToHashSet();
         try{
             if(command=="Duplicate"){

@@ -1,4 +1,23 @@
+## V1.8.1 — Startup Recovery (22/10/2026)
+
+Sửa NullReferenceException tại SyncProperties khi ComboBox phát SelectionChanged trong InitializeComponent. Callback chỉ chạy sau khi hoàn tất dựng XAML và nối các thành phần Editor; chặn đồng bộ lồng nhau. Giữ schema 6, ảnh gốc, sidecar, preset, URL update và đường dẫn cài.
+
+Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chưa thực thi Windows. Bộ hồi quy Windows gồm khởi tạo MainWindow thật, callback trước trạng thái sẵn sàng và đổi kiểu sau khởi tạo. Cần kiểm tra mở app trên máy Windows của Boss.
+
 # Changelog
+
+## 1.8.0 — Object Control & Layers
+
+- Layers tích hợp Editor: thứ tự hiển thị theo paint order, chọn đối tượng phía dưới, chọn nhiều, tên riêng, khóa và ẩn. Khóa/ẩn theo nhóm; renderer bỏ layer ẩn, giữ layer khóa khi xuất. Lớp bảo vệ vẫn luôn phủ trên chú thích.
+- Annotation thêm Name/Locked/Visible/Rotation. Schema 6 đọc 1–5; backup `.pre-v1.8.bak` trước lần ghi đè sidecar cũ đầu tiên; từ chối schema tương lai.
+- RotateTransform dùng chung pivot local cho vẽ/hit/bounds/handles; input gốc lấy inverse transform của ảnh. Xoay riêng/nhóm bằng vòng tròn, Shift 15°. Resize một hình đã xoay giữ điểm neo; nhóm xoay dùng tỷ lệ đồng đều.
+- Vùng che/làm mờ/pixel hóa xoay clip hình ở vị trí đích; lấy pixel gốc ở ROI đích thay vì xoay bitmap đã lọc. Giữ Cover opaque và lớp bảo vệ.
+- Inspector X/Y/W/H/góc số, giữ tỷ lệ, kiểm tra đầu vào trước commit, Undo/Redo trọn thao tác. Label tách khung trước xoay của một hình với khung bao/góc tương đối của nhóm.
+- Snap mép/tâm với crop và đối tượng hiện, guide riêng không xuất vào ảnh; Ctrl tạm bỏ snap, toggle lưu AppSettings. Lọc đối tượng chọn bằng một lượt theo nhóm để tránh tìm kiếm lặp.
+- Giữ chuyển ảnh V1.5.1, capture GDI V1.6.1, shape/style/preset V1.7 và installer/updater cùng dữ liệu gốc.
+- Thêm ObjectControlChecks và ObjectWindowsChecks; cập nhật bộ cũ theo schema 6 và script Windows build. Windows runtime chưa được nghiệm thu tại nơi build.
+
+Tiếp theo **V1.9 — Arrows, Lines & Connectors**: đường gấp khúc/cong và điểm điều khiển; connector gắn shape theo ID, đi theo khi chuyển/resize, duy trì liên kết qua lưu, duplicate, delete và Undo.
 
 ## 1.7.0 — Shapes & Stroke Studio
 

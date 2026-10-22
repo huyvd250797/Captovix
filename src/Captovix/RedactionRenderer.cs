@@ -14,7 +14,7 @@ public static class RedactionRenderer
     }
     private static readonly ConditionalWeakTable<BitmapSource,Cache> Caches=new();
     private const long CacheBudget=32*1024*1024;
-    public static void Draw(DrawingContext dc,BitmapSource original,Annotation a,bool draft=false)
+    private static void DrawCore(DrawingContext dc,BitmapSource original,Annotation a,bool draft=false)
     {
         int left=(int)Math.Clamp(Math.Floor(a.Left),0,original.PixelWidth),top=(int)Math.Clamp(Math.Floor(a.Top),0,original.PixelHeight);
         int right=(int)Math.Clamp(Math.Ceiling(a.Left+a.Width),0,original.PixelWidth),bottom=(int)Math.Clamp(Math.Ceiling(a.Top+a.Height),0,original.PixelHeight);
@@ -32,6 +32,17 @@ public static class RedactionRenderer
             cache.Entries[a.Id]=(key,image,bytes);cache.Bytes+=bytes;
         }
         dc.DrawImage(image,rect);
+    }
+    public static void Draw(DrawingContext dc,BitmapSource original,Annotation a,bool draft=false)
+    {
+        if(!a.Visible)return;
+        if(Math.Abs(a.Rotation)<1e-9){DrawCore(dc,original,a,draft);return;}
+        if(a.Width<=0||a.Height<=0)return;
+        var geometry=new RectangleGeometry(new Rect(a.Left,a.Top,a.Width,a.Height)){Transform=EditorRenderer.ObjectTransform(a)};
+        var world=geometry.Bounds;var sample=a.Copy();sample.Rotation=0;sample.X1=Math.Floor(world.Left);sample.Y1=Math.Floor(world.Top);sample.X2=Math.Ceiling(world.Right);sample.Y2=Math.Ceiling(world.Bottom);
+        // Filter pixels at their actual destination; rotating a filtered bitmap
+        // would mask the wrong source content. The rotated shape clips the ROI.
+        dc.PushClip(geometry);try{DrawCore(dc,original,sample,draft);}finally{dc.Pop();}
     }
     private static DrawingImage Build(BitmapSource source,int left,int top,int right,int bottom,int strength,bool pixelate)
     {

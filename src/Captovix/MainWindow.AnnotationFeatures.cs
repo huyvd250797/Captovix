@@ -29,7 +29,7 @@ public partial class MainWindow
     }
     private void ChangeSelected(Action<Annotation> change)
     {
-        if(_session==null||Surface.SelectedIds.Count==0)return;var ids=Surface.SelectedIds.ToHashSet();
+        if(_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds))return;var ids=Surface.SelectedIds.ToHashSet();
         _session.Commit();_session.Change(d=>{foreach(var a in d.Annotations.Where(a=>ids.Contains(a.Id)))change(a);});
     }
     private void Effect_Changed(object sender,SelectionChangedEventArgs e)

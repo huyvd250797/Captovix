@@ -1,7 +1,7 @@
-V1.7.0 — package verification
-658 logic/static checks passed on Linux; 9 real Velopack SDK package checks passed (667 total).
-App + ShapeWindowsChecks + EditorWindowsChecks + FidelityWindowsChecks cross-built with zero warnings/errors; Windows test execution NOT performed.
+V1.8.0 package validation — 22/10/2026
+700 logic/static checks passed on Linux; 9 real Velopack SDK package checks passed: 709 total.
+App and ObjectWindowsChecks/ShapeWindowsChecks/EditorWindowsChecks/FidelityWindowsChecks cross-built with 0 warnings/errors. Windows execution NOT performed.
 Self-contained win-x64 publish and NSIS wrapper compiled.
-Verified full nupkg identity/version/SHA1/SHA256/size/RELEASES; payload/build/nupkg Captovix.dll identical; dependency versions and bundled update URL preserved.
-Verified V1.6.1 desktop capture/pixel fidelity/updater/startup/install-path files and V1.5.1 unload function are byte-identical to baseline.
-Verified ZIP CRC and source content. No GitHub publishing. Windows installer/capture/mouse/DPI/clipboard acceptance remains pending.
+Verified nupkg AppId/version/SHA1/SHA256/size/RELEASES, source-build/payload/nupkg DLL identity, documentation consistency, dependencies and default update URL.
+Verified capture/fidelity/updater/startup/install-path files and unload hotfix byte-identical to V1.7 baseline; desktop capture function retained.
+Both ZIP CRC/source content verified. No GitHub publishing. Windows mouse/render/DPI/capture/clipboard/install/update acceptance pending.

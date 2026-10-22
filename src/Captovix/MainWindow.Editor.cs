@@ -15,7 +15,7 @@ public partial class MainWindow
     private readonly DispatcherTimer _textTimer=new(){Interval=TimeSpan.FromMilliseconds(700)};
     private EditorSession? _session;
     private MediaItem? _activeItem;
-    private bool _syncProperties,_changingSelection,_fitMode=true,_actualPixels;
+    private bool _editorReady,_syncProperties,_changingSelection,_fitMode=true,_actualPixels;
     private void InitializeEditor()
     {
         _saveTimer.Tick+=(_,_)=>{_saveTimer.Stop();if(_session?.InTransaction==true||_inlineId!=null)return;FlushEdits(false);};
@@ -26,12 +26,17 @@ public partial class MainWindow
         Surface.VisualChanged+=PositionInlineText;
         Surface.CropFinished+=()=>{SelectTool(EditorTool.Select);FitImage();};
         InitializeViewport();
+        InitializeObjectControl();
         InitializeShapeStudio();
         InitializeAnnotationFeatures();
+        // XAML raises selection events before later named controls exist.
+        // Enable callbacks only after all editor subsystems have been wired.
+        _editorReady=true;
         SelectTool(EditorTool.Select);
     }
     private void UpdateEditorReadout()
     {
+        if(!_editorReady)return;
         // Refresh also fires while a surface is being cleared or replaced.
         // Only read dimensions from a complete, matching document/surface pair.
         if(_session is {} session&&ReferenceEquals(session,Surface.Session)&&Surface.Original!=null&&Surface.Layout is {} layout){
@@ -87,7 +92,7 @@ public partial class MainWindow
         }
         SyncProperties();
         ToolHint.Text=tool switch{
-            EditorTool.Select=>"Shift/Ctrl+click chọn nhiều • Alt+click chọn lớp dưới • Shift khóa hướng/tỷ lệ • Con lăn zoom • Space kéo khung nhìn",
+            EditorTool.Select=>"Shift/Ctrl+click chọn nhiều • Alt+click chọn lớp dưới • Tay nắm tròn xoay • Shift khóa hướng/tỷ lệ/góc 15° • Con lăn zoom • Space kéo khung nhìn",
             EditorTool.Shape=>"Chọn hình và viền/nền ở bảng thuộc tính → kéo để vẽ • Shift giữ tỷ lệ • V để chọn và sửa lại.",
             EditorTool.Line or EditorTool.Arrow=>"Kéo để vẽ • Shift khóa hướng mỗi 45° • V để sửa đầu mút; chỉnh kiểu nét và đầu mũi tên bên phải.",
             EditorTool.Text=>"Click trên ảnh để nhập chữ trực tiếp • Double-click chữ để sửa • Ctrl+Enter hoàn tất, Esc hủy.",
@@ -102,13 +107,13 @@ public partial class MainWindow
     private void Tool_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:string tool}){_session?.Commit();SelectTool(Enum.Parse<EditorTool>(tool));Surface.Focus();}}
     private void SyncProperties()
     {
-        if(Surface==null||StrokePicker==null||FontPicker==null)return;_syncProperties=true;
+        if(!_editorReady||_syncProperties)return;_syncProperties=true;
         try{
             var a=Surface.Selected;DeleteAnnotationButton.IsEnabled=a!=null;PropertyTitle.Text=a==null?"Thuộc tính chú thích":a.Kind switch{AnnotationKind.Arrow=>"Mũi tên",AnnotationKind.Rectangle=>"Khung chữ nhật",AnnotationKind.Ellipse=>"Hình ellipse",AnnotationKind.Text=>"Chữ",AnnotationKind.Highlight=>"Highlight",AnnotationKind.Blur=>"Làm mờ",AnnotationKind.Pixelate=>"Pixel hóa",AnnotationKind.Cover=>"Che kín",AnnotationKind.Callout=>"Hộp chú thích",AnnotationKind.Freehand=>"Nét vẽ tự do",_=>ShapeStudio.IsClosed(a.Kind)||a.Kind==AnnotationKind.Line?ShapeStudio.Label(a.Kind):"Số bước"};
             if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
             if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
             SelectValue(StrokePicker,Surface.StrokeSize);SelectValue(FontPicker,Surface.TextSize);
-            SyncShapeStudio();SyncAnnotationFeatures();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();
+            SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();
             foreach(var b in ColorPalette.Children.OfType<Button>())b.BorderThickness=new Thickness(b.Tag?.ToString()==Surface.InkColor?3:1);
             TextProperties.Visibility=a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
@@ -130,14 +135,14 @@ public partial class MainWindow
     }
     private void Style_Changed(object sender,SelectionChangedEventArgs e)
     {
-        if(_syncProperties||Surface==null||StrokePicker==null||FontPicker==null)return;
+        if(!_editorReady||_syncProperties)return;
         var stroke=PickedValue(StrokePicker,4);var font=PickedValue(FontPicker,28);Surface.StrokeSize=stroke;Surface.TextSize=font;
         ChangeSelected(a=>{a.Stroke=stroke;a.FontSize=font;});
         Surface.Refresh();SyncProperties();
     }
     private void AnnotationText_Changed(object sender,TextChangedEventArgs e)
     {
-        if(_syncProperties||_session==null||Surface.Selected is not {Kind:AnnotationKind.Text or AnnotationKind.Callout} a)return;
+        if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Text or AnnotationKind.Callout} a)return;
         _session.Begin();a.Text=AnnotationText.Text.Length>20000?AnnotationText.Text[..20000]:AnnotationText.Text;SavedLabel.Text="Đang chỉnh sửa…";Surface.InvalidateVisual();_textTimer.Stop();_textTimer.Start();
     }
     private void PropertyText_LostFocus(object sender,KeyboardFocusChangedEventArgs e){_textTimer.Stop();_session?.Commit();}
@@ -148,7 +153,7 @@ public partial class MainWindow
     }
     private void StepNumber_Commit(object sender,KeyboardFocusChangedEventArgs e)=>CommitStep();
     private void StepNumber_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Enter){CommitStep();Surface.Focus();e.Handled=true;}}
-    private void CommitStep(){if(_syncProperties||_session==null||Surface.Selected is not {Kind:AnnotationKind.Step} a)return;if(int.TryParse(StepNumber.Text,out var n)&&n>=1&&n<=9999){var id=a.Id;_session.Change(d=>d.Annotations.First(x=>x.Id==id).Number=n);}SyncProperties();}
+    private void CommitStep(){if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Step} a)return;if(int.TryParse(StepNumber.Text,out var n)&&n>=1&&n<=9999){var id=a.Id;_session.Change(d=>d.Annotations.First(x=>x.Id==id).Number=n);}SyncProperties();}
     private void DeleteAnnotation_Click(object sender,RoutedEventArgs e)=>Surface.DeleteSelected();
     private void RestoreCrop_Click(object sender,RoutedEventArgs e){if(_session==null)return;SelectTool(EditorTool.Select);try{_=new ImageLayout(new PixelRect(0,0,_session.Document.OriginalWidth,_session.Document.OriginalHeight),_session.Document.Appearance);_session.Change(d=>d.Crop=null);Surface.Refresh();if(_fitMode)FitImage();}catch(Exception ex){SetStatus("Chưa khôi phục crop: "+ex.Message);}}
     private void Undo_Click(object sender,RoutedEventArgs e){Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
