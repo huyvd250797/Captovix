@@ -65,7 +65,7 @@ public static class AnnotationEditing
             copy.Translate(delta.X,delta.Y);doc.Annotations.Add(copy);result.Add(copy.Id);
         }return result;
     }
-    public static int Tier(Annotation a)=>a.IsRedaction?a.Kind==AnnotationKind.Cover?2:1:0;
+    public static int Tier(Annotation a)=>a.Kind==AnnotationKind.Spotlight?-1:a.IsRedaction?a.Kind==AnnotationKind.Cover?2:1:0;
     public static void Reorder(EditorDocument doc,IEnumerable<string> ids,AnnotationOrder order)
     {
         if(!ObjectControl.CanEdit(doc,ids))return;

@@ -1,19 +1,21 @@
-# Captovix V1.10.0 — Trạng thái kiểm chứng
+# Captovix V1.11.0 — Trạng thái kiểm chứng
 
 ## Đã chạy trên Linux
 
-- 830 logic/static checks: TextClipboardChecks 49; ConnectorChecks 81; ObjectControlChecks 42; ShapeStudioChecks 115; ImageFidelityChecks 122; CaptureWorkflowChecks 53; GeometryChecks 30; EditorCoreChecks 38; AnnotationChecks 76; AdvancedAnnotationChecks 49; ImageAppearanceChecks 61; ViewportChecks 48; UpdateChecks 41; InstallerContractChecks 25.
-- TextClipboardChecks kiểm tra schema 8, migration callout cũ schema 1–7, font/giãn dòng/màu không hợp lệ, preset typography, bỏ nền/Undo, copy/paste nhóm và remap connector, tháo đầu ra ngoài selection, dán sang ảnh khác giữ cỡ, khóa, renumber và rollback khi dữ liệu sai.
-- Cross-build app và 6 bộ WPF: TextStudioWindowsChecks, ConnectorWindowsChecks, ObjectWindowsChecks, ShapeWindowsChecks, FidelityWindowsChecks, EditorWindowsChecks: 0 warnings/errors. Không thực thi WPF tại đây.
-- Publish self-contained win-x64, gói Velopack, NSIS wrapper. SDK gói thực tế có thêm 9 kiểm tra so với UpdateChecks không có gói: tổng 839 logic/static/package checks. Kiểm tra CRC ZIP, package ID/version, hash feed, DLL, docs và config theo byte.
-- So sánh pipeline capture/fidelity/image transfer, element/hotkey/updater và install-path helper với source V1.9.0 đã nhận. Giữ startup readiness/unload guard. Không đăng release/push GitHub.
+- 895 logic/static checks: FocusPrivacyChecks 65; TextClipboardChecks 49; ConnectorChecks 81; ObjectControlChecks 42; ShapeStudioChecks 115; ImageFidelityChecks 122; CaptureWorkflowChecks 53; GeometryChecks 30; EditorCoreChecks 38; AnnotationChecks 76; AdvancedAnnotationChecks 49; ImageAppearanceChecks 61; ViewportChecks 48; UpdateChecks 41; InstallerContractChecks 25.
+- FocusPrivacyChecks: 6 loại vùng × 2 hình, serialization/clone; schema 1–8/legacy highlight alpha; từ chối NaN/Infinity/range/enum; tâm mẫu kính, move/resize/duplicate/clipboard; Undo/Redo; focus preset; lớp bảo vệ, review mask ẩn/vượt crop; cache key theo vùng che/crop; giới hạn mẫu ngoài crop.
+- Thêm 9 kiểm tra SDK gói full thực tế so với UpdateChecks không có gói = 904 logic/static/package checks. Gồm đọc version thật, download/hash, từ chối hash sai/same/older/wrong AppId/prerelease.
+- Cross-build app và 7 bộ WPF: FocusPrivacyWindowsChecks, TextStudioWindowsChecks, ConnectorWindowsChecks, ObjectWindowsChecks, ShapeWindowsChecks, FidelityWindowsChecks, EditorWindowsChecks. 0 cảnh báo/lỗi; không thực thi WPF tại đây.
+- Publish self-contained win-x64, Velopack full nupkg và NSIS wrapper. Verifier kiểm tra CRC ZIP, feed SHA1/SHA256/size, AppId/version, DLL/docs/config/runtime theo byte. Capture/fidelity/image transfer/hotkey/UIA/updater/install-path nền so sánh với source V1.10.0 đã gửi; giữ startup/unload guard.
 
-## Bộ WPF mới chỉ được biên dịch
+## Bộ WPF bổ sung — CHỈ BIÊN DỊCH, CHƯA CHẠY
 
-TextStudioWindowsChecks gọi cùng đường xử lý PointerDown/Move/Up mà native mouse handler sử dụng: vẽ khung, tạo bước, chọn/di chuyển khung trong Step/Arrow, Alt vẽ chồng, Undo/Redo, sync inspector và bỏ nền ngay. Có render text Việt nhiều dòng/italic/underline/căn giữa, roundtrip PNG pixel, zoom không đổi xuất, 5 callout và 3 step marker, fallback font, WPF DataObject và khởi tạo MainWindow thật. Các test này CHƯA ĐƯỢC CHẠY tại đây; không coi là bằng chứng thao tác Windows đã đạt.
+FocusPrivacyWindowsChecks dùng hai ảnh khác nhau ở vùng bí mật đã được che, kiểm tra bản render không đổi khi có kính, blur, che đặc, hai hình vùng, xoay 0/33°, zoom 1.25/3/8. Kiểm tra che đặc vẫn opaque dù opacity chung 0; save/reopen; spotlight union/ẩn/tối ngoài; ellipse hit test; crop/zoom/xoay toàn ảnh; PNG flattened; pointer chung với native handler; inspector Apply và MainWindow startup.
 
-## Chờ nghiệm thu Windows thật
+Các bài này chưa có kết quả chạy tại nơi build. Cần chạy trên Windows để xác nhận thực tế compositing, antialias, màu và pixel bảo vệ. Không được tuyên bố privacy đã được chứng nhận chỉ dựa vào source/test build.
 
-Chạy Build.cmd và docs/TEXT-CALLOUT-STUDIO.md. Thử clipboard qua hai lần mở app và hai ảnh, Unicode/IME, Ctrl+C/V trong ô nhập, drag/capture/lost focus, chọn đối tượng qua mọi công cụ, UI layout 100–200%, nhiều màn hình, xuất chữ/callout có xoay, installer tại D:\Captovix\Captovix và update restart. Các regression hotkey/UIA/capture/GDI vẫn cần máy Windows. HDR/màu rộng đánh giá riêng.
+## Chờ nghiệm thu Windows
 
-Chưa có rich text theo từng từ, paste bitmap ngoài thành layer, OCR, scrolling capture hay Video Editor trong V1.10.
+Theo docs/FOCUS-PRIVACY.md: thao tác chọn/Alt vẽ chồng, preset, đổi loại che, Undo/copy/paste; PNG/JPEG/clipboard; lens trên mask với thứ tự lớp khác nhau; mask sát biên/ellipse/xoay; mixed DPI 100–200%, monitor âm, hiệu năng 4K/8K và nhiều mask; install D:\Captovix\Captovix và update restart. Giữ checklist text/IME, hotkey/UIA/GDI/capture kế thừa. HDR/màu rộng riêng.
+
+Không push/deploy/publish GitHub Release ở lần bàn giao này. Không OCR/tự tìm dữ liệu nhạy cảm, không chứng minh blur/pixel không phục hồi, không nhúng image layers hoặc phát triển Video Editor trong V1.11.

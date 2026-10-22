@@ -104,11 +104,11 @@ internal static class Program
             item=new(){Id=Guid.NewGuid().ToString("N"),FilePath=originalFile};var session=DocumentStore.Load(item,source,out _);session.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Step,X1=20,Y1=20}));DocumentStore.Save(item,session,source);
             Check(!session.Dirty&&File.Exists(DocumentStore.EditPath(item.Id)),"Document saves as a sidecar and clears dirty state");
             var loaded=DocumentStore.Load(item,source,out var warning);Check(warning==null&&loaded.Document.Annotations.Count==1,"Sidecar reopens as editable objects");
-            var legacySidecar=loaded.Document.Serialize().Replace("\"Version\": 8","\"Version\": 4");File.WriteAllText(DocumentStore.EditPath(item.Id),legacySidecar);
+            var legacySidecar=loaded.Document.Serialize().Replace("\"Version\": 9","\"Version\": 4");File.WriteAllText(DocumentStore.EditPath(item.Id),legacySidecar);
             var migrated=DocumentStore.Load(item,source,out warning);migrated.Change(d=>d.Annotations[0].Color="#123456");DocumentStore.Save(item,migrated,source);
-            Check(File.ReadAllText(DocumentStore.EditPath(item.Id)+".pre-v1.10.bak")==legacySidecar,"First schema-8 save retains the exact old sidecar before replacement");
-            Check(EditorDocument.Deserialize(File.ReadAllText(DocumentStore.EditPath(item.Id))).Version==8,"Sidecar migration writes current schema after making backup");
-            File.Delete(DocumentStore.EditPath(item.Id)+".pre-v1.10.bak");
+            Check(File.ReadAllText(DocumentStore.EditPath(item.Id)+".pre-v1.11.bak")==legacySidecar,"First schema-9 save retains the exact old sidecar before replacement");
+            Check(EditorDocument.Deserialize(File.ReadAllText(DocumentStore.EditPath(item.Id))).Version==9,"Sidecar migration writes current schema after making backup");
+            File.Delete(DocumentStore.EditPath(item.Id)+".pre-v1.11.bak");
             DocumentStore.Delete(item);Check(!File.Exists(DocumentStore.EditPath(item.Id)),"Sidecar cleanup removes the selected item only");
             var app=new App();app.InitializeComponent();var window=new MainWindow();
             Check(window.WindowState==WindowState.Maximized,"Editor starts maximized");

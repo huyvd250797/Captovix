@@ -4,7 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Captovix;
-public enum EditorTool { Select, Arrow, Rectangle, Ellipse, Text, Highlight, Step, Crop, Blur, Pixelate, Cover, Callout, Freehand, Shape, Line }
+public enum EditorTool { Select, Arrow, Rectangle, Ellipse, Text, Highlight, Step, Crop, Blur, Pixelate, Cover, Callout, Freehand, Shape, Line, Magnifier, Spotlight }
 public sealed partial class EditorSurface : FrameworkElement
 {
     public EditorSession? Session {get;private set;}
@@ -104,7 +104,7 @@ public sealed partial class EditorSurface : FrameworkElement
         var p=e.GetPosition(this);var v=Session!.Document.Viewport;var source=Layout!.ToSource(p.X/Zoom,p.Y/Zoom);return Tool==EditorTool.Select||_action is DragAction.None or DragAction.Move or DragAction.Resize or DragAction.Rotate?new(source.X,source.Y):new(Math.Clamp(source.X,v.X,v.Right),Math.Clamp(source.Y,v.Y,v.Bottom));
     }
     private Annotation? Hit(Point p,bool cycle=false){
-        var hits=ObjectControl.CanvasCandidates(Session!.Document).OrderBy(a=>a.IsRedaction? a.Kind==AnnotationKind.Cover?2:1:0).Reverse().Where(a=>EditorRenderer.Hit(a,p,5/InteractionScale)).ToArray();
+        var hits=ObjectControl.CanvasCandidates(Session!.Document).OrderBy(AnnotationEditing.Tier).Reverse().Where(a=>EditorRenderer.Hit(a,p,5/InteractionScale)).ToArray();
         if(hits.Length==0)return null;int selected=Array.FindIndex(hits,a=>a.Id==_primary);return cycle&&selected>=0?hits[(selected+1)%hits.Length]:hits[0];
     }
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -148,7 +148,7 @@ public sealed partial class EditorSurface : FrameworkElement
             _pointBudget=100000-Session.Document.Annotations.Sum(a=>a.Points.Count);
             if(Session.Document.Annotations.Count>=10000||Tool==EditorTool.Freehand&&_pointBudget<1){return;}
             Session.Begin();var a=new Annotation{Kind=Tool==EditorTool.Shape?ShapeKind:Enum.Parse<AnnotationKind>(Tool.ToString()),X1=_start.X,Y1=_start.Y,X2=_start.X,Y2=_start.Y,Color=InkColor,Stroke=StrokeSize,FontSize=TextSize,EffectSize=EffectSize};
-            ShapeStudio.CopyStyle(ShapeDefaults,a);InitializeTextObject(a);BeginConnector(a);
+            ShapeStudio.CopyStyle(ShapeDefaults,a);InitializeTextObject(a);InitializeFocusObject(a);BeginConnector(a);
             if(Tool==EditorTool.Step)a.Number=Session.Document.NextStep();if(Tool is EditorTool.Text or EditorTool.Callout)a.Text="Nhập nội dung";
             if(Tool==EditorTool.Freehand)a.AddPoint(_start.X,_start.Y);
             Session.Document.Annotations.Add(a);_selected.Clear();_selected.Add(a.Id);_primary=_createdId=a.Id;SelectionChanged?.Invoke();

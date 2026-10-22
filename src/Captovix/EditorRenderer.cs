@@ -28,10 +28,15 @@ public static partial class EditorRenderer
     private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
         ConnectorStudio.Resolve(doc);
-        foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction))DrawAnnotation(dc,a);
+        var sampling=FocusStudio.Sampling(doc);
+        DrawSpotlights(dc,doc);
+        DrawingGroup? protectedSource=doc.Annotations.Any(a=>a.Visible&&a.Kind==AnnotationKind.Magnifier)?ProtectedSource(source,doc,draftIds,sampling):null;
+        foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction&&a.Kind!=AnnotationKind.Spotlight)){
+            if(a.Kind==AnnotationKind.Magnifier)DrawMagnifier(dc,protectedSource!,a);else DrawAnnotation(dc,a);
+        }
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
-            RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true);
+            RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true,sampling);
     }
     private static void DrawLocalAnnotation(DrawingContext dc,Annotation a)
     {
@@ -47,7 +52,7 @@ public static partial class EditorRenderer
             case AnnotationKind.Callout:
                 dc.DrawGeometry(a.FillEnabled?ShapeInk(a.FillColor,a.FillOpacity):null,a.StrokeEnabled?ShapePen(a):null,CalloutGeometry(a));DrawStyledText(dc,a);break;
             case AnnotationKind.Highlight:
-                var color=(Color)ColorConverter.ConvertFromString(a.Color);color.A=78;dc.DrawRectangle(new SolidColorBrush(color),null,rect);break;
+                dc.DrawGeometry(ShapeInk(a.Color,a.FocusOpacity),null,RegionGeometry(a));break;
             case AnnotationKind.Text:DrawStyledText(dc,a);break;
             case AnnotationKind.Step:
                 dc.DrawGeometry(brush,new Pen(Brushes.White,Math.Max(1,a.Stroke/2)),StepGeometry(a));
@@ -120,6 +125,7 @@ public static partial class EditorRenderer
         if(ConnectorStudio.IsPath(a))return HitConnector(a,p,tolerance);
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind))return HitStrokeShape(a,p,tolerance);
         if(a.Kind==AnnotationKind.Freehand){for(int i=0;i<a.Points.Count;i++){var v=a.Points[i];var u=a.Points[Math.Max(0,i-1)];if(Distance(p,new(u.X,u.Y),new(v.X,v.Y))<=tolerance+a.Stroke/2)return true;}return false;}
+        if(FocusStudio.Supports(a.Kind))return RegionGeometry(a).FillContains(p)||RegionGeometry(a).StrokeContains(new Pen(Brushes.Black,tolerance*2),p);
         if(a.Kind==AnnotationKind.Callout)return CalloutGeometry(a).FillContains(p)||CalloutGeometry(a).StrokeContains(new Pen(Brushes.Black,tolerance*2+a.Stroke),p);
         var bounds=LocalBounds(a);bounds.Inflate(tolerance,tolerance);return bounds.Contains(p);
     }

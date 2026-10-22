@@ -1,3 +1,7 @@
+# V1.11.0 — Focus & Privacy
+
+Đã triển khai kính 1.25–8×, spotlight hợp vùng, highlight opacity/hình vùng, mask ellipse/rotate và protected sampling theo tile, 5 preset, review trước chia sẻ. Schema 9 đọc 1–8, backup .pre-v1.11.bak. Logic/build đã kiểm tra trên Linux; kết quả render/input/cài đặt phải nghiệm thu Windows theo docs/FOCUS-PRIVACY.md.
+
 # V1.10.0 — Text & Callout Studio
 
 Đã triển khai typography, năm dạng callout, ba dạng bước, preset chữ, clipboard đối tượng, bỏ nền ngay và chọn/kéo đối tượng từ công cụ vẽ. Schema 8 đọc 1–7; backup .pre-v1.10.bak. Logic/build được kiểm tra trên Linux; thao tác WPF/IME/clipboard/cài đặt chờ nghiệm thu Windows theo docs/TEXT-CALLOUT-STUDIO.md.
@@ -14,7 +18,7 @@ Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chư
 
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9 đã triển khai và chờ nghiệm thu Windows; V1.10 đã triển khai và chờ nghiệm thu Windows; V1.11–V1.20 là kế hoạch, chưa triển khai. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
+Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9 đã triển khai và chờ nghiệm thu Windows; V1.10 đã triển khai và chờ nghiệm thu Windows; V1.11 đã triển khai, chờ nghiệm thu Windows; V1.12–V1.20 là kế hoạch, chưa triển khai. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
 
 ## 1. Định hướng mới
 
@@ -46,7 +50,7 @@ Ví dụ nghiệm thu: vẽ rectangle nền vàng nhạt, viền đỏ nét đ�
 
 ## 4. Roadmap tổng thể
 
-V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.8 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.9 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.10 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; các mốc từ V1.11 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
+V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.8 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.9 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.10 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.11 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; các mốc từ V1.12 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật và dữ liệu | Điều kiện hoàn thành | Phụ thuộc/thứ tự |
 |---|---|---|---|---|---|
@@ -131,4 +135,4 @@ Chỉ hai file theo yêu cầu Boss:
 
 Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
 
-Bản tiếp theo: V1.11 — Focus & Privacy dự kiến bổ sung kính phóng đại vùng ảnh, spotlight làm tối phần ngoài vùng chú ý, highlight theo vùng và hoàn thiện mask blur/pixel/che đặc. Các hiệu ứng cần giữ đúng vị trí khi crop/xoay/đổi kích thước, sửa lại được và có preset. Kiểm tra bản xuất che đặc trước chia sẻ; blur/pixel không thay thế che đặc khi cần giấu thông tin. Chưa phát triển Video Editor.
+Bản tiếp theo: V1.12 — Selection & Pixel Editing dự kiến bổ sung chọn vùng pixel bằng chữ nhật/ellipse/lasso, copy/cut/paste vùng thành đối tượng ảnh, fill/eraser và cắt bỏ hàng/cột thừa. Tách rõ chọn pixel với chọn chú thích; giữ ảnh gốc, Undo có giới hạn bộ nhớ và lưu/mở đủ dữ liệu vùng đã dán. Video tiếp tục để sau.

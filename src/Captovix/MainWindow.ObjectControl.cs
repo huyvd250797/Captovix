@@ -21,7 +21,7 @@ public partial class MainWindow
         try{
             var session=_session!=null&&ReferenceEquals(_session,Surface.Session)?_session:null;
             var doc=session?.Document;var objects=doc==null?[]:ObjectControl.Members(doc,Surface.SelectedIds);
-            var rows=doc?.Annotations.Select((a,i)=>new{Object=a,Index=i}).OrderBy(x=>AnnotationEditing.Tier(x.Object)).ThenBy(x=>x.Index).Reverse().Select(x=>new LayerRow(x.Object.Id,string.IsNullOrWhiteSpace(x.Object.Name)?$"{ShapeStudio.Label(x.Object.Kind)} {x.Index+1}":x.Object.Name,$"{ShapeStudio.Label(x.Object.Kind)}{(x.Object.GroupId!=null?" · Nhóm "+x.Object.GroupId[..4]:"")}{(x.Object.IsRedaction?" · Bảo vệ":"")}",x.Object.Locked,x.Object.Visible)).ToArray()??[];
+            var rows=doc?.Annotations.Select((a,i)=>new{Object=a,Index=i}).OrderBy(x=>AnnotationEditing.Tier(x.Object)).ThenBy(x=>x.Index).Reverse().Select(x=>new LayerRow(x.Object.Id,string.IsNullOrWhiteSpace(x.Object.Name)?$"{ShapeStudio.Label(x.Object.Kind)} {x.Index+1}":x.Object.Name,$"{ShapeStudio.Label(x.Object.Kind)}{(x.Object.GroupId!=null?" · Nhóm "+x.Object.GroupId[..4]:"")}{(x.Object.IsRedaction?" · Bảo vệ":x.Object.Kind==AnnotationKind.Spotlight?" · Nền focus":"")}",x.Object.Locked,x.Object.Visible)).ToArray()??[];
             if(!_layerRows.SequenceEqual(rows)){_layerRows=rows;LayerList.ItemsSource=_layerRows;}
             LayerList.SelectedItems.Clear();foreach(var row in _layerRows)if(Surface.SelectedIds.Contains(row.Id))LayerList.SelectedItems.Add(row);
             LayerCount.Text=doc==null?"Chưa mở ảnh.":$"{doc.Annotations.Count} đối tượng · {doc.Annotations.Count(a=>a.Visible)} đang hiện";

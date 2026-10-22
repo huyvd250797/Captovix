@@ -155,7 +155,7 @@ public partial class MainWindow : Window
     private void Copy_Click(object sender,RoutedEventArgs e)
     {
         if(_session==null||!PrepareCropForExport())return;_session.Commit();
-        try{ImageTransfer.Copy(Surface.Flatten());FlushEdits(false);SetStatus($"Đã copy {Surface.Layout!.Width} × {Surface.Layout.Height} px · PNG + Bitmap gồm chú thích/crop. App nhận quyết định cách dán.");}
+        try{ImageTransfer.Copy(Surface.Flatten());FlushEdits(false);SetStatus($"Đã copy {Surface.Layout!.Width} × {Surface.Layout.Height} px · PNG + Bitmap gồm chú thích/crop. App nhận quyết định cách dán."+PrivacyExportStatus());}
         catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không copy được ảnh");}
     }
     private void Export_Click(object sender,RoutedEventArgs e)
@@ -171,7 +171,7 @@ public partial class MainWindow : Window
                 var bitmap=Surface.Flatten();ImageTransfer.Save(bitmap,save.FileName,save.FilterIndex==2);
                 FlushEdits(false);
             }else File.Copy(i.FilePath,save.FileName,true);
-            SetStatus("Đã xuất file: "+save.FileName);
+            SetStatus("Đã xuất file: "+save.FileName+(i.IsVideo?"":PrivacyExportStatus()));
         }catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không xuất được file");}
     }
     private void Import_Click(object sender,RoutedEventArgs e)

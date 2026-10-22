@@ -30,7 +30,7 @@ internal static class Program
             session.Change(d=>typeof(EditorSurface).GetMethod("ResizeObjectSelection",flags)!.Invoke(surface,new object[]{new Point(90,130),false}));
             Check(plain.EndAnchor?.TargetId==left.Id&&plain.Rotation==0&&Math.Abs(plain.X1-oldStart.X)<1e-7&&Math.Abs(plain.Y1-oldStart.Y)<1e-7,"Previously unlinked rotated straight arrow can attach an endpoint without moving the opposite end");
             typeof(EditorSurface).GetField("_originals",flags)!.SetValue(surface,Array.Empty<Annotation>());surface.SelectIds([arrow.Id]);
-            var app=new App();app.InitializeComponent();var window=new MainWindow();Check(window.WindowState==WindowState.Maximized&&window.Title.Contains("V1.10.0"),"MainWindow initializes successfully and opens maximized");
+            var app=new App();app.InitializeComponent();var window=new MainWindow();Check(window.WindowState==WindowState.Maximized&&window.Title.Contains("V1.11.0"),"MainWindow initializes successfully and opens maximized");
             typeof(MainWindow).GetField("_session",flags)!.SetValue(window,session);var editor=(EditorSurface)window.FindName("Surface");editor.Load(image,session);editor.SelectIds([arrow.Id]);
             object? Invoke(string name,params object[] args)=>typeof(MainWindow).GetMethod(name,flags)!.Invoke(window,args);
             Invoke("BuildCanvasMenu");var menu=editor.ContextMenu;var order=menu.Items.OfType<MenuItem>().Single(m=>Equals(m.Header,"Sắp xếp lớp"));Check(order.IsEnabled&&order.Items.OfType<MenuItem>().Count()==4,"Canvas right-click menu has four functional layer commands");

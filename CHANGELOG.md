@@ -1,3 +1,16 @@
+# V1.11.0 — Focus & Privacy (22/10/2026)
+
+- **Kính phóng đại (M):** kéo vùng đặt kính tại chỗ, chỉnh 1.25–8×, chữ nhật hoặc ellipse, màu/dày viền và bật/tắt viền. Di chuyển kính để lấy vùng khác; hình ảnh bên trong giữ hướng của ảnh. Kính lấy ảnh gốc đã áp các vùng che đang bật, không lấy chữ/shape chú thích, không tạo thêm chi tiết thật.
+- **Spotlight (O):** giữ sáng vùng chọn, làm tối phần ngoài; chữ nhật/ellipse, màu và độ tối 0–100%. Nhiều vùng sáng được hợp lại; màu/độ tối lấy Spotlight trên cùng. Lớp nền spotlight luôn dưới các chú thích; dùng menu chuột phải sắp xếp các spotlight để chọn style chung.
+- **Highlight (H):** chữ nhật/ellipse, màu và độ đậm 0–100%. Dữ liệu highlight cũ giữ nền chữ nhật và alpha 78 như trước.
+- **Blur / Pixel / Che kín:** chọn hình vùng chữ nhật/ellipse; xoay, resize, đổi màu che và mức Blur/Pixel 4–64. Chuyển ba kiểu che tại cùng vùng bằng Áp dụng. Che kín luôn đặc 100%, độc lập opacity chung. Lớp che đặc luôn phủ trên chú thích, kính và filter.
+- Bộ lọc làm việc theo tile, có halo cho blur và cache giới hạn. Khi có che đặc, mẫu filter được tô che trước khi tính blur/pixel để tránh kéo màu từ phần đã che ra ngoài. Mẫu ngoài crop được thay trắng; kính không lấy ảnh ngoài crop. Cache cập nhật khi vị trí/màu/trạng thái che hoặc crop thay đổi.
+- Các hiệu ứng là đối tượng sửa lại được: kéo/resize/xoay, nhóm, khóa/ẩn, Undo/Redo, Ctrl+C/V, Ctrl+D, lưu/mở lại. Bấm trực tiếp để chỉnh từ công cụ vẽ khác; Alt+kéo để tạo mới chồng lên vùng đã có.
+- 5 preset mới: Kính rõ 2x, Spotlight nền tối, Che thông tin, Làm mờ mạnh, Highlight vàng. Có thể lưu preset riêng gồm hình vùng, mức zoom/opacity, màu và mức xử lý. Chọn preset → Chỉ dùng preset cho nét mới để chuyển công cụ tương ứng; Áp dụng trên đối tượng giữ loại công cụ hiện tại.
+- **Kiểm tra trước khi chia sẻ:** thống kê vùng che đặc/filter/đang ẩn và vùng vượt ảnh/crop; nút kiểm tra ở Actual Pixels ngay trong Editor. Copy/xuất nhắc trạng thái che. PNG/JPEG xuất là ảnh đã ghép; thư viện/dự án vẫn giữ ảnh gốc. Blur/pixel và highlight không thay thế che đặc khi cần giấu dữ liệu.
+
+Editor schema 9 đọc 1–8; backup sidecar .pre-v1.11.bak trước ghi lần đầu. Giữ backup cũ, Media, workflow và URL update; không đổi đường dẫn cài. Giữ các bản vá startup, chuyển ảnh và capture pixel lẻ. Build và logic được kiểm tra trên Linux; WPF/cài/update cần nghiệm thu Windows.
+
 # V1.10.0 — Text & Callout Studio (22/10/2026)
 
 - Chọn đối tượng → Ctrl+C → Ctrl+V để dán một bản vẫn sửa được. Giữ nhóm, kiểu chữ và liên kết connector nội bộ; tạo ID mới, tháo liên kết ra ngoài lựa chọn. Dán sang ảnh khác giữ số pixel, không tự co giãn. Mỗi lần dán là một Undo. Ctrl+D tiếp tục nhân bản như cũ.

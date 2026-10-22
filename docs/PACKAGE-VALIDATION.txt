@@ -1,7 +1,6 @@
-Captovix V1.10.0 — Package validation, 22/10/2026
+Captovix V1.11.0 — Package validation, 22/10/2026
 
-Executed on Linux: 830 logic/static checks; plus 9 real Velopack SDK full-package checks = 839. WPF is NOT executed on this host.
-App and six WPF projects cross-build with 0 warnings/errors: TextStudioWindowsChecks, ConnectorWindowsChecks, EditorWindowsChecks, ObjectWindowsChecks, ShapeWindowsChecks, FidelityWindowsChecks.
-Windows x64 self-contained publish, Velopack full nupkg and NSIS wrapper compile. Packaging verifier checks nupkg CRC, AppId/version, feed SHA1/SHA256/size, matching DLL/docs/runtime/config bytes, source and Update ZIP CRC and identity.
-Compared unchanged capture/fidelity/image transfer, UIA/element/hotkey/updater and install-path code against uploaded V1.9.0. Startup readiness and unload guards retained. Schema 8 migration/clipboard/typography tests executed; WPF rendering and real pointer/clipboard/IME tests require Windows.
-No GitHub push or Release publish. No Windows install, runtime UI, OS clipboard, IME, capture, DPI, hotkey/UIA app or update restart was executed here. Follow TEXT-CALLOUT-STUDIO.md plus inherited capture checklists before broad rollout. HDR/wide gamut separate.
+Executed on Linux: 895 logic/static checks including 65 FocusPrivacyChecks; plus 9 real Velopack SDK full-package checks = 904.
+App plus 7 WPF test projects cross-build with 0 warnings/errors. WPF rendering/native mouse/clipboard/IME/DPI are NOT executed on this host. FocusPrivacyWindowsChecks contains compositing and secret-pixel differential tests that still require Windows execution.
+Self-contained Windows x64 publish, full nupkg and NSIS wrapper compile. Packaging verifies CRC, AppId/version, SHA1/SHA256/size feeds, published DLL/docs/runtime/config byte identity, both output ZIPs and unchanged capture/UIA/hotkey/update/install-path foundation against uploaded V1.10.0.
+No GitHub push/Release publish. Windows installation/custom root, update restart, rendering/export privacy, input, capture, DPI and HDR remain acceptance work. No broad privacy certification is claimed.

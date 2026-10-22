@@ -2,13 +2,14 @@ using System.IO;
 using System.Text.Json;
 
 namespace Captovix;
-public sealed record AnnotationPreset(string Name,string Color,double Stroke,double FontSize,int EffectSize=24,string FillColor="#FFFFFF",bool FillEnabled=false,bool StrokeEnabled=true,double StrokeOpacity=100,double FillOpacity=100,StrokePattern Dash=StrokePattern.Solid,double CornerRadius=16,int StarPoints=5,double StarInset=.45,ArrowTip Tip=ArrowTip.Triangle,bool DoubleArrow=false,double ArrowHeadSize=0,AnnotationKind? Shape=null,TypographyPreset? Typography=null)
+public sealed record AnnotationPreset(string Name,string Color,double Stroke,double FontSize,int EffectSize=24,string FillColor="#FFFFFF",bool FillEnabled=false,bool StrokeEnabled=true,double StrokeOpacity=100,double FillOpacity=100,StrokePattern Dash=StrokePattern.Solid,double CornerRadius=16,int StarPoints=5,double StarInset=.45,ArrowTip Tip=ArrowTip.Triangle,bool DoubleArrow=false,double ArrowHeadSize=0,AnnotationKind? Shape=null,TypographyPreset? Typography=null,FocusPreset? Focus=null)
 {
-    public Annotation ToStyle(){var style=new Annotation{Color=Color,Stroke=Stroke,FontSize=FontSize,EffectSize=EffectSize,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize};Typography?.Apply(style);return style;}
-    public static AnnotationPreset From(string name,Annotation a,AnnotationKind? shape=null)=>new(name,a.Color,a.Stroke,a.FontSize,a.EffectSize,a.FillColor,a.FillEnabled,a.StrokeEnabled,a.StrokeOpacity,a.FillOpacity,a.Dash,a.CornerRadius,a.StarPoints,a.StarInset,a.Tip,a.DoubleArrow,a.ArrowHeadSize,shape,TextStudio.IsText(a.Kind)?TypographyPreset.From(a):null);
-    public void Apply(Annotation a){a.Color=Color;a.Stroke=Stroke;a.FontSize=FontSize;a.EffectSize=EffectSize;if(TextStudio.IsText(a.Kind)){Typography?.Apply(a);a.FillColor=FillColor;a.FillEnabled=FillEnabled;a.FillOpacity=FillOpacity;if(a.Kind==AnnotationKind.Callout)a.StrokeEnabled=StrokeEnabled;}if(ShapeStudio.HasStroke(a.Kind)){ShapeStudio.CopyStyle(ToStyle(),a);if(Shape is {} kind&&ShapeStudio.IsClosed(a.Kind))a.Kind=kind;}}
+    public Annotation ToStyle(){var style=new Annotation{Color=Color,Stroke=Stroke,FontSize=FontSize,EffectSize=EffectSize,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize};Typography?.Apply(style);Focus?.Apply(style);return style;}
+    public static AnnotationPreset From(string name,Annotation a,AnnotationKind? shape=null)=>new(name,a.Color,a.Stroke,a.FontSize,a.EffectSize,a.FillColor,a.FillEnabled,a.StrokeEnabled,a.StrokeOpacity,a.FillOpacity,a.Dash,a.CornerRadius,a.StarPoints,a.StarInset,a.Tip,a.DoubleArrow,a.ArrowHeadSize,shape,TextStudio.IsText(a.Kind)?TypographyPreset.From(a):null,FocusStudio.Supports(a.Kind)?FocusPreset.From(a):null);
+    public void Apply(Annotation a){if(FocusStudio.Supports(a.Kind)){Focus?.Apply(a);if(a.Kind==AnnotationKind.Magnifier){a.StrokeEnabled=StrokeEnabled;a.StrokeOpacity=StrokeOpacity;a.Dash=Dash;}}a.Color=Color;a.Stroke=Stroke;a.FontSize=FontSize;a.EffectSize=EffectSize;if(TextStudio.IsText(a.Kind)){Typography?.Apply(a);a.FillColor=FillColor;a.FillEnabled=FillEnabled;a.FillOpacity=FillOpacity;if(a.Kind==AnnotationKind.Callout)a.StrokeEnabled=StrokeEnabled;}if(ShapeStudio.HasStroke(a.Kind)){ShapeStudio.CopyStyle(ToStyle(),a);if(Shape is {} kind&&ShapeStudio.IsClosed(a.Kind))a.Kind=kind;}}
     public void Validate()
     {
+        Focus?.Validate();
         if(string.IsNullOrWhiteSpace(Name)||Name.Length>40)throw new ArgumentException("Tên preset cần từ 1 đến 40 ký tự.");
         if(Shape is {} kind&&!ShapeStudio.IsClosed(kind))throw new ArgumentException("Preset shape không hợp lệ.");
         new EditorDocument{OriginalWidth=1,OriginalHeight=1,Annotations=[ToStyle()]}.Validate(1,1,"");
@@ -22,7 +23,12 @@ public static class AnnotationPresetStore
         new("Nổi bật","#F3C746",6,28),new("Tối giản","#26364B",2,22),new("Chữ lớn","#26364B",4,48),
         new("Khoanh lỗi đỏ","#D94155",4,28,Dash:StrokePattern.Dash,Shape:AnnotationKind.RoundedRectangle),
         new("Khung ghi chú xanh","#008B92",3,28,FillColor:"#B9F2E6",FillEnabled:true,FillOpacity:35,Shape:AnnotationKind.RoundedRectangle),
-        new("Nền nhấn vàng","#B88B00",2,28,FillColor:"#FFE28A",FillEnabled:true,StrokeEnabled:false,FillOpacity:45,Shape:AnnotationKind.Rectangle)
+        new("Nền nhấn vàng","#B88B00",2,28,FillColor:"#FFE28A",FillEnabled:true,StrokeEnabled:false,FillOpacity:45,Shape:AnnotationKind.Rectangle),
+        new("Kính rõ 2x","#008B92",3,28,Focus:new(RegionShape.Ellipse,2,30,AnnotationKind.Magnifier)),
+        new("Spotlight nền tối","#101828",3,28,Focus:new(RegionShape.Rectangle,2,70,AnnotationKind.Spotlight)),
+        new("Che thông tin","#111827",3,28,Focus:new(RegionShape.Rectangle,2,100,AnnotationKind.Cover)),
+        new("Làm mờ mạnh","#111827",3,28,EffectSize:40,Focus:new(RegionShape.Rectangle,2,100,AnnotationKind.Blur)),
+        new("Highlight vàng","#F3C746",3,28,Focus:new(RegionShape.Rectangle,2,35,AnnotationKind.Highlight))
     ];
     public static List<AnnotationPreset> Load(string root,out string? warning)
     {
