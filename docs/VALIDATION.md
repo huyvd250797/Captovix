@@ -1,19 +1,19 @@
-# Validation — Captovix V1.6.1
+# Validation — Captovix V1.7.0
 
-Nền: Captovix-v1.6.0-Source.zip. Giữ .NET SDK 10.0.100, Windows runtime 10.0.13, Velopack SDK/CLI 1.2.161, ScreenRecorderLib 7.0.1; schema ảnh 4, URL cập nhật và hotfix chuyển ảnh V1.5.1.
+Nền Captovix-v1.6.1-Source.zip (SHA256 f814c4365944d78a2dd150ea3fd9c0c04c79832ef5d32b8d29c3a54be65fa23e). Giữ .NET SDK 10.0.100/runtime Windows 10.0.13, ScreenRecorderLib 7.0.1, Velopack SDK/CLI 1.2.161 và NSIS 3.08. Giữ bản vá V1.6.1 GDI và V1.5.1 unload; schema annotation lên 5.
 
 ## Đã chạy trên Linux
 
-ImageFidelity 122, CaptureWorkflow 53, Geometry 30, EditorCore 38, Annotation 76, AdvancedAnnotation 49, ImageAppearance 61, Viewport 48, Update core 41, InstallerContract 25: **543 kiểm tra logic/tĩnh**. Geometry thêm 18 kiểm tra vùng ảnh lẻ/chẵn/1 pixel, tọa độ âm và qua màn hình, giữ diện tích và mép ảnh. Đây là kiểm tra mô hình, không chạy GDI trên Linux.
+ShapeStudio 115, ImageFidelity 122, CaptureWorkflow 53, Geometry 30, EditorCore 38, Annotation 76, AdvancedAnnotation 49, ImageAppearance 61, Viewport 48, Update core 41, InstallerContract 25: **658 kiểm tra logic/tĩnh**. ShapeStudio gồm migration 1–4, JSON/copy/duplicate/resize đầy đủ style, undo/redo, style không hợp lệ, normalized polygon/star, khóa góc tại biên, preset cũ/mới và kiểm tra file không bị ghi đè khi lỗi.
 
-Cross-build ứng dụng WPF, FidelityWindowsChecks và EditorWindowsChecks thành công. Publish self-contained Windows x64; compile NSIS wrapper. Tính năng mới: ảnh desktop qua GDI BitBlt không qua engine căn chẵn, pixel alpha opaque SDR8; thông báo lỗi runtime có điều kiện.
-
-Thêm **9 kiểm tra SDK trên nupkg thực tế** (hash/package/version/channel), tổng **552**. Kiểm tra CRC ZIP, version/AppId/feed SHA1/SHA256/size và DLL giữa payload/nupkg; URL nguồn phát hành giữ nguyên. Chưa đăng GitHub Release.
+Cross-build app WPF và 3 bộ Windows checks: ShapeWindowsChecks, EditorWindowsChecks, FidelityWindowsChecks. Publish self-contained Windows x64; compile NSIS wrapper. Kiểm tra gói thật qua SDK sau đóng gói và kiểm tra ZIP/feed/identity/hash/size/DLL/default URL trước bàn giao; xem PACKAGE-VALIDATION.txt trong source cho kết quả cuối.
 
 ## Chưa chạy trên Windows
 
-Không có Windows host/VM. Chưa chạy native GDI, cursor/hotspot, Clipboard, installer/update/restart, WPF renderer/PNG, monitor âm hay DPI thực tế. Không đánh dấu nghiệm thu các mức 100/125/150/175/200%.
+Không có Windows host/VM/native UI trong môi trường build. Chưa chạy ShapeWindowsChecks (renderer/fill/dash/arrow/hit/surface/zoom/roundtrip), EditorWindowsChecks (thêm inspector, defaults và migration backup), FidelityWindowsChecks hoặc probe SDR. Các bộ này chỉ cross-build, không cộng vào số checks đã chạy.
 
-Probe Windows dùng cùng CaptureEngine/backend desktop mới. Ngoài mẫu 256×192 và full-display/window, thêm các mẫu 255×192, 256×191, 255×191, 1×1 so mọi byte BGRA, cùng hồi quy kích thước 1467×386 khi màn hình đủ lớn. Phải chạy chức năng Kiểm chứng SDR để có report thật; gói này không chứa report đạt Windows.
+Chưa xác minh thao tác chuột thật, layout thực tế, DPI 100/125/150/175/200%, native GDI/cursor, clipboard, cài/update/restart/path D, sidecar migration backup bằng API Windows. Không có report Windows đạt trong ZIP. V1.7: triển khai/build xong, CHỜ NGHIỆM THU WINDOWS. Không đăng GitHub Release.
 
-Cần kiểm tra thêm vùng sát mép/qua màn hình ở DPI khác nhau, bật/tắt cursor, không rò handle khi chụp liên tục, đổi ảnh/editor, crop/rotate/copy/export, cập nhật giữ dữ liệu và đường dẫn D:\Captovix\Captovix. Protected content/secure desktop có thể không chụp được. HDR/wide gamut/ICC/16-bit chưa đánh giá. GDI lấy hình desktop đang hiển thị; chụp cửa sổ độc lập vẫn dùng backend cũ.
+## Giới hạn
+
+SDR8; HDR/ICC/wide gamut/16-bit chưa đánh giá. Polygon tự do/eyedropper/layer panel/rotate object là nội dung tương lai. File schema 5 không dùng ngược bằng app cũ; backup Edits trước khi rollback. Trường thuộc tính cần Áp dụng trước khi đổi lựa chọn. Cả viền/nền cùng tắt/0% tạo shape vô hình có thể phục hồi bằng Undo/chọn tất cả. Không thay đổi originals hay video engine.

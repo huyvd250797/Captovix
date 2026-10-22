@@ -26,6 +26,7 @@ public partial class MainWindow
         Surface.VisualChanged+=PositionInlineText;
         Surface.CropFinished+=()=>{SelectTool(EditorTool.Select);FitImage();};
         InitializeViewport();
+        InitializeShapeStudio();
         InitializeAnnotationFeatures();
         SelectTool(EditorTool.Select);
     }
@@ -79,6 +80,7 @@ public partial class MainWindow
     {
         if(Surface==null)return;EndInlineText(true);Surface.CancelInteraction();
         if(Surface.Tool==EditorTool.Crop&&tool!=EditorTool.Crop)Surface.ClearCropDraft();
+        if(tool is EditorTool.Shape or EditorTool.Line or EditorTool.Arrow)Surface.SelectIds([]);
         Surface.Tool=tool;if(tool==EditorTool.Crop)Surface.StartCrop();Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
         foreach(var button in ToolBox.Children.OfType<Button>()){
             var selected=button.Tag?.ToString()==tool.ToString();button.Background=selected?(Brush)FindResource("Accent"):Brushes.White;button.Foreground=selected?Brushes.White:new SolidColorBrush(Color.FromRgb(36,51,72));
@@ -86,6 +88,8 @@ public partial class MainWindow
         SyncProperties();
         ToolHint.Text=tool switch{
             EditorTool.Select=>"Shift/Ctrl+click chọn nhiều • Alt+click chọn lớp dưới • Shift khóa hướng/tỷ lệ • Con lăn zoom • Space kéo khung nhìn",
+            EditorTool.Shape=>"Chọn hình và viền/nền ở bảng thuộc tính → kéo để vẽ • Shift giữ tỷ lệ • V để chọn và sửa lại.",
+            EditorTool.Line or EditorTool.Arrow=>"Kéo để vẽ • Shift khóa hướng mỗi 45° • V để sửa đầu mút; chỉnh kiểu nét và đầu mũi tên bên phải.",
             EditorTool.Text=>"Click trên ảnh để nhập chữ trực tiếp • Double-click chữ để sửa • Ctrl+Enter hoàn tất, Esc hủy.",
             EditorTool.Callout=>"Kéo hộp để tạo callout và nhập chữ • Chọn rồi kéo tay nắm ở đầu đuôi để đổi điểm chỉ • Double-click sửa chữ.",
             EditorTool.Freehand=>"Giữ chuột trái để vẽ tự do • Thả chuột kết thúc nét • Esc hủy nét đang vẽ.",
@@ -100,11 +104,11 @@ public partial class MainWindow
     {
         if(Surface==null||StrokePicker==null||FontPicker==null)return;_syncProperties=true;
         try{
-            var a=Surface.Selected;DeleteAnnotationButton.IsEnabled=a!=null;PropertyTitle.Text=a==null?"Thuộc tính chú thích":a.Kind switch{AnnotationKind.Arrow=>"Mũi tên",AnnotationKind.Rectangle=>"Khung chữ nhật",AnnotationKind.Ellipse=>"Hình ellipse",AnnotationKind.Text=>"Chữ",AnnotationKind.Highlight=>"Highlight",AnnotationKind.Blur=>"Làm mờ",AnnotationKind.Pixelate=>"Pixel hóa",AnnotationKind.Cover=>"Che kín",AnnotationKind.Callout=>"Hộp chú thích",AnnotationKind.Freehand=>"Nét vẽ tự do",_=>"Số bước"};
+            var a=Surface.Selected;DeleteAnnotationButton.IsEnabled=a!=null;PropertyTitle.Text=a==null?"Thuộc tính chú thích":a.Kind switch{AnnotationKind.Arrow=>"Mũi tên",AnnotationKind.Rectangle=>"Khung chữ nhật",AnnotationKind.Ellipse=>"Hình ellipse",AnnotationKind.Text=>"Chữ",AnnotationKind.Highlight=>"Highlight",AnnotationKind.Blur=>"Làm mờ",AnnotationKind.Pixelate=>"Pixel hóa",AnnotationKind.Cover=>"Che kín",AnnotationKind.Callout=>"Hộp chú thích",AnnotationKind.Freehand=>"Nét vẽ tự do",_=>ShapeStudio.IsClosed(a.Kind)||a.Kind==AnnotationKind.Line?ShapeStudio.Label(a.Kind):"Số bước"};
             if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
             if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
             SelectValue(StrokePicker,Surface.StrokeSize);SelectValue(FontPicker,Surface.TextSize);
-            SyncAnnotationFeatures();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();
+            SyncShapeStudio();SyncAnnotationFeatures();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();
             foreach(var b in ColorPalette.Children.OfType<Button>())b.BorderThickness=new Thickness(b.Tag?.ToString()==Surface.InkColor?3:1);
             TextProperties.Visibility=a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
@@ -129,7 +133,7 @@ public partial class MainWindow
         if(_syncProperties||Surface==null||StrokePicker==null||FontPicker==null)return;
         var stroke=PickedValue(StrokePicker,4);var font=PickedValue(FontPicker,28);Surface.StrokeSize=stroke;Surface.TextSize=font;
         ChangeSelected(a=>{a.Stroke=stroke;a.FontSize=font;});
-        Surface.Refresh();
+        Surface.Refresh();SyncProperties();
     }
     private void AnnotationText_Changed(object sender,TextChangedEventArgs e)
     {
@@ -194,7 +198,7 @@ public partial class MainWindow
         if(e.Key==Key.Delete){Surface.DeleteSelected();e.Handled=true;return;}
         double step=Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?10:1;
         if(e.Key is Key.Left or Key.Right or Key.Up or Key.Down){Surface.Nudge(e.Key==Key.Left?-step:e.Key==Key.Right?step:0,e.Key==Key.Up?-step:e.Key==Key.Down?step:0);e.Handled=true;return;}
-        EditorTool? tool=e.Key switch{Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Rectangle,Key.E=>EditorTool.Ellipse,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,Key.B=>EditorTool.Blur,Key.P=>EditorTool.Pixelate,Key.K=>EditorTool.Cover,Key.Q=>EditorTool.Callout,Key.F=>EditorTool.Freehand,_=>null};
+        EditorTool? tool=e.Key switch{Key.S=>EditorTool.Shape,Key.L=>EditorTool.Line,Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Rectangle,Key.E=>EditorTool.Ellipse,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,Key.B=>EditorTool.Blur,Key.P=>EditorTool.Pixelate,Key.K=>EditorTool.Cover,Key.Q=>EditorTool.Callout,Key.F=>EditorTool.Freehand,_=>null};
         if(tool!=null){SelectTool(tool.Value);Surface.Focus();e.Handled=true;}
     }
 }

@@ -4,7 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Captovix;
-public enum EditorTool { Select, Arrow, Rectangle, Ellipse, Text, Highlight, Step, Crop, Blur, Pixelate, Cover, Callout, Freehand }
+public enum EditorTool { Select, Arrow, Rectangle, Ellipse, Text, Highlight, Step, Crop, Blur, Pixelate, Cover, Callout, Freehand, Shape, Line }
 public sealed class EditorSurface : FrameworkElement
 {
     public EditorSession? Session {get;private set;}
@@ -17,6 +17,8 @@ public sealed class EditorSurface : FrameworkElement
     public EditorTool Tool {get;set;}
     public string InkColor {get;set;}="#008B92";
     public double StrokeSize {get;set;}=4;
+    public Annotation ShapeDefaults {get;set;}=new(){Kind=AnnotationKind.RoundedRectangle};
+    public AnnotationKind ShapeKind {get;set;}=AnnotationKind.RoundedRectangle;
     public double TextSize {get;set;}=28;
     public int EffectSize {get;set;}=24;
     public double Zoom {get;private set;}=1;
@@ -66,7 +68,7 @@ public sealed class EditorSurface : FrameworkElement
     private Point[] Handles()
     {
         if(_selected.Count==0)return [];
-        if(_selected.Count==1&&Selected is {Kind:AnnotationKind.Arrow} arrow)return [new(arrow.X1,arrow.Y1),new(arrow.X2,arrow.Y2)];
+        if(_selected.Count==1&&Selected is {Kind:AnnotationKind.Arrow or AnnotationKind.Line} arrow)return [new(arrow.X1,arrow.Y1),new(arrow.X2,arrow.Y2)];
         var b=SelectionBox();Point[] handles=[new(b.X,b.Y),new(b.CenterX,b.Y),new(b.Right,b.Y),new(b.Right,b.CenterY),new(b.Right,b.Bottom),new(b.CenterX,b.Bottom),new(b.X,b.Bottom),new(b.X,b.CenterY)];
         return _selected.Count==1&&Selected is {Kind:AnnotationKind.Callout} callout?[..handles,new(callout.TailX,callout.TailY)]:handles;
     }
@@ -144,7 +146,8 @@ public sealed class EditorSurface : FrameworkElement
         else{
             _pointBudget=100000-Session.Document.Annotations.Sum(a=>a.Points.Count);
             if(Session.Document.Annotations.Count>=10000||Tool==EditorTool.Freehand&&_pointBudget<1){e.Handled=true;return;}
-            Session.Begin();var a=new Annotation{Kind=Enum.Parse<AnnotationKind>(Tool.ToString()),X1=_start.X,Y1=_start.Y,X2=_start.X,Y2=_start.Y,Color=InkColor,Stroke=StrokeSize,FontSize=TextSize,EffectSize=EffectSize};
+            Session.Begin();var a=new Annotation{Kind=Tool==EditorTool.Shape?ShapeKind:Enum.Parse<AnnotationKind>(Tool.ToString()),X1=_start.X,Y1=_start.Y,X2=_start.X,Y2=_start.Y,Color=InkColor,Stroke=StrokeSize,FontSize=TextSize,EffectSize=EffectSize};
+            ShapeStudio.CopyStyle(ShapeDefaults,a);
             if(Tool==EditorTool.Step)a.Number=Session.Document.NextStep();if(Tool is EditorTool.Text or EditorTool.Callout)a.Text="Nhập nội dung";
             if(Tool==EditorTool.Freehand)a.AddPoint(_start.X,_start.Y);
             Session.Document.Annotations.Add(a);_selected.Clear();_selected.Add(a.Id);_primary=_createdId=a.Id;SelectionChanged?.Invoke();
@@ -172,7 +175,7 @@ public sealed class EditorSurface : FrameworkElement
         else if(_action==DragAction.Create&&Selected is {} created){
             if(created.Kind==AnnotationKind.Freehand){var last=created.Points[^1];if(created.Points.Count<_pointBudget&&(p-new Point(last.X,last.Y)).Length>=Math.Max(1,1.5/InteractionScale))created.AddPoint(p.X,p.Y);InvalidateVisual();return;}
             var end=p;
-            if(shift&&created.Kind==AnnotationKind.Arrow)end=ConstrainArrow(_start,p);
+            if(shift&&ShapeStudio.IsLine(created.Kind))end=ConstrainArrow(_start,p);
             else if(shift){double side=Math.Min(Math.Abs(p.X-_start.X),Math.Abs(p.Y-_start.Y));end=new(_start.X+Math.Sign(p.X-_start.X)*side,_start.Y+Math.Sign(p.Y-_start.Y)*side);}
             created.X2=end.X;created.Y2=end.Y;
             if(created.Kind==AnnotationKind.Callout){var v=Session.Document.Viewport;created.TailX=Math.Clamp(created.Left+created.Width*.2,v.X,v.Right);created.TailY=Math.Clamp(created.Top+created.Height+Math.Max(20,created.Height*.3),v.Y,v.Bottom);}
@@ -182,7 +185,7 @@ public sealed class EditorSurface : FrameworkElement
             foreach(var original in _originals){var a=Session.Document.Annotations.First(x=>x.Id==original.Id);AnnotationEditing.Transform(a,original,_dragBounds,_dragBounds);a.Translate(delta.X,delta.Y);}
         }else if(_action==DragAction.Resize){
             if(_originals.Length==1&&Selected is {Kind:AnnotationKind.Callout} callout&&_handle==8){callout.TailX=p.X;callout.TailY=p.Y;}
-            else if(_originals.Length==1&&Selected is {Kind:AnnotationKind.Arrow} a){
+            else if(_originals.Length==1&&Selected is {Kind:AnnotationKind.Arrow or AnnotationKind.Line} a){
                 var original=_originals[0];var fixedPoint=_handle==0?new Point(original.X2,original.Y2):new Point(original.X1,original.Y1);var end=shift?ConstrainArrow(fixedPoint,p):p;
                 if(_handle==0){a.X1=end.X;a.Y1=end.Y;}else{a.X2=end.X;a.Y2=end.Y;}
             }else{
@@ -194,10 +197,9 @@ public sealed class EditorSurface : FrameworkElement
     }
     private Point ConstrainArrow(Point start,Point end)
     {
-        var delta=end-start;double angle=Math.Round(Math.Atan2(delta.Y,delta.X)/(Math.PI/4))*Math.PI/4;var view=Session!.Document.Viewport;
-        return new(Math.Clamp(start.X+Math.Cos(angle)*delta.Length,view.X,view.Right),Math.Clamp(start.Y+Math.Sin(angle)*delta.Length,view.Y,view.Bottom));
+        var p=ShapeStudio.ConstrainedEnd(new(start.X,start.Y),new(end.X,end.Y),Session!.Document.Viewport);return new(p.X,p.Y);
     }
-    private Cursor ResizeCursor(int handle)=>handle==8?Cursors.Cross:_selected.Count==1&&Selected?.Kind==AnnotationKind.Arrow?Cursors.Cross:HandleCursor(handle);
+    private Cursor ResizeCursor(int handle)=>handle==8?Cursors.Cross:_selected.Count==1&&Selected?.Kind is AnnotationKind.Arrow or AnnotationKind.Line?Cursors.Cross:HandleCursor(handle);
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonUp(e);if(!Dragging||Session==null)return;OnMouseMove(e);var action=_action;_action=DragAction.None;ReleaseMouseCapture();
@@ -206,7 +208,7 @@ public sealed class EditorSurface : FrameworkElement
             if(marquee.Width>=2||marquee.Height>=2)foreach(var a in Session.Document.Annotations)if(marquee.IntersectsWith(EditorRenderer.Bounds(a)))_selected.Add(a.Id);
             _primary=_selected.LastOrDefault();_draft=null;
         }else{
-            var invalid=_createdId!=null&&Selected is {} a&&(a.Kind==AnnotationKind.Freehand?a.Points.Count==0:a.Kind==AnnotationKind.Callout?a.Width<36||a.Height<36:a.Kind==AnnotationKind.Arrow?Math.Sqrt(a.Width*a.Width+a.Height*a.Height)<2:a.Width<2||a.Height<2);
+            var invalid=_createdId!=null&&Selected is {} a&&(a.Kind==AnnotationKind.Freehand?a.Points.Count==0:a.Kind==AnnotationKind.Callout?a.Width<36||a.Height<36:ShapeStudio.IsLine(a.Kind)?Math.Sqrt(a.Width*a.Width+a.Height*a.Height)<2:a.Width<2||a.Height<2);
             if(invalid){Session.Cancel();_selected.Clear();_primary=null;}else Session.Commit();
         }
         _originals=[];Refresh();SelectionChanged?.Invoke();if(action==DragAction.Create&&Selected?.Kind==AnnotationKind.Callout)TextRequested?.Invoke();e.Handled=true;

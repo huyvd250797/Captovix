@@ -24,7 +24,7 @@ foreach ($folder in @($payload,$releases)) {
 if ($PreviousReleases) { Copy-Item (Join-Path (Resolve-Path $PreviousReleases).Path '*.nupkg') $releases -Force }
 dotnet run --project tests/InstallerContractChecks/InstallerContractChecks.csproj -c Release -- $projectRoot
 if ($LASTEXITCODE -ne 0) { throw 'Installer argument regression checks failed.' }
-foreach ($check in @('ImageFidelityChecks','CaptureWorkflowChecks','GeometryChecks','EditorCoreChecks','AnnotationChecks','AdvancedAnnotationChecks','ImageAppearanceChecks','ViewportChecks','UpdateChecks','EditorWindowsChecks','FidelityWindowsChecks')) {
+foreach ($check in @('ShapeStudioChecks','ShapeWindowsChecks','ImageFidelityChecks','CaptureWorkflowChecks','GeometryChecks','EditorCoreChecks','AnnotationChecks','AdvancedAnnotationChecks','ImageAppearanceChecks','ViewportChecks','UpdateChecks','EditorWindowsChecks','FidelityWindowsChecks')) {
     dotnet run --project "tests/$check/$check.csproj" -c Release -p:Platform=x64
     if ($LASTEXITCODE -ne 0) { throw "$check failed." }
 }

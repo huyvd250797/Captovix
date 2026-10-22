@@ -104,6 +104,11 @@ internal static class Program
             item=new(){Id=Guid.NewGuid().ToString("N"),FilePath=originalFile};var session=DocumentStore.Load(item,source,out _);session.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Step,X1=20,Y1=20}));DocumentStore.Save(item,session,source);
             Check(!session.Dirty&&File.Exists(DocumentStore.EditPath(item.Id)),"Document saves as a sidecar and clears dirty state");
             var loaded=DocumentStore.Load(item,source,out var warning);Check(warning==null&&loaded.Document.Annotations.Count==1,"Sidecar reopens as editable objects");
+            var legacySidecar=loaded.Document.Serialize().Replace("\"Version\": 5","\"Version\": 4");File.WriteAllText(DocumentStore.EditPath(item.Id),legacySidecar);
+            var migrated=DocumentStore.Load(item,source,out warning);migrated.Change(d=>d.Annotations[0].Color="#123456");DocumentStore.Save(item,migrated,source);
+            Check(File.ReadAllText(DocumentStore.EditPath(item.Id)+".pre-v1.7.bak")==legacySidecar,"First schema-5 save retains the exact old sidecar before replacement");
+            Check(EditorDocument.Deserialize(File.ReadAllText(DocumentStore.EditPath(item.Id))).Version==5,"Sidecar migration writes current schema after making backup");
+            File.Delete(DocumentStore.EditPath(item.Id)+".pre-v1.7.bak");
             DocumentStore.Delete(item);Check(!File.Exists(DocumentStore.EditPath(item.Id)),"Sidecar cleanup removes the selected item only");
             var app=new App();app.InitializeComponent();var window=new MainWindow();
             Check(window.WindowState==WindowState.Maximized,"Editor starts maximized");
@@ -177,6 +182,22 @@ internal static class Program
             foreach(var dpi in new[]{2d,1.75,1.5,1.25,1}){Invoke("OnDpiChanged",new DpiScale(previousDpi,previousDpi),new DpiScale(dpi,dpi));freeZoom&=Math.Abs(uiSurface.PhysicalZoom-2)<1e-9;previousDpi=dpi;}
             Check(freeZoom,"Simulated Editor DPI events preserve a chosen physical zoom without changing output");
             Check(uiSurface.Flatten().PixelWidth==4&&uiSurface.Flatten().PixelHeight==3,"Editor monitor transitions do not change exported pixel dimensions");
+            // V1.7 inspector integration on a real MainWindow/session.
+            list.SelectedItem=second;Invoke("SelectTool",EditorTool.Shape);
+            var shapeSession=(EditorSession)typeof(MainWindow).GetField("_session",flags)!.GetValue(window)!;
+            var styledShape=new Annotation{Kind=AnnotationKind.Rectangle,X1=10,Y1=10,X2=60,Y2=45};shapeSession.Change(d=>d.Annotations.Add(styledShape));uiSurface.SelectIds([styledShape.Id]);
+            var shapePicker=(System.Windows.Controls.ComboBox)window.FindName("ShapeKindPicker");shapePicker.SelectedValue=AnnotationKind.Star;
+            Check(styledShape.Kind==AnnotationKind.Star&&styledShape.X1==10&&styledShape.X2==60,"Shape picker converts the selected shape without changing its bounds");
+            void Field(string name,string value)=>((System.Windows.Controls.TextBox)window.FindName(name)).Text=value;
+            Field("ShapeStrokeHex","#123456");Field("ShapeFillHex","#FFE28A");Field("ShapeThickness","7.5");Field("ShapeStarPoints","7");Field("ShapeStarInset","35");
+            ((System.Windows.Controls.CheckBox)window.FindName("ShapeFillEnabled")).IsChecked=true;
+            ((System.Windows.Controls.ComboBox)window.FindName("ShapeDash")).SelectedIndex=3;
+            Check((bool)Invoke("ApplyShapeStyle")!&&styledShape.Stroke==7.5&&styledShape.Dash==StrokePattern.DashDot&&styledShape.FillColor=="#FFE28A"&&styledShape.StarPoints==7,"Inspector commits validated shape styling");
+            var styleJson=shapeSession.Document.Serialize();Field("ShapeThickness","NaN");Check(!(bool)Invoke("ApplyShapeStyle")!&&shapeSession.Document.Serialize()==styleJson,"Invalid inspector input leaves document untouched");Invoke("SyncProperties");
+            shapeSession.Undo();uiSurface.Refresh();Check(shapeSession.Document.Annotations[0].Stroke==4&&shapeSession.Document.Annotations[0].Kind==AnnotationKind.Star,"Style inspector has one complete undo step");shapeSession.Redo();uiSurface.Refresh();
+            Invoke("SelectTool",EditorTool.Line);Check(uiSurface.SelectedIds.Count==0&&uiSurface.Tool==EditorTool.Line,"Choosing a drawing tool prepares defaults without altering previous objects");
+            var selectedPreset=(System.Windows.Controls.ComboBox)window.FindName("PresetPicker");selectedPreset.SelectedItem=selectedPreset.Items.Cast<AnnotationPreset>().First(p=>p.Name=="Khoanh lỗi đỏ");var prior=shapeSession.Document.Serialize();
+            Invoke("ApplyPreset_Click",new System.Windows.Controls.Button{Tag="Defaults"},new RoutedEventArgs());Check(shapeSession.Document.Serialize()==prior&&uiSurface.Tool==EditorTool.Shape&&uiSurface.ShapeDefaults.Dash==StrokePattern.Dash,"Use-preset-for-new changes defaults without changing drawn objects");
             window.Close();
             Console.WriteLine($"{count} Windows renderer/document checks passed. Screen/audio capture remains a manual test.");return 0;
         }catch(Exception ex){Console.Error.WriteLine(ex);return 1;}

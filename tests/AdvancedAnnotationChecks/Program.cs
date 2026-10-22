@@ -6,7 +6,7 @@ EditorDocument Doc()=>new(){OriginalWidth=800,OriginalHeight=600,SourceHash="has
 Annotation Rect(double x,double y,double w=30,double h=30)=>new(){Kind=AnnotationKind.Rectangle,X1=x,Y1=y,X2=x+w,Y2=y+h};
 AnnotationBox Box(Annotation a)=>new(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
 void Validate(EditorDocument d)=>d.Validate(800,600,"hash");
-foreach(int version in new[]{1,2,3}){var legacy=Doc();legacy.Version=version;legacy.Annotations.Add(Rect(10,20));var id=legacy.Annotations[0].Id;Validate(legacy);Check(legacy.Version==4&&legacy.Annotations[0].Id==id&&legacy.Annotations[0].X1==10,"Migrate supported schema "+version);}
+foreach(int version in new[]{1,2,3}){var legacy=Doc();legacy.Version=version;legacy.Annotations.Add(Rect(10,20));var id=legacy.Annotations[0].Id;Validate(legacy);Check(legacy.Version==5&&legacy.Annotations[0].Id==id&&legacy.Annotations[0].X1==10,"Migrate supported schema "+version);}
 var stroke=new Annotation{Kind=AnnotationKind.Freehand};stroke.AddPoint(10,20);stroke.AddPoint(90,10);stroke.AddPoint(45,80);
 var d=Doc();d.Annotations.Add(stroke);Validate(d);var clone=EditorDocument.Deserialize(d.Serialize());Validate(clone);
 Check(clone.Annotations[0].Points.SequenceEqual(stroke.Points),"Freehand roundtrip preserves every point");

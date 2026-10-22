@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.7.0 — Shapes & Stroke Studio
+
+- 9 hình kín; đường thẳng; mũi tên một/hai đầu, 4 kiểu đầu và cỡ đầu tùy chỉnh.
+- Màu HEX viền/nền độc lập, opacity, không viền/không nền, độ dày, solid/dash/dot/dash-dot. Bo góc và sao cấu hình được.
+- Hình học dùng chung cho render/hit test, chọn vùng tô hoặc mép hình rỗng, kéo/resize/sao chép giữ style và ID phù hợp; Shift khóa góc ngay cả tại mép ảnh.
+- Đổi loại hình kín tại inspector; áp dụng nhiều thuộc tính thành một Undo/Redo. Nhấn Enter áp dụng, Esc đồng bộ lại trường. Nét gạch/chấm được giữ khi export/reopen.
+- 3 preset shape mới và lưu preset đủ trường. Nút chỉ dùng preset cho nét mới tách khỏi áp dụng lên lựa chọn hiện có. Preset cũ tiếp tục tải được.
+- Schema 5 đọc 1–4; style mặc định tương thích hình cũ. Lần lưu sidecar schema cũ đầu tiên giữ `.pre-v1.7.bak` trước khi ghi. Không hỗ trợ app cũ ghi file schema 5.
+- Giữ V1.6.1 capture GDI đúng pixel, V1.5.1 unload và toàn bộ config updater/installer/tray. Không thêm editor video.
+- Thêm ShapeStudioChecks, ShapeWindowsChecks và UI inspector/migration cases vào EditorWindowsChecks; script Build-Windows chạy các bộ mới. Linux chạy logic; Windows runtime chưa được nghiệm thu tại nơi build.
+
+Tiếp theo **V1.8 — Object Control & Layers**: layer panel, khóa/ẩn/đổi tên/thứ tự, X/Y/W/H/góc xoay, cải thiện multi-select/snap/group/căn chỉnh và chia đều.
+
 ## V1.6.1 — Exact Desktop Capture Hotfix
 
 - Sửa chụp vùng/toàn màn hình bị engine hạ kích thước lẻ về chẵn (ví dụ 1467×386 → 1466×386).

@@ -1,6 +1,6 @@
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Cập nhật: 21/10/2026. V1.6.1 sửa lỗi kích thước lẻ bằng backend ảnh desktop GDI SDR8, đang chờ xác minh Windows. Nền hiện tại V1.6.1 Image Fidelity đã triển khai source, test logic, công cụ Windows và build. **Chưa nghiệm thu Windows thật**: renderer/PNG/clipboard, capture tại 100/125/150/175/200%, monitor âm và kéo Editor giữa màn hình. Không đánh dấu hoàn thành các tiêu chí này khi chưa có report thực tế. V1.7–V1.20 là kế hoạch, chưa triển khai. Bản vá lifecycle V1.5.1 được giữ nguyên.
+Cập nhật: 21/10/2026. Nền V1.7.0 Shapes & Stroke Studio đã triển khai source và test logic/cross-build; chờ nghiệm thu Windows. Giữ hotfix V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.8–V1.20 là kế hoạch, chưa triển khai. Các tiêu chí capture/DPI Windows và WPF chỉ được đánh dấu đạt sau report thật.
 
 ## 1. Định hướng mới
 
@@ -32,12 +32,12 @@ Ví dụ nghiệm thu: vẽ rectangle nền vàng nhạt, viền đỏ nét đ�
 
 ## 4. Roadmap tổng thể
 
-V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; các mốc từ V1.7 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
+V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, các mốc từ V1.8 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật và dữ liệu | Điều kiện hoàn thành | Phụ thuộc/thứ tự |
 |---|---|---|---|---|---|
 | V1.6 — Image Fidelity | Chụp/lưu/xem/xuất rõ đúng nguồn | Pixel-native capture; Actual Pixels; thông tin kích thước; PNG gốc; copy/xuất không resize ngầm | Rà pipeline capture→file→bitmap→viewport→renderer→clipboard; test DPI; fixture pixel SDR | Đúng W×H; PNG không đổi pixel ở vùng không chỉnh trong môi trường SDR xác định; zoom không đổi file | Làm trước mọi mở rộng ảnh |
-| V1.7 — Shapes & Stroke Studio | Nhiều shape với style đầy đủ | 10 nhóm shape; stroke/fill riêng; trong suốt; độ dày; solid/dash/dot/dash-dot; preset shape | Mở rộng schema annotation, geometry/path, hit testing và renderer; migration giữ file cũ | Chỉnh shape sau vẽ; lưu/mở/undo/export đúng màu, nền, nét và hình | Sau 1.6; kiểm thử transform hiện có |
+| V1.7 — Shapes & Stroke Studio | Nhiều shape với style đầy đủ | 9 hình kín + đường/mũi tên; stroke/fill riêng; trong suốt; độ dày; solid/dash/dot/dash-dot; preset shape | Mở rộng schema annotation, geometry/path, hit testing và renderer; migration giữ file cũ | Chỉnh shape sau vẽ; lưu/mở/undo/export đúng màu, nền, nét và hình | Sau 1.6; kiểm thử transform hiện có |
 | V1.8 — Object Control & Layers | Điều khiển đối tượng chính xác | Kéo/resize/rotate; X/Y/W/H/góc số; multi-select; duplicate/group; snap/căn/chia đều; layer lock/visibility/order | Selection overlay riêng; transform/undo theo gesture; layer panel tích hợp; stable ID | 1 gesture=1 undo; chọn xuyên lớp; khóa không bị kéo nhầm; mở lại giữ nhóm/lớp | Sau schema shape 1.7; nâng các tính năng có sẵn |
 | V1.9 — Arrows, Lines & Connectors | Vẽ hướng dẫn và sơ đồ rõ | Mũi tên thẳng/gấp khúc/cong; một/hai đầu; dạng đầu; nét đứt; connector bám shape | Endpoint/control point model, liên kết theo ID; cập nhật khi di chuyển/nhân bản/undo | Kéo shape thì connector theo; xóa shape xử lý liên kết nhất quán; export không lệch | Dựa object model 1.8 |
 | V1.10 — Text & Callout Studio | Chú thích chữ dễ đọc | Font/style/căn dòng, padding; nhiều callout; chỉnh đuôi; step marker nhiều kiểu; tự đánh số | Text layout/metrics; fallback font; text và shape không flatten khi lưu | Gõ tiếng Việt/IME, đổi zoom/rotate/export không cắt chữ; callout sửa lại được | Sau 1.8–1.9; kế thừa inline text cũ |
@@ -64,11 +64,11 @@ Giới hạn: không phục hồi chi tiết chưa có trong nguồn; không kh�
 
 ### V1.7 — Shapes & Stroke Studio
 
-Gallery shape gọn trong toolbar: rectangle, rounded rectangle, ellipse/circle, triangle, diamond, trapezoid, pentagon, hexagon, star, polygon; line/arrow mở rộng ở V1.9. Shift hỗ trợ hình cân đối; polygon có Enter hoàn tất/Esc hủy và chỉnh điểm theo khả năng loại hình.
+Đã triển khai theo phạm vi Boss chốt: 9 hình kín (rectangle, rounded rectangle, ellipse/circle, triangle, diamond, trapezoid, pentagon, hexagon, star), line và arrow 1/2 đầu. Thuộc tính viền/nền, alpha riêng, độ dày, dash, radius, cánh/lõi sao, kiểu/cỡ đầu mũi tên. Màu HEX và bảng màu nhanh. Nút công cụ ở toolbar, picker/thuộc tính tích hợp inspector của Editor.
 
-Thuộc tính: stroke color + alpha, fill color + alpha, no fill/no outline, stroke width theo px, solid/dash/dot/dash-dot, radius khi hỗ trợ. Có eyedropper và bảng màu gần đây; preset gợi ý như Khung lỗi, Vùng cần chú ý, Khung nét đứt. Màu fill không được thay màu stroke ngầm.
+Hình vẽ vẫn là đối tượng có ID, chọn/kéo/resize/chuyển hình/đổi style, Undo/Redo và mở lại được. Preset cũ giữ tương thích; 3 preset mới và lưu đủ style. Schema 5 đọc 1–4; backup sidecar cũ trước lần lưu mới đầu tiên. Chờ Windows kiểm thử interaction, renderer/PNG/DPI và installer/update.
 
-Sau khi vẽ, có thể chuyển Chọn để kéo/resize ngay. V1.8 bổ sung quản lý nâng cao, không có nghĩa V1.7 lưu shape thành ảnh phẳng. Schema mới phải đọc/migrate sidecar trước, có backup và không cho app cũ ghi đè dữ liệu mới không hiểu.
+Polygon tự do/chỉnh từng đỉnh, eyedropper/màu gần đây và connector thông minh chưa thuộc đợt V1.7 đã chốt; các phần này cần phạm vi và kiểm thử riêng ở những mốc công cụ tiếp theo. Arrow cơ bản được đưa lên V1.7, V1.9 giữ nhóm connector/callout nâng cao.
 
 ### V1.8 — Object Control & Layers
 
@@ -117,14 +117,4 @@ Chỉ hai file theo yêu cầu Boss:
 
 Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
 
-Bản tiếp theo: V1.7 Shapes & Stroke Studio; bổ sung nhiều shape, màu viền/nền độc lập, opacity, độ dày, nét liền/đứt/chấm và preset; đối tượng tiếp tục sửa sau vẽ. Sau đó V1.8 Object Control & Layers để đáp ứng trực tiếp yêu cầu ảnh rõ, nhiều shape, sửa màu/nền/nét và di chuyển đối tượng.
-
-## 10. Nguồn tham khảo chính thức
-
-Các nguồn dùng để tham khảo nhu cầu/chức năng và giới hạn chất lượng, không phải đặc tả implementation của Captovix:
-
-- TechSmith, Snagit Features: https://www.techsmith.com/snagit/features/ — shapes, arrows, callouts, templates, scrolling, OCR, smart move, simplify và export/library. Một số tính năng khác theo nền tảng; không mặc định mọi tính năng đều có trên Windows.
-- TechSmith, Images Captured in Snagit Are Blurry or Fuzzy: https://support.techsmith.com/hc/en-us/articles/203732158-Images-Captured-in-Snagit-Are-Blurry-or-Fuzzy — scale/zoom/lossy compression là các nguyên nhân ảnh trông mờ.
-- TechSmith, Does Snagit Support Scrolling Capture?: https://support.techsmith.com/hc/en-us/articles/41686829112205-Does-Snagit-Support-Scrolling-Capture
-- TechSmith, What is Smart Move?: https://support.techsmith.com/hc/en-us/articles/39980449934093-What-is-Smart-Move
-- TechSmith, Snagit Grab Text & Edit Text Best Practices: https://support.techsmith.com/hc/en-us/articles/115002031592-Snagit-Grab-Text-Edit-Text-Best-Practices — OCR có hạn chế theo font, cỡ chữ và tương phản; không dùng như cam kết chính xác cho Captovix.
+Bản tiếp theo: V1.8 — Object Control & Layers. Tích hợp bảng layer chọn, đổi tên, khóa, ẩn và sắp xếp; nhập X/Y/W/H/góc xoay, thao tác nhóm/nhiều lựa chọn, snap và căn/chia đều chính xác. Giữ công cụ đã có và ưu tiên ảnh; video xử lý sau.

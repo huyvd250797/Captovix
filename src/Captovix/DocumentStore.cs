@@ -26,7 +26,17 @@ public static class DocumentStore
     {
         var doc=session.Document;doc.Validate(original.PixelWidth,original.PixelHeight,doc.SourceHash);
         // The document is authoritative; failure to cache a thumbnail must not lose edits.
-        MediaStore.AtomicWrite(EditPath(item.Id),doc.Serialize());session.MarkSaved();
+        var editPath=EditPath(item.Id);
+        // First save of an older schema keeps the exact old bytes, including a
+        // manual Setup upgrade that did not run the in-app backup flow.
+        if(File.Exists(editPath)){
+            int priorVersion=0;
+            try{using var prior=System.Text.Json.JsonDocument.Parse(File.ReadAllText(editPath));if(prior.RootElement.ValueKind==System.Text.Json.JsonValueKind.Object&&prior.RootElement.TryGetProperty("Version",out var version)&&version.ValueKind==System.Text.Json.JsonValueKind.Number&&version.TryGetInt32(out var number))priorVersion=number;}
+            catch(System.Text.Json.JsonException){ /* Keep corrupt sidecar bytes before replacing the recovered document. */ }
+            if(priorVersion>5)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");
+            if(priorVersion<5&&!File.Exists(editPath+".pre-v1.7.bak"))File.Copy(editPath,editPath+".pre-v1.7.bak",false);
+        }
+        MediaStore.AtomicWrite(editPath,doc.Serialize());session.MarkSaved();
         try{
             var thumb=EditorRenderer.Render(original,doc,240);var path=ThumbnailPath(item.Id);Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var temp=path+".tmp";var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(thumb));using(var f=File.Create(temp))encoder.Save(f);File.Move(temp,path,true);item.Thumbnail=thumb;

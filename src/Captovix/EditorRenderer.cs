@@ -4,7 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Captovix;
-public static class EditorRenderer
+public static partial class EditorRenderer
 {
     public static Brush Ink(string color)=>new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
     public static FormattedText TextLayout(Annotation a,string? text=null,Brush? ink=null)=>new(text??a.Text,CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),a.FontSize,ink??Ink(a.Color),1.0);
@@ -33,14 +33,11 @@ public static class EditorRenderer
     }
     public static void DrawAnnotation(DrawingContext dc,Annotation a)
     {
-        var brush=Ink(a.Color);var pen=new Pen(brush,a.Stroke){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};
+        if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind)){DrawStrokeShape(dc,a);return;}
+        var brush=ShapeStudio.HasStroke(a.Kind)?ShapeInk(a.Color,a.StrokeOpacity):Ink(a.Color);var pen=new Pen(brush,a.Stroke){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};
+        if(a.Kind==AnnotationKind.Freehand){if(!a.StrokeEnabled||a.StrokeOpacity<=0)return;pen=ShapePen(a);}
         var p1=new Point(a.X1,a.Y1);var p2=new Point(a.X2,a.Y2);var rect=new Rect(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
         switch(a.Kind){
-            case AnnotationKind.Arrow:
-                var delta=p2-p1;var length=delta.Length;if(length<.01)return;delta.Normalize();
-                var head=Math.Min(Math.Max(12,a.Stroke*4),length*.5);var back=p2-delta*head;var side=new Vector(-delta.Y,delta.X)*head*.45;
-                dc.DrawLine(pen,p1,back+delta*a.Stroke);
-                var triangle=new StreamGeometry();using(var ctx=triangle.Open()){ctx.BeginFigure(p2,true,true);ctx.LineTo(back+side,true,false);ctx.LineTo(back-side,true,false);}dc.DrawGeometry(brush,null,triangle);break;
             case AnnotationKind.Freehand:
                 if(a.Points.Count==1){dc.DrawEllipse(brush,null,new(a.Points[0].X,a.Points[0].Y),a.Stroke/2,a.Stroke/2);break;}
                 if(a.Points.Count>1){var path=new StreamGeometry();using(var ctx=path.Open()){ctx.BeginFigure(new(a.Points[0].X,a.Points[0].Y),false,false);ctx.PolyLineTo(a.Points.Skip(1).Select(p=>new Point(p.X,p.Y)).ToArray(),true,false);}path.Freeze();dc.DrawGeometry(null,pen,path);}break;
@@ -49,8 +46,6 @@ public static class EditorRenderer
                 var inner=new Rect(rect.Left+12,rect.Top+12,Math.Max(1,rect.Width-24),Math.Max(1,rect.Height-24));
                 var label=TextLayout(a);label.MaxTextWidth=inner.Width;
                 dc.PushClip(new RectangleGeometry(inner));dc.DrawText(label,inner.TopLeft);dc.Pop();break;
-            case AnnotationKind.Rectangle:dc.DrawRectangle(null,pen,rect);break;
-            case AnnotationKind.Ellipse:dc.DrawEllipse(null,pen,new(rect.Left+rect.Width/2,rect.Top+rect.Height/2),rect.Width/2,rect.Height/2);break;
             case AnnotationKind.Highlight:
                 var color=(Color)ColorConverter.ConvertFromString(a.Color);color.A=78;dc.DrawRectangle(new SolidColorBrush(color),null,rect);break;
             case AnnotationKind.Text:dc.DrawText(TextLayout(a),p1);break;
@@ -121,16 +116,9 @@ public static class EditorRenderer
     }
     public static bool Hit(Annotation a,Point p,double tolerance)
     {
+        if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind))return HitStrokeShape(a,p,tolerance);
         if(a.Kind==AnnotationKind.Freehand){for(int i=0;i<a.Points.Count;i++){var v=a.Points[i];var u=a.Points[Math.Max(0,i-1)];if(Distance(p,new(u.X,u.Y),new(v.X,v.Y))<=tolerance+a.Stroke/2)return true;}return false;}
         if(a.Kind==AnnotationKind.Callout)return CalloutGeometry(a).FillContains(p)||CalloutGeometry(a).StrokeContains(new Pen(Brushes.Black,tolerance*2+a.Stroke),p);
-        if(a.Kind!=AnnotationKind.Arrow){
-            var r=Bounds(a);r.Inflate(tolerance,tolerance);if(!r.Contains(p))return false;
-            if(a.Kind==AnnotationKind.Rectangle){var inside=Bounds(a);inside.Inflate(-Math.Min(inside.Width/2,tolerance+a.Stroke/2),-Math.Min(inside.Height/2,tolerance+a.Stroke/2));return !inside.Contains(p);}
-            if(a.Kind==AnnotationKind.Ellipse){var b=Bounds(a);var rx=b.Width/2;var ry=b.Height/2;var dx=p.X-(b.Left+rx);var dy=p.Y-(b.Top+ry);var pad=tolerance+a.Stroke/2;var outside=dx*dx/Math.Pow(rx+pad,2)+dy*dy/Math.Pow(ry+pad,2);var innerX=rx-pad;var innerY=ry-pad;return outside<=1&&(innerX<=0||innerY<=0||dx*dx/(innerX*innerX)+dy*dy/(innerY*innerY)>=1);}
-            return true;
-        }
-        var start=new Point(a.X1,a.Y1);var end=new Point(a.X2,a.Y2);var d=end-start;
-        if(d.LengthSquared<.01)return (p-start).Length<=tolerance;
-        var t=Math.Clamp(Vector.Multiply(p-start,d)/d.LengthSquared,0,1);return (p-(start+d*t)).Length<=tolerance+a.Stroke;
+        var bounds=Bounds(a);bounds.Inflate(tolerance,tolerance);return bounds.Contains(p);
     }
 }

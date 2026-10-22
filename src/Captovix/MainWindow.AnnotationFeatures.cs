@@ -14,7 +14,8 @@ public partial class MainWindow
     }
     private void RefreshPresets(string? selected=null)
     {
-        PresetPicker.ItemsSource=AnnotationPresetStore.BuiltIn.Concat(_customPresets).ToArray();
+        var customNames=_customPresets.Select(p=>p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        PresetPicker.ItemsSource=AnnotationPresetStore.BuiltIn.Where(p=>!customNames.Contains(p.Name)).Concat(_customPresets).ToArray();
         PresetPicker.SelectedItem=PresetPicker.Items.Cast<AnnotationPreset>().FirstOrDefault(p=>p.Name==selected)??PresetPicker.Items[0];
     }
     private void SyncAnnotationFeatures()
@@ -40,14 +41,18 @@ public partial class MainWindow
     private void ApplyPreset_Click(object sender,RoutedEventArgs e)
     {
         if(PresetPicker.SelectedItem is not AnnotationPreset preset)return;
-        Surface.InkColor=preset.Color;Surface.StrokeSize=preset.Stroke;Surface.TextSize=preset.FontSize;Surface.EffectSize=preset.EffectSize;
-        ChangeSelected(preset.Apply);Surface.Refresh();SyncProperties();SetStatus($"Đã áp dụng preset {preset.Name}.");
+        Surface.InkColor=preset.Color;Surface.StrokeSize=preset.Stroke;Surface.TextSize=preset.FontSize;Surface.EffectSize=preset.EffectSize;Surface.ShapeDefaults=preset.ToStyle();if(preset.Shape is {} kind)Surface.ShapeKind=kind;
+        if(sender is Button {Tag:"Defaults"}){Surface.SelectIds([]);if(preset.Shape!=null)SelectTool(EditorTool.Shape);}
+        else ChangeSelected(preset.Apply);
+        Surface.Refresh();SyncProperties();SetStatus($"Đã áp dụng preset {preset.Name}.");
     }
     private void SavePreset_Click(object sender,RoutedEventArgs e)
     {
         if(_presetsUnavailable)return;
         try{
-            var preset=new AnnotationPreset(PresetName.Text.Trim(),Surface.InkColor,Surface.StrokeSize,Surface.TextSize,Surface.EffectSize);
+            var style=Surface.ShapeDefaults.Copy();style.Color=Surface.InkColor;style.Stroke=Surface.StrokeSize;style.FontSize=Surface.TextSize;style.EffectSize=Surface.EffectSize;
+            AnnotationKind? shape=Surface.Selected is {} a&&ShapeStudio.IsClosed(a.Kind)?a.Kind:Surface.Tool==EditorTool.Shape?Surface.ShapeKind:null;
+            var preset=AnnotationPreset.From(PresetName.Text.Trim(),style,shape);
             var candidate=_customPresets.Append(preset).ToList();AnnotationPresetStore.Save(App.DataRoot,candidate);
             _customPresets=candidate;RefreshPresets(preset.Name);PresetName.Clear();SetStatus("Đã lưu preset riêng.");
         }catch(Exception ex){SetStatus("Chưa lưu preset: "+ex.Message);}
