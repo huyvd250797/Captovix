@@ -1,8 +1,19 @@
-# Captovix V1.9.0 — Arrows & Connectors
+# Captovix V1.10.0 — Text & Callout Studio
 
 Ứng dụng Windows x64 chụp ảnh và chỉnh sửa trong một Editor, mở mặc định phóng to. Ưu tiên ảnh; giữ quay màn hình hiện có, chưa phát triển thêm Editor video. © 2026 HuyVo. All rights reserved.
 
-## Mới trong V1.9.0
+## Mới trong V1.10.0
+
+- Chọn đối tượng → Ctrl+C → Ctrl+V để dán một bản vẫn sửa được. Giữ nhóm, kiểu chữ và liên kết connector nội bộ; tạo ID mới, tháo liên kết ra ngoài lựa chọn. Dán sang ảnh khác giữ số pixel, không tự co giãn. Mỗi lần dán là một Undo. Ctrl+D tiếp tục nhân bản như cũ.
+- Khi không chọn đối tượng, Ctrl+C vẫn copy ảnh đã chỉnh. Ctrl+Shift+C luôn copy ảnh đã chỉnh. Khi đang gõ trong ô chữ, Ctrl+C/V vẫn là copy/paste văn bản. Bản này chưa nhận bitmap ngoài Captovix thành image layer.
+- Chọn shape đã tô → bỏ dấu Tô nền hoặc bấm Không tô nền: bỏ nền ngay, giữ màu để bật lại. Nền Text/Callout có checkbox riêng trong Text & Callout Studio. Ctrl+Z phục hồi được.
+- Chọn/di chuyển/resize trực tiếp từ mọi công cụ vẽ (ngoại trừ Crop). Bấm đường viền khung trong suốt, hoặc phần nền khung đã tô, rồi kéo; inspector tự theo loại đối tượng được chọn. Kéo vùng trống để vẽ tiếp bằng công cụ đang bật; giữ Alt khi kéo để vẽ đối tượng mới chồng lên đối tượng cũ. Vẫn có Chọn (V), chọn nhiều, Layers và menu chuột phải.
+- Text: font cài trong Windows, đậm/nghiêng/gạch chân, màu chữ riêng, căn trái/giữa/phải khi có chiều rộng, padding, wrap theo chiều rộng nhập và giãn dòng. Mỗi đối tượng dùng một kiểu chữ; chưa có rich text theo từng từ.
+- Callout: chữ nhật có đuôi, bo góc có đuôi, ellipse có đuôi, chữ nhật không đuôi và bo góc không đuôi. Màu chữ/nền/viền độc lập; căn dọc trên/giữa/dưới, tự tăng chiều cao khi bật Giãn hộp theo chữ. Tay nắm đuôi kế thừa, kéo được khi callout đã chọn.
+- Step: tròn, vuông bo góc, hình thoi; tự tăng số khi tạo; đánh lại số các bước được chọn, hoặc các bước hiện và không khóa nếu không chọn. Giới hạn 1–9999; giữ nhóm/khóa và Undo.
+- Preset riêng lưu thêm kiểu chữ/callout/step; các preset cũ vẫn đọc được. Thiếu font trên máy khác thì xem/xuất dùng Segoe UI và hiện cảnh báo. Double-click chữ/callout hoặc F2 để sửa trên ảnh; Enter xuống dòng, Ctrl+Enter hoàn tất, Esc hủy. IME cần nghiệm thu trên Windows.
+
+## Kế thừa V1.9 — Arrows & Connectors
 
 - Đường/mũi tên thẳng, gấp khúc và cong; chỉnh nét, màu, độ dày, kiểu đầu và một/hai đầu như trước. Công cụ Mũi tên (A) hoặc Đường (L) → chọn kiểu đường bên phải.
 - Bật Bám vào shape, kéo từ shape sang shape. Hai đầu gắn theo ID và vị trí trên biên; cập nhật khi target di chuyển/resize/xoay. V chọn lại; kéo hai đầu để nối lại hoặc tháo đầu đang kéo. Tay nắm thứ ba chỉnh cong hoặc vị trí trục gấp khúc. Đường gấp khúc dùng hai góc và một trục giữa có thể kéo ngang; chưa có thêm/xóa nhiều đỉnh tùy ý hoặc tránh chướng ngại tự động.
@@ -14,11 +25,11 @@
 
 ## Cài đặt / nâng cấp ngay
 
-1. Giải nén `Captovix-v1.9.0-Update-Packages.zip`.
+1. Giải nén `Captovix-v1.10.0-Update-Packages.zip`.
 2. Thoát Captovix ở khay hệ thống. Nếu app cũ không mở được, kết thúc Captovix.exe trong Task Manager.
 3. Chạy `HuyVo.Captovix-win-Setup.exe` bên trong ZIP. Đây là wrapper NSIS kèm bộ cài Velopack và VC++ prerequisite, không phải source.
 4. Giữ đường dẫn đang cài, bao gồm `D:\Captovix\Captovix`. Không gỡ app, không xóa thư mục dữ liệu. Bộ cài từ chối đổi root của một bản đã quản lý; muốn di chuyển root cần thực hiện quy trình gỡ/cài riêng và giữ dữ liệu.
-5. Mở shortcut, kiểm tra nhãn V1.9.0 và thử mở/chuyển ảnh trước khi kiểm tra chức năng mới.
+5. Mở shortcut, kiểm tra nhãn V1.10.0 và thử mở/chuyển ảnh trước khi kiểm tra chức năng mới.
 
 Máy dùng không cần .NET SDK hoặc Visual Studio: bản phát hành kèm .NET desktop runtime. VC++ Runtime có thể cần quyền quản trị nếu chưa có. Windows x64, ưu tiên Windows 11; Windows 10 22H2 cần nghiệm thu riêng. Windows N/KN cần Media Feature Pack. Chưa có bản x86/ARM64 hoặc chứng thư ký mã thương mại.
 
@@ -44,9 +55,9 @@ Nếu xung đột, đổi tổ hợp hoặc kiểm tra app khác đang dùng. Ca
 
 Dữ liệu tại `%LOCALAPPDATA%\HuyVo\Captovix`: Media, thư viện, settings, Edits, presets, backup và `errors.log`. Thư mục này độc lập với đường dẫn cài. Ảnh gốc giữ riêng; chú thích là đối tượng sửa lại được, không flatten ảnh gốc. Không có database/server hoặc Supabase; ảnh và cấu hình ở máy.
 
-- Editor schema 7 đọc schema 1–6. Trước lần lưu đầu lên schema 7, giữ byte sidecar cũ ở `Edits/<id>.json.pre-v1.9.bak`; giữ nguyên các backup trước đó. Không ghi đè dữ liệu schema mới hơn.
+- Editor schema 8 đọc schema 1–7. Trước lần lưu đầu lên schema 8, giữ byte sidecar cũ ở `Edits/<id>.json.pre-v1.10.bak`; giữ nguyên các backup trước đó. Không ghi đè dữ liệu schema mới hơn.
 - Workflow vẫn schema 1, bổ sung action Element. Cấu hình 5 action được nạp thêm action Element mặc định tắt để tránh chiếm tổ hợp cũ; thiết lập cài mới có 6 action. Trước lần ghi workflow đầu ở bản này giữ `capture-workflow.json.pre-v1.9.bak`.
-- Trước nâng cấp nên sao lưu toàn bộ thư mục dữ liệu. Updater trong app cũng sao lưu theo cơ chế đang có. Để hạ phiên bản: thoát app, giữ bản sao dữ liệu hiện tại, khôi phục sidecar/workflow phù hợp từ backup trước khi dùng bản cũ. Không mở schema 7 trực tiếp bằng V1.8.1 trở xuống. Không cần xóa Media để nâng cấp.
+- Trước nâng cấp nên sao lưu toàn bộ thư mục dữ liệu. Updater trong app cũng sao lưu theo cơ chế đang có. Để hạ phiên bản: thoát app, giữ bản sao dữ liệu hiện tại, khôi phục sidecar/workflow phù hợp từ backup trước khi dùng bản cũ. Không mở schema 8 trực tiếp bằng V1.9.0 trở xuống. Không cần xóa Media để nâng cấp.
 - Báo lỗi: Win+R → `%LOCALAPPDATA%\HuyVo\Captovix\errors.log`, gửi log mới nhất kèm thao tác gây lỗi. Video có thêm recorder.log.
 
 ## Build từ source trên Windows
@@ -62,13 +73,15 @@ Script chạy các test logic, các bộ WPF trên Windows, publish self-contain
 Kiểm tra riêng:
 
 ```powershell
+dotnet run --project tests/TextClipboardChecks -c Release -p:Platform=x64
+dotnet run --project tests/TextStudioWindowsChecks -c Release -p:Platform=x64
 dotnet run --project tests/ConnectorChecks -c Release -p:Platform=x64
 dotnet run --project tests/ConnectorWindowsChecks -c Release -p:Platform=x64
 dotnet run --project tests/EditorWindowsChecks -c Release -p:Platform=x64
 dotnet build src/Captovix/Captovix.csproj -c Release -p:Platform=x64
 ```
 
-Output: `artifacts/releases` có full nupkg/feed/Setup canonical; `artifacts/Captovix-v1.9.0-Update-Packages.zip` dùng phát hành. `.\scripts\Build-Windows.ps1 -SkipInstaller` bỏ wrapper NSIS, không dùng Setup raw đó cho quy trình cài chuyển đổi. Nếu cần delta, truyền `-PreviousReleases` trỏ thư mục chứa nupkg phiên bản trước; không sửa feed/hash bằng tay.
+Output: `artifacts/releases` có full nupkg/feed/Setup canonical; `artifacts/Captovix-v1.10.0-Update-Packages.zip` dùng phát hành. `.\scripts\Build-Windows.ps1 -SkipInstaller` bỏ wrapper NSIS, không dùng Setup raw đó cho quy trình cài chuyển đổi. Nếu cần delta, truyền `-PreviousReleases` trỏ thư mục chứa nupkg phiên bản trước; không sửa feed/hash bằng tay.
 
 Stack giữ nguyên: C# / .NET 10 WPF, ScreenRecorderLib 7.0.1, Velopack 1.2.161, NSIS 3.08. UIA dùng assembly Windows Desktop, không thêm package trình duyệt. Build Linux chỉ cross-build cho Windows; không thực thi WPF hoặc cài đặt trên Linux.
 
@@ -77,8 +90,8 @@ Stack giữ nguyên: C# / .NET 10 WPF, ScreenRecorderLib 7.0.1, Velopack 1.2.161
 Nguồn mặc định đã tích hợp: https://github.com/huyvd250797/captovix-releases . Không phải nhập lại sau mỗi lần cài. Không cần token trong app cho repo công khai.
 
 1. Giải nén Update-Packages.
-2. Tạo stable release tag `v1.9.0`, title `Captovix V1.9.0 — Arrows & Connectors`.
-3. Đính kèm đúng 5 asset: `HuyVo.Captovix-1.9.0-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không upload chỉ nguyên ZIP hoặc Source ZIP thay cho các asset này.
+2. Tạo stable release tag `v1.10.0`, title `Captovix V1.10.0 — Text & Callout Studio`.
+3. Đính kèm đúng 5 asset: `HuyVo.Captovix-1.10.0-full.nupkg`, `HuyVo.Captovix-win-Setup.exe`, `RELEASES`, `assets.win.json`, `releases.win.json`. Không upload chỉ nguyên ZIP hoặc Source ZIP thay cho các asset này.
 4. Publish. Máy đã mở được app: Kiểm tra cập nhật → Tải → Khởi động lại. Máy app lỗi khởi động: dùng Setup trong ZIP.
 5. Kiểm tra tải/package hash và nâng cấp trên một máy Windows trước khi cài nhiều máy. Bản bàn giao tại đây chưa được đăng GitHub Release.
 
@@ -87,18 +100,20 @@ Source nên dùng repo phát triển riêng. Repo mới (thay URL đúng repo so
 ```powershell
 git init
 git add .
-git commit -m "Captovix v1.9.0 arrows and capture workflow"
+git commit -m "Captovix v1.10.0 text callouts and smart object editing"
 git branch -M main
 git remote add origin https://github.com/OWNER/CAPTOVIX-SOURCE.git
 git push -u origin main
 ```
 
-Repo đã có source: clone/fetch/pull trước, đọc khác biệt và tích hợp thay đổi V1.9.0, commit/push bình thường. Không force push để ghi đè lịch sử. Không đưa artifacts lớn hoặc dữ liệu cá nhân vào source repo. Đây là ứng dụng Windows, không deploy WPF lên Vercel/Netlify; GitHub Releases chỉ phân phối bộ cài và update.
+Repo đã có source: clone/fetch/pull trước, đọc khác biệt và tích hợp thay đổi V1.10.0, commit/push bình thường. Không force push để ghi đè lịch sử. Không đưa artifacts lớn hoặc dữ liệu cá nhân vào source repo. Đây là ứng dụng Windows, không deploy WPF lên Vercel/Netlify; GitHub Releases chỉ phân phối bộ cài và update.
 
 ## Kiểm chứng và phiên bản tiếp theo
 
-Xem `docs/VALIDATION.md` để phân biệt các test logic đã chạy với các bộ WPF chỉ cross-build. Chưa thực thi Windows thật trong môi trường build này. Đặc biệt cần nghiệm thu Ctrl + ` ở app khác/khay, provider UIA của browser/modal/grid, hủy khi provider chậm, input hook, DPI 100/125/150/175/200%, màn hình tọa độ âm và installer/updater. HDR/màu rộng đánh giá riêng.
+Xem `docs/VALIDATION.md` để phân biệt các test logic đã chạy với các bộ WPF chỉ cross-build. Chưa thực thi Windows thật trong môi trường build này. Đặc biệt cần nghiệm thu chọn/kéo từ mọi công cụ, clipboard đối tượng, tiếng Việt/IME, callout xuất đủ chữ và Ctrl + ` ở app khác/khay, provider UIA của browser/modal/grid, hủy khi provider chậm, input hook, DPI 100/125/150/175/200%, màn hình tọa độ âm và installer/updater. HDR/màu rộng đánh giá riêng.
 
-V1.10 — Text & Callout Studio: font/kiểu chữ/căn dòng, padding trong hộp, thêm kiểu callout và tay nắm đuôi, step marker và tự đánh số; kiểm tra tiếng Việt/IME, zoom, xoay, lưu và xuất không cắt chữ. Chưa triển khai bản này.
+V1.11 — Focus & Privacy dự kiến bổ sung kính phóng đại vùng ảnh, spotlight làm tối phần ngoài vùng chú ý, highlight theo vùng và hoàn thiện mask blur/pixel/che đặc. Các hiệu ứng cần giữ đúng vị trí khi crop/xoay/đổi kích thước, sửa lại được và có preset. Kiểm tra bản xuất che đặc trước chia sẻ; blur/pixel không thay thế che đặc khi cần giấu thông tin. Chưa phát triển Video Editor.
 
 Bàn giao 2 ZIP: Update-Packages và Source. Setup nằm trong Update-Packages. Lần nâng cấp sau gửi Source ZIP mới nhất này.
+
+Hướng dẫn/chấp nhận mới: `docs/TEXT-CALLOUT-STUDIO.md`. Nội dung quá dài hoặc đặt ngoài ảnh/crop vẫn bị cắt ở biên file xuất; inspector cảnh báo để di chuyển, tăng hộp hoặc giảm cỡ chữ trước khi xuất. Zoom không tự thay đổi số pixel đầu ra.

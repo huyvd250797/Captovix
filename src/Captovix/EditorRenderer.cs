@@ -7,15 +7,14 @@ namespace Captovix;
 public static partial class EditorRenderer
 {
     public static Brush Ink(string color)=>new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
-    public static FormattedText TextLayout(Annotation a,string? text=null,Brush? ink=null)=>new(text??a.Text,CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),a.FontSize,ink??Ink(a.Color),1.0);
     public static Rect LocalBounds(Annotation a)
     {
         if(ConnectorStudio.IsPath(a)){var box=ConnectorStudio.Bounds(a);return new(box.X,box.Y,box.Width,box.Height);}
         if(ShapeStudio.IsLine(a.Kind))return new(a.Left,a.Top,a.Width,a.Height);
-        if(a.Kind==AnnotationKind.Callout)return Rect.Union(new Rect(a.Left,a.Top,a.Width,a.Height),new Rect(a.TailX,a.TailY,1,1));
+        if(a.Kind==AnnotationKind.Callout){var b=CalloutGeometry(a).Bounds;return Rect.Union(b,TextInkBounds(a));}
         if(a.Kind==AnnotationKind.Freehand)return new(a.Left-a.Stroke/2,a.Top-a.Stroke/2,Math.Max(1,a.Width)+a.Stroke,Math.Max(1,a.Height)+a.Stroke);
-        if(a.Kind==AnnotationKind.Text){var text=TextLayout(a);return new(a.X1,a.Y1,Math.Max(10,text.WidthIncludingTrailingWhitespace),Math.Max(a.FontSize,text.Height));}
-        if(a.Kind==AnnotationKind.Step){var r=a.FontSize*.8;return new(a.X1-r,a.Y1-r,r*2,r*2);}
+        if(a.Kind==AnnotationKind.Text){var b=TextInkBounds(a);if(a.FillEnabled)b.Inflate(TextStudio.Padding(a),TextStudio.Padding(a));return b;}
+        if(a.Kind==AnnotationKind.Step)return StepGeometry(a).Bounds;
         return new(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
     }
     public static AnnotationBox Box(Annotation a){var b=Bounds(a);return ObjectControl.SelectionBounds(new(b.X,b.Y,b.Width,b.Height));}
@@ -46,20 +45,18 @@ public static partial class EditorRenderer
                 if(a.Points.Count==1){dc.DrawEllipse(brush,null,new(a.Points[0].X,a.Points[0].Y),a.Stroke/2,a.Stroke/2);break;}
                 if(a.Points.Count>1){var path=new StreamGeometry();using(var ctx=path.Open()){ctx.BeginFigure(new(a.Points[0].X,a.Points[0].Y),false,false);ctx.PolyLineTo(a.Points.Skip(1).Select(p=>new Point(p.X,p.Y)).ToArray(),true,false);}path.Freeze();dc.DrawGeometry(null,pen,path);}break;
             case AnnotationKind.Callout:
-                dc.DrawGeometry(Brushes.White,pen,CalloutGeometry(a));
-                var inner=new Rect(rect.Left+12,rect.Top+12,Math.Max(1,rect.Width-24),Math.Max(1,rect.Height-24));
-                var label=TextLayout(a);label.MaxTextWidth=inner.Width;
-                dc.PushClip(new RectangleGeometry(inner));dc.DrawText(label,inner.TopLeft);dc.Pop();break;
+                dc.DrawGeometry(a.FillEnabled?ShapeInk(a.FillColor,a.FillOpacity):null,a.StrokeEnabled?ShapePen(a):null,CalloutGeometry(a));DrawStyledText(dc,a);break;
             case AnnotationKind.Highlight:
                 var color=(Color)ColorConverter.ConvertFromString(a.Color);color.A=78;dc.DrawRectangle(new SolidColorBrush(color),null,rect);break;
-            case AnnotationKind.Text:dc.DrawText(TextLayout(a),p1);break;
+            case AnnotationKind.Text:DrawStyledText(dc,a);break;
             case AnnotationKind.Step:
-                var radius=a.FontSize*.8;dc.DrawEllipse(brush,new Pen(Brushes.White,Math.Max(1,a.Stroke/2)),p1,radius,radius);
-                var number=TextLayout(a,a.Number.ToString(CultureInfo.InvariantCulture),Brushes.White);dc.DrawText(number,new(p1.X-number.Width/2,p1.Y-number.Height/2));break;
+                dc.DrawGeometry(brush,new Pen(Brushes.White,Math.Max(1,a.Stroke/2)),StepGeometry(a));
+                var number=TextLayout(a,a.Number.ToString(CultureInfo.InvariantCulture));dc.DrawText(number,new(p1.X-number.WidthIncludingTrailingWhitespace/2,p1.Y-number.Height/2));break;
         }
     }
     public static Geometry CalloutGeometry(Annotation a)
     {
+        if(a.CalloutStyle!=CalloutStyle.Speech)return StyledCalloutGeometry(a);
         var b=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));var tail=new Point(a.TailX,a.TailY);
         var vertices=new List<Point>{b.TopLeft};int edge=-1;
         if(!b.Contains(tail)){var dx=(tail.X-(b.Left+b.Width/2))/(b.Width/2);var dy=(tail.Y-(b.Top+b.Height/2))/(b.Height/2);edge=Math.Abs(dx)>Math.Abs(dy)?dx>0?1:3:dy>0?2:0;}

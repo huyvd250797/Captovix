@@ -1,3 +1,7 @@
+# V1.10.0 — Text & Callout Studio
+
+Đã triển khai typography, năm dạng callout, ba dạng bước, preset chữ, clipboard đối tượng, bỏ nền ngay và chọn/kéo đối tượng từ công cụ vẽ. Schema 8 đọc 1–7; backup .pre-v1.10.bak. Logic/build được kiểm tra trên Linux; thao tác WPF/IME/clipboard/cài đặt chờ nghiệm thu Windows theo docs/TEXT-CALLOUT-STUDIO.md.
+
 # V1.9.0 — Triển khai Arrows & Connectors
 
 22/10/2026: đã triển khai route/control/anchor, hotkey OEM và chụp phần tử UIA; chuyển các lệnh sắp xếp sang context menu. Logic/build được kiểm tra trên Linux, chờ nghiệm thu Windows thật theo docs/ARROWS-CAPTURE-WORKFLOW.md. Gấp khúc một trục và cong một control; không có auto-routing tránh vật cản. Element capture phụ thuộc provider, có window/manual fallback.
@@ -10,7 +14,7 @@ Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chư
 
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9 đã triển khai và chờ nghiệm thu Windows; V1.10–V1.20 là kế hoạch, chưa triển khai. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
+Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9 đã triển khai và chờ nghiệm thu Windows; V1.10 đã triển khai và chờ nghiệm thu Windows; V1.11–V1.20 là kế hoạch, chưa triển khai. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
 
 ## 1. Định hướng mới
 
@@ -38,11 +42,11 @@ Mỗi đối tượng có ID ổn định; hình học/tọa độ theo ảnh g�
 
 Khi chọn đối tượng, thay thuộc tính tác động đối tượng đang chọn. Khi không chọn, thuộc tính áp dụng cho lần vẽ tiếp theo. Có thao tác rõ ràng để lưu style thành preset hoặc đặt làm mặc định; không âm thầm đổi mọi đối tượng cũ.
 
-Ví dụ nghiệm thu: vẽ rectangle nền vàng nhạt, viền đỏ nét đứt 3 px → chuyển công cụ Chọn → kéo vị trí, đổi kích thước, đổi fill sang trong suốt → lưu và mở lại → đối tượng vẫn sửa được, undo/redo chính xác, PNG xuất đúng nét và màu.
+Ví dụ nghiệm thu: vẽ rectangle nền vàng nhạt, viền đỏ nét đứt 3 px → bấm vào đối tượng → kéo vị trí, đổi kích thước, đổi fill sang trong suốt → lưu và mở lại → đối tượng vẫn sửa được, undo/redo chính xác, PNG xuất đúng nét và màu.
 
 ## 4. Roadmap tổng thể
 
-V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.8 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.9 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; các mốc từ V1.10 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
+V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.8 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.9 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.10 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; các mốc từ V1.11 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật và dữ liệu | Điều kiện hoàn thành | Phụ thuộc/thứ tự |
 |---|---|---|---|---|---|
@@ -127,4 +131,4 @@ Chỉ hai file theo yêu cầu Boss:
 
 Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
 
-Bản tiếp theo: V1.10 — Text & Callout Studio. Font/kiểu chữ/căn dòng, padding, kiểu callout và chỉnh đuôi, step marker/tự đánh số; kiểm tra IME tiếng Việt, zoom/xoay/lưu/xuất không cắt chữ. Video vẫn để sau.
+Bản tiếp theo: V1.11 — Focus & Privacy dự kiến bổ sung kính phóng đại vùng ảnh, spotlight làm tối phần ngoài vùng chú ý, highlight theo vùng và hoàn thiện mask blur/pixel/che đặc. Các hiệu ứng cần giữ đúng vị trí khi crop/xoay/đổi kích thước, sửa lại được và có preset. Kiểm tra bản xuất che đặc trước chia sẻ; blur/pixel không thay thế che đặc khi cần giấu thông tin. Chưa phát triển Video Editor.

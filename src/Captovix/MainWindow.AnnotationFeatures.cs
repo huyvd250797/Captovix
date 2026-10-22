@@ -41,15 +41,16 @@ public partial class MainWindow
     {
         if(PresetPicker.SelectedItem is not AnnotationPreset preset)return;
         Surface.InkColor=preset.Color;Surface.StrokeSize=preset.Stroke;Surface.TextSize=preset.FontSize;Surface.EffectSize=preset.EffectSize;Surface.ShapeDefaults=preset.ToStyle();if(preset.Shape is {} kind)Surface.ShapeKind=kind;
+        if(preset.Typography!=null)foreach(var style in new[]{Surface.TextDefaults,Surface.CalloutDefaults,Surface.StepDefaults})preset.Apply(style);
         if(sender is Button {Tag:"Defaults"}){Surface.SelectIds([]);if(preset.Shape!=null)SelectTool(EditorTool.Shape);}
-        else ChangeSelected(preset.Apply);
+        else ChangeSelected(a=>{preset.Apply(a);if(_session!=null)EditorRenderer.FitText(a,_session.Document.Viewport);});
         Surface.Refresh();SyncProperties();SetStatus($"Đã áp dụng preset {preset.Name}.");
     }
     private void SavePreset_Click(object sender,RoutedEventArgs e)
     {
         if(_presetsUnavailable)return;
         try{
-            var style=Surface.ShapeDefaults.Copy();style.Color=Surface.InkColor;style.Stroke=Surface.StrokeSize;style.FontSize=Surface.TextSize;style.EffectSize=Surface.EffectSize;
+            var style=Surface.Selected is {} target&&TextStudio.IsText(target.Kind)?target.Copy():Surface.Selected==null&&Surface.Tool is EditorTool.Text or EditorTool.Callout or EditorTool.Step?Surface.TextDefaultsFor(CurrentTextKind()).Copy():Surface.ShapeDefaults.Copy();style.Color=Surface.InkColor;style.Stroke=Surface.StrokeSize;style.FontSize=Surface.TextSize;style.EffectSize=Surface.EffectSize;
             AnnotationKind? shape=Surface.Selected is {} a&&ShapeStudio.IsClosed(a.Kind)?a.Kind:Surface.Tool==EditorTool.Shape?Surface.ShapeKind:null;
             var preset=AnnotationPreset.From(PresetName.Text.Trim(),style,shape);
             var candidate=_customPresets.Append(preset).ToList();AnnotationPresetStore.Save(App.DataRoot,candidate);

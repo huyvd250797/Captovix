@@ -1,8 +1,7 @@
-Captovix V1.9.0 — Package validation, 22/10/2026
+Captovix V1.10.0 — Package validation, 22/10/2026
 
-Executed on Linux: 781 logic/static checks (81 ConnectorChecks, 700 inherited suites), plus 9 real Velopack SDK full-package checks = 790 checks.
-Actual child-process protocol tests cover normal output, timeout independent of pipe cancellation, helper termination, restart, malformed output and cancellation. These use a fixture process, not Windows UIA.
-App plus ConnectorWindowsChecks / EditorWindowsChecks / ObjectWindowsChecks / ShapeWindowsChecks / FidelityWindowsChecks cross-build with 0 warnings/errors. WPF tests are NOT executed here.
-Self-contained Windows x64 publish, Velopack full nupkg and NSIS migration wrapper compile. Full nupkg CRC / AppId / version / feed SHA1+SHA256+size / DLL consistency are checked. Source and Update ZIP CRC and file identity are checked by packaging verifier. UIAutomationClient/Types/Provider assemblies are bundled.
-Preserved capture engine, physical GDI capture, fidelity, image transfer, updater and install-path helper are compared byte-for-byte against uploaded V1.8.1 source. Startup readiness and unload guards are retained.
-No GitHub push/Release publish. No Windows execution: global hotkey delivery/conflicts, UIA apps/modal/grid, native hook input, DPI/negative monitors, GDI/clipboard, installation/custom path and update restart require Windows acceptance. HDR/wide gamut remains separate.
+Executed on Linux: 830 logic/static checks; plus 9 real Velopack SDK full-package checks = 839. WPF is NOT executed on this host.
+App and six WPF projects cross-build with 0 warnings/errors: TextStudioWindowsChecks, ConnectorWindowsChecks, EditorWindowsChecks, ObjectWindowsChecks, ShapeWindowsChecks, FidelityWindowsChecks.
+Windows x64 self-contained publish, Velopack full nupkg and NSIS wrapper compile. Packaging verifier checks nupkg CRC, AppId/version, feed SHA1/SHA256/size, matching DLL/docs/runtime/config bytes, source and Update ZIP CRC and identity.
+Compared unchanged capture/fidelity/image transfer, UIA/element/hotkey/updater and install-path code against uploaded V1.9.0. Startup readiness and unload guards retained. Schema 8 migration/clipboard/typography tests executed; WPF rendering and real pointer/clipboard/IME tests require Windows.
+No GitHub push or Release publish. No Windows install, runtime UI, OS clipboard, IME, capture, DPI, hotkey/UIA app or update restart was executed here. Follow TEXT-CALLOUT-STUDIO.md plus inherited capture checklists before broad rollout. HDR/wide gamut separate.

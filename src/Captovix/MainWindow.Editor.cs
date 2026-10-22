@@ -30,6 +30,7 @@ public partial class MainWindow
         InitializeShapeStudio();
         InitializeAnnotationFeatures();
         InitializeCanvasMenu();
+        InitializeTextStudio();
         // XAML raises selection events before later named controls exist.
         // Enable callbacks only after all editor subsystems have been wired.
         _editorReady=true;
@@ -86,7 +87,7 @@ public partial class MainWindow
     {
         if(Surface==null)return;EndInlineText(true);Surface.CancelInteraction();
         if(Surface.Tool==EditorTool.Crop&&tool!=EditorTool.Crop)Surface.ClearCropDraft();
-        if(tool is EditorTool.Shape or EditorTool.Line or EditorTool.Arrow)Surface.SelectIds([]);
+        if(tool is not (EditorTool.Select or EditorTool.Crop))Surface.SelectIds([]);
         Surface.Tool=tool;if(tool==EditorTool.Crop)Surface.StartCrop();Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
         foreach(var button in ToolBox.Children.OfType<Button>()){
             var selected=button.Tag?.ToString()==tool.ToString();button.Background=selected?(Brush)FindResource("Accent"):Brushes.White;button.Foreground=selected?Brushes.White:new SolidColorBrush(Color.FromRgb(36,51,72));
@@ -103,7 +104,7 @@ public partial class MainWindow
             EditorTool.Crop=>"Kéo vùng → kéo tay nắm hoặc nhập kích thước → Enter/Áp dụng • Esc hủy • Space kéo khung nhìn.",
             EditorTool.Highlight=>"Kéo phủ vùng cần làm nổi bật. Chọn màu ở bảng thuộc tính.",
             EditorTool.Blur or EditorTool.Pixelate=>"Kéo vùng cần xử lý • Khi kéo vùng tạm che kín; thả chuột để áp dụng • Chỉnh mức xử lý bên phải.",
-            EditorTool.Cover=>"Kéo vùng để che kín bằng màu đang chọn • Xuất PNG/JPEG để chia sẻ ảnh đã che.",_=>"Kéo để vẽ đối tượng • Chọn công cụ Chọn (V) để sửa lại."};
+            EditorTool.Cover=>"Kéo vùng để che kín bằng màu đang chọn • Xuất PNG/JPEG để chia sẻ ảnh đã che.",_=>"Kéo vùng trống để vẽ • Bấm đối tượng để sửa • Alt+kéo vẽ chồng."};
     }
     private void Tool_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:string tool}){_session?.Commit();SelectTool(Enum.Parse<EditorTool>(tool));Surface.Focus();}}
     private void SyncProperties()
@@ -114,7 +115,7 @@ public partial class MainWindow
             if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
             if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
             SelectValue(StrokePicker,Surface.StrokeSize);SelectValue(FontPicker,Surface.TextSize);
-            SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();
+            SyncTextStudio();SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();
             foreach(var b in ColorPalette.Children.OfType<Button>())b.BorderThickness=new Thickness(b.Tag?.ToString()==Surface.InkColor?3:1);
             TextProperties.Visibility=a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
@@ -131,20 +132,21 @@ public partial class MainWindow
     private void Color_Click(object sender,RoutedEventArgs e)
     {
         if(sender is not Button {Tag:string color})return;Surface.InkColor=color;
-        ChangeSelected(a=>a.Color=color);
+        ChangeSelected(a=>{a.Color=color;if(a.Kind==AnnotationKind.Text)a.TextColor=color;});
+        if(Surface.Tool==EditorTool.Text&&Surface.SelectedIds.Count==0)Surface.TextDefaults.TextColor=color;
         Surface.Refresh();SyncProperties();
     }
     private void Style_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(!_editorReady||_syncProperties)return;
         var stroke=PickedValue(StrokePicker,4);var font=PickedValue(FontPicker,28);Surface.StrokeSize=stroke;Surface.TextSize=font;
-        ChangeSelected(a=>{a.Stroke=stroke;a.FontSize=font;});
+        ChangeSelected(a=>{a.Stroke=stroke;a.FontSize=font;if(_session!=null)EditorRenderer.FitText(a,_session.Document.Viewport);});
         Surface.Refresh();SyncProperties();
     }
     private void AnnotationText_Changed(object sender,TextChangedEventArgs e)
     {
         if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Text or AnnotationKind.Callout} a)return;
-        _session.Begin();a.Text=AnnotationText.Text.Length>20000?AnnotationText.Text[..20000]:AnnotationText.Text;SavedLabel.Text="Đang chỉnh sửa…";Surface.InvalidateVisual();_textTimer.Stop();_textTimer.Start();
+        _session.Begin();a.Text=AnnotationText.Text.Length>20000?AnnotationText.Text[..20000]:AnnotationText.Text;EditorRenderer.FitText(a,_session.Document.Viewport);SavedLabel.Text="Đang chỉnh sửa…";Surface.InvalidateVisual();_textTimer.Stop();_textTimer.Start();
     }
     private void PropertyText_LostFocus(object sender,KeyboardFocusChangedEventArgs e){_textTimer.Stop();_session?.Commit();}
     private void PropertyText_KeyDown(object sender,KeyEventArgs e)
@@ -195,7 +197,8 @@ public partial class MainWindow
             if(e.Key is Key.OemCloseBrackets or Key.OemOpenBrackets){ObjectCommand(e.Key==Key.OemCloseBrackets?(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?"Front":"Forward"):(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?"Back":"Backward"));e.Handled=true;return;}
             if(e.Key==Key.Z){if(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))Redo_Click(sender,e);else Undo_Click(sender,e);e.Handled=true;}
             else if(e.Key==Key.Y){Redo_Click(sender,e);e.Handled=true;}
-            else if(e.Key==Key.C){Copy_Click(sender,e);e.Handled=true;}
+            else if(e.Key==Key.C){if(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)||Surface.SelectedIds.Count==0)Copy_Click(sender,e);else CopyObjects();e.Handled=true;}
+            else if(e.Key==Key.V){PasteObjects();e.Handled=true;}
             else if(e.Key==Key.A){Surface.SelectAll();e.Handled=true;}
             return;
         }

@@ -1,17 +1,19 @@
-# Captovix V1.9.0 — Trạng thái kiểm chứng
+# Captovix V1.10.0 — Trạng thái kiểm chứng
 
-## Đã chạy trong môi trường Linux
+## Đã chạy trên Linux
 
-- Các bộ test pure .NET: ConnectorChecks, ObjectControlChecks, ShapeStudioChecks, ImageFidelityChecks, CaptureWorkflowChecks, GeometryChecks, EditorCoreChecks, AnnotationChecks, AdvancedAnnotationChecks, ImageAppearanceChecks, ViewportChecks, UpdateChecks; InstallerContractChecks kiểm tra hợp đồng argument/install-path trong source.
-- ConnectorChecks có 81 kiểm tra, gồm giao thức tiến trình thật trên Linux với fixture: timeout, kill/restart, response lỗi và hủy. Fixture không giả làm kết quả đã test UIA Windows. Tổng logic/static 781; thêm 9 kiểm tra SDK gói thực tế = 790.
-- Cross-build ứng dụng net10.0-windows x64 và năm dự án WPF: ConnectorWindowsChecks, EditorWindowsChecks, ObjectWindowsChecks, ShapeWindowsChecks, FidelityWindowsChecks. Không thực thi các dự án Windows tại đây.
-- Self-contained publish, full nupkg Velopack, NSIS wrapper; kiểm tra CRC ZIP, package AppId/version, feed SHA1/SHA256/size và DLL đồng nhất với publish.
-- Tích hợp UpdateChecks với gói full thực tế qua SDK Velopack, bao gồm từ chối hash sai.
+- 830 logic/static checks: TextClipboardChecks 49; ConnectorChecks 81; ObjectControlChecks 42; ShapeStudioChecks 115; ImageFidelityChecks 122; CaptureWorkflowChecks 53; GeometryChecks 30; EditorCoreChecks 38; AnnotationChecks 76; AdvancedAnnotationChecks 49; ImageAppearanceChecks 61; ViewportChecks 48; UpdateChecks 41; InstallerContractChecks 25.
+- TextClipboardChecks kiểm tra schema 8, migration callout cũ schema 1–7, font/giãn dòng/màu không hợp lệ, preset typography, bỏ nền/Undo, copy/paste nhóm và remap connector, tháo đầu ra ngoài selection, dán sang ảnh khác giữ cỡ, khóa, renumber và rollback khi dữ liệu sai.
+- Cross-build app và 6 bộ WPF: TextStudioWindowsChecks, ConnectorWindowsChecks, ObjectWindowsChecks, ShapeWindowsChecks, FidelityWindowsChecks, EditorWindowsChecks: 0 warnings/errors. Không thực thi WPF tại đây.
+- Publish self-contained win-x64, gói Velopack, NSIS wrapper. SDK gói thực tế có thêm 9 kiểm tra so với UpdateChecks không có gói: tổng 839 logic/static/package checks. Kiểm tra CRC ZIP, package ID/version, hash feed, DLL, docs và config theo byte.
+- So sánh pipeline capture/fidelity/image transfer, element/hotkey/updater và install-path helper với source V1.9.0 đã nhận. Giữ startup readiness/unload guard. Không đăng release/push GitHub.
 
-Số lượng và kết quả cụ thể được ghi trong docs/PACKAGE-VALIDATION.txt sau khi hoàn tất kiểm tra gói.
+## Bộ WPF mới chỉ được biên dịch
 
-## Chưa chạy / không được coi đã đạt
+TextStudioWindowsChecks gọi cùng đường xử lý PointerDown/Move/Up mà native mouse handler sử dụng: vẽ khung, tạo bước, chọn/di chuyển khung trong Step/Arrow, Alt vẽ chồng, Undo/Redo, sync inspector và bỏ nền ngay. Có render text Việt nhiều dòng/italic/underline/căn giữa, roundtrip PNG pixel, zoom không đổi xuất, 5 callout và 3 step marker, fallback font, WPF DataObject và khởi tạo MainWindow thật. Các test này CHƯA ĐƯỢC CHẠY tại đây; không coi là bằng chứng thao tác Windows đã đạt.
 
-Khởi động và dùng WPF trên Windows, Ctrl+` toàn hệ thống/khay/xung đột thật, UIA browser/modal/grid và provider treo, low-level mouse hook nuốt click/cancel, mixed DPI và monitor âm, GDI/cursor/window capture, clipboard, cài D:\Captovix\Captovix, ký số prerequisite và updater restart trên desktop. Cần nghiệm thu theo checklist trước triển khai rộng. Không có môi trường Windows thật tại nơi build.
+## Chờ nghiệm thu Windows thật
 
-HDR/màu rộng, chụp cuộn, OCR, DOM/browser extension, auto-routing tránh shape, nhiều đỉnh tùy ý và Video Editor chưa thuộc phạm vi V1.9.0. Không đăng GitHub Release hoặc push source từ môi trường này.
+Chạy Build.cmd và docs/TEXT-CALLOUT-STUDIO.md. Thử clipboard qua hai lần mở app và hai ảnh, Unicode/IME, Ctrl+C/V trong ô nhập, drag/capture/lost focus, chọn đối tượng qua mọi công cụ, UI layout 100–200%, nhiều màn hình, xuất chữ/callout có xoay, installer tại D:\Captovix\Captovix và update restart. Các regression hotkey/UIA/capture/GDI vẫn cần máy Windows. HDR/màu rộng đánh giá riêng.
+
+Chưa có rich text theo từng từ, paste bitmap ngoài thành layer, OCR, scrolling capture hay Video Editor trong V1.10.

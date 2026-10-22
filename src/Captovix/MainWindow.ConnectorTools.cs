@@ -16,6 +16,7 @@ public partial class MainWindow
             var units=AnnotationEditing.Units(_session.Document,Surface.SelectedIds);
             MenuItem Add(ItemsControl owner,string title,Action action,bool enabled=true){var item=new MenuItem{Header=title,IsEnabled=enabled};item.Click+=(_,_)=>action();owner.Items.Add(item);return item;}
             Add(menu,"Hoàn tác",()=>Undo_Click(this,new()),_session.CanUndo);Add(menu,"Làm lại",()=>Redo_Click(this,new()),_session.CanRedo);menu.Items.Add(new Separator());
+            Add(menu,"Copy đối tượng · Ctrl+C",CopyObjects,Surface.SelectedIds.Count>0);Add(menu,"Dán đối tượng · Ctrl+V",PasteObjects,HasObjectClipboard());
             Add(menu,"Nhân bản · Ctrl+D",()=>ObjectCommand("Duplicate"),active);
             Add(menu,"Nhóm · Ctrl+G",()=>ObjectCommand("Group"),active&&units.Length>1);
             Add(menu,"Bỏ nhóm · Ctrl+Shift+G",()=>ObjectCommand("Ungroup"),active&&units.Any(u=>u.Any(a=>a.GroupId!=null)));
@@ -29,7 +30,7 @@ public partial class MainWindow
             Add(menu,"Ẩn đối tượng · hiện lại ở Layers",()=>{_session.Change(d=>ObjectControl.Show(d,Surface.SelectedIds,false));Surface.Refresh();SyncProperties();},active);
             Add(menu,"Tháo liên kết đường nối",()=>Surface.DetachConnectors(),active&&members.Any(a=>a.StartAnchor!=null||a.EndAnchor!=null));
             Add(menu,"Xóa đối tượng · Delete",()=>Surface.DeleteSelected(),active);menu.Items.Add(new Separator());
-            Add(menu,"Copy ảnh đã chỉnh",()=>Copy_Click(this,new()));Add(menu,"Xuất ảnh…",()=>Export_Click(this,new()));
+            Add(menu,"Copy ảnh đã chỉnh · Ctrl+Shift+C",()=>Copy_Click(this,new()));Add(menu,"Xuất ảnh…",()=>Export_Click(this,new()));
     }
     private void AlignObjects(string tag)
     {

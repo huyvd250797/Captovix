@@ -125,6 +125,8 @@ public static class AnnotationEditing
     }
     public static void Transform(Annotation target,Annotation original,AnnotationBox from,AnnotationBox to)
     {
+        target.TextWidth=original.TextWidth>0?Math.Clamp(original.TextWidth*to.Width/Math.Max(1,from.Width),1,100000):0;
+        target.TextPadding=original.TextPadding is {} padding?Math.Clamp(padding*Math.Min(to.Width/Math.Max(1,from.Width),to.Height/Math.Max(1,from.Height)),0,200):null;
         target.Rotation=original.Rotation;
         var control=original.Control??(ConnectorStudio.IsPath(original)&&original.Route!=ConnectorRoute.Straight?ConnectorStudio.Control(original):(AnnotationPoint?)null);
         target.Control=control is {} c?new(to.X+(c.X-from.X)*to.Width/Math.Max(1,from.Width),to.Y+(c.Y-from.Y)*to.Height/Math.Max(1,from.Height)):null;

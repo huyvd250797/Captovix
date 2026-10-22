@@ -33,7 +33,7 @@ public static class ObjectControl
     public static void Rename(Annotation a,string name){name=name.Trim();if(name.Length>80||name.Any(char.IsControl))throw new ArgumentException("Tên layer tối đa 80 ký tự, không có ký tự điều khiển.");a.Name=name;}
     public static void RestoreGeometry(Annotation target,Annotation original)
     {
-        target.Control=original.Control;target.Route=original.Route;target.StartAnchor=original.StartAnchor;target.EndAnchor=original.EndAnchor;target.X1=original.X1;target.X2=original.X2;target.Y1=original.Y1;target.Y2=original.Y2;target.TailX=original.TailX;target.TailY=original.TailY;target.Points=[..original.Points];target.FontSize=original.FontSize;target.Rotation=original.Rotation;
+        target.TextPadding=original.TextPadding;target.TextWidth=original.TextWidth;target.Control=original.Control;target.Route=original.Route;target.StartAnchor=original.StartAnchor;target.EndAnchor=original.EndAnchor;target.X1=original.X1;target.X2=original.X2;target.Y1=original.Y1;target.Y2=original.Y2;target.TailX=original.TailX;target.TailY=original.TailY;target.Points=[..original.Points];target.FontSize=original.FontSize;target.Rotation=original.Rotation;
     }
     public static void Rotate(Annotation target,Annotation original,double delta,AnnotationPoint pivot,Func<Annotation,AnnotationBox> localBounds)
     {

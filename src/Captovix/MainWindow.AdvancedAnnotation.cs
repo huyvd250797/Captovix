@@ -15,7 +15,7 @@ public partial class MainWindow
         if(_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {} a||a.Kind is not (AnnotationKind.Text or AnnotationKind.Callout))return;
         _textTimer.Stop();_session.Commit();_saveTimer.Stop();
         if(Surface.Zoom<.5)ZoomAtCenter(.5);
-        _inlineId=a.Id;InlineText.Text=a.Text;InlineText.Visibility=Visibility.Visible;PositionInlineText();
+        _imeComposing=false;_inlineId=a.Id;InlineText.Text=a.Text;InlineText.Visibility=Visibility.Visible;PositionInlineText();
         Dispatcher.BeginInvoke(()=>{if(_inlineId!=a.Id)return;InlineText.Focus();InlineText.SelectAll();InlineText.BringIntoView();},DispatcherPriority.Input);
         SetStatus("Đang sửa chữ trên ảnh · Ctrl+Enter hoàn tất · Esc hủy · Enter xuống dòng.");
     }
@@ -24,30 +24,31 @@ public partial class MainWindow
         if(_inlineId==null||_session==null)return;
         var a=_session.Document.Annotations.FirstOrDefault(x=>x.Id==_inlineId);if(a==null){EndInlineText(false);return;}
         var view=_session.Document.Viewport;bool callout=a.Kind==AnnotationKind.Callout;
-        double x=callout?a.Left+12:a.X1,y=callout?a.Top+12:a.Y1;
+        var content=EditorRenderer.TextContent(a);double x=content.X,y=content.Y;
         var layout=Surface.Layout!;InlineCanvas.RenderTransform=new MatrixTransform(EditorRenderer.LayoutMatrix(layout,Surface.Zoom));
         var inverse=EditorRenderer.LayoutMatrix(layout);inverse.Invert();InlineCanvas.Clip=new RectangleGeometry(EditorRenderer.RectOf(layout.Canvas)){Transform=new MatrixTransform(inverse)};
         Canvas.SetLeft(InlineText,x);Canvas.SetTop(InlineText,y);
         var frame=EditorRenderer.LocalBox(a);InlineText.RenderTransform=new RotateTransform(a.Rotation,frame.CenterX-x,frame.CenterY-y);
-        InlineText.FontSize=a.FontSize;InlineText.Foreground=EditorRenderer.Ink(a.Color);
-        InlineText.TextWrapping=callout?TextWrapping.Wrap:TextWrapping.NoWrap;
-        InlineText.Width=Math.Max(24,callout?Math.Max(1,a.Width-24):Math.Max(160,Math.Min(view.Right-x,Math.Max(160,EditorRenderer.LocalBounds(a).Width+40))));
-        InlineText.MaxHeight=Math.Max(24,callout?Math.Max(1,a.Height-24):Math.Max(24,view.Bottom-y));
+        InlineText.FontSize=a.FontSize;InlineText.FontFamily=EditorRenderer.TextFont(a);InlineText.FontWeight=a.Bold?FontWeights.Bold:FontWeights.Normal;InlineText.FontStyle=a.Italic?FontStyles.Italic:FontStyles.Normal;InlineText.TextAlignment=EditorRenderer.WpfAlignment(a.TextAlignment);InlineText.Foreground=EditorRenderer.Ink(TextStudio.Foreground(a));
+        System.Windows.Documents.TextElement.SetFontFamily(InlineText,InlineText.FontFamily);
+        InlineText.TextWrapping=callout||a.TextWidth>0?TextWrapping.Wrap:TextWrapping.NoWrap;
+        InlineText.Width=Math.Max(24,callout?content.Width:a.TextWidth>0?a.TextWidth:Math.Max(160,Math.Min(view.Right-x,Math.Max(160,EditorRenderer.LocalBounds(a).Width+40))));
+        InlineText.MaxHeight=Math.Max(80,Math.Min(600,view.Height));
     }
     private void EndInlineText(bool commit)
     {
         if(_endingInline||_inlineId==null)return;_endingInline=true;
         try{
-            var id=_inlineId;var text=InlineText.Text;_inlineId=null;InlineText.Visibility=Visibility.Collapsed;
+            var id=_inlineId;var text=InlineText.Text;_inlineId=null;_imeComposing=false;InlineText.Visibility=Visibility.Collapsed;
             if(commit&&_session is {} session&&session.Document.Annotations.Any(a=>a.Id==id)){
-                session.Commit();session.Change(d=>d.Annotations.First(a=>a.Id==id).Text=text);
+                session.Commit();session.Change(d=>{var target=d.Annotations.First(a=>a.Id==id);target.Text=text;EditorRenderer.FitText(target,d.Viewport);});
             }
-            if(Surface.Tool is EditorTool.Text or EditorTool.Callout)SelectTool(EditorTool.Select);
             Surface.InvalidateVisual();SyncProperties();if(_session?.Dirty==true){_saveTimer.Stop();_saveTimer.Start();}
         }finally{_endingInline=false;}
     }
     private void InlineText_KeyDown(object sender,KeyEventArgs e)
     {
+        if(_imeComposing&&e.Key is Key.Enter or Key.Escape)return;
         if(e.Key==Key.Escape){EndInlineText(false);Surface.Focus();e.Handled=true;}
         else if(e.Key==Key.Enter&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){EndInlineText(true);Surface.Focus();e.Handled=true;}
     }
