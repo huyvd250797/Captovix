@@ -1,3 +1,13 @@
+# V1.14.0 — Scrolling Capture Foundation (23/10/2026)
+
+Chụp vùng cuộn dọc thủ công, overlap matching có phát hiện trùng/chưa chắc, sửa và xác nhận điểm nối, xem trước100%, ghép trực tiếp hàng pixel; hạn chế24khung/4MPkhung/64MPnguồn/40MPoutput/32768h. Khung nguồn lưu disk, manifest/hash và menu khôi phục; hủy/ghi lỗi không xóa khung đã commit. Chưa auto-scroll/ghép ngang.
+
+Tích hợp logo tím gọn đã chốt vào header/exe/tray/installer; SVG/PNG/ICO nhiều cỡ. Bổ sung thiết lập giao diện Sáng/Tối/Theo hệ thống và màu nhấn tự chọn áp dụng ngay, lưu LocalAppData từng tài khoản/máy, có backup cập nhật. Không đổi màu ảnh/chú thích. Giữ schema12 và toàn bộ công cụ ảnh trước đó. Nghiệm thu Windows thật còn chờ; xem docs/VALIDATION.md và docs/WINDOWS-TEST-V1.14.md.
+
+Bản tiếp theo V1.15: auto-scroll theo danh sách app hỗ trợ, nghiên cứu ghép ngang/fixed-region/window/client/menu và phát hiện nội dung động; triển khai theo nhóm nhỏ sau nghiệm thu1.14.
+
+---
+
 # Captovix V1.13.0 — Image Composition & Templates
 
 Ứng dụng Windows x64, C#/.NET 10 WPF, một Editor mở phóng to. Bàn giao đúng hai ZIP: Update-Packages (có setup) và Source. Chưa đăng Release/GitHub. Quay màn hình giữ chức năng hiện có; phát triển chuyên sâu về ảnh.

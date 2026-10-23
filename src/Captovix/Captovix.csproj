@@ -13,7 +13,7 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix.ico</ApplicationIcon>
-    <Version>1.13.0</Version>
+    <Version>1.14.0</Version>
     <StartupObject>Captovix.Program</StartupObject>
     <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
     <PublishTrimmed>false</PublishTrimmed>
@@ -22,6 +22,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Resource Include="Assets/Captovix.ico" />
+    <Resource Include="Assets/Captovix-mark.png" />
+    <Resource Include="Assets/Captovix-mark-light.png" />
     <PackageReference Include="ScreenRecorderLib" Version="7.0.1" />
     <PackageReference Include="Velopack" Version="1.2.161" />
     <None Update="update-source.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

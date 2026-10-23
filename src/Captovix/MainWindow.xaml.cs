@@ -61,6 +61,7 @@ public partial class MainWindow : Window
         if(HandleWorkflowMessage(msg,w,l)){handled=true;return 0;}
         if(msg==0x312){handled=true;switch((int)w){case 1:if(!_busy)_=CaptureAsync(false);break;case 2:if(!_busy)_=CaptureAsync(true);break;case 3:StopRecording();break;case 4:_bar?.PauseFromHotkey();break;}}
         if(msg==0x7E&&!_busy)Dispatcher.BeginInvoke(RefreshSources);
+        if(msg is 0x1A or 0x31A)Dispatcher.BeginInvoke(AppearanceManager.RefreshSystem);
         return 0;
     }
     private AppSettings Settings()=>new(){ObjectSnap=Surface.SnapEnabled,SourceMode=SourceMode.SelectedIndex,Delay=int.Parse(((ComboBoxItem)DelayPicker.SelectedItem).Tag.ToString()!),Fps=int.Parse(((ComboBoxItem)FpsPicker.SelectedItem).Tag.ToString()!),Cursor=CursorToggle.IsChecked==true,Mic=MicToggle.IsChecked==true,SystemAudio=SystemToggle.IsChecked==true,Hardware=HardwareToggle.IsChecked==true,Display=(DisplayPicker.SelectedItem as DisplayInfo)?.Device??""};

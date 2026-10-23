@@ -1,16 +1,29 @@
-Captovix V1.13.0 — Package validation
+Captovix 1.14.0 — 23/10/2026
 
-Windows x64, self-contained .NET10.0.13; AppId HuyVo.Captovix, channel win.
-Velopack1.2.161. Native wrapper compiled using NSIS3.08-3+deb12u1 on Linux.
+Linux x64 build and artifact checks; NOT Windows desktop acceptance.
+.NET SDK10.0.100; self-contained Windows x64 runtime10.0.13.
+ScreenRecorderLib7.0.1; Velopack1.2.161; NSIS3.08 directory/migration wrapper.
 
-The release includes one full nupkg and the canonical NSIS wrapper setup.
-releases.win.json, RELEASES and assets.win.json point to those artifacts.
-Verify-Packages.py checks hashes/size/CRC, payload identity, runtime version,
-fixed publisher source, canonical setup and clean source/update archives.
-UpdateChecks also checks discovery/download/hash with a real full package.
-The source ZIP contains build scripts and test harnesses to repeat validation.
+20 pure/static suites: 1258 passing checks, including78 new scrolling/appearance checks.
+11 WPF suites: cross-build only; not executed on Linux.
+Production updater integration with actual full.nupkg:61 checks (52 baseline +9 package-specific).
+Unique executed assertions across pure and package-specific suites:1267 (1258+9).
 
-Actual Windows install/update, signature/SmartScreen UX, capture hardware,
-DPI, rendering, clipboard, drag/drop and IME are pending real-device acceptance.
-Executables are not code-signed by a publisher certificate in this build.
-No GitHub Release has been published by this workflow.
+Artifact verification script checks feed SHA256/SHA1/size, RELEASES, nuspec/AppId/version,
+CRC, published payload/doc byte equality, runtime pin, stable baked-in URL, no PDB,
+canonical Setup wrapper, asset manifest and exactly five release files,
+11 protected capture/native/entry foundations unchanged versus V1.13 source,
+installer invocation unchanged except release version, source/update ZIP byte equality.
+Expected final artifact assertions:42 including ZIP checks. Run scripts/Verify-Packages.py
+against actual release assets and supplied Source/Update ZIPs to reproduce.
+
+Source includes the approved compact purple logo trace and multi-resolution ICO;
+logo loaded by app header/exe/tray/installer. Theming does not alter authored image content.
+PNG stitching copies source rows directly and gates uncertain joins pending manual review.
+
+Not performed: Windows install/uninstall/upgrade, live capture/scroll/hotkeys/UI,
+multiple physical screens/DPI100–200%, HDR, signing validation on Windows,
+visual/interaction/clipboard/resource/template runtime assertions of WPF harnesses.
+Installer/app are not signed with a publisher certificate. No automatic publishing.
+
+Windows acceptance checklist:docs/WINDOWS-TEST-V1.14.md.

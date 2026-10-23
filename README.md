@@ -1,39 +1,32 @@
-# Captovix V1.13.0 — Image Composition & Templates
+# Captovix V1.14.0 — Scrolling Capture Foundation
 
-Ứng dụng Windows x64, C#/.NET 10 WPF, một Editor mở phóng to. Bàn giao đúng hai ZIP: Update-Packages (có setup) và Source. Chưa đăng Release/GitHub. Quay màn hình giữ chức năng hiện có; phát triển chuyên sâu về ảnh.
+Ứng dụng Windows x64, C#/.NET10 WPF, một Editor mở maximized. Bản nâng cấp từ source V1.13.0, giữ bộ công cụ ảnh và chức năng quay hiện có. Bàn giao đúng hai ZIP: Update-Packages (có Setup.exe) và Source. Chưa tự đăng GitHub/Release.
 
-## Nội dung mới
+## Nội dung V1.14
 
-- Menu **Bố cục**: tạo canvas, thêm nhiều ảnh, sắp xếp theo mẫu trực quan, đổi chỗ hai ảnh; tiêu đề, caption và ghi chú cuối là đối tượng chữ sửa được.
-- Từng ảnh là lớp riêng: Fit/Fill giữ tỷ lệ, kéo nội dung ảnh trong ô, đổi vị trí bằng thanh trượt, cắt theo pixel nguồn, thay ảnh, viền/bo góc/bóng. Ảnh nguồn nhúng trong tài liệu.
-- `.cvtemplate`: lưu bố cục và đối tượng vector, bỏ ảnh công việc và thay chữ bằng placeholder. `.cvproject`: một gói ZIP chứa ảnh gốc và tài liệu với đủ lớp ảnh; mở độc lập file nguồn ngoài máy.
-- Callout mới có đệm 30 px, tự mở rộng chiều ngang hợp lý, giới hạn chiều cao theo canvas và clip chữ trong vùng nội dung. Mẫu preview dùng chữ/đệm/cỡ mẫu riêng; dữ liệu yêu thích giữ nguyên style thực tế.
-- Màu chữ có palette và hộp chọn màu Windows. Ctrl+B/I/U cho đậm/nghiêng/gạch chân cả đối tượng, cả khi nhập inline; chưa có rich text từng từ.
-- Icon vector thống nhất cho công cụ/chụp/quay/copy/xuất/thư viện/layers; chụp teal, quay đỏ dịu. Phím tắt và chụp/quay là hai module riêng. Ẩn cấu hình và địa chỉ nguồn cập nhật; trình bày thuộc tính theo công cụ trước, layers/hình học/toàn ảnh sau.
-- Bỏ nút và phím P tạo Pixel hóa; giữ render dữ liệu Pixelate cũ. Vùng pixel chữ nhật/ellipse/lasso vẫn dùng để cắt/copy/tô/xóa pixel ảnh nền.
+- **Chụp cuộn dọc:** chọn vùng, tự cuộn trang bằng tay, lấy từng khung bằng nút hoặc Ctrl+Shift+F10; Ctrl+Shift+F11 mở ghép/xem trước. Tìm overlap, loại khung trùng, đánh dấu điểm nối không chắc; chỉnh overlap theo hàng pixel và xác nhận trước lưu. Giới hạn24 khung,4MP/khung,64MP nguồn/phiên,40MP ảnh ghép và cao32768px.
+- **Phục hồi:** giữ PNG gốc + manifest + SHA256 trong ScrollSessions. Có menu khôi phục phiên để xem/ghép lại; không cần giữ cửa sổ nguồn cũ. Có hủy thao tác; lỗi không xóa nguồn đã thu. Chưa có auto-scroll hoặc ghép ngang.
+- **Logo chính thức theo mẫu Boss chốt:** biểu tượng hai góc/chấm tròn gọn, tím #7C3AED, dùng trong header, exe/taskbar/tray và bộ cài. Có SVG và ICO16–256px.
+- **Giao diện riêng trên từng máy:** Sáng/Tối/Theo hệ thống, palette và chọn màu nhấn tùy ý; áp dụng/lưu ngay. Lưu riêng tài khoản Windows trên máy, giữ qua cập nhật, không đồng bộ cloud. Không đổi màu ảnh/chú thích/file xuất.
 
-Hướng dẫn: [IMAGE-COMPOSITION-TEMPLATES.md](docs/IMAGE-COMPOSITION-TEMPLATES.md). Bản này build và kiểm tra logic trên Linux; WPF chỉ cross-build. Chưa chạy giao diện, clipboard, hộp chọn màu native, capture/DPI, cài đặt hoặc update trên Windows thật.
+Hướng dẫn thao tác, giới hạn và đường dẫn dữ liệu: [SCROLLING-CAPTURE-APPEARANCE.md](docs/SCROLLING-CAPTURE-APPEARANCE.md). Kết quả kiểm tra: docs/VALIDATION.md. Nghiệm thu Windows thật còn chờ: docs/WINDOWS-TEST-V1.14.md. Không coi build thành công là đã kiểm thử chụp/quay/cài đặt/UI trên Windows.
 
-## Bản tiếp theo
+## Cài đặt hoặc cập nhật
 
-**V1.14 — Scrolling Capture Foundation:** chọn vùng rồi cuộn một chiều; ghi các khung có overlap, ghép ảnh dài, xem điểm nối và báo vùng không chắc. Có hủy thao tác/giới hạn bộ nhớ và giữ các khung nguồn nếu ghép thất bại. Chưa triển khai; cần thử riêng theo từng ứng dụng Windows.
+1. Giải nén **Captovix-v1.14.0-Update-Packages.zip**.
+2. Đóng Captovix cả ở tray; chạy **HuyVo.Captovix-win-Setup.exe** trong ZIP để cài/nâng cấp thủ công. Máy mới có thể chọn thư mục riêng như `D:\\Captovix\\Captovix`; máy đã cài managed thì giữ installroot hiện có, không lồng thêm current.
+3. Hoặc dùng Trợ giúp → Kiểm tra cập nhật **sau khi** nhà phát hành đăng đủ5 assets lên stable latest Release. Không nhập link, không cần cài source. Không cần nâng lần lượt qua từng minor version khi dùng full package hợp lệ.
+4. Ứng dụng tự chứa .NET10.0.13 x64, bộ cài có Visual C++ Runtime. App/Setup chưa được ký bằng chứng thư nhà phát hành. Không xóa thư mục dữ liệu để sửa lỗi.
 
-## Cài đặt và nâng cấp
+Nguồn ổn định: `src/Captovix/update-source.json`, gắn sẵn và không hiển thị địa chỉ trên UI. Giao diện: **Hiển thị → Giao diện · Sáng / Tối / Theo hệ thống…**. Chụp cuộn: **Chụp & quay → Chụp cuộn dọc…**. Khôi phục phiên cũng trong menu này.
 
-1. Giải nén Captovix-v1.13.0-Update-Packages.zip.
-2. Máy đang chạy app: đóng app rồi chạy HuyVo.Captovix-win-Setup.exe, hoặc cập nhật từ Trợ giúp → Kiểm tra cập nhật sau khi nhà phát hành đăng các asset.
-3. Chọn đường dẫn cài phù hợp, ví dụ D:\Captovix\Captovix. Không chọn thư mục Media/dữ liệu. Installer nhận diện managed install root, không lồng nhiều thư mục current và giữ dữ liệu.
-4. Mở Captovix. Giao diện mặc định maximized. Máy chạy Windows x64 cần Visual C++ Runtime; bộ cài có prerequisite. .NET runtime đã tự chứa.
+## Công cụ ảnh trước đây vẫn giữ
 
-Nguồn cập nhật gắn sẵn trong src/Captovix/update-source.json; V1.13 không cho đổi/hiện địa chỉ trên UI. Khi muốn đổi publisher, sửa file này trong source trước build. Không đưa token/mật khẩu vào file. Không cần Supabase/database hoặc biến môi trường để dùng offline.
+Ctrl+wheel zoom; wheel cuộn dọc; Shift+wheel ngang; Space+kéo pan. Click đối tượng để chọn/kéo/sửa, Alt+kéo vẽ chồng, Ctrl+C/V/D, Ctrl+Z/Y; Ctrl+B/I/U cả đối tượng chữ. Shapes/mũi tên/callout/layers/blur/focus/pixel selection/composition/template/project giữ hành vi V1.13. Hướng dẫn cũ: docs/IMAGE-COMPOSITION-TEMPLATES.md; roadmap tập trung ảnh, video phát triển sau.
 
-## Cách dùng
+## Bản tiếp theo — V1.15: Advanced Capture & Stitching
 
-- Chụp ảnh hoặc Ctrl + ` theo cấu hình của Boss; vào Công cụ → Phím tắt & chạy nền để đăng ký tổ hợp phím. Mở app/khu vực khay để phím toàn cục hoạt động; hệ thống báo xung đột nếu ứng dụng khác đã dùng phím.
-- Chụp & quay → Cấu hình chụp & quay: nguồn, delay, mic, âm thanh máy, viền và kết quả sau chụp. Chụp phần tử cần provider UI Automation; con lăn chọn khối cha/con, Esc hủy.
-- Ctrl+con lăn zoom, con lăn cuộn dọc, Shift+con lăn cuộn ngang, Space+kéo khung nhìn. Chọn/click đối tượng để di chuyển và sửa; Alt+kéo để vẽ chồng; Ctrl+C/V/D, Ctrl+Z/Y. Nội dung chữ có Ctrl+B/I/U áp dụng cho cả đối tượng.
-- Bố cục → Tạo bản ghép mới; chọn kích thước/mẫu/tiêu đề/caption rồi chọn nhiều file. Hướng dẫn chi tiết về Fit/Fill, crop, template/project: docs/IMAGE-COMPOSITION-TEMPLATES.md.
-- Delete thumbnail chuyển nội dung vào Trash; nút khôi phục ở đáy thư viện khôi phục lần xóa vừa rồi. Chuột phải canvas mở lệnh nhóm, thứ tự lớp và căn chỉnh.
+Mở rộng **sau nghiệm thu V1.14**: auto-scroll cho từng app được hỗ trợ, thử ghép ngang, vùng cố định nhập số và các chế độ window/client/menu; nhận diện viewport đổi hoặc animation, công bố rõ trường hợp hỗ trợ/fallback. Không hứa auto-scroll mọi app. Có thể tách các nhóm này thành patch nhỏ để ổn định trước khi thêm rộng.
 
 ## Build từ source trên Windows
 
@@ -55,8 +48,8 @@ Hoặc double-click Build.cmd. Kết quả ở artifacts; Update-Packages là ZI
 Chạy riêng logic/bộ WPF mới trên Windows:
 
 ```powershell
-dotnet run --project tests/CompositionChecks/CompositionChecks.csproj -c Release
-dotnet run --project tests/CompositionWindowsChecks/CompositionWindowsChecks.csproj -c Release -p:Platform=x64
+dotnet run --project tests/ScrollAppearanceChecks/ScrollAppearanceChecks.csproj -c Release
+dotnet run --project tests/ScrollAppearanceWindowsChecks/ScrollAppearanceWindowsChecks.csproj -c Release -p:Platform=x64
 ```
 
 Nếu chỉ cross-build ở Linux, các bộ WPF không được xem là đã chạy. Đừng build chỉ định cả thư mục khi có tệp WPF tạm: dùng đúng đường dẫn .csproj.
@@ -76,7 +69,7 @@ Bản bàn giao chưa push source hoặc đăng Release. Phần mềm desktop WP
 ```powershell
 git init
 git add .
-git commit -m "Captovix v1.13.0 image composition and templates"
+git commit -m "Captovix v1.14.0 scrolling capture and personal appearance"
 git branch -M main
 git remote add origin https://github.com/OWNER/CAPTOVIX-SOURCE.git
 git push -u origin main
@@ -84,9 +77,9 @@ git push -u origin main
 
 Với repo có sẵn: clone/fetch/pull, tích hợp thay đổi rồi commit/push; không force push. Không đưa artifacts hoặc dữ liệu người dùng vào repo source.
 
-Để updater thấy bản mới: tạo GitHub Release công khai stable, tag v1.13.0, Set as latest; tải riêng đúng5 asset trong Update-Packages:
+Để updater thấy bản mới: tạo GitHub Release công khai stable, tag v1.14.0, Set as latest; tải riêng đúng5 asset trong Update-Packages:
 
-- HuyVo.Captovix-1.13.0-full.nupkg
+- HuyVo.Captovix-1.14.0-full.nupkg
 - HuyVo.Captovix-win-Setup.exe
 - releases.win.json
 - assets.win.json
@@ -94,4 +87,4 @@ Với repo có sẵn: clone/fetch/pull, tích hợp thay đổi rồi commit/pus
 
 Không chỉ upload ZIP/source. Publish xong thử cập nhật trên một máy Windows trước khi cài nhiều máy. Xem docs/UPDATE-GUIDE.md, docs/VALIDATION.md và docs/WINDOWS-TEST-CHECKLIST.md.
 
-Bàn giao2 ZIP: Update-Packages và Source; Setup ở trong Update-Packages. Lần nâng cấp sau gửi Source ZIP mới nhất này. Roadmap V1.14 và những mốc ảnh tiếp theo ở ROADMAP.md; không tự triển khai video editor trong bản này.
+Bàn giao2 ZIP: Update-Packages và Source; Setup ở trong Update-Packages. Lần nâng cấp sau gửi Source ZIP mới nhất này. Roadmap V1.15 và những mốc ảnh tiếp theo ở ROADMAP.md; không tự triển khai video editor trong bản này.

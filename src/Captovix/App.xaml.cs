@@ -14,9 +14,10 @@ public partial class App : Application
         DispatcherUnhandledException += (_, a) => {
             Log(a.Exception); MessageBox.Show("Có lỗi: " + a.Exception.Message + "\nBáo cáo lỗi được lưu trong thư mục dữ liệu của app.", "Captovix"); a.Handled = true;
         };
+        AppearanceManager.Initialize();
         base.OnStartup(e);
     }
     public static string DataRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HuyVo", "Captovix");
     public static void Log(Exception e) { try { Directory.CreateDirectory(DataRoot); File.AppendAllText(Path.Combine(DataRoot, "errors.log"), $"{DateTimeOffset.Now:O} {e}\n"); } catch { } }
-    protected override void OnExit(ExitEventArgs e) { _singleInstance?.Dispose(); base.OnExit(e); }
+    protected override void OnExit(ExitEventArgs e) { AppearanceManager.Stop(); _singleInstance?.Dispose(); base.OnExit(e); }
 }

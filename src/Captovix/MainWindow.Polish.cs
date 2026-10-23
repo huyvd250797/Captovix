@@ -29,8 +29,8 @@ public partial class MainWindow
             }
             if(key==null)continue;button.Content=AppIcons.Content(key,label);button.SetValue(System.Windows.Automation.AutomationProperties.NameProperty,string.IsNullOrEmpty(label)?button.ToolTip?.ToString()??key:label);
         }
-        CaptureButton.Background=new SolidColorBrush(Color.FromRgb(0,139,146));CaptureButton.Foreground=Brushes.White;
-        RecordButton.Background=new SolidColorBrush(Color.FromRgb(255,241,242));RecordButton.Foreground=new SolidColorBrush(Color.FromRgb(190,18,60));RecordButton.BorderBrush=new SolidColorBrush(Color.FromRgb(254,205,211));
+        CaptureButton.SetResourceReference(Control.BackgroundProperty,"Accent");CaptureButton.SetResourceReference(Control.ForegroundProperty,"OnAccent");
+        RecordButton.SetResourceReference(Control.BackgroundProperty,"RecordBackground");RecordButton.SetResourceReference(Control.ForegroundProperty,"RecordText");RecordButton.SetResourceReference(Control.BorderBrushProperty,"RecordText");
     }
 }
 public static class AppIcons

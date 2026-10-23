@@ -19,6 +19,7 @@ public static class UpdateBackup
                     var source = Path.Combine(root, name);
                     if (File.Exists(source)) zip.CreateEntryFromFile(source, name);
                 }
+                var appearance=Path.Combine(root,"appearance-settings.json");if(File.Exists(appearance))zip.CreateEntryFromFile(appearance,"appearance-settings.json");
                 var edits = Path.Combine(root, "Edits");
                 if (Directory.Exists(edits))
                     foreach (var source in Directory.EnumerateFiles(edits, "*.json", SearchOption.TopDirectoryOnly))

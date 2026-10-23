@@ -1,10 +1,15 @@
-# V1.13.0 — Kết quả kiểm tra
+# V1.14.0 — Kết quả kiểm tra (23/10/2026)
 
-23/10/2026. Môi trường thực thi Linux x64, .NET SDK10.0.100. Ứng dụng Windows C#/.NET10 WPF, runtime tự chứa10.0.13, ScreenRecorderLib7.0.1 và Velopack1.2.161; không thay dependency app.
+- Môi trường: Linux x64, SDK10.0.100, cross-target Windows x64, runtime đi kèm10.0.13. Không có desktop Windows thật trong lần bàn giao này.
+- Đã chạy20 bộ kiểm tra logic/static: **1.258 kiểm tra đạt**, gồm78 kiểm tra mới về scrolling/appearance. Bao gồm match shift1–106px, khung trùng, nội dung lặp, reverse, uncertainty, ghép BGRA từng byte, overlap thủ công, cancellation và giới hạn; mode/theme persistence/corrupt backup/isolation/contrast; menu và wiring system/theme/capture safety. Giữ các bộ geometry/fidelity/editor/history/migration/shapes/layers/text/blur/composition/update/installer trước đây.
+- **11 bộ WPF chỉ cross-build thành công**, không thực thi trên Linux. Bộ mới ScrollAppearanceWindowsChecks kiểm tra resource/template sáng/tối, logo pack URI và session PNG/hash/compose/export roundtrip khi chạy trên Windows. Không được tính các assertions này là đã chạy.
+- Main app build không lỗi; publish self-contained và kiểm tra package/feed/hash/ZIP được ghi riêng ở PACKAGE-VALIDATION.txt sau đóng gói. Kiểm tra UpdateChecks với nupkg thật bổ sung9 kiểm tra tích hợp so với52 baseline; không cộng baseline52 hai lần.
+- Nền tảng capture/native/keyboard và câu lệnh installer --installto được so byte với source V1.13; chỉ cập nhật version installer và logo asset. Không thêm dấu -- passthrough (lỗi EXE_ARGS).
 
-- 19 bộ kiểm tra logic/cấu trúc chạy thành công: 1.180 kiểm tra, trong đó CompositionChecks151. Bao gồm bố cục1–16 ảnh,1000 trường hợp Fit/Fill ngẫu nhiên, crop/ratio, group caption, Undo/Redo, template không nhúng ảnh công việc, clone/style, migrate schema1–11, từ chối future schema và project hash/path lạ.
-- 10 bộ kiểm tra WPF cross-build thành công; **chưa thực thi** vì môi trường Linux. Bộ CompositionWindowsChecks chứa render Fit/Fill/bo góc, kéo bên trong ô/Undo, zoom không đổi export, callout hẹp/chữ dài/10 kiểu, khởi tạo cửa sổ và tách module.
-- Publish Windows x64 self-contained đã thành công; kiểm tra nupkg/feed/installer và ZIP được ghi riêng trong PACKAGE-VALIDATION.txt sau đóng gói.
-- Không coi cross-build hoặc kiểm tra XML là bằng chứng giao diện/IME/chuột/bộ nhớ/clipboard đã hoạt động trên Windows. Đặc biệt cần thử native color picker, drag Explorer/thư viện, Ctrl+B/I/U trong inline, template/project trên máy khác và installer/update ở D:\Captovix\Captovix.
+## Chưa được xác minh thực tế
 
-Giới hạn: pixel operations/canvas40MP,128 triệu ký tự PNG mã hóa mỗi doc, history8 triệu ký tự; ảnh lớn có thể ít Undo và tốn RAM/CPU. HDR/màu rộng riêng. Cắt lớp ảnh bằng form pixel nguồn; template giữ layout/vector và placeholder, không phải kho asset cloud. Bản phát hành chưa được đăng GitHub tự động. Xem WINDOWS-TEST-CHECKLIST.md.
+Không khẳng định UI/theme/hotkey/mouse/capture, độ chính xác ghép trang Windows, nhiều DPI/màn hình, dung lượng/bộ nhớ, clipboard, installer/update đã đạt trên máy Windows thật. Cần thực hiện docs/WINDOWS-TEST-V1.14.md, lưu kết quả theo từng app và từng scale100–200%. Trang offline docs/scroll-capture-test.html dùng làm mẫu có hàng đánh số. HDR/màu rộng đánh giá riêng.
+
+Nguồn cuộn tĩnh/SDR8, một chiều xuống; không tự cuộn, không hiểu nội dung DOM, không tự loại thanh cố định. Matching là lấy mẫu và có thể sai ở nội dung lặp/động; luôn xem điểm nối100%. Giới hạn4MP/khung,24khung,64MPnguồn,40MPoutput,32768px cao. Theme lưu LocalAppData theo tài khoản/máy, không đồng bộ. Native dialogs/installer có thể theo Windows thay vì theme ứng dụng. Không đổi schema12/tài liệu cũ và không mở rộng video.
+
+Build/kiểm tra lại: scripts/Run-Checks.py dùng DOTNET_EXE nếu dotnet không có PATH; trên Windows dùng scripts/Build-Windows.ps1 để thực thi WPF và kiểm thử installer path. Gói bàn giao chưa tự đăng GitHub; Setup chưa ký bằng chứng thư nhà phát hành.

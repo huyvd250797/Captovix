@@ -38,13 +38,15 @@ public partial class MainWindow
         var layout=new Grid{Margin=new(12)};layout.ColumnDefinitions.Add(new(){Width=new(192)});layout.ColumnDefinitions.Add(new());
         var tree=new TreeView{BorderThickness=new(0),Margin=new(0,0,12,0)};var host=new ContentControl();Grid.SetColumn(host,1);layout.Children.Add(tree);layout.Children.Add(host);dialog.Content=layout;
         var views=new Dictionary<string,FrameworkElement>{{"Capture",CaptureSettingsView},{"Hotkeys",HotkeysSettingsView},{"Updates",UpdatesExpander},{"Diagnostics",DiagnosticsSettingsView},{"Metadata",MetadataSettingsView}};
+        views["Appearance"]=BuildAppearanceSettings();
         FrameworkElement? mounted=null;
-        void Show(string key){if(mounted!=null){if(host.Content is ScrollViewer previous)previous.Content=null;host.Content=null;SettingsStaging.Children.Add(mounted);}mounted=views[key];SettingsStaging.Children.Remove(mounted);if(mounted is Expander ex)ex.IsExpanded=true;host.Content=new ScrollViewer{Content=mounted,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};}
+        void Show(string key){if(mounted!=null){if(host.Content is ScrollViewer previous)previous.Content=null;host.Content=null;if(mounted!=views["Appearance"])SettingsStaging.Children.Add(mounted);}mounted=views[key];SettingsStaging.Children.Remove(mounted);if(mounted is Expander ex)ex.IsExpanded=true;host.Content=new ScrollViewer{Content=mounted,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};}
         foreach(var group in new[]{("Chụp & quay",new[]{("Capture","Chụp & quay"),("Hotkeys","Phím tắt & chạy nền")}), ("Hệ thống",new[]{("Updates","Cập nhật ứng dụng"),("Diagnostics","Máy & màn hình")}), ("Nội dung",new[]{("Metadata","Thông tin ảnh / video")})}){
             var node=new TreeViewItem{Header=group.Item1,IsExpanded=true,Margin=new(0,5,0,0)};foreach(var item in group.Item2){var child=new TreeViewItem{Header=item.Item2,Tag=item.Item1,Padding=new(4,7,2,7)};child.Selected+=(_,e)=>{if(e.OriginalSource==child){Show((string)child.Tag);e.Handled=true;}};node.Items.Add(child);if(item.Item1==selected)child.IsSelected=true;}tree.Items.Add(node);
         }
-        if(mounted==null)Show(selected);
-        dialog.Closing+=(_,_)=>{FlushAutoProperties();if(mounted!=null){if(host.Content is ScrollViewer scroll)scroll.Content=null;host.Content=null;SettingsStaging.Children.Add(mounted);mounted=null;}_settingsDialog=null;};dialog.ShowDialog();
+        var appearance=new TreeViewItem{Header="Giao diện · màu sắc",Tag="Appearance",Padding=new(4,7,2,7)};appearance.Selected+=(_,e)=>{if(e.OriginalSource==appearance){Show("Appearance");e.Handled=true;}};tree.Items.Add(appearance);if(selected=="Appearance")appearance.IsSelected=true;
+        if(mounted==null)Show(views.ContainsKey(selected)?selected:"Capture");
+        dialog.Closing+=(_,_)=>{FlushAutoProperties();if(mounted!=null){if(host.Content is ScrollViewer scroll)scroll.Content=null;host.Content=null;if(mounted!=views["Appearance"])SettingsStaging.Children.Add(mounted);mounted=null;}_settingsDialog=null;};dialog.ShowDialog();
     }
     private static IEnumerable<DependencyObject> Descendants(DependencyObject root){foreach(var child in System.Windows.LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>()){yield return child;foreach(var next in Descendants(child))yield return next;}}
 }

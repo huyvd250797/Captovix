@@ -1,4 +1,4 @@
-# Captovix V1.13.0 — Image Composition & Templates
+# Captovix V1.14.0 — Scrolling Capture Foundation
 
 Ứng dụng Windows x64, C#/.NET 10 WPF, một Editor mở phóng to. Bàn giao đúng hai ZIP: Update-Packages (có setup) và Source. Chưa đăng Release/GitHub. Quay màn hình giữ chức năng hiện có; phát triển chuyên sâu về ảnh.
 
@@ -16,7 +16,7 @@ Hướng dẫn: [IMAGE-COMPOSITION-TEMPLATES.md](docs/IMAGE-COMPOSITION-TEMPLATE
 
 ## Bản tiếp theo
 
-**V1.14 — Scrolling Capture Foundation:** chọn vùng rồi cuộn một chiều; ghi các khung có overlap, ghép ảnh dài, xem điểm nối và báo vùng không chắc. Có hủy thao tác/giới hạn bộ nhớ và giữ các khung nguồn nếu ghép thất bại. Chưa triển khai; cần thử riêng theo từng ứng dụng Windows.
+**V1.14 — Scrolling Capture Foundation:** đã triển khai trong source: chọn vùng/cuộn xuống thủ công, thu khung, matching overlap, kiểm tra/sửa điểm nối và khôi phục từ PNG/manifest/hash. Kèm logo đã chốt và màu giao diện + Light/Dark/System lưu riêng máy. Cross-build/logic không thay thế nghiệm thu Windows thật. Xem docs/SCROLLING-CAPTURE-APPEARANCE.md.
 
 
 # V1.12.0 — Selection & Pixel Editing
@@ -168,4 +168,4 @@ Chỉ hai file theo yêu cầu Boss:
 
 Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
 
-Bản tiếp theo: V1.14 — Scrolling Capture Foundation: chọn vùng cuộn một chiều, thu khung chồng lấn, ghép ảnh dài và kiểm tra điểm nối; hủy, giới hạn bộ nhớ, giữ frame nếu lỗi. Chưa triển khai; thử nghiệm theo ứng dụng Windows. Video tiếp tục để sau.
+Bản tiếp theo: V1.15 — Advanced Capture & Stitching: auto-scroll với từng app hỗ trợ; nghiên cứu ghép ngang, fixed-region nhập số, window/client/menu; phát hiện viewport đổi/animation và fallback có thông báo. Triển khai sau nghiệm thu V1.14; video tiếp tục để sau.
