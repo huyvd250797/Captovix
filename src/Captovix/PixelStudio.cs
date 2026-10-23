@@ -31,7 +31,7 @@ public static class PixelStudio
     public static void Validate(EditorDocument doc)
     {
         long total=0;if(doc.PixelBasePng!=null){var size=PngSize(doc.PixelBasePng);if(size!=(doc.OriginalWidth,doc.OriginalHeight))throw new InvalidDataException("Nền pixel phải cùng số pixel với ảnh gốc.");total+=doc.PixelBasePng.Length;}
-        foreach(var a in doc.Annotations){if(a.Kind==AnnotationKind.ImageLayer){if(a.PixelPng==null||a.Width<1||a.Height<1)throw new InvalidDataException("Lớp ảnh thiếu dữ liệu hoặc kích thước.");PngSize(a.PixelPng);total+=a.PixelPng.Length;}else if(a.PixelPng!=null)throw new InvalidDataException("Chỉ lớp ảnh được chứa bitmap.");}
+        foreach(var a in doc.Annotations){if(a.Kind==AnnotationKind.ImageLayer){if(a.PixelPng==null||a.Width<1||a.Height<1)throw new InvalidDataException("Lớp ảnh thiếu dữ liệu hoặc kích thước.");var size=PngSize(a.PixelPng);a.ImageStyle?.Validate(size.Width,size.Height);total+=a.PixelPng.Length;}else if(a.PixelPng!=null||a.ImagePlaceholder)throw new InvalidDataException("Chỉ lớp ảnh được chứa bitmap.");}
         if(total>128_000_000)throw new InvalidDataException("Tài liệu pixel quá lớn (tối đa 128 triệu ký tự PNG mã hóa).");
     }
     // Scanline intervals keep lasso work proportional to rows × edges, not pixels × edges.

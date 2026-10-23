@@ -1,6 +1,8 @@
-# Phát hành V1.12.0
+V1.13: xem [IMAGE-COMPOSITION-TEMPLATES.md](IMAGE-COMPOSITION-TEMPLATES.md) và VALIDATION.md cho trạng thái thực tế.
 
-Giải nén Update-Packages và upload đủ5 assets: HuyVo.Captovix-1.12.0-full.nupkg, HuyVo.Captovix-win-Setup.exe, releases.win.json, assets.win.json, RELEASES. Release public stable tag v1.12.0, Set as latest. Nguồn stable và quy trình cài/update giữ như V1.11.1. Modal cập nhật mở qua Trợ giúp → Kiểm tra cập nhật hoặc Công cụ → Thiết lập hệ thống → Nguồn cập nhật. Xem SELECTION-PIXEL-EDITOR.md để nâng cấp từ bản cũ và INSTALL-LOCATION.md để giữ root cài.
+# Phát hành V1.13.0
+
+Giải nén Update-Packages và upload đủ5 assets: HuyVo.Captovix-1.13.0-full.nupkg, HuyVo.Captovix-win-Setup.exe, releases.win.json, assets.win.json, RELEASES. Release public stable tag v1.13.0, Set as latest. Nguồn stable và quy trình cài/update giữ như V1.11.1. Modal cập nhật mở qua Trợ giúp → Kiểm tra cập nhật hoặc Công cụ → Thiết lập hệ thống → Nguồn cập nhật. Xem SELECTION-PIXEL-EDITOR.md để nâng cấp từ bản cũ và INSTALL-LOCATION.md để giữ root cài.
 
 # Cập nhật hướng dẫn cho V1.11.1
 

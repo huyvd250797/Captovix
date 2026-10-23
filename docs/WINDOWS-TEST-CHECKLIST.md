@@ -1,4 +1,6 @@
-# Nghiệm thu V1.12.0 — chưa đánh dấu đạt Windows
+V1.13: xem IMAGE-COMPOSITION-TEMPLATES.md và VALIDATION.md.
+
+# Nghiệm thu V1.13.0 — chưa đánh dấu đạt Windows
 
 - [ ] Mở maximized, không NullReference trong XAML; thử 1366/1920, DPI100–200%, monitor âm.
 - [ ] Menu ngang mở đúng module/modal; đổi Capture/Hotkeys/Updates/Diagnostics/Metadata nhiều lần, đóng rồi mở lại; không lỗi logical/visual parent; hotkey đổi/xung đột vẫn xử lý như trước.
@@ -256,3 +258,15 @@ Cross-build không thay cho thực thi các thao tác này trên Windows.
 6. PNG alpha đúng, JPEG ghép trắng, clipboard/thumbnail cùng bố cục. Vùng che luôn phủ trên chữ/nét ở mọi tổ hợp biến đổi.
 7. Nhập số sai, màu sai, kích thước vượt giới hạn: không thay tài liệu. Reset/undo/redo/mở lại phải khôi phục toàn bộ cấu hình và giữ ảnh gốc.
 8. Mở sidecar schema 1/2/3, sửa rồi lưu schema 4; nâng cấp từ V1.3, kiểm tra backup/URL phát hành, thư mục D và khởi động maximized.
+
+## Nghiệm thu V1.13 trên Windows (chưa chạy tại môi trường bàn giao)
+
+- [ ] Chạy CompositionWindowsChecks; mở app và đổi ảnh 20 lần, mọi module modal độc lập.
+- [ ] Tạo ghép2/3/4 ảnh, kéo file/thumbnail, dán PNG, xếp/Undo; xuất đúng pixel ở zoom khác nhau.
+- [ ] Fit/Fill, kéo nội dung trong ô, crop pixel nguồn/khôi phục, replace, bo góc/viền/bóng, đổi chỗ hai ảnh.
+- [ ] Save/open project khi di chuyển hoặc xóa các ảnh nguồn ngoài máy; đủ ảnh/đối tượng.
+- [ ] Template không có ảnh công việc; mở template mới và điền ô; file lỗi/future schema bị chặn.
+- [ ] Callout10 kiểu, padding30, hộp nhỏ/chữ dài, clip và preview; Ctrl+B/I/U đang inline, IME Việt; bảng màu/native chooser/hủy.
+- [ ] Mẫu sao/preset theo loại; vùng Pixelate cũ còn đúng; không còn nút tạo Pixelate; Vùng pixel vẫn dùng.
+- [ ] Cài mới/nâng cấp1.12→1.13 ở D:\Captovix\Captovix; update nguồn gắn sẵn và không hiện URL.
+- [ ] Capture/quay, phím tắt, scale100–200%, monitor tọa độ âm, di chuyển Editor giữa màn hình.

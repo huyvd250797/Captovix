@@ -1,6 +1,16 @@
-Captovix 1.12.0
-Logic/static: 1029 checks PASS. Real full-package SDK:9 additional checks run after pack.
-WPF app +9 harness cross-built only, not executed on Windows.
-Runtime .NET10.0.13 win-x64 self-contained; Velopack1.2.161; NSIS3.09 wrapper.
-Verify-Packages.py: feed SHA1/SHA256/size, nupkg/ZIP CRC, AppId/version/runtime/config/docs, canonical wrapper, source tree and protected baseline bytes.
-Native Windows UI/install/update/clipboard/DPI acceptance remains pending. See VALIDATION.md and WINDOWS-TEST-CHECKLIST.md.
+Captovix V1.13.0 — Package validation
+
+Windows x64, self-contained .NET10.0.13; AppId HuyVo.Captovix, channel win.
+Velopack1.2.161. Native wrapper compiled using NSIS3.08-3+deb12u1 on Linux.
+
+The release includes one full nupkg and the canonical NSIS wrapper setup.
+releases.win.json, RELEASES and assets.win.json point to those artifacts.
+Verify-Packages.py checks hashes/size/CRC, payload identity, runtime version,
+fixed publisher source, canonical setup and clean source/update archives.
+UpdateChecks also checks discovery/download/hash with a real full package.
+The source ZIP contains build scripts and test harnesses to repeat validation.
+
+Actual Windows install/update, signature/SmartScreen UX, capture hardware,
+DPI, rendering, clipboard, drag/drop and IME are pending real-device acceptance.
+Executables are not code-signed by a publisher certificate in this build.
+No GitHub Release has been published by this workflow.

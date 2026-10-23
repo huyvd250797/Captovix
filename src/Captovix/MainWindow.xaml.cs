@@ -32,7 +32,7 @@ public partial class MainWindow : Window
         InitializeComponent();InitializeEditor();_store=new();MediaList.ItemsSource=_store.Items;
         CollectionViewSource.GetDefaultView(_store.Items).Filter=o=>{var i=(MediaItem)o;var q=SearchBox.Text??"";return $"{i.Title} {(i.IsVideo?"video":"ảnh")} {i.Created:dd/MM/yyyy}".Contains(q,StringComparison.CurrentCultureIgnoreCase);};
         _store.Items.CollectionChanged+=(_,_)=>CountLabel.Text=_store.Items.Count.ToString();CountLabel.Text=_store.Items.Count.ToString();
-        InitializeShell();Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;
+        InitializeShell();InitializeComposition();InitializeIcons();Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;
         _videoTimer.Tick+=(_,_)=>{if(VideoPreview.Visibility==Visibility.Visible&&VideoPreview.NaturalDuration.HasTimeSpan){if(Mouse.LeftButton!=MouseButtonState.Pressed)VideoSeek.Value=VideoPreview.Position.TotalSeconds;VideoTime.Text=$"{VideoPreview.Position:hh\\:mm\\:ss} / {VideoPreview.NaturalDuration.TimeSpan:hh\\:mm\\:ss}";}};
         _videoTimer.Start();
     }

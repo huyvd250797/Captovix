@@ -33,8 +33,8 @@ public static class DocumentStore
             int priorVersion=0;
             try{using var prior=System.Text.Json.JsonDocument.Parse(File.ReadAllText(editPath));if(prior.RootElement.ValueKind==System.Text.Json.JsonValueKind.Object&&prior.RootElement.TryGetProperty("Version",out var version)&&version.ValueKind==System.Text.Json.JsonValueKind.Number&&version.TryGetInt32(out var number))priorVersion=number;}
             catch(System.Text.Json.JsonException){ /* Keep corrupt sidecar bytes before replacing the recovered document. */ }
-            if(priorVersion>11)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");
-            if(priorVersion<11&&!File.Exists(editPath+".pre-v1.12.bak"))File.Copy(editPath,editPath+".pre-v1.12.bak",false);
+            if(priorVersion>12)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");
+            if(priorVersion<12&&!File.Exists(editPath+".pre-v1.13.bak"))File.Copy(editPath,editPath+".pre-v1.13.bak",false);
         }
         MediaStore.AtomicWrite(editPath,doc.Serialize());session.MarkSaved();
         try{

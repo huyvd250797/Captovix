@@ -16,6 +16,8 @@ public partial class MainWindow
         _updateCheckTimer.Tick += async (_, _) => await AutoCheckUpdatesAsync();
         _updateCheckTimer.Start();
         _updateSettings = UpdateSettingsStore.Load(App.DataRoot, Path.Combine(AppContext.BaseDirectory, "update-source.json"), out var warning);
+        // Publisher source is shipped with the application; user metadata only controls timing.
+        try{var shipped=System.Text.Json.JsonSerializer.Deserialize<UpdateSettings>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"update-source.json")))??throw new InvalidDataException();shipped.NormalizeUrl();_updateSettings.SourceKind=shipped.SourceKind;_updateSettings.SourceUrl=shipped.SourceUrl;warning=null;}catch(Exception ex){App.Log(ex);warning="Không đọc được cấu hình phát hành. Hãy cài lại bản đầy đủ hoặc gửi log cho nhà phát triển.";}
         SourceKindPicker.SelectedIndex = _updateSettings.SourceKind == "Https" ? 1 : 0;
         UpdateSourceBox.Text = _updateSettings.SourceUrl;
         AutoUpdateCheck.IsChecked = _updateSettings.AutoCheck;
@@ -30,7 +32,7 @@ public partial class MainWindow
         _updates = null;
         if (!_updateSettings.IsConfigured)
         {
-            UpdateStatus.Text = "Chưa cấu hình nguồn phát hành. Mở Cấu hình nguồn cập nhật để thiết lập.";
+            UpdateStatus.Text = "Gói cài chưa có cấu hình phát hành. Vui lòng liên hệ nhà phát triển.";
             UpdateInstallLabel.Text = "Nguồn cập nhật chưa được thiết lập";
             RenderUpdateUi(); return;
         }
@@ -41,7 +43,7 @@ public partial class MainWindow
             _updates = new(backend); _updates.Changed += RenderUpdateUi; _updates.Failed += App.Log;
             RenderUpdateUi();
         }
-        catch (Exception ex) { App.Log(ex); UpdateStatus.Text = "Chưa khởi tạo được cập nhật. Hãy kiểm tra và lưu lại cấu hình nguồn."; RenderUpdateUi(); }
+        catch (Exception ex) { App.Log(ex); UpdateStatus.Text = "Chưa khởi tạo được cập nhật. Hãy thử lại hoặc gửi log cho nhà phát triển."; RenderUpdateUi(); }
     }
 
     private async Task AutoCheckUpdatesAsync()
@@ -70,8 +72,8 @@ public partial class MainWindow
         if (_updateUiClosed) return;
         var stage = _updates?.Stage ?? UpdateStage.Idle;
         var working = _updates?.IsWorking == true;
-        if (_updates != null) UpdateStatus.Text = _updates.Message;
-        UpdateSourceReadLabel.Text=_updates?.SourceVersion is {} found?$"Phiên bản nguồn: V{found}\nNguồn: {_updates.FeedDescription}":"Chưa đọc được phiên bản từ nguồn.";
+        if (_updates != null) UpdateStatus.Text = System.Text.RegularExpressions.Regex.Replace(_updates.Message,@"https?://[^\s]+","[địa chỉ phát hành]");
+        UpdateSourceReadLabel.Text=_updates?.SourceVersion is {} found?$"Phiên bản phát hành: V{found}":"Chưa kiểm tra phiên bản phát hành.";
         UpdateConfiguration.IsEnabled = !working && stage != UpdateStage.Ready;
         CheckUpdatesButton.IsEnabled = _updates != null && !working && stage != UpdateStage.Ready;
         DownloadUpdateButton.Visibility = stage == UpdateStage.Available && _updates?.CanApply == true ? Visibility.Visible : Visibility.Collapsed;

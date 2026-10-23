@@ -25,6 +25,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public double DisplayScale {get;private set;}=1;
     public double PhysicalZoom=>ImageFidelity.PhysicalZoom(Zoom,DisplayScale);
     public void SetDisplayScale(double value){_=ImageFidelity.ActualZoom(value);DisplayScale=value;Refresh();}
+    public bool ContentPanEnabled {get;set;}
     public bool IsInteracting=>Dragging;
     public ImageLayout? Layout=>Session==null?null:new ImageLayout(Session.Document.Viewport,Session.Document.Appearance);
     private double InteractionScale=>Zoom*(Layout?.ScaleMin??1);
@@ -35,7 +36,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public event Action? VisualChanged;
     public event Action? TextRequested;
     public event Action? CropFinished;
-    private enum DragAction { None,Move,Resize,Rotate,Create,Crop,CropMove,CropResize,Marquee,PixelRegion }
+    private enum DragAction { None,Move,Resize,Rotate,Create,Crop,CropMove,CropResize,Marquee,PixelRegion,ImagePan }
     private DragAction _action;
     private bool Dragging=>_action!=DragAction.None;
     private Point _start;
@@ -121,6 +122,7 @@ public sealed partial class EditorSurface : FrameworkElement
         if(Session==null)return;
         if(PixelDown(point))return;
         Session.Commit();_start=point;_moved=false;_createdId=null;_originals=[];_handle=-1;_selectionBefore=new(_selected);
+        if(ContentPanEnabled&&Selected is {Kind:AnnotationKind.ImageLayer,ImageStyle.Fit:ImageFit.Fill} image&&ObjectControl.CanEdit(Session.Document,_selected)&&EditorRenderer.Hit(image,point,0)&&HitHandle(point)<0){Session.Begin();_originals=[image.Copy()];_action=DragAction.ImagePan;CaptureMouse();return;}
         bool forceNew=modifiers.HasFlag(ModifierKeys.Alt)&&Tool!=EditorTool.Select;
         if(UsesSelectionGesture(Hit(_start)!=null,HitHandle(_start)>=0,forceNew)){
             var additive=(modifiers&(ModifierKeys.Shift|ModifierKeys.Control))!=0;
@@ -178,6 +180,7 @@ public sealed partial class EditorSurface : FrameworkElement
             var region=_action==DragAction.Crop?CropGeometry.FromPoints(_start.X,_start.Y,p.X,p.Y,view,shift):_action==DragAction.CropMove?CropGeometry.Move(_cropBefore!.Value,p.X-_start.X,p.Y-_start.Y,view):CropGeometry.Resize(_cropBefore!.Value,_handle,p.X,p.Y,view,shift);
             CropDraft=CropGeometry.IsValid(region,view)?region:null;CropDraftChanged?.Invoke();
         }
+        else if(_action==DragAction.ImagePan&&Selected is {} image){var original=_originals[0];var style=original.ImageStyle!;var source=RasterPixels.Decode(original.PixelPng!);var placement=CompositionStudio.ImagePlacement(new(original.Left,original.Top,original.Width,original.Height),source.PixelWidth,source.PixelHeight,style);var localStart=EditorRenderer.LocalPoint(original,_start);var localEnd=EditorRenderer.LocalPoint(original,p);var delta=localEnd-localStart;var current=image.ImageStyle!;double overflowX=original.Width-placement.Width,overflowY=original.Height-placement.Height;current.PanX=Math.Clamp(style.PanX+(Math.Abs(overflowX)>1e-6?delta.X/overflowX:0),0,1);current.PanY=Math.Clamp(style.PanY+(Math.Abs(overflowY)>1e-6?delta.Y/overflowY:0),0,1);}
         else if(_action==DragAction.Marquee){_draft=new(_start,p);}
         else if(_action==DragAction.Create&&Selected is {} created){
             if(created.Kind==AnnotationKind.Freehand){var last=created.Points[^1];if(created.Points.Count<_pointBudget&&(p-new Point(last.X,last.Y)).Length>=Math.Max(1,1.5/InteractionScale))created.AddPoint(p.X,p.Y);InvalidateVisual();return;}
@@ -185,7 +188,7 @@ public sealed partial class EditorSurface : FrameworkElement
             if(shift&&ShapeStudio.IsLine(created.Kind))end=ConstrainArrow(_start,p);
             else if(shift){double side=Math.Min(Math.Abs(p.X-_start.X),Math.Abs(p.Y-_start.Y));end=new(_start.X+Math.Sign(p.X-_start.X)*side,_start.Y+Math.Sign(p.Y-_start.Y)*side);}
             created.X2=end.X;created.Y2=end.Y;if(ShapeStudio.IsLine(created.Kind))EndConnector(created,end);
-            if(created.Kind==AnnotationKind.Callout){var v=Session.Document.Viewport;created.TailX=Math.Clamp(created.Left+created.Width*.2,v.X,v.Right);created.TailY=Math.Clamp(created.Top+created.Height+Math.Max(20,created.Height*.3),v.Y,v.Bottom);}
+            if(created.Kind==AnnotationKind.Callout){var v=Session.Document.Viewport;created.TailX=Math.Clamp(created.Left+created.Width*.2,v.X,v.Right);created.TailY=Math.Clamp(created.Top+created.Height+Math.Clamp(created.Height*.3,20,60),v.Y,v.Bottom);}
         }else if(_action==DragAction.Move){
             double dx=p.X-_start.X,dy=p.Y-_start.Y;
             var snap=ObjectControl.Snap(_dragBounds,Session.Document.Viewport,_snapPeers,dx,dy,6/InteractionScale,shift,SnapEnabled&&!modifiers.HasFlag(ModifierKeys.Control));
@@ -216,7 +219,7 @@ public sealed partial class EditorSurface : FrameworkElement
             _primary=_selected.LastOrDefault();_draft=null;
         }else{
             var invalid=_createdId!=null&&Selected is {} a&&(a.Kind==AnnotationKind.Freehand?a.Points.Count==0:a.Kind==AnnotationKind.Callout?a.Width<36||a.Height<36:ShapeStudio.IsLine(a.Kind)?Math.Sqrt(a.Width*a.Width+a.Height*a.Height)<2:a.Width<2||a.Height<2);
-            if(invalid){Session.Cancel();_selected.Clear();_primary=null;}else{if(action is DragAction.Create or DragAction.Resize)foreach(var target in Session.Document.Annotations.Where(a=>_selected.Contains(a.Id)))EditorRenderer.FitText(target,Session.Document.Viewport);Session.Commit();}
+            if(invalid){Session.Cancel();_selected.Clear();_primary=null;}else{if(action is DragAction.Create or DragAction.Resize)foreach(var target in Session.Document.Annotations.Where(a=>_selected.Contains(a.Id))){EditorRenderer.FitText(target,Session.Document.Viewport);if(action==DragAction.Create&&target.Kind==AnnotationKind.Callout){var view=Session.Document.Viewport;target.TailX=Math.Clamp(target.Left+target.Width*.25,view.X,view.Right);target.TailY=Math.Clamp(target.Top+target.Height+32,view.Y,view.Bottom);}}Session.Commit();}
         }
         _originals=[];Refresh();SelectionChanged?.Invoke();if(action==DragAction.Create&&Selected?.Kind==AnnotationKind.Callout)TextRequested?.Invoke();
     }

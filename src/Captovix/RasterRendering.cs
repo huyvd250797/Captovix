@@ -20,7 +20,7 @@ public static partial class EditorRenderer
     {
         var layers=doc.Annotations.Where(a=>a.Visible&&a.Kind==AnnotationKind.ImageLayer).ToArray();
         if(layers.Length==0||!doc.Annotations.Any(a=>a.Visible&&(a.IsRedaction||a.Kind==AnnotationKind.Magnifier))){_rasterSampling=null;_rasterSamplingOriginal=null;_rasterData=[];return source;}
-        string key=RuntimeHelpers.GetHashCode(source)+"|"+string.Join(";",layers.Select(a=>$"{a.Id}:{a.X1:R}:{a.Y1:R}:{a.X2:R}:{a.Y2:R}:{a.Rotation:R}:{(a.PixelPng==null?0:RuntimeHelpers.GetHashCode(a.PixelPng))}"));
+        string key=RuntimeHelpers.GetHashCode(source)+"|"+string.Join(";",layers.Select(a=>$"{a.Id}:{a.X1:R}:{a.Y1:R}:{a.X2:R}:{a.Y2:R}:{a.Rotation:R}:{System.Text.Json.JsonSerializer.Serialize(a.ImageStyle)}:{(a.PixelPng==null?0:RuntimeHelpers.GetHashCode(a.PixelPng))}"));
         if(key==_rasterSamplingKey&&_rasterSampling!=null&&ReferenceEquals(source,_rasterSamplingOriginal)&&layers.Select(a=>a.PixelPng).SequenceEqual(_rasterData))return _rasterSampling;
         var visual=new System.Windows.Media.DrawingVisual();using(var dc=visual.RenderOpen()){dc.DrawImage(source,new System.Windows.Rect(0,0,doc.OriginalWidth,doc.OriginalHeight));foreach(var layer in layers)DrawAnnotation(dc,layer);}
         var bitmap=new RenderTargetBitmap(doc.OriginalWidth,doc.OriginalHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(visual);bitmap.Freeze();_rasterSamplingKey=key;_rasterSampling=bitmap;_rasterSamplingOriginal=source;_rasterData=layers.Select(a=>a.PixelPng).ToArray();return bitmap;

@@ -6,6 +6,7 @@ public partial class MainWindow
 {
     private List<AnnotationPreset> _customPresets=[];
     private bool _presetsUnavailable;
+    private string? _presetFamily;
     private void InitializeAnnotationFeatures()
     {
         _customPresets=AnnotationPresetStore.Load(App.DataRoot,out var warning);_presetsUnavailable=warning!=null;
@@ -15,12 +16,14 @@ public partial class MainWindow
     private void RefreshPresets(string? selected=null)
     {
         var customNames=_customPresets.Select(p=>p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        PresetPicker.ItemsSource=AnnotationPresetStore.BuiltIn.Where(p=>!customNames.Contains(p.Name)).Concat(_customPresets).ToArray();
-        PresetPicker.SelectedItem=PresetPicker.Items.Cast<AnnotationPreset>().FirstOrDefault(p=>p.Name==selected)??PresetPicker.Items[0];
+        var active=Surface.Selected?.Kind??(Surface.Tool==EditorTool.Shape?Surface.ShapeKind:Enum.TryParse<AnnotationKind>(Surface.Tool.ToString(),out var k)?k:AnnotationKind.Rectangle);
+        bool Match(AnnotationPreset p)=>p.ToolKind is {} kind?CompositionStudio.SameFamily(active,kind)||kind==active:p.Shape is {} shape?ShapeStudio.IsClosed(active):p.Focus is {} focus?active==focus.Kind:p.Typography!=null?TextStudio.IsText(active):true;
+        PresetPicker.ItemsSource=AnnotationPresetStore.BuiltIn.Where(p=>!customNames.Contains(p.Name)).Concat(_customPresets).Where(Match).ToArray();
+        PresetPicker.SelectedItem=PresetPicker.Items.Cast<AnnotationPreset>().FirstOrDefault(p=>p.Name==selected)??PresetPicker.Items.Cast<AnnotationPreset>().FirstOrDefault();
     }
     private void SyncAnnotationFeatures()
     {
-        if(EffectPicker==null)return;SelectValue(EffectPicker,Surface.EffectSize);
+        if(EffectPicker==null)return;var family=(Surface.Selected?.Kind.ToString()??Surface.Tool.ToString())+"|"+Surface.ShapeKind; if(_presetFamily!=family){_presetFamily=family;RefreshPresets((PresetPicker.SelectedItem as AnnotationPreset)?.Name);}SelectValue(EffectPicker,Surface.EffectSize);
         var filters=Surface.Tool is EditorTool.Blur or EditorTool.Pixelate or EditorTool.Cover||_session?.Document.Annotations.Any(a=>Surface.SelectedIds.Contains(a.Id)&&a.IsRedaction)==true;
         EffectProperties.Visibility=filters?Visibility.Visible:Visibility.Collapsed;
         EffectPicker.IsEnabled=Surface.Tool is EditorTool.Blur or EditorTool.Pixelate||_session?.Document.Annotations.Any(a=>Surface.SelectedIds.Contains(a.Id)&&a.Kind is AnnotationKind.Blur or AnnotationKind.Pixelate)==true;

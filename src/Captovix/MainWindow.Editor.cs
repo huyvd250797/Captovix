@@ -116,11 +116,11 @@ public partial class MainWindow
     {
         if(!_editorReady||_syncProperties||_autoApplying)return;_syncProperties=true;
         try{
-            var a=Surface.Selected;DeleteAnnotationButton.IsEnabled=a!=null;PropertyTitle.Text=a==null?"Thuộc tính chú thích":a.Kind switch{AnnotationKind.Arrow=>"Mũi tên",AnnotationKind.Rectangle=>"Khung chữ nhật",AnnotationKind.Ellipse=>"Hình ellipse",AnnotationKind.Text=>"Chữ",AnnotationKind.Highlight=>"Highlight",AnnotationKind.Magnifier=>"Kính phóng đại",AnnotationKind.Spotlight=>"Spotlight",AnnotationKind.Blur=>"Làm mờ",AnnotationKind.Pixelate=>"Pixel hóa",AnnotationKind.Cover=>"Che kín",AnnotationKind.Callout=>"Hộp chú thích",AnnotationKind.Freehand=>"Nét vẽ tự do",_=>ShapeStudio.IsClosed(a.Kind)||a.Kind==AnnotationKind.Line?ShapeStudio.Label(a.Kind):"Số bước"};
+            var a=Surface.Selected;DeleteAnnotationButton.IsEnabled=a!=null;PropertyTitle.Text=a==null?"Thuộc tính chú thích":a.Kind switch{AnnotationKind.Arrow=>"Mũi tên",AnnotationKind.Rectangle=>"Khung chữ nhật",AnnotationKind.Ellipse=>"Hình ellipse",AnnotationKind.Text=>"Chữ",AnnotationKind.Highlight=>"Highlight",AnnotationKind.Magnifier=>"Kính phóng đại",AnnotationKind.Spotlight=>"Spotlight",AnnotationKind.Blur=>"Làm mờ",AnnotationKind.Pixelate=>"Pixel hóa · dữ liệu cũ",AnnotationKind.ImageLayer=>"Lớp ảnh",AnnotationKind.Cover=>"Che kín",AnnotationKind.Callout=>"Hộp chú thích",AnnotationKind.Freehand=>"Nét vẽ tự do",_=>ShapeStudio.IsClosed(a.Kind)||a.Kind==AnnotationKind.Line?ShapeStudio.Label(a.Kind):"Số bước"};
             if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
             if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
             SelectValue(StrokePicker,Surface.StrokeSize);SelectValue(FontPicker,Surface.TextSize);
-            SyncTextStudio();SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncFocusStudio();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();SyncVisualStudio();SyncPixelStudio();
+            SyncTextStudio();SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncFocusStudio();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();SyncVisualStudio();SyncPixelStudio();SyncCompositionControls();
             foreach(var b in ColorPalette.Children.OfType<Button>())b.BorderThickness=new Thickness(b.Tag?.ToString()==Surface.InkColor?3:1);
             TextProperties.Visibility=a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
@@ -189,6 +189,7 @@ public partial class MainWindow
         if(_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))return;
         if(e.Key==Key.Delete&&MediaList.IsKeyboardFocusWithin){Delete_Click(sender,e);e.Handled=true;return;}
         var ctrl=Keyboard.Modifiers.HasFlag(ModifierKeys.Control);var typing=Keyboard.FocusedElement is TextBoxBase;
+        if(TryTextShortcut(e))return;
         if(ViewportKey(e,typing))return;
         if(Surface.IsMouseCaptured&&e.Key!=Key.Escape){
             if(ctrl&&e.Key==Key.Z){FlushAutoProperties();Surface.CancelInteraction();_session?.Undo();Surface.Refresh();SyncProperties();}
@@ -215,7 +216,7 @@ public partial class MainWindow
         if(e.Key==Key.Delete){Surface.DeleteSelected();e.Handled=true;return;}
         double step=Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?10:1;
         if(e.Key is Key.Left or Key.Right or Key.Up or Key.Down){Surface.Nudge(e.Key==Key.Left?-step:e.Key==Key.Right?step:0,e.Key==Key.Up?-step:e.Key==Key.Down?step:0);e.Handled=true;return;}
-        EditorTool? tool=e.Key switch{Key.S=>EditorTool.Shape,Key.L=>EditorTool.Arrow,Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Shape,Key.E=>EditorTool.Shape,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.M=>EditorTool.Magnifier,Key.O=>EditorTool.Spotlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,Key.B=>EditorTool.Blur,Key.P=>EditorTool.Pixelate,Key.Q=>EditorTool.Callout,Key.F=>EditorTool.Freehand,_=>null};
+        EditorTool? tool=e.Key switch{Key.S=>EditorTool.Shape,Key.L=>EditorTool.Arrow,Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Shape,Key.E=>EditorTool.Shape,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.M=>EditorTool.Magnifier,Key.O=>EditorTool.Spotlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,Key.B=>EditorTool.Blur,Key.Q=>EditorTool.Callout,Key.F=>EditorTool.Freehand,_=>null};
         if(e.Key==Key.E)Surface.ShapeKind=AnnotationKind.Ellipse;if(e.Key==Key.R)Surface.ShapeKind=AnnotationKind.Rectangle;if(e.Key==Key.L)Surface.ShapeDefaults.Tip=ArrowTip.None;
         if(tool!=null){SelectTool(tool.Value);Surface.Focus();e.Handled=true;}
     }

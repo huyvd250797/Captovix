@@ -46,7 +46,7 @@ public static partial class EditorRenderer
         if(a.Kind==AnnotationKind.Freehand){if(!a.StrokeEnabled||a.StrokeOpacity<=0)return;pen=ShapePen(a);}
         var p1=new Point(a.X1,a.Y1);var p2=new Point(a.X2,a.Y2);var rect=new Rect(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
         switch(a.Kind){
-            case AnnotationKind.ImageLayer:if(a.PixelPng!=null)dc.DrawImage(RasterPixels.Decode(a.PixelPng),rect);break;
+            case AnnotationKind.ImageLayer:DrawImageLayer(dc,a,rect);break;
             case AnnotationKind.Freehand:
                 if(a.Points.Count==1){dc.DrawEllipse(brush,null,new(a.Points[0].X,a.Points[0].Y),a.Stroke/2,a.Stroke/2);break;}
                 if(a.Points.Count>1){var path=new StreamGeometry();using(var ctx=path.Open()){ctx.BeginFigure(new(a.Points[0].X,a.Points[0].Y),false,false);ctx.PolyLineTo(a.Points.Skip(1).Select(p=>new Point(p.X,p.Y)).ToArray(),true,false);}path.Freeze();dc.DrawGeometry(null,pen,path);}break;

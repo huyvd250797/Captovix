@@ -37,7 +37,7 @@ internal static class Program
             var app=new App();app.InitializeComponent();var window=new MainWindow();var flags=BindingFlags.Instance|BindingFlags.NonPublic;typeof(MainWindow).GetField("_session",flags)!.SetValue(window,session);var editor=(EditorSurface)window.FindName("Surface");editor.Load(source,session);editor.SelectIds([rectId]);
             ((CheckBox)window.FindName("ShapeFillEnabled")).IsChecked=false;Check(!session.Document.Annotations.First(a=>a.Id==rectId).FillEnabled,"Unchecking fill updates selected shape immediately without Apply");
             typeof(MainWindow).GetMethod("SelectTool",flags)!.Invoke(window,new object[]{EditorTool.Step});editor.PointerDown(new(700,500));editor.PointerDown(new(100,100));editor.PointerUp(new(100,100));Check(editor.SelectedId==rectId&&((TextBlock)window.FindName("PropertyTitle")).Text.Contains("chữ nhật",StringComparison.OrdinalIgnoreCase),"Smart targeting updates MainWindow properties to actual rectangle while Step remains drawing tool");
-            Check(window.Title.Contains("V1.12.0")&&window.WindowState==WindowState.Maximized,"Current Editor initializes successfully and opens maximized");window.Close();
+            Check(window.Title.Contains("V1.13.0")&&window.WindowState==WindowState.Maximized,"Current Editor initializes successfully and opens maximized");window.Close();
             Check(Pixels(source).SequenceEqual(raw),"All text and pointer operations preserve original image pixels");Console.WriteLine($"{count} text studio Windows checks passed. Real IME, OS clipboard, DPI and pointer devices remain manual acceptance.");return 0;
         }catch(Exception e){Console.Error.WriteLine(e);return 1;}
     }

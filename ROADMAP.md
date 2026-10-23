@@ -1,8 +1,29 @@
+# Captovix V1.13.0 — Image Composition & Templates
+
+Ứng dụng Windows x64, C#/.NET 10 WPF, một Editor mở phóng to. Bàn giao đúng hai ZIP: Update-Packages (có setup) và Source. Chưa đăng Release/GitHub. Quay màn hình giữ chức năng hiện có; phát triển chuyên sâu về ảnh.
+
+## Nội dung mới
+
+- Menu **Bố cục**: tạo canvas, thêm nhiều ảnh, sắp xếp theo mẫu trực quan, đổi chỗ hai ảnh; tiêu đề, caption và ghi chú cuối là đối tượng chữ sửa được.
+- Từng ảnh là lớp riêng: Fit/Fill giữ tỷ lệ, kéo nội dung ảnh trong ô, đổi vị trí bằng thanh trượt, cắt theo pixel nguồn, thay ảnh, viền/bo góc/bóng. Ảnh nguồn nhúng trong tài liệu.
+- `.cvtemplate`: lưu bố cục và đối tượng vector, bỏ ảnh công việc và thay chữ bằng placeholder. `.cvproject`: một gói ZIP chứa ảnh gốc và tài liệu với đủ lớp ảnh; mở độc lập file nguồn ngoài máy.
+- Callout mới có đệm 30 px, tự mở rộng chiều ngang hợp lý, giới hạn chiều cao theo canvas và clip chữ trong vùng nội dung. Mẫu preview dùng chữ/đệm/cỡ mẫu riêng; dữ liệu yêu thích giữ nguyên style thực tế.
+- Màu chữ có palette và hộp chọn màu Windows. Ctrl+B/I/U cho đậm/nghiêng/gạch chân cả đối tượng, cả khi nhập inline; chưa có rich text từng từ.
+- Icon vector thống nhất cho công cụ/chụp/quay/copy/xuất/thư viện/layers; chụp teal, quay đỏ dịu. Phím tắt và chụp/quay là hai module riêng. Ẩn cấu hình và địa chỉ nguồn cập nhật; trình bày thuộc tính theo công cụ trước, layers/hình học/toàn ảnh sau.
+- Bỏ nút và phím P tạo Pixel hóa; giữ render dữ liệu Pixelate cũ. Vùng pixel chữ nhật/ellipse/lasso vẫn dùng để cắt/copy/tô/xóa pixel ảnh nền.
+
+Hướng dẫn: [IMAGE-COMPOSITION-TEMPLATES.md](docs/IMAGE-COMPOSITION-TEMPLATES.md). Bản này build và kiểm tra logic trên Linux; WPF chỉ cross-build. Chưa chạy giao diện, clipboard, hộp chọn màu native, capture/DPI, cài đặt hoặc update trên Windows thật.
+
+## Bản tiếp theo
+
+**V1.14 — Scrolling Capture Foundation:** chọn vùng rồi cuộn một chiều; ghi các khung có overlap, ghép ảnh dài, xem điểm nối và báo vùng không chắc. Có hủy thao tác/giới hạn bộ nhớ và giữ các khung nguồn nếu ghép thất bại. Chưa triển khai; cần thử riêng theo từng ứng dụng Windows.
+
+
 # V1.12.0 — Selection & Pixel Editing
 
 Đã triển khai trong source: Editor/menu/modal mới, thư viện dọc/ngang, gộp công cụ; gallery10 callout và đuôi tự do; vùng chữ nhật/ellipse/lasso, copy/cắt/tô/xóa nền, dán lớp ảnh, Undo/Redo và lưu sidecar. Logic/build kiểm tra tại môi trường Linux; UI/cài đặt/input/render chỉ đạt sau nghiệm thu Windows. Xem docs/SELECTION-PIXEL-EDITOR.md về giới hạn phạm vi.
 
-**Tiếp theo V1.13 — Image Composition & Templates:** thêm ảnh bằng mở/kéo thả, bố cục ảnh2/3/4 ô, căn và giãn khoảng cách, header/caption, lưu template và gói tài nguyên dự án. Tận dụng ImageLayer V1.12; chưa triển khai. Video tiếp tục sau nhánh ảnh.
+**Mốc V1.13 đã triển khai trong source (23/10/2026):** thêm ảnh bằng mở/kéo thả, bố cục ảnh2/3/4 ô, căn và giãn khoảng cách, header/caption, lưu template và gói tài nguyên dự án. Tận dụng ImageLayer V1.12; xem docs/IMAGE-COMPOSITION-TEMPLATES.md. Chờ nghiệm thu Windows. Video tiếp tục sau nhánh ảnh.
 
 # V1.11.1 — Update Reliability
 
@@ -30,7 +51,7 @@ Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chư
 
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9 đã triển khai và chờ nghiệm thu Windows; V1.10 đã triển khai và chờ nghiệm thu Windows; V1.11 đã triển khai, chờ nghiệm thu Windows; V1.12–V1.20 là kế hoạch, chưa triển khai. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
+Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9 đã triển khai và chờ nghiệm thu Windows; V1.10 đã triển khai và chờ nghiệm thu Windows; V1.11 đã triển khai, chờ nghiệm thu Windows; V1.12/V1.13 đã triển khai trong source; V1.14–V1.20 là kế hoạch. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
 
 ## 1. Định hướng mới
 
@@ -73,7 +94,7 @@ V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ
 | V1.10 — Text & Callout Studio | Chú thích chữ dễ đọc | Font/style/căn dòng, padding; nhiều callout; chỉnh đuôi; step marker nhiều kiểu; tự đánh số | Text layout/metrics; fallback font; text và shape không flatten khi lưu | Gõ tiếng Việt/IME, đổi zoom/rotate/export không cắt chữ; callout sửa lại được | Sau 1.8–1.9; kế thừa inline text cũ |
 | V1.11 — Focus & Privacy | Nhấn đúng nội dung và che thông tin | Magnifier; spotlight; highlight theo vùng; mask blur/pixel/opaque; preset che | Object-based effect/mask; xác định thứ tự compositing; xử lý tile | Hiệu ứng đúng vị trí sau crop/rotate/resize; bản xuất che kín không chứa bản gốc ẩn | Sau object/render model ổn định; nâng mask cũ |
 | V1.12 — Selection & Pixel Editing · đã triển khai source, chờ Windows | Sửa vùng pixel có kiểm soát | Rectangle/ellipse/lasso; copy vùng hiển thị; cut/fill/erase nền; paste image layer; cut-out hàng/cột để mốc sau | Raster patch/image layer model, selection mask; giữ ảnh gốc; undo pixel có giới hạn bộ nhớ | Cắt/dán vùng không phá nguồn; Undo trong ngân sách bộ nhớ; phân biệt chọn pixel và chọn annotation | Cần layer control 1.8; rủi ro dữ liệu lớn |
-| V1.13 — Image Composition & Templates | Ghép nhiều ảnh thành tài liệu | Kéo thêm ảnh vào canvas; crop/resize từng ảnh; layout 2/3/4 ô; header/caption; stamp/icon tự thiết kế | Image object tham chiếu asset; layout/preset; đóng gói asset dự án | Mở lại đủ ảnh ghép; layer vẫn sửa được; xuất đúng kích thước | Sau 1.10/1.12 |
+| V1.13 — Image Composition & Templates | Ghép nhiều ảnh thành tài liệu | Kéo thêm ảnh vào canvas; crop/resize từng ảnh; layout 2/3/4 ô; header/caption; template và project offline | Image object tham chiếu asset; layout/preset; đóng gói asset dự án | Mở lại đủ ảnh ghép; layer vẫn sửa được; xuất đúng kích thước | Sau 1.10/1.12 |
 | V1.14 — Scrolling Capture Foundation | Chụp nội dung dài | Người dùng chọn vùng và cuộn một chiều; ghép có overlap; xem trước và sửa điểm nối | Đăng ký/ghép khung, phát hiện trùng, cancellation, giới hạn pixel/bộ nhớ | Trang mẫu không lặp/mất đoạn; báo điểm nối không chắc; lỗi giữ các khung nguồn | Dựa fidelity 1.6; thử nghiệm có phạm vi |
 | V1.15 — Advanced Capture & Stitching | Mở rộng capture sau bản cuộn cơ bản | Cuộn tự động với ứng dụng hỗ trợ; ghép ngang; fixed-region số; window/client/menu capture; con trỏ thành object ở capture hỗ trợ | Từng adapter/capability; resize/animation detection; cursor metadata và overlay riêng | Công bố danh sách hỗ trợ; không ghép sai âm thầm; không lưu HWND lâu dài | Sau 1.14; chia patch/nhánh nếu quá rộng |
 | V1.16 — OCR & Text Extraction | Lấy chữ từ ảnh | OCR vùng chọn; Việt/Anh; copy plain text; giữ dòng; kết quả có thể sửa | Đánh giá OCR engine offline/license/model, chạy nền; ngôn ngữ tải tùy chọn | Bộ mẫu Việt/Anh có báo cáo lỗi/tỷ lệ; hủy được; nguồn ảnh không bị sửa | Sau selection; không hứa đúng 100% |
@@ -147,4 +168,4 @@ Chỉ hai file theo yêu cầu Boss:
 
 Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
 
-Bản tiếp theo: V1.12 — Selection & Pixel Editing dự kiến bổ sung chọn vùng pixel bằng chữ nhật/ellipse/lasso, copy/cut/paste vùng thành đối tượng ảnh, fill/eraser và cắt bỏ hàng/cột thừa. Tách rõ chọn pixel với chọn chú thích; giữ ảnh gốc, Undo có giới hạn bộ nhớ và lưu/mở đủ dữ liệu vùng đã dán. Video tiếp tục để sau.
+Bản tiếp theo: V1.14 — Scrolling Capture Foundation: chọn vùng cuộn một chiều, thu khung chồng lấn, ghép ảnh dài và kiểm tra điểm nối; hủy, giới hạn bộ nhớ, giữ frame nếu lỗi. Chưa triển khai; thử nghiệm theo ứng dụng Windows. Video tiếp tục để sau.

@@ -5,7 +5,7 @@ var doc=XDocument.Load(Path.Combine(root.FullName,"src/Captovix/MainWindow.xaml"
 void Check(bool b,string s){if(!b)throw new Exception(s);n++;Console.WriteLine("PASS: "+s);}XElement Named(string name)=>doc.Descendants().Single(e=>(string?)e.Attribute(x+"Name")==name);
 var stage=Named("SettingsStaging");var inspector=Named("InspectorPane");
 Check(doc.Root!.Attribute("WindowState")?.Value=="Maximized","Editor default remains maximized");
-Check(doc.Descendants(w+"Menu").Single().Elements(w+"MenuItem").Count()==6,"Six conventional top-level menu modules");
+Check(doc.Descendants(w+"Menu").Single().Elements(w+"MenuItem").Count()==7,"Seven conventional top-level menu modules");
 Check(doc.Descendants(w+"MenuItem").Any(e=>e.Elements(w+"MenuItem").Any(child=>child.Elements(w+"MenuItem").Any())),"Menu exposes hierarchical submodules");
 foreach(var name in new[]{"CaptureSettingsView","UpdatesExpander","MetadataSettingsView","DiagnosticsSettingsView"})Check(Named(name).Ancestors().Contains(stage)&&!Named(name).Ancestors().Contains(inspector),"System module belongs to modal staging, not inspector: "+name);
 Check(stage.Attribute("Visibility")?.Value=="Collapsed","Unopened system controls consume no workspace area");

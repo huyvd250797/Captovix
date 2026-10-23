@@ -24,7 +24,7 @@ with zipfile.ZipFile(pkg) as z:
  nuspec=ET.fromstring(z.read(next(n for n in z.namelist() if n.endswith('.nuspec'))));fields={e.tag.rsplit('}',1)[-1]:e.text for e in nuspec.iter()}
  check(fields['id']==app and fields['version']==version,'Nuspec AppId/version verified')
  def entry(name):return next(n for n in z.namelist() if n.startswith('lib/') and n.endswith('/'+name))
- for name in ['Captovix.dll','Captovix.exe','ScreenRecorderLib.dll','Velopack.dll','Captovix.runtimeconfig.json','update-source.json','README.md','CHANGELOG.md','ROADMAP.md','docs/SELECTION-PIXEL-EDITOR.md','docs/VALIDATION.md','docs/RELEASE-NOTES.md']:
+ for name in ['Captovix.dll','Captovix.exe','ScreenRecorderLib.dll','Velopack.dll','Captovix.runtimeconfig.json','update-source.json','README.md','CHANGELOG.md','ROADMAP.md','docs/IMAGE-COMPOSITION-TEMPLATES.md','docs/VALIDATION.md','docs/RELEASE-NOTES.md']:
   check(z.read(entry(name))==(payload/name).read_bytes(),'Packaged payload matches published '+name)
  runtime=json.loads(z.read(entry('Captovix.runtimeconfig.json')));check(all(f['version']=='10.0.13' for f in runtime['runtimeOptions']['includedFrameworks']),'.NET10.0.13 self-contained runtime declared')
  source=json.loads(z.read(entry('update-source.json')));check(source['SourceKind']=='Https' and source['SourceUrl']=='https://github.com/huyvd250797/captovix-releases/releases/latest/download','Stable source baked into package')
@@ -37,7 +37,7 @@ if a.baseline_source:
  with zipfile.ZipFile(a.baseline_source) as old:
   for path in ['src/Captovix/Native.cs','src/Captovix/DesktopPhotoCapture.cs','src/Captovix/CaptureEngine.cs','src/Captovix/ImageFidelity.cs','src/Captovix/ImageTransfer.cs','src/Captovix/CaptureKeys.cs','src/Captovix/ElementProbe.cs','src/Captovix/ElementProbeClient.cs','src/Captovix/CaptureWorkflowNative.cs','src/Captovix/Program.cs','installer/InstallPath.nsh']:
    prior=old.read(next(n for n in old.namelist() if n.endswith('/'+path)));check(prior==(r/path).read_bytes(),'Protected foundation unchanged: '+path)
-  prior=old.read(next(n for n in old.namelist() if n.endswith('/installer/Captovix.nsi'))).decode();check(prior.replace('1.11.1','1.12.0')==(r/'installer/Captovix.nsi').read_text(),'Installer invocation unchanged except release version')
+  prior=old.read(next(n for n in old.namelist() if n.endswith('/installer/Captovix.nsi'))).decode();check(prior.replace('1.12.0',version)==(r/'installer/Captovix.nsi').read_text(),'Installer invocation unchanged except release version')
 for path in [a.source_zip,a.update_zip]:
  if path:
   with zipfile.ZipFile(path) as z:

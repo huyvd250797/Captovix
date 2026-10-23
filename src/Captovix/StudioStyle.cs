@@ -16,7 +16,7 @@ public sealed record ObjectShadow
 public static class StudioStyle
 {
     public static bool Hex(string? color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
-    public static bool SupportsShadow(AnnotationKind kind)=>ShapeStudio.IsClosed(kind)||kind==AnnotationKind.Callout;
+    public static bool SupportsShadow(AnnotationKind kind)=>ShapeStudio.IsClosed(kind)||kind is AnnotationKind.Callout or AnnotationKind.ImageLayer;
     public static (double X,double Y) Offset(int direction,double distance)
     {
         if(direction<0||direction>8||!double.IsFinite(distance)||distance<0||distance>80)throw new ArgumentException("Hướng bóng cần thuộc 9 ô và khoảng cách 0–80 px.");

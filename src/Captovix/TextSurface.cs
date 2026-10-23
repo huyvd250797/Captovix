@@ -2,7 +2,7 @@ namespace Captovix;
 public sealed partial class EditorSurface
 {
     public Annotation TextDefaults {get;}=new(){Kind=AnnotationKind.Text};
-    public Annotation CalloutDefaults {get;}=new(){Kind=AnnotationKind.Callout,FillEnabled=true,FillColor="#FFFFFF"};
+    public Annotation CalloutDefaults {get;}=new(){Kind=AnnotationKind.Callout,TextPadding=30,VerticalAlignment=TextVertical.Center,FillEnabled=true,FillColor="#FFFFFF"};
     public Annotation StepDefaults {get;}=new(){Kind=AnnotationKind.Step};
     public Annotation TextDefaultsFor(AnnotationKind kind)=>kind==AnnotationKind.Callout?CalloutDefaults:kind==AnnotationKind.Step?StepDefaults:TextDefaults;
     private void InitializeTextObject(Annotation a)

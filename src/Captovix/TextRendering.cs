@@ -49,7 +49,8 @@ public static partial class EditorRenderer
     {
         var text=TextLayout(a);var inkBounds=TextInkBounds(a);double pad=TextStudio.Padding(a);
         if(a.Kind==AnnotationKind.Text&&a.FillEnabled){var bg=inkBounds;bg.Inflate(pad,pad);dc.DrawRectangle(ShapeInk(a.FillColor,a.FillOpacity),null,bg);}
-        dc.DrawText(text,TextOrigin(a,text));
+        if(a.Kind==AnnotationKind.Callout)dc.PushClip(new RectangleGeometry(TextContent(a)));
+        dc.DrawText(text,TextOrigin(a,text));if(a.Kind==AnnotationKind.Callout)dc.Pop();
     }
     private static Geometry StyledCalloutGeometry(Annotation a)
     {
@@ -72,8 +73,12 @@ public static partial class EditorRenderer
     {
         if(!TextStudio.IsText(a.Kind)||a.Kind==AnnotationKind.Step)return;
         if(a.Kind==AnnotationKind.Callout&&a.AutoFitText){
-            var text=TextLayout(a);double padding=TextStudio.Padding(a);double needed=(text.Height+Math.Max(0,text.OverhangAfter)+padding*2)/(a.CalloutStyle is CalloutStyle.EllipseSpeech or CalloutStyle.Ellipse?.707106:a.CalloutStyle==CalloutStyle.DiamondSpeech?.5:a.CalloutStyle==CalloutStyle.HexagonSpeech?.64:1);
-            double height=Math.Clamp(Math.Max(a.Height,needed),36,100000);var top=a.Top;var left=a.Left;var width=Math.Max(36,a.Width);a.X1=left;a.Y1=top;a.X2=left+width;a.Y2=top+height;
+            double pad=TextStudio.Padding(a);double fraction=a.CalloutStyle is CalloutStyle.EllipseSpeech or CalloutStyle.Ellipse?.707106:a.CalloutStyle==CalloutStyle.DiamondSpeech?.5:a.CalloutStyle==CalloutStyle.HexagonSpeech?.64:1;
+            var natural=TextLayout(a,a.Text);double minContent=Math.Max(a.FontSize*5,Math.Min(natural.WidthIncludingTrailingWhitespace,420));double wanted=(minContent+pad*2)/fraction;
+            double maxWidth=Math.Max(36,view.Width);double widthBefore=Math.Max(36,a.Width);double newWidth=Math.Max(widthBefore,Math.Min(maxWidth,wanted));
+            double bodyLeft=a.Left;a.X1=bodyLeft;a.X2=bodyLeft+newWidth;
+            var text=TextLayout(a);double padding=pad;double needed=(text.Height+Math.Max(0,text.OverhangAfter)+padding*2)/(a.CalloutStyle is CalloutStyle.EllipseSpeech or CalloutStyle.Ellipse?.707106:a.CalloutStyle==CalloutStyle.DiamondSpeech?.5:a.CalloutStyle==CalloutStyle.HexagonSpeech?.64:1);
+            double height=Math.Clamp(Math.Max(a.Height,needed),36,Math.Max(36,view.Height));var top=a.Top;var left=a.Left;var width=Math.Max(36,a.Width);a.X1=left;a.Y1=top;a.X2=left+width;a.Y2=top+height;
         }
         if(a.AutoFitText){var b=LocalBounds(a);double dx=b.Width<=view.Width?Math.Clamp(b.Left,view.X,view.Right-b.Width)-b.Left:0,dy=b.Height<=view.Height?Math.Clamp(b.Top,view.Y,view.Bottom-b.Height)-b.Top:0;if(dx!=0||dy!=0)a.Translate(dx,dy);}
     }

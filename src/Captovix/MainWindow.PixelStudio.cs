@@ -33,7 +33,7 @@ public partial class MainWindow
         if(value is Stream stream){if(stream.Length>72_000_000)throw new InvalidDataException("PNG clipboard quá lớn.");if(stream.CanSeek)stream.Position=0;using var bytes=new MemoryStream();stream.CopyTo(bytes);image=RasterPixels.Decode(Convert.ToBase64String(bytes.ToArray()));}
         image??=Clipboard.GetImage();if(image==null){SetStatus("Clipboard chưa có ảnh. Copy vùng pixel hoặc ảnh từ ứng dụng khác trước.");return;}
         string data=RasterPixels.Encode(image);var view=_session.Document.Viewport;var at=Surface.PixelRegion?.Bounds??view;
-        double x=at.X,y=at.Y;var layer=new Annotation{Kind=AnnotationKind.ImageLayer,Name="Ảnh dán",X1=x,Y1=y,X2=x+image.PixelWidth,Y2=y+image.PixelHeight,PixelPng=data};
+        double x=at.X,y=at.Y;var layer=new Annotation{Kind=AnnotationKind.ImageLayer,ImageStyle=new(),Name="Ảnh dán",X1=x,Y1=y,X2=x+image.PixelWidth,Y2=y+image.PixelHeight,PixelPng=data};
         _session.Change(d=>{d.Annotations.Add(layer);PixelStudio.Validate(d);});Surface.ClearPixelRegion();SelectTool(EditorTool.Select);Surface.SelectIds([layer.Id]);Surface.Focus();SetStatus($"Đã dán lớp ảnh {image.PixelWidth} × {image.PixelHeight} px; chọn/kéo/resize như đối tượng. Phần ngoài canvas bị cắt khi xuất.");
     }
 }
