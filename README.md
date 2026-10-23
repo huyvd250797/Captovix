@@ -1,8 +1,22 @@
-# Captovix V1.11.1 — Update Reliability
+# Captovix V1.12.0 — Selection & Pixel Editing
 
 Ứng dụng Windows x64 chụp ảnh và chỉnh sửa trong một Editor, mở mặc định phóng to. Ưu tiên ảnh; giữ quay màn hình hiện có, chưa phát triển thêm Editor video. © 2026 HuyVo. All rights reserved.
 
-## Mới trong V1.11.1
+## Mới trong V1.12.0
+
+- Menu ngang có nhóm/menu con; cấu hình, phím tắt/chạy nền, cập nhật, thông tin ảnh và chẩn đoán mở trong modal có cây module. Thanh phải dành cho thuộc tính công cụ.
+- Nút chụp/quay gọn; thư viện dọc hoặc ngang dưới, nhớ bố cục; icon xóa/khôi phục/mở thư mục ở đáy; có thể ẩn thanh thuộc tính.
+- Gộp Mũi tên + Đường (đầu None), gộp các hình kín vào Khung. Bỏ UI tạo Che kín; giữ nguyên vùng che đã lưu.
+- Callout có gallery 10 mẫu, gồm viên thuốc có/không đuôi, thoi và lục giác; ☆ lưu mẫu; callout mới có thân ổn định và kéo đầu đuôi tự do.
+- Chọn vùng chữ nhật/ellipse/lasso, copy vùng hiển thị, cắt/tô/xóa pixel nền; dán clipboard PNG/Bitmap thành lớp ảnh có thể di chuyển/resize/xoay; Undo/Redo và mở lại sidecar.
+- Ảnh gốc giữ riêng, schema11 đọc1–10; mẫu ☆ V1.11.1 được giữ qua migration hash.
+
+Hướng dẫn và giới hạn đầy đủ: [docs/SELECTION-PIXEL-EDITOR.md](docs/SELECTION-PIXEL-EDITOR.md). Tô/cắt/xóa tác động nền; chú thích và lớp ảnh được chỉnh riêng. Pixel canvas tối đa 40 triệu pixel. UI/install/clipboard Windows thực tế chờ nghiệm thu, xem VALIDATION.md.
+
+Bàn giao 2 ZIP: Update-Packages (có setup) và Source. Chưa push/publish Release. Bản kế tiếp V1.13 Image Composition & Templates: nhiều ảnh, bố cục 2/3/4 ô, caption/header và đóng gói tài nguyên.
+
+## Kế thừa V1.11.1 — Update Reliability
+
 
 - Nguồn stable gắn sẵn, đọc feed trực tiếp không bị giới hạn 10 Releases; hiển thị phiên bản nguồn/URL và lỗi rõ ràng.
 - Xóa nội dung từ từng thumbnail, chuyển vào Trash và khôi phục lần xóa vừa rồi.

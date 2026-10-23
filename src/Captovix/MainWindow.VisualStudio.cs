@@ -23,7 +23,7 @@ public partial class MainWindow
     }
     private Annotation StudioTarget()
     {
-        if(Surface.Selected is {} selected)return selected.Copy();
+        if(Surface.Selected is {} selected){var copy=selected.Copy();if(copy.Kind==AnnotationKind.Line){copy.Kind=AnnotationKind.Arrow;copy.Tip=ArrowTip.None;}return copy;}
         var kind=Surface.Tool switch{EditorTool.Shape=>Surface.ShapeKind,EditorTool.Rectangle=>AnnotationKind.Rectangle,EditorTool.Ellipse=>AnnotationKind.Ellipse,EditorTool.Arrow=>AnnotationKind.Arrow,EditorTool.Line=>AnnotationKind.Line,EditorTool.Callout=>AnnotationKind.Callout,EditorTool.Text=>AnnotationKind.Text,_=>AnnotationKind.Freehand};
         var a=(TextStudio.IsText(kind)?Surface.TextDefaultsFor(kind):Surface.ShapeDefaults).Copy();a.Kind=kind;a.Color=Surface.InkColor;a.Stroke=Surface.StrokeSize;a.FontSize=Surface.TextSize;a.Route=Surface.ArrowRoute;return a;
     }
@@ -36,12 +36,13 @@ public partial class MainWindow
         if(!active)return;bool text=a.Kind==AnnotationKind.Text;
         PaintButton(StrokePaintButton,text?"Chữ":"Viền",text?TextStudio.Foreground(a):a.StrokeEnabled?a.Color:null);PaintButton(FillPaintButton,"Nền",a.FillEnabled?a.FillColor:null);FillPaintButton.IsEnabled=ShapeStudio.IsClosed(a.Kind)||a.Kind is AnnotationKind.Text or AnnotationKind.Callout;
         ObjectShadowPanel.Visibility=StudioStyle.SupportsShadow(a.Kind)?Visibility.Visible:Visibility.Collapsed;_shadowDirection=a.Shadow.Direction;ObjectShadowEnabled.IsChecked=a.Shadow.Enabled;ObjectShadowDistance.Text=ShapeNumber(a.Shadow.Distance);ObjectShadowBlur.Text=ShapeNumber(a.Shadow.Blur);ObjectShadowOpacity.Text=ShapeNumber(a.Shadow.Opacity);MarkDirection(ObjectShadowDirections,a.Shadow.Enabled,a.Shadow.Direction);
-        string key=StudioStyle.Signature(a)+"|"+string.Join(",",_favorites.Select(f=>f.Id));if(key==_galleryKey)return;_galleryKey=key;ShapeTileGrid.Children.Clear();VariantTileGrid.Children.Clear();FavoriteTileGrid.Children.Clear();
+        string key=StudioStyle.Signature(a)+"|"+string.Join(",",_favorites.Select(f=>f.Id));if(key==_galleryKey)return;_galleryKey=key;ShapeTileGrid.Children.Clear();VariantTileGrid.Children.Clear();FavoriteTileGrid.Children.Clear();CalloutTileGrid.Children.Clear();
+        if(a.Kind==AnnotationKind.Callout)foreach(var callout in Enum.GetValues<CalloutStyle>()){var preview=a.Copy();preview.CalloutStyle=callout;AddStyleTile(CalloutTileGrid,preview,CalloutLabel(callout),()=>ChooseStyle(preview));}
         if(ShapeStudio.IsClosed(a.Kind))foreach(var kind in ShapeStudio.Shapes){var preview=a.Copy();preview.Kind=kind;AddStyleTile(ShapeTileGrid,preview,ShapeStudio.Label(kind),()=>ChooseStyle(preview));}
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind))foreach(var dash in Enum.GetValues<StrokePattern>()){var preview=a.Copy();preview.Dash=dash;AddStyleTile(VariantTileGrid,preview,dash switch{StrokePattern.Solid=>"Liền",StrokePattern.Dash=>"Nét đứt",StrokePattern.Dot=>"Chấm",_=>"Đứt chấm"},()=>ChooseStyle(preview));}
         if(ShapeStudio.IsLine(a.Kind)){
             foreach(var route in Enum.GetValues<ConnectorRoute>()){var preview=a.Copy();preview.Route=route;AddStyleTile(VariantTileGrid,preview,route switch{ConnectorRoute.Straight=>"Thẳng",ConnectorRoute.Elbow=>"Gấp khúc",_=>"Cong"},()=>ChooseStyle(preview));}
-            if(a.Kind==AnnotationKind.Arrow)foreach(var tip in Enum.GetValues<ArrowTip>()){var preview=a.Copy();preview.Tip=tip;AddStyleTile(VariantTileGrid,preview,tip.ToString(),()=>ChooseStyle(preview));}
+            if(a.Kind==AnnotationKind.Arrow)foreach(var tip in Enum.GetValues<ArrowTip>()){var preview=a.Copy();preview.Tip=tip;AddStyleTile(VariantTileGrid,preview,tip switch{ArrowTip.None=>"Không đầu · đường",ArrowTip.Open=>"Đầu mở",ArrowTip.Diamond=>"Đầu thoi",ArrowTip.Circle=>"Đầu tròn",_=>"Tam giác"},()=>ChooseStyle(preview));}
         }
         foreach(var favorite in _favorites)AddStyleTile(FavoriteTileGrid,favorite.Style,favorite.Label,()=>ChooseStyle(favorite.Style));
         if(_favorites.Count==0)FavoriteTileGrid.Children.Add(new TextBlock{Text="Bấm ☆ ngay trên mẫu để lưu.",TextWrapping=TextWrapping.Wrap,FontSize=11,Foreground=Brushes.SlateGray});
@@ -54,14 +55,16 @@ public partial class MainWindow
         var select=new Button{Content=content,Padding=new(1),Margin=new(0),ToolTip=label};select.Click+=(_,_)=>{FlushAutoProperties();choose();};grid.Children.Add(select);
         var id=StudioStyle.Signature(snapshot);var star=new Button{Content=_favorites.Any(f=>f.Id==id)?"★":"☆",HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Padding=new(2,0,2,0),Margin=new(0),FontSize=15,ToolTip="Lưu / bỏ mẫu yêu thích",IsEnabled=!_favoritesReadOnly};star.Click+=(_,e)=>{try{var list=_favorites.ToList();if(list.Any(f=>f.Id==id))list.RemoveAll(f=>f.Id==id);else list.Add(new(id,label,snapshot.Copy()));StyleFavoriteStore.Save(App.DataRoot,list);_favorites=list;_galleryKey=null;SyncProperties();}catch(Exception ex){VisualStudioError.Text=ex.Message;}e.Handled=true;};grid.Children.Add(star);host.Children.Add(grid);
     }
+    private static string CalloutLabel(CalloutStyle s)=>s switch{CalloutStyle.Speech=>"Hộp có đuôi",CalloutStyle.RoundedSpeech=>"Bo góc có đuôi",CalloutStyle.EllipseSpeech=>"Bầu dục có đuôi",CalloutStyle.Rectangle=>"Hộp",CalloutStyle.RoundedRectangle=>"Hộp bo góc",CalloutStyle.PillSpeech=>"Viên thuốc có đuôi",CalloutStyle.Pill=>"Viên thuốc",CalloutStyle.Ellipse=>"Bầu dục",CalloutStyle.DiamondSpeech=>"Thoi có đuôi",_=>"Lục giác có đuôi"};
     private void ChooseStyle(Annotation style)
     {
         var next=style.Copy();Surface.ShapeDefaults=next.Copy();Surface.ShapeKind=ShapeStudio.IsClosed(next.Kind)?next.Kind:Surface.ShapeKind;Surface.InkColor=next.Color;Surface.StrokeSize=next.Stroke;Surface.ArrowRoute=next.Route;
-        bool Compatible(Annotation a)=>(ShapeStudio.IsClosed(a.Kind)&&ShapeStudio.IsClosed(next.Kind))||(ShapeStudio.IsLine(a.Kind)&&ShapeStudio.IsLine(next.Kind));
+        bool Compatible(Annotation a)=>(ShapeStudio.IsClosed(a.Kind)&&ShapeStudio.IsClosed(next.Kind))||(ShapeStudio.IsLine(a.Kind)&&ShapeStudio.IsLine(next.Kind))||(a.Kind==AnnotationKind.Callout&&next.Kind==AnnotationKind.Callout);
         var ids=Surface.SelectedIds.ToArray();var primary=Surface.Selected?.Id;
         bool retain=ids.Length>0&&_session!=null&&_session.Document.Annotations.Where(a=>ids.Contains(a.Id)).All(Compatible);
-        if(retain)ChangeSelected(a=>{if(!Compatible(a))return;a.Kind=next.Kind;if(ShapeStudio.IsLine(a.Kind)){a.Route=next.Route;a.Control=null;}a.Color=next.Color;a.Stroke=next.Stroke;ShapeStudio.CopyStyle(next,a);});
-        SelectTool(ShapeStudio.IsClosed(next.Kind)?EditorTool.Shape:next.Kind==AnnotationKind.Arrow?EditorTool.Arrow:EditorTool.Line);
+        if(next.Kind==AnnotationKind.Callout){ShapeStudio.CopyStyle(next,Surface.CalloutDefaults);TextStudio.CopyStyle(next,Surface.CalloutDefaults);}
+        if(retain)ChangeSelected(a=>{if(!Compatible(a))return;if(a.Kind==AnnotationKind.Callout){TextStudio.CopyStyle(next,a);ShapeStudio.CopyStyle(next,a);a.Color=next.Color;a.Stroke=next.Stroke;return;}a.Kind=next.Kind;if(ShapeStudio.IsLine(a.Kind)){a.Route=next.Route;a.Control=null;}a.Color=next.Color;a.Stroke=next.Stroke;ShapeStudio.CopyStyle(next,a);});
+        SelectTool(next.Kind==AnnotationKind.Callout?EditorTool.Callout:ShapeStudio.IsClosed(next.Kind)?EditorTool.Shape:EditorTool.Arrow);
         if(retain)Surface.SelectIds(ids,primary);
         Surface.Refresh();SyncProperties();
     }

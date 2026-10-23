@@ -1,3 +1,18 @@
+# Nghiệm thu V1.12.0 — chưa đánh dấu đạt Windows
+
+- [ ] Mở maximized, không NullReference trong XAML; thử 1366/1920, DPI100–200%, monitor âm.
+- [ ] Menu ngang mở đúng module/modal; đổi Capture/Hotkeys/Updates/Diagnostics/Metadata nhiều lần, đóng rồi mở lại; không lỗi logical/visual parent; hotkey đổi/xung đột vẫn xử lý như trước.
+- [ ] Capture từ modal hoặc hotkey đóng modal trước overlay, không chụp nhầm hộp thoại cấu hình; updater đang tải có thể đóng/mở modal mà không mất phiên.
+- [ ] Thư viện trái/ngang đổi qua lại, giữ ảnh đang chọn/tìm kiếm; mở app lại nhớ bố cục; nhiều thumbnail cuộn đúng hướng; icon ở đáy, xóa/khôi phục vẫn nguyên byte.
+- [ ] Khung gallery và Mũi tên head None thẳng/cong/gấp khúc, hai đầu; ảnh cũ Cover vẫn kín và không đổi; không có nút Cover mới.
+- [ ] Callout10 mẫu; text IME; ☆ giữ sau mở lại; kéo đuôi bốn hướng/cạnh/góc/ngoài ảnh, thân không di chuyển; xoay trước khi kéo đuôi; no-tail không hiện tay nắm đuôi; callout schema10 xoay không đổi ảnh khi mở.
+- [ ] Pixel rectangle/ellipse/lasso ở các zoom; di chuyển vùng chọn, đổi ảnh/công cụ bỏ vùng cũ; không in đường chọn vào export.
+- [ ] Ctrl+C vùng lấy chú thích/mask đang hiện; Ctrl+Shift+C toàn ảnh; Ctrl+X xóa nền và giữ đối tượng riêng; tô/xóa/Undo/Redo; gõ text vẫn clipboard văn bản.
+- [ ] Paste PNG có alpha và Bitmap từ ứng dụng ngoài; kéo/resize/xoay/ẩn/khóa/layers/copy/dán đối tượng; phần vượt crop chỉ bị cắt khi export; sidecar load lại đúng PNG.
+- [ ] Pixel 4K/8K trong giới hạn40MP: đo RAM/thời gian save/undo/copy/render; lỗi decode/giới hạn không làm mất tài liệu; ảnh gốc hash không đổi.
+- [ ] Blur/Pixel/lens trên lớp ảnh mới, Cover cũ vẫn áp mẫu bảo vệ; copy vùng che không lộ gốc; so sánh cả PNG/JPEG/clipboard.
+- [ ] Cài mới và update từ1.11.1 tại D:\Captovix\Captovix; giữ thư viện/cấu hình/hotkey/favorites và restart. Chạy PixelStudioWindowsChecks cùng8 harness kế thừa.
+
 # Nghiệm thu V1.11.1 — chưa đánh dấu đạt
 
 - [ ] Mở MainWindow một lần, maximized, không NullReference trước/during InitializeComponent.

@@ -1,0 +1,24 @@
+using Captovix;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+internal static class Program{
+ static int n;static void Check(bool b,string s){if(!b)throw new Exception(s);n++;Console.WriteLine("PASS: "+s);}static byte[] Raw(BitmapSource b)=>ImageTransfer.Bgra(b);
+ [STAThread]static int Main(){try{
+ var raw=Enumerable.Range(0,160*120*4).Select(i=>(byte)(i%256)).ToArray();for(int i=3;i<raw.Length;i+=4)raw[i]=255;var image=ImageTransfer.Bitmap(160,120,raw);var region=new PixelSelection{Kind=PixelSelectionKind.Ellipse,Bounds=new(10,20,40,30)};
+ var edited=PixelStudio.Edit(raw,160,120,region,null);var doc=new EditorDocument{OriginalWidth=160,OriginalHeight=120,PixelBasePng=RasterPixels.Encode(ImageTransfer.Bitmap(160,120,edited))};doc.Validate(160,120,"");Check(Raw(EditorRenderer.Render(image,doc)).SequenceEqual(edited),"Edited base exports exact bytes through PNG/save/decode");Check(Raw(image).SequenceEqual(raw),"Original bitmap remains unchanged");
+ var patch=ImageTransfer.Bitmap(40,30,PixelStudio.Extract(raw,160,120,region));doc.Annotations.Add(new(){Kind=AnnotationKind.ImageLayer,X1=10,Y1=20,X2=50,Y2=50,PixelPng=RasterPixels.Encode(patch)});var filled=EditorRenderer.Render(image,doc);Check(Raw(filled)[(35*160+30)*4+3]==255,"Pasted layer covers erased base with alpha preserved");
+ var session=new EditorSession(doc);var surface=new EditorSurface();surface.Load(image,session);surface.Tool=EditorTool.PixelRectangle;surface.PointerDown(new(20,30));surface.PointerMove(new(80,70));surface.PointerUp(new(80,70));Check(surface.PixelRegion?.Bounds==new PixelRect(20,30,60,40),"Native-shared pointer path makes source-pixel selection");surface.PointerDown(new(30,40));surface.PointerUp(new(40,50));Check(surface.PixelRegion!.Bounds.X==30&&surface.PixelRegion.Bounds.Y==40,"Dragging inside moves selection instead of drawing object");var output=Raw(surface.Flatten());surface.SetZoom(.2);Check(Raw(surface.Flatten()).SequenceEqual(output),"Selection and zoom do not enter export");
+ foreach(var kind in Enum.GetValues<CalloutStyle>()){var a=new Annotation{Kind=AnnotationKind.Callout,X1=40,Y1=30,X2=110,Y2=70,FillEnabled=true,CalloutStyle=kind,TailX=150,TailY=105,AutoFitText=false};Check(!EditorRenderer.CalloutGeometry(a).IsEmpty(),"Callout geometry exists: "+kind);if(kind is CalloutStyle.PillSpeech or CalloutStyle.DiamondSpeech or CalloutStyle.HexagonSpeech)Check(EditorRenderer.CalloutGeometry(a).FillContains(new Point(146.75,102.25)),"New tail reaches arbitrary target: "+kind);}
+ var arrow=new Annotation{Kind=AnnotationKind.Arrow,X1=20,Y1=20,X2=100,Y2=20,Tip=ArrowTip.None};var line=arrow.Copy();line.Kind=AnnotationKind.Line;Check(EditorRenderer.Bounds(arrow)==EditorRenderer.Bounds(line),"Headless arrow bounds match line");
+ var app=new App();app.InitializeComponent();var window=new MainWindow();var flags=BindingFlags.NonPublic|BindingFlags.Instance;void Call(string name,params object?[] args)=>typeof(MainWindow).GetMethod(name,flags)!.Invoke(window,args);typeof(MainWindow).GetField("_session",flags)!.SetValue(window,session);var editor=(EditorSurface)window.FindName("Surface");editor.Load(image,session);
+ Check(window.WindowState==WindowState.Maximized&&window.Title.Contains("1.12.0"),"MainWindow starts maximized without initialization callbacks failing");typeof(MainWindow).GetField("_libraryBottom",flags)!.SetValue(window,false);Call("ApplyLibraryLayout");Call("ToggleLibrary_Click",window,new RoutedEventArgs());Check(Grid.GetRow((FrameworkElement)window.FindName("LibraryPane"))==2,"Library moves to bottom row");Call("ToggleLibrary_Click",window,new RoutedEventArgs());Check(Grid.GetRow((FrameworkElement)window.FindName("LibraryPane"))==0,"Library returns left with selected data intact");
+ var handle=new WindowInteropHelper(window).EnsureHandle();Exception? modalError=null;window.Dispatcher.BeginInvoke(()=>{try{var dialog=(Window)typeof(MainWindow).GetField("_settingsDialog",flags)!.GetValue(window)!;var grid=(Grid)dialog.Content;var tree=grid.Children.OfType<TreeView>().Single();foreach(TreeViewItem group in tree.Items)foreach(TreeViewItem child in group.Items)child.IsSelected=true;dialog.Close();}catch(Exception e){modalError=e;((Window?)typeof(MainWindow).GetField("_settingsDialog",flags)!.GetValue(window))?.Close();}},DispatcherPriority.ApplicationIdle);Call("OpenSettings","Capture");Check(modalError==null,"Settings tree switches modules and restores parentage without logical-parent exception");window.Close();
+ Console.WriteLine($"{n} pixel/shell Windows checks passed. Real device input/install/DPI remains manual acceptance.");return 0;
+ }catch(Exception e){Console.Error.WriteLine(e);return 1;}}
+}

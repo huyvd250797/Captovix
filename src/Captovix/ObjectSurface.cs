@@ -15,7 +15,7 @@ public sealed partial class EditorSurface
             if(ConnectorStudio.IsPath(single)){var start=new Point(single.X1,single.Y1);var end=new Point(single.X2,single.Y2);var c=ConnectorStudio.Control(single);return single.Route==ConnectorRoute.Straight?[start,end]:[start,end,new(c.X,c.Y)];}
             if(ShapeStudio.IsLine(single.Kind))return [EditorRenderer.WorldPoint(single,new(single.X1,single.Y1)),EditorRenderer.WorldPoint(single,new(single.X2,single.Y2))];
             var b=EditorRenderer.LocalBox(single);var points=BoxHandles(b).Select(p=>EditorRenderer.WorldPoint(single,p)).ToArray();
-            return single.Kind==AnnotationKind.Callout?[..points,EditorRenderer.WorldPoint(single,new(single.TailX,single.TailY))]:points;
+            return single.Kind==AnnotationKind.Callout&&single.CalloutStyle is not (CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse)?[..points,EditorRenderer.WorldPoint(single,new(single.TailX,single.TailY))]:points;
         }
         return BoxHandles(SelectionBox());
     }

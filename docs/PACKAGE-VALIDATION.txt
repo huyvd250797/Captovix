@@ -1,6 +1,6 @@
-Captovix 1.11.1
-Build: .NET10.0.13 Windows x64 self-contained; Velopack1.2.161; NSIS3.08 wrapper.
-Logic/static: 950 checks PASS. WPF app + 8 harness cross-built, not executed on Windows.
-Package integrity verified by scripts/Verify-Packages.py after packing: feed SHA1/SHA256/size, nupkg/source CRC, identity/runtime/config/docs, canonical installer and protected foundation comparison.
-Real package SDK integration: 9 additional checks required; external final verification report records actual result.
-Windows installation/update restart/input/render acceptance remains pending.
+Captovix 1.12.0
+Logic/static: 1029 checks PASS. Real full-package SDK:9 additional checks run after pack.
+WPF app +9 harness cross-built only, not executed on Windows.
+Runtime .NET10.0.13 win-x64 self-contained; Velopack1.2.161; NSIS3.09 wrapper.
+Verify-Packages.py: feed SHA1/SHA256/size, nupkg/ZIP CRC, AppId/version/runtime/config/docs, canonical wrapper, source tree and protected baseline bytes.
+Native Windows UI/install/update/clipboard/DPI acceptance remains pending. See VALIDATION.md and WINDOWS-TEST-CHECKLIST.md.

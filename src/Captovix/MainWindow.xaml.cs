@@ -32,7 +32,7 @@ public partial class MainWindow : Window
         InitializeComponent();InitializeEditor();_store=new();MediaList.ItemsSource=_store.Items;
         CollectionViewSource.GetDefaultView(_store.Items).Filter=o=>{var i=(MediaItem)o;var q=SearchBox.Text??"";return $"{i.Title} {(i.IsVideo?"video":"ảnh")} {i.Created:dd/MM/yyyy}".Contains(q,StringComparison.CurrentCultureIgnoreCase);};
         _store.Items.CollectionChanged+=(_,_)=>CountLabel.Text=_store.Items.Count.ToString();CountLabel.Text=_store.Items.Count.ToString();
-        Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;
+        InitializeShell();Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;
         _videoTimer.Tick+=(_,_)=>{if(VideoPreview.Visibility==Visibility.Visible&&VideoPreview.NaturalDuration.HasTimeSpan){if(Mouse.LeftButton!=MouseButtonState.Pressed)VideoSeek.Value=VideoPreview.Position.TotalSeconds;VideoTime.Text=$"{VideoPreview.Position:hh\\:mm\\:ss} / {VideoPreview.NaturalDuration.TimeSpan:hh\\:mm\\:ss}";}};
         _videoTimer.Start();
     }
@@ -68,7 +68,7 @@ public partial class MainWindow : Window
     private async Task CaptureAsync(bool video,PhotoAction action=PhotoAction.Current)
     {
         if(_busy||_updateApplying||!_captureGate.TryEnter())return;
-        var previousWindowState=WindowState;var wasVisible=IsVisible;bool success=false,showAfter=video,failed=false;string? finalStatus=null;
+        _settingsDialog?.Close();var previousWindowState=WindowState;var wasVisible=IsVisible;bool success=false,showAfter=video,failed=false;string? finalStatus=null;
         SetBusy(true);
         try {
             Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();_playing=false;

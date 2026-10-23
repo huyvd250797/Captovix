@@ -14,7 +14,7 @@ public static partial class EditorRenderer
     }
     private static IEnumerable<Geometry> ConnectorHeads(Annotation a)
     {
-        if(a.Kind!=AnnotationKind.Arrow)yield break;
+        if(a.Kind!=AnnotationKind.Arrow||a.Tip==ArrowTip.None)yield break;
         var p=ConnectorStudio.Samples(a);var distinct=p.Where((v,i)=>i==0||v!=p[i-1]).ToArray();if(distinct.Length<2)yield break;
         double length=0;for(int i=1;i<p.Length;i++)length+=new Vector(p[i].X-p[i-1].X,p[i].Y-p[i-1].Y).Length;
         var end=new Point(distinct[^1].X,distinct[^1].Y);var start=new Point(distinct[0].X,distinct[0].Y);

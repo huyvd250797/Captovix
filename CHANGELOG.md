@@ -1,3 +1,7 @@
+# V1.12.0 — Selection & Pixel Editing (23/10/2026)
+
+Editor dành thêm chỗ cho ảnh: menu module/modal cấu hình, inspector chỉ công cụ, nút gọn, thư viện dọc/ngang dưới và icon ở đáy. Gộp mũi tên/đường và khung/hình kín, bỏ UI tạo Cover nhưng giữ dữ liệu cũ. Callout gallery10 mẫu gồm viên thuốc, thân/pivot ổn định cho callout mới và đuôi kéo tự do. Chọn rectangle/ellipse/lasso; copy vùng hiển thị, cắt/tô/xóa nền, dán clipboard thành lớp ảnh editable, Undo/Redo. Schema11 đọc1–10, backup .pre-v1.12.bak; giữ mẫu sao1111 qua migration hash. Chi tiết/giới hạn/nghiệm thu trong docs/SELECTION-PIXEL-EDITOR.md và docs/VALIDATION.md.
+
 # V1.11.1 — Update Reliability
 
 Đọc releases.win.json từ URL stable được gắn sẵn, bỏ phụ thuộc GitHubSource giới hạn 10 Releases; chẩn đoán phiên bản/URL nguồn, lỗi feed/mạng/hash rõ ràng. Thêm xóa/khôi phục nội dung, Ctrl+wheel zoom, wheel dọc và Shift+wheel ngang; viền chụp không phá hủy, thuộc tính tự áp dụng, palette trong suốt, gallery mẫu có sao và bóng 9 hướng. Schema 10 đọc 1–9, backup trước khi ghi. Xem docs/UPDATE-RELIABILITY.md và docs/VALIDATION.md về phạm vi kiểm chứng, giới hạn và hướng dẫn phát hành.

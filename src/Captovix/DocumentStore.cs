@@ -14,7 +14,7 @@ public static class DocumentStore
         warning=null;using var stream=File.OpenRead(item.FilePath);var hash=Convert.ToHexString(SHA256.HashData(stream));
         var path=EditPath(item.Id);
         if(File.Exists(path)){
-            try{var doc=EditorDocument.Deserialize(File.ReadAllText(path));doc.Validate(bitmap.PixelWidth,bitmap.PixelHeight,hash);return new(doc);}
+            try{var doc=EditorDocument.Deserialize(File.ReadAllText(path));doc.Validate(bitmap.PixelWidth,bitmap.PixelHeight,hash);RasterPixels.ValidateDecoded(doc);return new(doc);}
             catch(Exception ex){
                 App.Log(ex);var backup=path+".invalid-"+DateTime.Now.ToString("yyyyMMddHHmmssfff");File.Copy(path,backup,false);
                 warning="Không áp dụng được bản chú thích cũ. Đã giữ bản sao: "+backup+"\n"+ex.Message;
@@ -33,8 +33,8 @@ public static class DocumentStore
             int priorVersion=0;
             try{using var prior=System.Text.Json.JsonDocument.Parse(File.ReadAllText(editPath));if(prior.RootElement.ValueKind==System.Text.Json.JsonValueKind.Object&&prior.RootElement.TryGetProperty("Version",out var version)&&version.ValueKind==System.Text.Json.JsonValueKind.Number&&version.TryGetInt32(out var number))priorVersion=number;}
             catch(System.Text.Json.JsonException){ /* Keep corrupt sidecar bytes before replacing the recovered document. */ }
-            if(priorVersion>10)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");
-            if(priorVersion<10&&!File.Exists(editPath+".pre-v1.11.1.bak"))File.Copy(editPath,editPath+".pre-v1.11.1.bak",false);
+            if(priorVersion>11)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");
+            if(priorVersion<11&&!File.Exists(editPath+".pre-v1.12.bak"))File.Copy(editPath,editPath+".pre-v1.12.bak",false);
         }
         MediaStore.AtomicWrite(editPath,doc.Serialize());session.MarkSaved();
         try{

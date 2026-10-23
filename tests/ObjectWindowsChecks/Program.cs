@@ -9,7 +9,7 @@ internal static class Program
         int checks=0;void Check(bool yes,string label){if(!yes)throw new Exception(label);checks++;Console.WriteLine("PASS: "+label);}
         try{
             const int width=240,height=180;var original=new byte[width*height*4];for(int y=0;y<height;y++)for(int x=0;x<width;x++){int n=(y*width+x)*4;original[n]=(byte)(x*5%256);original[n+1]=(byte)(y*7%256);original[n+2]=(byte)((x+y)%2*240);original[n+3]=255;}var source=ImageTransfer.Bitmap(width,height,original);
-            foreach(var kind in Enum.GetValues<AnnotationKind>()){
+            foreach(var kind in Enum.GetValues<AnnotationKind>().Where(k=>k!=AnnotationKind.ImageLayer)){
                 var a=new Annotation{Kind=kind,X1=60,Y1=50,X2=160,Y2=110,TailX=120,TailY=140,Text="Chữ",FontSize=18,FillEnabled=true,FillColor="#008080",Rotation=30};if(kind==AnnotationKind.Freehand){a.Points=[new(60,50),new(100,90),new(160,110)];}
                 var doc=new EditorDocument{OriginalWidth=width,OriginalHeight=height,Annotations=[a]};var result=EditorRenderer.Render(source,doc);var pixels=ImageTransfer.Bgra(result);
                 Check(result.PixelWidth==width&&result.PixelHeight==height&&!pixels.SequenceEqual(original),"Rotated object renders without resizing the file: "+kind);

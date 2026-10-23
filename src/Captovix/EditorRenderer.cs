@@ -11,7 +11,7 @@ public static partial class EditorRenderer
     {
         if(ConnectorStudio.IsPath(a)){var box=ConnectorStudio.Bounds(a);return new(box.X,box.Y,box.Width,box.Height);}
         if(ShapeStudio.IsLine(a.Kind))return new(a.Left,a.Top,a.Width,a.Height);
-        if(a.Kind==AnnotationKind.Callout){var b=CalloutGeometry(a).Bounds;return Rect.Union(b,TextInkBounds(a));}
+        if(a.Kind==AnnotationKind.Callout){var b=a.CalloutBodyPivot?new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height)):CalloutGeometry(a).Bounds;return Rect.Union(b,TextInkBounds(a));}
         if(a.Kind==AnnotationKind.Freehand)return new(a.Left-a.Stroke/2,a.Top-a.Stroke/2,Math.Max(1,a.Width)+a.Stroke,Math.Max(1,a.Height)+a.Stroke);
         if(a.Kind==AnnotationKind.Text){var b=TextInkBounds(a);if(a.FillEnabled)b.Inflate(TextStudio.Padding(a),TextStudio.Padding(a));return b;}
         if(a.Kind==AnnotationKind.Step)return StepGeometry(a).Bounds;
@@ -20,7 +20,7 @@ public static partial class EditorRenderer
     public static AnnotationBox Box(Annotation a){var b=Bounds(a);return ObjectControl.SelectionBounds(new(b.X,b.Y,b.Width,b.Height));}
     public static void Draw(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
-        var view=doc.Viewport;
+        source=RasterPixels.Source(source,doc);var view=doc.Viewport;
         dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));
         dc.DrawImage(source,new Rect(0,0,doc.OriginalWidth,doc.OriginalHeight));
         DrawOverlays(dc,source,doc,draftIds);dc.Pop();
@@ -28,7 +28,7 @@ public static partial class EditorRenderer
     private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
         ConnectorStudio.Resolve(doc);
-        var sampling=FocusStudio.Sampling(doc);
+        source=RasterSampling(source,doc);var sampling=FocusStudio.Sampling(doc);
         DrawSpotlights(dc,doc);
         DrawingGroup? protectedSource=doc.Annotations.Any(a=>a.Visible&&a.Kind==AnnotationKind.Magnifier)?ProtectedSource(source,doc,draftIds,sampling):null;
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction&&a.Kind!=AnnotationKind.Spotlight)){
@@ -46,6 +46,7 @@ public static partial class EditorRenderer
         if(a.Kind==AnnotationKind.Freehand){if(!a.StrokeEnabled||a.StrokeOpacity<=0)return;pen=ShapePen(a);}
         var p1=new Point(a.X1,a.Y1);var p2=new Point(a.X2,a.Y2);var rect=new Rect(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
         switch(a.Kind){
+            case AnnotationKind.ImageLayer:if(a.PixelPng!=null)dc.DrawImage(RasterPixels.Decode(a.PixelPng),rect);break;
             case AnnotationKind.Freehand:
                 if(a.Points.Count==1){dc.DrawEllipse(brush,null,new(a.Points[0].X,a.Points[0].Y),a.Stroke/2,a.Stroke/2);break;}
                 if(a.Points.Count>1){var path=new StreamGeometry();using(var ctx=path.Open()){ctx.BeginFigure(new(a.Points[0].X,a.Points[0].Y),false,false);ctx.PolyLineTo(a.Points.Skip(1).Select(p=>new Point(p.X,p.Y)).ToArray(),true,false);}path.Freeze();dc.DrawGeometry(null,pen,path);}break;
@@ -110,7 +111,7 @@ public static partial class EditorRenderer
         // Keep untouched source pixels out of WPF's premultiplied resampling path.
         byte[]? frame=null;var style=doc.Appearance;
         if(!style.Transparent||style.BorderWidth>0||style.Shadow){var visual=new DrawingVisual();using(var dc=visual.RenderOpen())DrawFrame(dc,layout,style);var rendered=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);rendered.Render(visual);frame=ImageTransfer.Bgra(rendered);}
-        var pixels=ImageFidelity.CopyPixels(ImageTransfer.Bgra(source),source.PixelWidth,source.PixelHeight,doc.Viewport,layout,frame);
+        source=RasterPixels.Source(source,doc);var pixels=ImageFidelity.CopyPixels(ImageTransfer.Bgra(source),source.PixelWidth,source.PixelHeight,doc.Viewport,layout,frame);
         if(doc.Annotations.Count>0){
             var overlay=new DrawingVisual();using(var dc=overlay.RenderOpen()){
                 dc.PushClip(new RectangleGeometry(RectOf(layout.Canvas)));dc.PushTransform(new MatrixTransform(LayoutMatrix(layout)));

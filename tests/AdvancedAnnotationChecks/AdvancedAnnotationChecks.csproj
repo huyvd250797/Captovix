@@ -6,5 +6,5 @@
   <Compile Include="../../src/Captovix/AnnotationEditing.cs" Link="AnnotationEditing.cs"/>
   <Compile Include="../../src/Captovix/AnnotationPresets.cs" Link="AnnotationPresets.cs"/>
   <Compile Include="../../src/Captovix/RedactionPixels.cs" Link="RedactionPixels.cs"/>
- <Compile Include="../../src/Captovix/ImageAppearance.cs" Link="ImageAppearance.cs"/><Compile Include="../../src/Captovix/ShapeStudio.cs" Link="ShapeStudio.cs"/><Compile Include="../../src/Captovix/ObjectControl.cs" Link="ObjectControl.cs"/><Compile Include="../../src/Captovix/ConnectorStudio.cs"/><Compile Include="../../src/Captovix/TextStudio.cs"/><Compile Include="../../src/Captovix/FocusStudio.cs"/><Compile Include="../../src/Captovix/StudioStyle.cs"/></ItemGroup>
+ <Compile Include="../../src/Captovix/ImageAppearance.cs" Link="ImageAppearance.cs"/><Compile Include="../../src/Captovix/ShapeStudio.cs" Link="ShapeStudio.cs"/><Compile Include="../../src/Captovix/ObjectControl.cs" Link="ObjectControl.cs"/><Compile Include="../../src/Captovix/ConnectorStudio.cs"/><Compile Include="../../src/Captovix/TextStudio.cs"/><Compile Include="../../src/Captovix/FocusStudio.cs"/><Compile Include="../../src/Captovix/StudioStyle.cs"/><Compile Include="../../src/Captovix/PixelStudio.cs"/><Compile Include="../../src/Captovix/EditorViewportMath.cs"/></ItemGroup>
 </Project>

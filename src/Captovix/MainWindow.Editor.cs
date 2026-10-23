@@ -90,12 +90,13 @@ public partial class MainWindow
         if(Surface==null)return;FlushAutoProperties();EndInlineText(true);Surface.CancelInteraction();
         if(Surface.Tool==EditorTool.Crop&&tool!=EditorTool.Crop)Surface.ClearCropDraft();
         if(tool is not (EditorTool.Select or EditorTool.Crop))Surface.SelectIds([]);
-        Surface.Tool=tool;if(tool==EditorTool.Crop)Surface.StartCrop();Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
+        if(tool is not (EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso))Surface.ClearPixelRegion();Surface.Tool=tool;if(tool==EditorTool.Crop)Surface.StartCrop();Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
         foreach(var button in ToolBox.Children.OfType<Button>()){
-            var selected=button.Tag?.ToString()==tool.ToString();button.Background=selected?(Brush)FindResource("Accent"):Brushes.White;button.Foreground=selected?Brushes.White:new SolidColorBrush(Color.FromRgb(36,51,72));
+            var selected=button.Tag?.ToString()==tool.ToString()||button.Tag?.ToString()=="PixelRectangle"&&Surface.IsPixelTool;button.Background=selected?(Brush)FindResource("Accent"):Brushes.White;button.Foreground=selected?Brushes.White:new SolidColorBrush(Color.FromRgb(36,51,72));
         }
         SyncProperties();
         ToolHint.Text=tool switch{
+            EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso=>"Kéo vùng pixel trên ảnh nền; Ctrl+C copy, Ctrl+X cắt, Delete xóa; tô màu bên phải.",
             EditorTool.Select=>"Shift/Ctrl+click chọn nhiều • Alt+click chọn lớp dưới • Tay nắm tròn xoay • Shift khóa hướng/tỷ lệ/góc 15° • Ctrl+con lăn zoom; con lăn cuộn dọc; Shift+con lăn cuộn ngang • Space kéo khung nhìn",
             EditorTool.Shape=>"Chọn hình và viền/nền ở bảng thuộc tính → kéo để vẽ • Shift giữ tỷ lệ • V để chọn và sửa lại.",
             EditorTool.Line or EditorTool.Arrow=>"Chọn thẳng/gấp khúc/cong bên phải • Kéo từ shape sang shape để nối • Kéo để vẽ • Shift khóa hướng mỗi 45° • V để sửa đầu mút; chỉnh kiểu nét và đầu mũi tên bên phải.",
@@ -119,7 +120,7 @@ public partial class MainWindow
             if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
             if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
             SelectValue(StrokePicker,Surface.StrokeSize);SelectValue(FontPicker,Surface.TextSize);
-            SyncTextStudio();SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncFocusStudio();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();SyncVisualStudio();
+            SyncTextStudio();SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncFocusStudio();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();SyncVisualStudio();SyncPixelStudio();
             foreach(var b in ColorPalette.Children.OfType<Button>())b.BorderThickness=new Thickness(b.Tag?.ToString()==Surface.InkColor?3:1);
             TextProperties.Visibility=a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
@@ -197,6 +198,7 @@ public partial class MainWindow
         if(typing||Keyboard.FocusedElement is ComboBox or ComboBoxItem||_session==null||_busy)return;
         if(!ctrl&&e.Key==Key.F2){BeginInlineText();e.Handled=true;return;}
         if(ctrl){
+            if(Surface.IsPixelTool&&Surface.PixelRegion!=null&&!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)&&e.Key is Key.C or Key.X){PixelAction(e.Key==Key.C?"Copy":"Cut");e.Handled=true;return;}
             if(e.Key==Key.D){ObjectCommand("Duplicate");e.Handled=true;return;}
             if(e.Key==Key.G){ObjectCommand(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?"Ungroup":"Group");e.Handled=true;return;}
             if(e.Key is Key.OemCloseBrackets or Key.OemOpenBrackets){ObjectCommand(e.Key==Key.OemCloseBrackets?(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?"Front":"Forward"):(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?"Back":"Backward"));e.Handled=true;return;}
@@ -209,10 +211,12 @@ public partial class MainWindow
         }
         if(Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))return;
         if(e.Key==Key.Escape){Surface.CancelInteraction();SelectTool(EditorTool.Select);e.Handled=true;return;}
+        if(Surface.IsPixelTool&&Surface.PixelRegion!=null&&e.Key==Key.Delete){PixelAction("Erase");e.Handled=true;return;}
         if(e.Key==Key.Delete){Surface.DeleteSelected();e.Handled=true;return;}
         double step=Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?10:1;
         if(e.Key is Key.Left or Key.Right or Key.Up or Key.Down){Surface.Nudge(e.Key==Key.Left?-step:e.Key==Key.Right?step:0,e.Key==Key.Up?-step:e.Key==Key.Down?step:0);e.Handled=true;return;}
-        EditorTool? tool=e.Key switch{Key.S=>EditorTool.Shape,Key.L=>EditorTool.Line,Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Rectangle,Key.E=>EditorTool.Ellipse,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.M=>EditorTool.Magnifier,Key.O=>EditorTool.Spotlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,Key.B=>EditorTool.Blur,Key.P=>EditorTool.Pixelate,Key.K=>EditorTool.Cover,Key.Q=>EditorTool.Callout,Key.F=>EditorTool.Freehand,_=>null};
+        EditorTool? tool=e.Key switch{Key.S=>EditorTool.Shape,Key.L=>EditorTool.Arrow,Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Shape,Key.E=>EditorTool.Shape,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.M=>EditorTool.Magnifier,Key.O=>EditorTool.Spotlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,Key.B=>EditorTool.Blur,Key.P=>EditorTool.Pixelate,Key.Q=>EditorTool.Callout,Key.F=>EditorTool.Freehand,_=>null};
+        if(e.Key==Key.E)Surface.ShapeKind=AnnotationKind.Ellipse;if(e.Key==Key.R)Surface.ShapeKind=AnnotationKind.Rectangle;if(e.Key==Key.L)Surface.ShapeDefaults.Tip=ArrowTip.None;
         if(tool!=null){SelectTool(tool.Value);Surface.Focus();e.Handled=true;}
     }
 }

@@ -66,7 +66,7 @@ internal static class Program
             cropSession.Undo();Check(cropSession.Document.Crop==null,"Crop gesture is undoable once");
             cropSurface.StartCrop();cropSurface.SetCropDraft(new(5,5,20,20));cropSurface.ClearCropDraft();
             Check(cropSurface.CropDraft==null&&cropSession.Document.Crop==null,"Cancel pending crop leaves image unmodified");
-            foreach(var kind in Enum.GetValues<AnnotationKind>()){
+            foreach(var kind in Enum.GetValues<AnnotationKind>().Where(k=>k!=AnnotationKind.ImageLayer)){
                 var sample=new EditorDocument{OriginalWidth=64,OriginalHeight=48};var shape=new Annotation{Kind=kind,X1=12,Y1=8,X2=52,Y2=44,TailX=20,TailY=48,Text="Chữ",FontSize=16};if(kind==AnnotationKind.Freehand){shape.AddPoint(12,8);shape.AddPoint(52,44);}sample.Annotations.Add(shape);
                 Check(EditorRenderer.Render(source,sample).PixelWidth==64,"Render tool: "+kind);
             }
@@ -104,11 +104,11 @@ internal static class Program
             item=new(){Id=Guid.NewGuid().ToString("N"),FilePath=originalFile};var session=DocumentStore.Load(item,source,out _);session.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Step,X1=20,Y1=20}));DocumentStore.Save(item,session,source);
             Check(!session.Dirty&&File.Exists(DocumentStore.EditPath(item.Id)),"Document saves as a sidecar and clears dirty state");
             var loaded=DocumentStore.Load(item,source,out var warning);Check(warning==null&&loaded.Document.Annotations.Count==1,"Sidecar reopens as editable objects");
-            var legacySidecar=loaded.Document.Serialize().Replace("\"Version\": 10","\"Version\": 4");File.WriteAllText(DocumentStore.EditPath(item.Id),legacySidecar);
+            var legacySidecar=loaded.Document.Serialize().Replace("\"Version\": 11","\"Version\": 4");File.WriteAllText(DocumentStore.EditPath(item.Id),legacySidecar);
             var migrated=DocumentStore.Load(item,source,out warning);migrated.Change(d=>d.Annotations[0].Color="#123456");DocumentStore.Save(item,migrated,source);
-            Check(File.ReadAllText(DocumentStore.EditPath(item.Id)+".pre-v1.11.1.bak")==legacySidecar,"First schema-10 save retains the exact old sidecar before replacement");
-            Check(EditorDocument.Deserialize(File.ReadAllText(DocumentStore.EditPath(item.Id))).Version==10,"Sidecar migration writes current schema after making backup");
-            File.Delete(DocumentStore.EditPath(item.Id)+".pre-v1.11.1.bak");
+            Check(File.ReadAllText(DocumentStore.EditPath(item.Id)+".pre-v1.12.bak")==legacySidecar,"First schema-11 save retains the exact old sidecar before replacement");
+            Check(EditorDocument.Deserialize(File.ReadAllText(DocumentStore.EditPath(item.Id))).Version==11,"Sidecar migration writes current schema after making backup");
+            File.Delete(DocumentStore.EditPath(item.Id)+".pre-v1.12.bak");
             DocumentStore.Delete(item);Check(!File.Exists(DocumentStore.EditPath(item.Id)),"Sidecar cleanup removes the selected item only");
             var app=new App();app.InitializeComponent();var window=new MainWindow();
             Check(window.WindowState==WindowState.Maximized,"Editor starts maximized");

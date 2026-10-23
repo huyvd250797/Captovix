@@ -1,23 +1,25 @@
-# Captovix V1.11.1 — Trạng thái kiểm chứng
+# Captovix V1.12.0 — Kết quả kiểm chứng (23/10/2026)
 
-## Đã chạy
+## Đã thực thi trên Linux
 
-950 logic/static checks trên Linux, tất cả đạt. Chi tiết: AdvancedAnnotationChecks 49; AnnotationChecks 76; CaptureWorkflowChecks 53; ConnectorChecks 81; EditorCoreChecks 38; FocusPrivacyChecks 65; GeometryChecks 30; ImageAppearanceChecks 61; ImageFidelityChecks 122; InstallerContractChecks 25; ObjectControlChecks 42; ShapeStudioChecks 115; StudioReliabilityChecks 44; TextClipboardChecks 49; UpdateChecks 52; ViewportChecks 48.
+1029 logic/static checks, tất cả đạt: AdvancedAnnotationChecks 49; AnnotationChecks 76; CaptureWorkflowChecks 53; ConnectorChecks 81; EditorCoreChecks 38; FocusPrivacyChecks 64; GeometryChecks 30; ImageAppearanceChecks 61; ImageFidelityChecks 122; InstallerContractChecks 25; ObjectControlChecks 42; PixelStudioChecks 57; ShapeStudioChecks 115; ShellLayoutChecks 18; StudioReliabilityChecks 44; TextClipboardChecks 54; UpdateChecks 52; ViewportChecks 48.
 
-Thêm 9 kiểm tra SDK với gói full thực tế sau đóng gói: đọc version/package thật, tải và kiểm tra hash, từ chối SHA-256 sai, app khác, older/same/prerelease và thiếu hash. Tổng sau gói thực tế: 959 checks. Xem PACKAGE-VALIDATION.txt về kết quả đóng gói cuối.
+Sau đóng gói chạy thêm9 kiểm tra SDK với full nupkg thực tế (download/hash, phiên bản mới, app khác, same/older/prerelease/thiếu hash và hash sai). Tổng logic/static/package sau gói thực tế: 1038. Xem PACKAGE-VALIDATION.txt và script Verify-Packages.py để kiểm tra artifact.
 
-Hồi quy mới kiểm tra đủ 9 hướng bóng, down-center/halo, clone không dùng chung bóng; schema 1–9 lên 10; favorites giữ kiểu và bỏ qua vị trí/ID, backup/corrupt/duplicate; cấu hình viền; modifier routing và scroll bounds; Trash giữ byte, phục hồi, xung đột và rollback khi lưu thất bại. Updater SDK đọc newest ở vị trí15, giữ custom publisher/opt-out, phiên bản nguồn khi up-to-date và feed rỗng không báo mới nhất.
+Pixel checks kiểm tra vùng chữ nhật/ellipse/lasso, scanline khớp geometric mask, giữ nguyên byte bên ngoài và input, fill/erase/alpha/extract/move/clamp, PNG header/budget, schema11/Undo/Redo/clipboard lớp ảnh,10 kiểu callout, head None và migration schema1–10. Hash favorite cũ được đối chiếu với bản V1.11.1 thực đã biên dịch từ ZIP đầu vào, không chỉ tính lại bằng mã mới. Các kiểm tra shell kiểm tra hệ thống nằm trong staging cho modal, menu cây, nhóm công cụ, nút gọn, thư viện và unique names.
 
-## Chỉ biên dịch, chưa chạy Windows
+## Chỉ cross-build — CHƯA thực thi Windows
 
-App WPF win-x64 và 8 harness: StudioReliabilityWindowsChecks, FocusPrivacyWindowsChecks, TextStudioWindowsChecks, ConnectorWindowsChecks, ObjectWindowsChecks, ShapeWindowsChecks, FidelityWindowsChecks, EditorWindowsChecks. Không có runtime Windows trong môi trường build; không có bằng chứng chạy UI/cài đặt/native input tại đây.
+App WPF win-x64 và9 harness: ConnectorWindowsChecks, EditorWindowsChecks, FidelityWindowsChecks, FocusPrivacyWindowsChecks, ObjectWindowsChecks, PixelStudioWindowsChecks, ShapeWindowsChecks, StudioReliabilityWindowsChecks, TextStudioWindowsChecks. Không có runtime Windows trong môi trường build này. Không đánh dấu UI/input/render/install/clipboard/restart cập nhật đã đạt chỉ vì biên dịch thành công.
 
-StudioReliabilityWindowsChecks bổ sung MainWindow startup/maximized, palette transparent rồi khôi phục màu, auto-property TextChanged, gallery giữ selection và chuyển công cụ vẽ tiếp, grid bóng qua handler thật, pixel bóng xuống dưới, viền ngoài giữ pixel, zoom không đổi ảnh xuất. Harness privacy kế thừa tiếp tục bao phủ protected sampling/mask/lens, tile/crop và pipeline export. Cross-build thành công không chứng nhận kết quả render/input.
+PixelStudioWindowsChecks bao phủ: PNG nền sửa không đổi pixel ngoài vùng, alpha lớp dán, native-shared pointer chọn/di chuyển vùng, zoom không đổi export;10 geometry callout; MainWindow startup/maximized; đổi thư viện trái/dưới; mở modal và đổi các node để phát hiện lỗi logical parent. Các kiểm tra WPF kế thừa cho text/IME/shape/object/fidelity/privacy tiếp tục được biên dịch.
 
-## Đóng gói và phần cần nghiệm thu
+## Giới hạn và nghiệm thu bắt buộc
 
-Publish .NET10.0.13 self-contained Windows x64; Velopack1.2.161 full nupkg; NSIS wrapper gồm VC++ runtime. So sánh feed SHA1/SHA256/size, CRC ZIP, AppId/version, DLL/payload/docs/config và source. Giữ nguyên installer invocation tránh EXE_ARGS, install-path normalizer, GDI/native capture, hotkey/UIA và pixel transfer nền của source V1.11.0.
+Theo WINDOWS-TEST-CHECKLIST.md và SELECTION-PIXEL-EDITOR.md: Windows thật ở DPI100–200%/monitor âm, modal/phím tắt/capture, layout khi1366/1920, callout cũ xoay và đuôi mới, PNG/Bitmap clipboard ngoài app, raster layer/Blur/lens/Cover cũ, Undo/redo/save/reopen, RAM và thời gian ảnh4K/8K≤40MP, cài mới/update từ1.11.1 tại D:\Captovix\Captovix. HDR/màu rộng đánh giá riêng.
 
-Cần chạy checklist UPDATE-RELIABILITY.md và WINDOWS-TEST-CHECKLIST.md trên Windows thật: cập nhật/restart từ v1.9/v1.11; install D:\Captovix\Captovix; palette/gallery/live typing/đổi ảnh/Undo; xóa/khôi phục khi file khóa; wheel modifiers; viền chụp/auto-copy; bóng khi xoay/crop; mixed DPI100–200%/monitor âm, IME, clipboard và privacy compositing/4K/8K. HDR/màu rộng đánh giá riêng.
+Giữ nguyên Native/GDI/capture engine/ImageFidelity/ImageTransfer/hotkey/UIA/program và install-path nền so với ZIP V1.11.1; installer chỉ đổi version. Payload self-contained .NET10.0.13, ScreenRecorderLib7.0.1, Velopack1.2.161, NSIS3.09. Package CRC/feed SHA1/SHA256/size/canonical installer/source tree cần chạy Verify-Packages.py sau đóng gói.
 
-Không push/publish GitHub trong lần bàn giao này. Không bổ sung video editor; V1.12 Selection & Pixel Editing là kế hoạch.
+Copy vùng lấy phần hiển thị; Cut/Fill/Erase chỉ sửa nền, đối tượng giữ riêng. Không cut-out hàng/cột, flood-fill/magic-wand/feather, chỉnh pixel riêng từng lớp hay đuôi callout nhiều nhánh. Pixel budget40MP, PNG và lịch sử có giới hạn; xem hướng dẫn để không nhầm với khả năng đã triển khai.
+
+Chưa push/publish GitHub Release; không phát triển video editor. V1.13 Composition & Templates là kế hoạch.

@@ -21,10 +21,10 @@ public partial class MainWindow
         if(_session==null||Surface.Tool==EditorTool.Crop||_busy)return;
         try{
             var raw=Clipboard.GetDataObject()?.GetData(AnnotationClipboard.Format,false);string? json=raw switch{MemoryStream stream when stream.Length<=AnnotationClipboard.MaxChars*4L=>Encoding.UTF8.GetString(stream.ToArray()),byte[] bytes when bytes.Length<=AnnotationClipboard.MaxChars*4L=>Encoding.UTF8.GetString(bytes),string value when value.Length<=AnnotationClipboard.MaxChars=>value,_=>null};
-            if(json==null){SetStatus("Clipboard chưa có đối tượng Captovix. Chọn đối tượng rồi Ctrl+C; vùng nhập chữ vẫn dùng copy/paste văn bản của Windows.");return;}
+            if(json==null){PastePixelImage();return;}
             EndInlineText(true);Surface.CancelInteraction();_session.Commit();if(_lastObjectClipboard!=json||_lastPasteItem!=_activeItem?.Id)_pasteCount=0;
-            HashSet<string> added=[];int count=Math.Min(_pasteCount+1,1000);_session.Change(d=>added=AnnotationClipboard.Paste(d,json,count*16,EditorRenderer.Box));
-            _lastObjectClipboard=json;_lastPasteItem=_activeItem?.Id;_pasteCount=count;Surface.SelectIds(added);Surface.Focus();SyncProperties();SetStatus($"Đã dán {added.Count} đối tượng, vẫn chỉnh sửa được · Ctrl+Z hoàn tác.");
+            HashSet<string> added=[];int count=Math.Min(_pasteCount+1,1000);_session.Change(d=>{added=AnnotationClipboard.Paste(d,json,count*16,EditorRenderer.Box);RasterPixels.ValidateDecoded(d);});
+            _lastObjectClipboard=json;_lastPasteItem=_activeItem?.Id;_pasteCount=count;if(Surface.IsPixelTool)SelectTool(EditorTool.Select);Surface.SelectIds(added);Surface.Focus();SyncProperties();SetStatus($"Đã dán {added.Count} đối tượng, vẫn chỉnh sửa được · Ctrl+Z hoàn tác.");
         }catch(Exception e){SetStatus("Chưa dán được đối tượng: "+e.Message);}
     }
 }

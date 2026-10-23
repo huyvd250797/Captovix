@@ -34,6 +34,7 @@ public static partial class EditorRenderer
     }
     private static IEnumerable<Geometry> ArrowHeads(Annotation a)
     {
+        if(a.Tip==ArrowTip.None)yield break;
         var start=new Point(a.X1,a.Y1);var end=new Point(a.X2,a.Y2);var d=end-start;if(d.Length<.01)yield break;double head=ShapeStudio.HeadSize(a,d.Length);d.Normalize();
         yield return HeadGeometry(a,end,d,head);if(a.DoubleArrow)yield return HeadGeometry(a,start,-d,head);
     }
@@ -43,7 +44,7 @@ public static partial class EditorRenderer
         if(ShapeStudio.IsClosed(a.Kind)){dc.DrawGeometry(a.FillEnabled&&a.FillOpacity>0?ShapeInk(a.FillColor,a.FillOpacity):null,pen,ShapeGeometry(a));return;}
         if(pen==null)return;
         var p1=new Point(a.X1,a.Y1);var p2=new Point(a.X2,a.Y2);
-        if(a.Kind==AnnotationKind.Line){dc.DrawLine(pen,p1,p2);return;}
+        if(a.Kind==AnnotationKind.Line||a.Tip==ArrowTip.None){dc.DrawLine(pen,p1,p2);return;}
         var d=p2-p1;double length=d.Length;if(length<.01)return;d.Normalize();
         double head=ShapeStudio.HeadSize(a,length);double trim=a.Tip==ArrowTip.Open?0:Math.Max(0,head-a.Stroke);
         dc.DrawLine(pen,p1+(a.DoubleArrow?d*trim:new Vector()),p2-d*trim);

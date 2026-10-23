@@ -26,7 +26,7 @@ public static class AnnotationPresetStore
         new("Nền nhấn vàng","#B88B00",2,28,FillColor:"#FFE28A",FillEnabled:true,StrokeEnabled:false,FillOpacity:45,Shape:AnnotationKind.Rectangle),
         new("Kính rõ 2x","#008B92",3,28,Focus:new(RegionShape.Ellipse,2,30,AnnotationKind.Magnifier)),
         new("Spotlight nền tối","#101828",3,28,Focus:new(RegionShape.Rectangle,2,70,AnnotationKind.Spotlight)),
-        new("Che thông tin","#111827",3,28,Focus:new(RegionShape.Rectangle,2,100,AnnotationKind.Cover)),
+        new("Khung nền đặc","#111827",3,28,FillColor:"#111827",FillEnabled:true,StrokeEnabled:false,Shape:AnnotationKind.Rectangle),
         new("Làm mờ mạnh","#111827",3,28,EffectSize:40,Focus:new(RegionShape.Rectangle,2,100,AnnotationKind.Blur)),
         new("Highlight vàng","#F3C746",3,28,Focus:new(RegionShape.Rectangle,2,35,AnnotationKind.Highlight))
     ];

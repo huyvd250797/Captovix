@@ -97,10 +97,8 @@ public partial class MainWindow
         LastUpdateCheckLabel.Text = _updateSettings.LastCheckUtc is {} time ? $"Lần kiểm tra: {time.ToLocalTime():dd/MM/yyyy HH:mm}" : "Chưa kiểm tra lần nào";
     }
 
-    private void UpdateFooter_Click(object sender, RoutedEventArgs e)
-    {
-        UpdatesExpander.IsExpanded = true; UpdatesExpander.BringIntoView();
-        if (!_updateSettings.IsConfigured) UpdateConfiguration.IsExpanded = true;
+    private void UpdateFooter_Click(object sender,RoutedEventArgs e)
+    {OpenSettings("Updates");
     }
 
     private void SaveUpdateSource_Click(object sender, RoutedEventArgs e)

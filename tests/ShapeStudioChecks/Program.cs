@@ -6,10 +6,10 @@ EditorDocument Doc()=>new(){OriginalWidth=1920,OriginalHeight=1080,SourceHash="h
 Annotation Styled(AnnotationKind kind)=>new(){Kind=kind,X1=20,Y1=30,X2=151,Y2=132,Color="#D94155",FillColor="#B9F2E6",FillEnabled=true,StrokeEnabled=false,StrokeOpacity=62.5,FillOpacity=34,Stroke=7.5,Dash=StrokePattern.DashDot,CornerRadius=24,StarPoints=7,StarInset=.35,Tip=ArrowTip.Diamond,DoubleArrow=true,ArrowHeadSize=35};
 foreach(int version in new[]{1,2,3,4}){
  var old=EditorDocument.Deserialize($$"""{"Version":{{version}},"OriginalWidth":1920,"OriginalHeight":1080,"SourceHash":"h","Annotations":[{"Kind":"Rectangle","X1":20,"Y1":30,"X2":151,"Y2":132,"Color":"#ABCDEF","Stroke":6}]}""");var id=old.Annotations[0].Id;old.Validate(1920,1080,"h");var a=old.Annotations[0];
- Check(old.Version==10&&a.Id==id&&a.X1==20&&a.X2==151&&a.Color=="#ABCDEF"&&a.Stroke==6,"Schema "+version+" migrates without moving/restyling existing objects");
+ Check(old.Version==11&&a.Id==id&&a.X1==20&&a.X2==151&&a.Color=="#ABCDEF"&&a.Stroke==6,"Schema "+version+" migrates without moving/restyling existing objects");
  Check(!a.FillEnabled&&a.StrokeEnabled&&a.StrokeOpacity==100&&a.Dash==StrokePattern.Solid,"Legacy outline appearance is retained: "+version);
 }
-var future=Doc();future.Version=11;Reject(()=>future.Validate(1920,1080,"h"),"Future schema is protected");
+var future=Doc();future.Version=12;Reject(()=>future.Validate(1920,1080,"h"),"Future schema is protected");
 foreach(var kind in ShapeStudio.Shapes.Append(AnnotationKind.Line).Append(AnnotationKind.Arrow)){
  var doc=Doc();var a=Styled(kind);doc.Annotations.Add(a);doc.Validate(1920,1080,"h");var json=doc.Serialize();var again=EditorDocument.Deserialize(json);again.Validate(1920,1080,"h");
  Check(again.Serialize()==json,"All shape/style fields survive reopen: "+kind);

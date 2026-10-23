@@ -4,7 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Captovix;
-public enum EditorTool { Select, Arrow, Rectangle, Ellipse, Text, Highlight, Step, Crop, Blur, Pixelate, Cover, Callout, Freehand, Shape, Line, Magnifier, Spotlight }
+public enum EditorTool { Select, Arrow, Rectangle, Ellipse, Text, Highlight, Step, Crop, Blur, Pixelate, Cover, Callout, Freehand, Shape, Line, Magnifier, Spotlight, PixelRectangle,PixelEllipse,PixelLasso }
 public sealed partial class EditorSurface : FrameworkElement
 {
     public EditorSession? Session {get;private set;}
@@ -35,7 +35,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public event Action? VisualChanged;
     public event Action? TextRequested;
     public event Action? CropFinished;
-    private enum DragAction { None,Move,Resize,Rotate,Create,Crop,CropMove,CropResize,Marquee }
+    private enum DragAction { None,Move,Resize,Rotate,Create,Crop,CropMove,CropResize,Marquee,PixelRegion }
     private DragAction _action;
     private bool Dragging=>_action!=DragAction.None;
     private Point _start;
@@ -50,7 +50,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public EditorSurface(){UseLayoutRounding=true;SnapsToDevicePixels=true;Focusable=true;ClipToBounds=true;Cursor=Cursors.Arrow;RenderOptions.SetBitmapScalingMode(this,BitmapScalingMode.HighQuality);}
     public void Load(BitmapSource? source,EditorSession? session)
     {
-        CancelInteraction();CropDraft=null;Original=source;Session=session;_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();CropDraftChanged?.Invoke();
+        CancelInteraction();PixelRegion=null;CropDraft=null;Original=source;Session=session;_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();CropDraftChanged?.Invoke();
     }
     public void SetZoom(double zoom){Zoom=Math.Clamp(zoom,.02,8);Refresh();}
     public void Refresh()
@@ -84,7 +84,7 @@ public sealed partial class EditorSurface : FrameworkElement
                 dc.DrawRectangle(Brushes.White,new Pen(Brushes.DodgerBlue,1/InteractionScale),new(point.X-size/2,point.Y-size/2,size,size));
             }
         }
-        DrawSnapGuides(dc,view);
+        DrawSnapGuides(dc,view);DrawPixelRegion(dc);
         if(Tool==EditorTool.Crop&&CropDraft is {} crop){
             var v=new Rect(view.X,view.Y,view.Width,view.Height);var r=new Rect(crop.X,crop.Y,crop.Width,crop.Height);var shade=new SolidColorBrush(Color.FromArgb(130,10,20,30));
             dc.DrawRectangle(shade,null,new Rect(v.Left,v.Top,v.Width,Math.Max(0,r.Top-v.Top)));
@@ -119,6 +119,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public void PointerDown(Point point,ModifierKeys modifiers=ModifierKeys.None,int clickCount=1)
     {
         if(Session==null)return;
+        if(PixelDown(point))return;
         Session.Commit();_start=point;_moved=false;_createdId=null;_originals=[];_handle=-1;_selectionBefore=new(_selected);
         bool forceNew=modifiers.HasFlag(ModifierKeys.Alt)&&Tool!=EditorTool.Select;
         if(UsesSelectionGesture(Hit(_start)!=null,HitHandle(_start)>=0,forceNew)){
@@ -164,6 +165,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public void PointerMove(Point p,ModifierKeys modifiers=ModifierKeys.None)
     {
         if(Session==null)return;
+        if(_action==DragAction.PixelRegion){PixelMove(p);return;}
         if(!Dragging){
             if(Tool!=EditorTool.Crop&&!modifiers.HasFlag(ModifierKeys.Alt)){int h=HitHandle(p);Cursor=h>=0?ResizeCursor(h):Hit(p)!=null?Cursors.SizeAll:Cursors.Arrow;}
             else if(Tool==EditorTool.Crop&&CropDraft is {} crop){int h=HitCropHandle(crop,p);Cursor=h>=0?HandleCursor(h):new Rect(crop.X,crop.Y,crop.Width,crop.Height).Contains(p)?Cursors.SizeAll:Cursors.Cross;}
@@ -206,6 +208,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public void PointerUp(Point p,ModifierKeys modifiers=ModifierKeys.None)
     {
         if(!Dragging||Session==null)return;PointerMove(p,modifiers);
+        if(_action==DragAction.PixelRegion){_action=DragAction.None;ReleaseMouseCapture();try{PixelRegion?.Validate(Session.Document.Viewport);}catch{PixelRegion=null;}InvalidateVisual();SelectionChanged?.Invoke();return;}
         var action=_action;_action=DragAction.None;_guideX=_guideY=null;ReleaseMouseCapture();
         if(action is DragAction.Crop or DragAction.CropMove or DragAction.CropResize){CropDraftChanged?.Invoke();
         }else if(action==DragAction.Marquee&&_draft is {} marquee){
@@ -220,7 +223,7 @@ public sealed partial class EditorSurface : FrameworkElement
     protected override void OnLostMouseCapture(MouseEventArgs e){base.OnLostMouseCapture(e);if(Dragging)CancelInteraction();}
     public void CancelInteraction()
     {
-        if(!Dragging)return;var action=_action;_action=DragAction.None;_draft=null;_guideX=_guideY=null;
+        if(!Dragging)return;if(_action==DragAction.PixelRegion){_action=DragAction.None;PixelRegion=_pixelBefore;ReleaseMouseCapture();InvalidateVisual();SelectionChanged?.Invoke();return;}var action=_action;_action=DragAction.None;_draft=null;_guideX=_guideY=null;
         if(action is DragAction.Crop or DragAction.CropMove or DragAction.CropResize){CropDraft=_cropBefore;CropDraftChanged?.Invoke();}
         else if(action!=DragAction.Marquee)Session?.Cancel();
         _selected.Clear();_selected.UnionWith(_selectionBefore);_primary=_selected.LastOrDefault();ReleaseMouseCapture();_createdId=null;_originals=[];Refresh();SelectionChanged?.Invoke();

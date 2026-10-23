@@ -1,3 +1,7 @@
+# Phát hành V1.12.0
+
+Giải nén Update-Packages và upload đủ5 assets: HuyVo.Captovix-1.12.0-full.nupkg, HuyVo.Captovix-win-Setup.exe, releases.win.json, assets.win.json, RELEASES. Release public stable tag v1.12.0, Set as latest. Nguồn stable và quy trình cài/update giữ như V1.11.1. Modal cập nhật mở qua Trợ giúp → Kiểm tra cập nhật hoặc Công cụ → Thiết lập hệ thống → Nguồn cập nhật. Xem SELECTION-PIXEL-EDITOR.md để nâng cấp từ bản cũ và INSTALL-LOCATION.md để giữ root cài.
+
 # Cập nhật hướng dẫn cho V1.11.1
 
 Ưu tiên [UPDATE-RELIABILITY.md](UPDATE-RELIABILITY.md): nguồn mặc định là https://github.com/huyvd250797/captovix-releases/releases/latest/download và đọc feed trực tiếp. Release phải public, stable, Set as latest và đủ 5 assets. V1.9 cũ cần chọn nguồn Thư mục HTTPS URL này hoặc chạy Setup thủ công. Nguồn tùy chỉnh vẫn được giữ. Các hướng dẫn lịch sử bên dưới chỉ áp dụng đúng phiên bản được nêu.

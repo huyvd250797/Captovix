@@ -2,7 +2,7 @@ using System.IO;
 namespace Captovix;
 public enum TextAlign { Left, Center, Right }
 public enum TextVertical { Top, Center, Bottom }
-public enum CalloutStyle { Speech, RoundedSpeech, EllipseSpeech, Rectangle, RoundedRectangle }
+public enum CalloutStyle { Speech, RoundedSpeech, EllipseSpeech, Rectangle, RoundedRectangle, PillSpeech, Pill, Ellipse, DiamondSpeech, HexagonSpeech }
 public enum StepStyle { Circle, Square, Diamond }
 public static class TextStudio
 {
