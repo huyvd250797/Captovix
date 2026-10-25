@@ -1,3 +1,9 @@
+# Captovix V1.15.0 — Advanced Capture & Stitching
+
+Đã triển khai trong source toàn bộ nhóm V1.15 Boss chọn: tự cuộn dọc/ngang, pause/resume/dừng khi không có nội dung mới; header/footer cố định; xem hai khung và loại khung lỗi; vùng cố định/gần đây, client hiển thị và menu hẹn giờ. Chưa nghiệm thu trên Windows thật. Hướng dẫn chi tiết: docs/ADVANCED-CAPTURE.md.
+
+V1.15.1 dự kiến: củng cố khả năng cuộn theo từng app sau nghiệm thu, chỉnh tốc độ/thời gian chờ và cải thiện điểm nối. Nội dung bên dưới là lịch sử nền1.14; ưu tiên hướng dẫn1.15 bên trên.
+
 # Captovix V1.14.0 — Scrolling Capture Foundation
 
 Ứng dụng Windows x64, C#/.NET 10 WPF, một Editor mở phóng to. Bàn giao đúng hai ZIP: Update-Packages (có setup) và Source. Chưa đăng Release/GitHub. Quay màn hình giữ chức năng hiện có; phát triển chuyên sâu về ảnh.

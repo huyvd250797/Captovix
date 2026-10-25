@@ -10,9 +10,16 @@ public sealed class ScrollJoin
     public bool Confirmed {get;set;}
     public string Message {get;set;}="";
 }
-public sealed class ScrollSession
+public sealed partial class ScrollSession
 {
-    public int Schema {get;set;}=1;
+    public int Schema {get;set;}=2;
+    public bool Horizontal {get;set;}
+    public int Header {get;set;}
+    public int Footer {get;set;}
+    public bool KeepHeader {get;set;}=true;
+    public int WorkWidth=>Horizontal?Height:Width;
+    public int WorkHeight=>Horizontal?Width:Height-Header-Footer;
+    public ScrollFrame Prepare(ScrollFrame frame)=>Horizontal?AdvancedScroll.Transpose(frame):AdvancedScroll.Trim(frame,Header,Footer);
     public int Width {get;set;}
     public int Height {get;set;}
     public int Count {get;set;}
@@ -29,12 +36,12 @@ public sealed class ScrollSession
     {
         var info=new FileInfo(path);if(!info.Exists||info.Length>128*1024||(info.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidDataException("File phiên không hợp lệ.");
         var s=JsonSerializer.Deserialize<ScrollSession>(File.ReadAllText(path))??throw new InvalidDataException("Không đọc được phiên.");s.Folder=Path.GetDirectoryName(Path.GetFullPath(path))!;
-        if((File.GetAttributes(s.Folder)&FileAttributes.ReparsePoint)!=0||s.Schema!=1||s.Count<1||s.Count>ScrollStitching.MaxFrames||s.Joins==null||s.Joins.Count!=s.Count-1||s.Hashes==null||s.Hashes.Count!=s.Count)throw new InvalidDataException("Phiên chưa có khung hoàn chỉnh hoặc định dạng không hỗ trợ.");
-        ScrollStitching.OutputHeight(s.Width,s.Height,s.Joins.Select(j=>j.Overlap).ToArray());for(int i=0;i<s.Count;i++){var frame=new FileInfo(s.FramePath(i));if(!frame.Exists||frame.Length>20_000_000||(frame.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidDataException("Thiếu hoặc vượt giới hạn khung nguồn.");}return s;
+        if((File.GetAttributes(s.Folder)&FileAttributes.ReparsePoint)!=0||(s.Schema!=1&&s.Schema!=2)||s.Count<1||s.Count>ScrollStitching.MaxFrames||s.Joins==null||s.Joins.Count!=s.Count-1||s.Hashes==null||s.Hashes.Count!=s.Count)throw new InvalidDataException("Phiên chưa có khung hoàn chỉnh hoặc định dạng không hỗ trợ.");
+        ScrollStitching.OutputHeight(s.WorkWidth,s.WorkHeight,s.Joins.Select(j=>j.Overlap).ToArray());for(int i=0;i<s.Count;i++){var frame=new FileInfo(s.FramePath(i));if(!frame.Exists||frame.Length>20_000_000||(frame.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidDataException("Thiếu hoặc vượt giới hạn khung nguồn.");}return s;
     }
     public ScrollFrame Load(int index)
     {
-        if(index<0||index>=Count)throw new ArgumentOutOfRangeException(nameof(index));if(Hash(FramePath(index))!=Hashes[index])throw new InvalidDataException("Khung nguồn đã bị thay đổi; không tiếp tục ghép dữ liệu không khớp.");return ReadFrame(FramePath(index),Width,Height);
+        if(index<0||index>=Count)throw new ArgumentOutOfRangeException(nameof(index));if(Hash(FramePath(index))!=Hashes[index])throw new InvalidDataException("Khung nguồn đã bị thay đổi; không tiếp tục ghép dữ liệu không khớp.");return Prepare(ReadFrame(FramePath(index),Width,Height));
     }
     public static string Hash(string path){using var stream=File.OpenRead(path);return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));}
     public void Append(string candidate,ScrollMatch? match)
@@ -56,6 +63,6 @@ public sealed class ScrollSession
     }
     public BitmapSource Compose(CancellationToken cancellation=default)
     {
-        int[] joins=Joins.Select(j=>j.Overlap).ToArray();var pixels=ScrollStitching.Compose(Width,Height,joins,Load,cancellation);var bitmap=BitmapSource.Create(Width,ScrollStitching.OutputHeight(Width,Height,joins),96,96,PixelFormats.Bgra32,null,pixels,Width*4);bitmap.Freeze();return bitmap;
+        int[] joins=Joins.Select(j=>j.Overlap).ToArray();var pixels=ScrollStitching.Compose(WorkWidth,WorkHeight,joins,Load,cancellation);var output=new ScrollFrame(WorkWidth,ScrollStitching.OutputHeight(WorkWidth,WorkHeight,joins),pixels);if(Horizontal)output=AdvancedScroll.Transpose(output);else if(KeepHeader&&(Header+Footer)>0){int height=output.Height+Header+Footer;if(height>32768||(long)Width*height>ScrollStitching.MaxOutputPixels)throw new InvalidDataException("Ảnh kèm header/footer vượt giới hạn.");var all=new byte[Width*height*4];var first=ReadFrame(FramePath(0),Width,Height);var last=ReadFrame(FramePath(Count-1),Width,Height);Buffer.BlockCopy(first.Pixels,0,all,0,Header*Width*4);Buffer.BlockCopy(output.Pixels,0,all,Header*Width*4,output.Pixels.Length);Buffer.BlockCopy(last.Pixels,(Height-Footer)*Width*4,all,(height-Footer)*Width*4,Footer*Width*4);output=new(Width,height,all);}var bitmap=BitmapSource.Create(output.Width,output.Height,96,96,PixelFormats.Bgra32,null,output.Pixels,output.Width*4);bitmap.Freeze();return bitmap;
     }
 }

@@ -37,7 +37,7 @@ if a.baseline_source:
  with zipfile.ZipFile(a.baseline_source) as old:
   for path in ['src/Captovix/Native.cs','src/Captovix/DesktopPhotoCapture.cs','src/Captovix/CaptureEngine.cs','src/Captovix/ImageFidelity.cs','src/Captovix/ImageTransfer.cs','src/Captovix/CaptureKeys.cs','src/Captovix/ElementProbe.cs','src/Captovix/ElementProbeClient.cs','src/Captovix/CaptureWorkflowNative.cs','src/Captovix/Program.cs','installer/InstallPath.nsh']:
    prior=old.read(next(n for n in old.namelist() if n.endswith('/'+path)));check(prior==(r/path).read_bytes(),'Protected foundation unchanged: '+path)
-  prior=old.read(next(n for n in old.namelist() if n.endswith('/installer/Captovix.nsi'))).decode();check(prior.replace('1.13.0',version)==(r/'installer/Captovix.nsi').read_text(),'Installer invocation unchanged except release version')
+  prior=old.read(next(n for n in old.namelist() if n.endswith('/installer/Captovix.nsi'))).decode();check(prior.replace('1.14.0',version)==(r/'installer/Captovix.nsi').read_text(),'Installer invocation unchanged except release version')
 for path in [a.source_zip,a.update_zip]:
  if path:
   with zipfile.ZipFile(path) as z:

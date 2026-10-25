@@ -1,3 +1,9 @@
+# Captovix V1.15.0 — Advanced Capture & Stitching
+
+Đã triển khai trong source toàn bộ nhóm V1.15 Boss chọn: tự cuộn dọc/ngang, pause/resume/dừng khi không có nội dung mới; header/footer cố định; xem hai khung và loại khung lỗi; vùng cố định/gần đây, client hiển thị và menu hẹn giờ. Chưa nghiệm thu trên Windows thật. Hướng dẫn chi tiết: docs/ADVANCED-CAPTURE.md.
+
+V1.16 dự kiến: củng cố khả năng cuộn theo từng app sau nghiệm thu, chỉnh tốc độ/thời gian chờ và cải thiện điểm nối. Nội dung bên dưới là lịch sử nền1.14; ưu tiên hướng dẫn1.15 bên trên.
+
 # V1.14.0 — Scrolling Capture Foundation (23/10/2026)
 
 Chụp vùng cuộn dọc thủ công, overlap matching có phát hiện trùng/chưa chắc, sửa và xác nhận điểm nối, xem trước100%, ghép trực tiếp hàng pixel; hạn chế24khung/4MPkhung/64MPnguồn/40MPoutput/32768h. Khung nguồn lưu disk, manifest/hash và menu khôi phục; hủy/ghi lỗi không xóa khung đã commit. Chưa auto-scroll/ghép ngang.

@@ -1,0 +1,20 @@
+using System.IO;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Controls;
+namespace Captovix;
+public partial class MainWindow
+{
+    private async void AdvancedCapture_Click(object sender,RoutedEventArgs e)
+    {
+        if(_busy||_updateApplying||!_captureGate.TryEnter())return;SetBusy(true);_settingsDialog?.Close();
+        try{
+            Surface.CancelInteraction();if(!FlushEdits())return;_captureCancellation=new();var token=_captureCancellation.Token;RegisterCaptureEscape();RefreshSources();var mode=(sender as MenuItem)?.Tag?.ToString();PixelRect region;
+            if(mode=="Client"){Hide();var window=await CapturePrompts.PickWindowAsync(token);if(window==null)return;if(!AdvancedCaptureNative.GetClientRect(window.Handle,out var r))throw new IOException("Ứng dụng không cung cấp vùng client.");var p=new Native.POINT();if(!AdvancedCaptureNative.ClientToScreen(window.Handle,ref p))throw new IOException("Không đọc được tọa độ client.");region=new(p.X,p.Y,r.Right,r.Bottom);}
+            else{var recent=Path.Combine(App.DataRoot,"recent-capture-regions.json");var history=new List<PixelRect>();try{if(File.Exists(recent))history=JsonSerializer.Deserialize<List<PixelRect>>(File.ReadAllText(recent))??[];}catch(Exception ex){App.Log(ex);}
+                var dialog=new Window{Owner=this,Title="Chụp vùng pixel / menu hẹn giờ",Width=420,SizeToContent=SizeToContent.Height,WindowStartupLocation=WindowStartupLocation.CenterOwner};var panel=new StackPanel{Margin=new(16)};dialog.Content=panel;var fields=new[]{new TextBox{Text="0"},new TextBox{Text="0"},new TextBox{Text="800"},new TextBox{Text="600"},new TextBox{Text=mode=="Menu"?"5":"0"}};var labels=new[]{"X · pixel màn hình (có thể âm)","Y · pixel màn hình (có thể âm)","Rộng · pixel","Cao · pixel","Đếm ngược · 0–15 giây"};for(int i=0;i<fields.Length;i++){panel.Children.Add(new TextBlock{Text=labels[i]});panel.Children.Add(fields[i]);}var list=new ComboBox{ItemsSource=history.Select(r=>r.ToString()).ToArray()};panel.Children.Add(list);list.SelectionChanged+=(_,_)=>{if(list.SelectedIndex<0)return;var r=history[list.SelectedIndex];fields[0].Text=r.X.ToString();fields[1].Text=r.Y.ToString();fields[2].Text=r.Width.ToString();fields[3].Text=r.Height.ToString();};var error=new TextBlock{TextWrapping=TextWrapping.Wrap};panel.Children.Add(error);var start=new Button{Content="Chụp"};panel.Children.Add(start);int[] values=[];start.Click+=(_,_)=>{try{values=fields.Select(f=>int.Parse(f.Text)).ToArray();ImageFidelity.ValidateCapture(new(values[0],values[1],values[2],values[3]),values[2],values[3],false);if(values[4]<0||values[4]>15)throw new Exception("Đếm ngược từ0 đến15 giây.");dialog.DialogResult=true;}catch(Exception ex){error.Text=ex.Message;}};if(dialog.ShowDialog()!=true)return;region=new(values[0],values[1],values[2],values[3]);history.RemoveAll(r=>r==region);history.Insert(0,region);MediaStore.AtomicWrite(recent,JsonSerializer.Serialize(history.Take(8)));Hide();await Task.Delay(values[4]*1000,token);
+            }
+            await Task.Delay(350,token);var area=CaptureGeometry.Split(region,_displays.Select(d=>(d.Device,d.Bounds)));if(area.Sum(p=>(long)p.Crop.Width*p.Crop.Height)!=(long)region.Width*region.Height)throw new IOException("Vùng nằm ngoài màn hình. Chọn lại tọa độ.");var path=_store.NewPath(false);await Task.Run(()=>DesktopPhotoCapture.Save(region,_displays,false,path),token);var item=new MediaItem{FilePath=path,Title="Ảnh chính xác "+DateTime.Now.ToString("HH:mm:ss"),Width=region.Width,Height=region.Height,Source=mode=="Client"?"Client · pixel màn hình, cửa sổ cần hiển thị không bị che":"Vùng cố định / menu có hẹn giờ"};_store.Add(item);SearchBox.Clear();MediaList.SelectedItem=item;
+        }catch(OperationCanceledException){SetStatus("Đã hủy chụp.");}catch(Exception ex){App.Log(ex);Show();MessageBox.Show(this,ex.Message,"Chụp nâng cao");}finally{ReleaseCaptureEscape();_captureCancellation?.Dispose();_captureCancellation=null;Show();Activate();SetBusy(false);_captureGate.Exit();}
+    }
+}
