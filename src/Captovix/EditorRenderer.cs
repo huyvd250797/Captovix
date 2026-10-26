@@ -23,7 +23,7 @@ public static partial class EditorRenderer
         source=RasterPixels.Source(source,doc);var view=doc.Viewport;
         dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));
         dc.DrawImage(source,new Rect(0,0,doc.OriginalWidth,doc.OriginalHeight));
-        DrawOverlays(dc,source,doc,draftIds);dc.Pop();
+        if(doc.Appearance.DrawOutsideImage){dc.Pop();DrawOverlays(dc,source,doc,draftIds);}else{DrawOverlays(dc,source,doc,draftIds);dc.Pop();}
     }
     private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
@@ -97,6 +97,10 @@ public static partial class EditorRenderer
     }
     public static BitmapSource Render(BitmapSource source,EditorDocument doc,int maxWidth=0)
     {
+        var watch=System.Diagnostics.Stopwatch.StartNew();var result=RenderCore(source,doc,maxWidth);RenderMetrics.Add(new(result.PixelWidth,result.PixelHeight,doc.Annotations.Count,watch.Elapsed.TotalMilliseconds,Environment.CurrentManagedThreadId));return result;
+    }
+    private static BitmapSource RenderCore(BitmapSource source,EditorDocument doc,int maxWidth)
+    {
         if(source.PixelWidth!=doc.OriginalWidth||source.PixelHeight!=doc.OriginalHeight)throw new InvalidOperationException("Kích thước ảnh gốc không khớp tài liệu; không tự scale nguồn.");
         var layout=new ImageLayout(doc.Viewport,doc.Appearance);
         if(maxWidth==0&&ImageFidelity.CanCopyPixels(layout))return RenderExact(source,doc,layout);
@@ -115,7 +119,7 @@ public static partial class EditorRenderer
         if(doc.Annotations.Count>0){
             var overlay=new DrawingVisual();using(var dc=overlay.RenderOpen()){
                 dc.PushClip(new RectangleGeometry(RectOf(layout.Canvas)));dc.PushTransform(new MatrixTransform(LayoutMatrix(layout)));
-                dc.PushClip(new RectangleGeometry(new Rect(doc.Viewport.X,doc.Viewport.Y,doc.Viewport.Width,doc.Viewport.Height)));DrawOverlays(dc,source,doc);dc.Pop();dc.Pop();dc.Pop();
+                if(!doc.Appearance.DrawOutsideImage)dc.PushClip(new RectangleGeometry(new Rect(doc.Viewport.X,doc.Viewport.Y,doc.Viewport.Width,doc.Viewport.Height)));DrawOverlays(dc,source,doc);if(!doc.Appearance.DrawOutsideImage)dc.Pop();dc.Pop();dc.Pop();
             }
             var bitmap=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);bitmap.Render(overlay);var bytes=new byte[checked(layout.Width*layout.Height*4)];bitmap.CopyPixels(bytes,checked(layout.Width*4),0);ImageFidelity.OverlayPremultiplied(pixels,bytes);
         }

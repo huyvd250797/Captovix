@@ -13,12 +13,9 @@ public static class DocumentStore
     {
         warning=null;using var stream=File.OpenRead(item.FilePath);var hash=Convert.ToHexString(SHA256.HashData(stream));
         var path=EditPath(item.Id);
-        if(File.Exists(path)){
-            try{var doc=EditorDocument.Deserialize(File.ReadAllText(path));doc.Validate(bitmap.PixelWidth,bitmap.PixelHeight,hash);RasterPixels.ValidateDecoded(doc);return new(doc);}
-            catch(Exception ex){
-                App.Log(ex);var backup=path+".invalid-"+DateTime.Now.ToString("yyyyMMddHHmmssfff");File.Copy(path,backup,false);
-                warning="Không áp dụng được bản chú thích cũ. Đã giữ bản sao: "+backup+"\n"+ex.Message;
-            }
+        if(File.Exists(path)||File.Exists(RecoveryFiles.BackupPath(path))){
+            try{var doc=RecoveryFiles.Load(path,text=>{var d=EditorDocument.Deserialize(text);d.Validate(bitmap.PixelWidth,bitmap.PixelHeight,hash);RasterPixels.ValidateDecoded(d);return d;},out bool recovered);if(recovered){if(File.Exists(path))try{File.Copy(path,path+".invalid-"+Guid.NewGuid().ToString("N"),false);}catch(Exception ex){App.Log(ex);}warning="Đã phục hồi bản lưu tốt gần nhất. Bản chính lỗi được giữ riêng; kiểm tra nội dung trước khi lưu tiếp.";}var session=new EditorSession(doc);if(recovered)session.RequireSave();return session;}
+            catch(Exception ex){App.Log(ex);if(File.Exists(path))try{File.Copy(path,path+".invalid-"+Guid.NewGuid().ToString("N"),false);}catch(Exception copy){App.Log(copy);}warning="Chưa áp dụng được bản chỉnh. File hiện có được giữ; không tự gán lên nguồn khác.\n"+ex.Message;}
         }
         return new(new(){OriginalWidth=bitmap.PixelWidth,OriginalHeight=bitmap.PixelHeight,SourceHash=hash});
     }
@@ -33,10 +30,12 @@ public static class DocumentStore
             int priorVersion=0;
             try{using var prior=System.Text.Json.JsonDocument.Parse(File.ReadAllText(editPath));if(prior.RootElement.ValueKind==System.Text.Json.JsonValueKind.Object&&prior.RootElement.TryGetProperty("Version",out var version)&&version.ValueKind==System.Text.Json.JsonValueKind.Number&&version.TryGetInt32(out var number))priorVersion=number;}
             catch(System.Text.Json.JsonException){ /* Keep corrupt sidecar bytes before replacing the recovered document. */ }
-            if(priorVersion>12)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");
+            if(priorVersion>13)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");
             if(priorVersion<12&&!File.Exists(editPath+".pre-v1.13.bak"))File.Copy(editPath,editPath+".pre-v1.13.bak",false);
         }
-        MediaStore.AtomicWrite(editPath,doc.Serialize());session.MarkSaved();
+        try{RecoveryFiles.Backup(editPath,text=>{var d=EditorDocument.Deserialize(text);d.Validate(original.PixelWidth,original.PixelHeight,doc.SourceHash);return d;});}catch(Exception ex){App.Log(ex);}
+        string json=doc.Serialize();if(Encoding.UTF8.GetByteCount(json)>140_000_000)throw new InvalidDataException("Tài liệu vượt140MB. Tách dự án hoặc xuất ảnh PNG; bản đang chỉnh vẫn giữ trong Editor.");
+        MediaStore.AtomicWrite(editPath,json);session.MarkSaved();
         try{
             var thumb=EditorRenderer.Render(original,doc,240);var path=ThumbnailPath(item.Id);Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var temp=path+".tmp";var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(thumb));using(var f=File.Create(temp))encoder.Save(f);File.Move(temp,path,true);item.Thumbnail=thumb;

@@ -37,7 +37,7 @@ public partial class MainWindow
             style.TextPadding=ShapeValue(TextPaddingField,"Đệm chữ",0,200);style.TextWidth=ShapeValue(TextWrapWidth,"Rộng chữ",0,100000);style.LineSpacing=ShapeValue(TextSpacing,"Giãn dòng",0,3);style.AutoFitText=TextAutoFit.IsChecked==true;
             style.CalloutStyle=(CalloutStyle)CalloutKindPicker.SelectedIndex;style.StepStyle=(StepStyle)StepKindPicker.SelectedIndex;style.FillColor=TextBackgroundHex.Text.Trim().ToUpperInvariant();style.FillOpacity=ShapeValue(TextBackgroundOpacity,"Đậm nền",0,100);style.FillEnabled=TextBackgroundToggle.IsChecked==true;style.StrokeEnabled=TextBorderToggle.IsChecked==true;
             TextStudio.Validate(style);ShapeStudio.ValidateStyle(style);
-            void Apply(Annotation a){TextStudio.CopyStyle(style,a);a.FillEnabled=style.FillEnabled;a.FillColor=style.FillColor;a.FillOpacity=style.FillOpacity;if(a.Kind==AnnotationKind.Callout)a.StrokeEnabled=style.StrokeEnabled;if(_session!=null)EditorRenderer.FitText(a,_session.Document.Viewport);}
+            void Apply(Annotation a){TextStudio.CopyStyle(style,a);a.FillEnabled=style.FillEnabled;a.FillColor=style.FillColor;a.FillOpacity=style.FillOpacity;if(a.Kind==AnnotationKind.Callout)a.StrokeEnabled=style.StrokeEnabled;if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds);}
             Apply(Surface.TextDefaultsFor(kind));ChangeSelected(a=>{if(TextStudio.IsText(a.Kind))Apply(a);});Surface.Refresh();SyncProperties();SetStatus("Đã áp dụng kiểu chữ/callout · Ctrl+Z hoàn tác.");return true;
         }catch(Exception e){TextStudioError.Text=e.Message;return false;}
     }

@@ -14,7 +14,7 @@ public partial class App : Application
         DispatcherUnhandledException += (_, a) => {
             Log(a.Exception); MessageBox.Show("Có lỗi: " + a.Exception.Message + "\nBáo cáo lỗi được lưu trong thư mục dữ liệu của app.", "Captovix"); a.Handled = true;
         };
-        AppearanceManager.Initialize();
+        BrandShortcuts.Repair();WindowTheme.Initialize();AppearanceManager.Initialize();
         base.OnStartup(e);
     }
     public static string DataRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HuyVo", "Captovix");

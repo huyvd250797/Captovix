@@ -1,0 +1,16 @@
+{
+  "version": "1.19.0",
+  "host": "Linux",
+  "engine": "PdfImages.cs production writer",
+  "independent_reader": "PyMuPDF 1.26.6",
+  "pages": 2,
+  "checks": [
+    "parsed PDF catalog/page tree",
+    "rendered both pages",
+    "landscape and portrait MediaBox",
+    "embedded image exact native dimensions",
+    "lossless RGB samples",
+    "rendered red upper band / blue lower band"
+  ],
+  "windows_wpf_export_runtime": "pending"
+}

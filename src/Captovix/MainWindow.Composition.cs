@@ -18,6 +18,7 @@ public partial class MainWindow
     private readonly CheckBox _panImageMode=new(){Content="Kéo ảnh bên trong ô"};
     private readonly CheckBox _layerShadow=new(){Content="Đổ bóng"};
     private bool _syncComposition;
+    private MediaItem? _libraryDragItem;
     private MediaItem? _compositionDropTarget;
     private Point _libraryDragStart;
     private static Button ActionButton(string text,Action action){var b=new Button{Content=text};b.Click+=(_,_)=>action();return b;}
@@ -31,8 +32,8 @@ public partial class MainWindow
         foreach(var text in new[]{_layerRadius,_layerBorder}){text.LostKeyboardFocus+=(_,_)=>ApplyLayerControls();text.KeyDown+=(_,e)=>{if(e.Key==Key.Enter)ApplyLayerControls();};}
         _layerColor.Click+=(_,_)=>OpenPaint(_layerColor,c=>{if(c!=null)LayerChange(a=>(a.ImageStyle??=new()).BorderColor=c);},false);
         EditorPane.AllowDrop=true;EditorPane.DragOver+=(_,e)=>{e.Effects=e.Data.GetDataPresent(DataFormats.FileDrop)||e.Data.GetDataPresent("Captovix.LibraryImage")?DragDropEffects.Copy:DragDropEffects.None;e.Handled=true;};EditorPane.Drop+=CompositionDrop;
-        MediaList.PreviewMouseLeftButtonDown+=(_,e)=>{_libraryDragStart=e.GetPosition(MediaList);_compositionDropTarget=_activeItem;};
-        MediaList.PreviewMouseMove+=(_,e)=>{if(e.LeftButton!=MouseButtonState.Pressed||Math.Abs(e.GetPosition(MediaList).X-_libraryDragStart.X)+Math.Abs(e.GetPosition(MediaList).Y-_libraryDragStart.Y)<12)return;if(MediaList.SelectedItem is MediaItem{IsVideo:false} item){var data=new DataObject("Captovix.LibraryImage",item);DragDrop.DoDragDrop(MediaList,data,DragDropEffects.Copy);}};
+        MediaList.PreviewMouseLeftButtonDown+=(_,e)=>{_libraryDragItem=null;var source=e.OriginalSource as DependencyObject;if(Ancestor<System.Windows.Controls.Primitives.ScrollBar>(source)!=null||Ancestor<System.Windows.Controls.Primitives.Thumb>(source)!=null||Ancestor<Button>(source)!=null||Keyboard.Modifiers!=ModifierKeys.None)return;_libraryDragStart=e.GetPosition(MediaList);_compositionDropTarget=_activeItem;_libraryDragItem=Ancestor<ListBoxItem>(source)?.DataContext as MediaItem;};
+        MediaList.PreviewMouseMove+=(_,e)=>{if(_libraryDragItem==null||MediaList.SelectedItems.Count>1||e.LeftButton!=MouseButtonState.Pressed||Math.Abs(e.GetPosition(MediaList).X-_libraryDragStart.X)+Math.Abs(e.GetPosition(MediaList).Y-_libraryDragStart.Y)<12)return;if(_libraryDragItem is MediaItem{IsVideo:false} item){_libraryDragItem=null;var data=new DataObject("Captovix.LibraryImage",item);DragDrop.DoDragDrop(MediaList,data,DragDropEffects.Copy);}};
         SyncCompositionControls();
     }
     private Annotation? SelectedImage()=>_session?.Document.Annotations.Where(a=>Surface.SelectedIds.Contains(a.Id)&&a.Kind==AnnotationKind.ImageLayer).SingleOrDefaultSafe();

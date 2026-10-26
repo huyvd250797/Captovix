@@ -29,10 +29,10 @@ public partial class MainWindow : Window
     private MediaItem? Selected => MediaList.SelectedItem as MediaItem;
     public MainWindow()
     {
-        InitializeComponent();InitializeBrand();InitializeEditor();_store=new();MediaList.ItemsSource=_store.Items;
-        CollectionViewSource.GetDefaultView(_store.Items).Filter=o=>{var i=(MediaItem)o;var q=SearchBox.Text??"";return $"{i.Title} {(i.IsVideo?"video":"ảnh")} {i.Created:dd/MM/yyyy}".Contains(q,StringComparison.CurrentCultureIgnoreCase);};
-        _store.Items.CollectionChanged+=(_,_)=>CountLabel.Text=_store.Items.Count.ToString();CountLabel.Text=_store.Items.Count.ToString();
-        InitializeShell();InitializeComposition();InitializeIcons();Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;
+        InitializeComponent();InitializeBrand();InitializeEditor();_store=new();RebuildRecent();MediaList.ItemsSource=_recentItems;
+        CollectionViewSource.GetDefaultView(_recentItems).Filter=o=>{var i=(MediaItem)o;return LibraryMatch(i);};
+        _store.Items.CollectionChanged+=(_,_)=>{if(_libraryRefreshHold==0)RebuildRecent();};CountLabel.Text=$"{_recentItems.Count}/{_store.Items.Count}";
+        InitializeShell();InitializeLibraryProjects();InitializeComposition();InitializeToolOrder();InitializeIcons();Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;
         _videoTimer.Tick+=(_,_)=>{if(VideoPreview.Visibility==Visibility.Visible&&VideoPreview.NaturalDuration.HasTimeSpan){if(Mouse.LeftButton!=MouseButtonState.Pressed)VideoSeek.Value=VideoPreview.Position.TotalSeconds;VideoTime.Text=$"{VideoPreview.Position:hh\\:mm\\:ss} / {VideoPreview.NaturalDuration.TimeSpan:hh\\:mm\\:ss}";}};
         _videoTimer.Start();
     }
@@ -69,7 +69,7 @@ public partial class MainWindow : Window
     private async Task CaptureAsync(bool video,PhotoAction action=PhotoAction.Current)
     {
         if(_busy||_updateApplying||!_captureGate.TryEnter())return;
-        _settingsDialog?.Close();var previousWindowState=WindowState;var wasVisible=IsVisible;bool success=false,showAfter=video,failed=false;string? finalStatus=null;
+        _settingsDialog?.Close();var previousWindowState=WindowState;var wasVisible=IsVisible;bool success=false,showAfter=video,failed=false;PixelRect? scrollNext=null;bool scrollHorizontal=false;string? finalStatus=null;
         SetBusy(true);
         try {
             Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();_playing=false;
@@ -93,6 +93,7 @@ public partial class MainWindow : Window
                 if(window==null)return;
                 if(!Native.IsWindow(window.Handle)||Native.IsIconic(window.Handle)||!Native.GetWindowRect(window.Handle,out var wr))throw new InvalidOperationException("Cửa sổ đã đóng hoặc thu nhỏ. Hãy chọn lại.");region=wr.Pixels;
             }
+            if(!video&&s.SourceMode is 0 or 3&&action!=PhotoAction.Repeat){var choice=await CaptureActionPicker.PickAsync(region,_displays,cancellation);if(choice==null)return;if(choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=choice==CaptureChoice.Horizontal;return;}}
             if(video)region=region.Even();if(region.IsEmpty)throw new InvalidOperationException("Vùng chọn quá nhỏ.");
             await CapturePrompts.CountdownAsync(s.Delay,cancellation);await Task.Delay(220,cancellation);
             var now=Native.Displays().Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity));if(CaptureWorkflowStore.Topology(now)!=topology)throw new InvalidOperationException("Màn hình hoặc DPI đã thay đổi trong phiên chụp. Hãy thử chọn lại.");
@@ -109,7 +110,7 @@ public partial class MainWindow : Window
             File.Move(actual,final);
             var item=new MediaItem{FilePath=final,Title=(video?"Video ":"Ảnh ")+DateTime.Now.ToString("dd-MM HH:mm:ss"),IsVideo=video,Width=region.Width,Height=region.Height,Source=window?.Title??(s.SourceMode==0?$"Vùng chọn · {region}":s.SourceMode==3?$"Phần tử · {region}":display.Label),Microphone=video&&s.Mic,SystemAudio=video&&s.SystemAudio,Fps=video?s.Fps:0,Seconds=video?clock.Elapsed.TotalSeconds:0};
             if(capturedImage!=null){item.Width=capturedImage.PixelWidth;item.Height=capturedImage.PixelHeight;item.Capture=new(region.Width,region.Height,item.Width,item.Height,window!=null?"Window capture (native output bounds)":"GDI BitBlt · physical pixels · SDR8");}
-            if(capturedImage!=null&&options.PhotoStyle.BorderEnabled){var framed=DocumentStore.Load(item,capturedImage,out _);framed.Change(d=>{d.Appearance.Padding=options.PhotoStyle.BorderWidth;d.Appearance.BorderWidth=options.PhotoStyle.BorderWidth;d.Appearance.BorderColor=options.PhotoStyle.BorderColor;});DocumentStore.Save(item,framed,capturedImage);}
+            if(capturedImage!=null&&options.PhotoStyle.BorderEnabled){var framed=DocumentStore.Load(item,capturedImage,out _);framed.Change(d=>{d.Appearance.Padding=0;d.Appearance.BorderWidth=options.PhotoStyle.BorderWidth;d.Appearance.BorderColor=options.PhotoStyle.BorderColor;});DocumentStore.Save(item,framed,capturedImage);}
             _store.Add(item);success=true;finalStatus="● Đã lưu nội dung trên máy.";
             if(!video&&s.SourceMode==0){_lastRegion=region;var updated=_workflow.Clone();updated.LastRegion=new(region,topology);if(!_workflowReadOnly)try{SaveWorkflow(updated);}catch(Exception ex){App.Log(ex);finalStatus+=" Chưa lưu được vùng chụp lại.";}}
             if(!video&&options.AutoCopy)try{var original=MediaStore.LoadImage(final);var edits=DocumentStore.Load(item,original,out _);ImageTransfer.Copy(EditorRenderer.Render(original,edits.Document));finalStatus+=" Đã copy ảnh.";}catch(Exception ex){App.Log(ex);finalStatus+=" Clipboard đang bận; ảnh đã được lưu, có thể copy trong Editor.";}
@@ -122,7 +123,7 @@ public partial class MainWindow : Window
             ReleaseCaptureEscape();_captureCancellation?.Dispose();_captureCancellation=null;
             if((success&&showAfter)||failed||(!success&&wasVisible)||_tray?.Ready!=true){Show();WindowState=previousWindowState==WindowState.Minimized?WindowState.Maximized:previousWindowState;Activate();}
             SetBusy(false);SetStatus(finalStatus??"● Sẵn sàng · Phiên đã hủy hoặc chưa hoàn thành.");_captureGate.Exit();
-            if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);
+            if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);else if(scrollNext is {} next)_=Dispatcher.BeginInvoke(()=>_=ScrollCaptureAsync(next,scrollHorizontal));
         }
     }
     private void StopRecording(){if(_engine==null||_stopping)return;_stopping=true;SetStatus("Đang hoàn tất file MP4…");_engine.Stop();}
@@ -132,10 +133,10 @@ public partial class MainWindow : Window
     private void Record_Click(object sender,RoutedEventArgs e)=>_=CaptureAsync(true);
     private void Refresh_Click(object sender,RoutedEventArgs e)=>RefreshSources();
     private void SourceMode_Changed(object sender,SelectionChangedEventArgs e){if(DisplayPicker==null||WindowPicker==null)return;bool window=SourceMode.SelectedIndex==1;DisplayPicker.Visibility=window?Visibility.Collapsed:Visibility.Visible;WindowPicker.Visibility=window?Visibility.Visible:Visibility.Collapsed;}
-    private void Search_Changed(object sender,TextChangedEventArgs e){if(_store!=null)CollectionViewSource.GetDefaultView(_store.Items).Refresh();}
+    private void Search_Changed(object sender,TextChangedEventArgs e){if(_store!=null)CollectionViewSource.GetDefaultView(_recentItems).Refresh();if(LibrarySearchButton!=null)LibrarySearchButton.SetResourceReference(Control.ForegroundProperty,string.IsNullOrWhiteSpace(SearchBox.Text)?"Text":"AccentText");}
     private void Media_Changed(object sender,SelectionChangedEventArgs e)
     {
-        if(_changingSelection)return;
+        if(_changingSelection)return;if(MediaList.SelectedItems.Count>1){SetStatus($"Đã chọn {MediaList.SelectedItems.Count} nội dung · Delete để xóa / Xuất nhiều.");return;}
         Surface.CancelInteraction();
         if(!FlushEdits()){
             _changingSelection=true;MediaList.SelectedItem=_activeItem;_changingSelection=false;return;
@@ -187,27 +188,9 @@ public partial class MainWindow : Window
     private void Rename_Click(object sender,RoutedEventArgs e){if(Selected==null)return;RenameBox.Text=Selected.Title;RenameBox.Visibility=Visibility.Visible;RenameBox.Focus();RenameBox.SelectAll();}
     private void Rename_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Escape)RenameBox.Visibility=Visibility.Collapsed;if(e.Key==Key.Enter&&Selected is { } i&&!string.IsNullOrWhiteSpace(RenameBox.Text)){i.Title=RenameBox.Text.Trim();_store.Save();MediaList.Items.Refresh();DocumentTitle.Text=i.Title;RenameBox.Visibility=Visibility.Collapsed;}}
     private TrashReceipt? _lastDeleted;
-    private void Delete_Click(object sender,RoutedEventArgs e){if(Selected is {} item)DeleteMedia(item);}
-    private void DeleteMediaTile_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:MediaItem item})DeleteMedia(item);e.Handled=true;}
-    private void DeleteMedia(MediaItem item)
-    {
-        if(_busy||_updateApplying)return;
-        if(MessageBox.Show(this,$"Chuyển '{item.Title}' cùng bản chú thích vào thùng rác Captovix?","Xóa nội dung",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
-        FlushAutoProperties();if(!FlushEdits())return;
-        if(ReferenceEquals(item,Selected)){VideoPreview.Stop();VideoPreview.Source=null;}
-        int index=_store.Items.IndexOf(item);bool active=ReferenceEquals(item,Selected);TrashReceipt? receipt=null;
-        try{
-            var edit=DocumentStore.EditPath(item.Id);var paths=new List<string>{item.FilePath,edit,DocumentStore.ThumbnailPath(item.Id)};if(Directory.Exists(Path.GetDirectoryName(edit)))paths.AddRange(Directory.EnumerateFiles(Path.GetDirectoryName(edit)!,Path.GetFileName(edit)+".*.bak"));
-            receipt=MediaTrash.Move(App.DataRoot,JsonSerializer.Serialize(item),paths);if(active)UnloadEditor();_store.Items.Remove(item);_store.Save();_lastDeleted=receipt;RestoreMediaButton.IsEnabled=true;
-            if(active)MediaList.SelectedItem=_store.Items.ElementAtOrDefault(Math.Max(0,Math.Min(index,_store.Items.Count-1)));SetStatus("Đã chuyển nội dung vào thùng rác · có thể khôi phục lần xóa vừa rồi.");
-        }catch(Exception ex){if(receipt!=null){try{MediaTrash.Restore(receipt);if(!_store.Items.Contains(item))_store.Items.Insert(Math.Clamp(index,0,_store.Items.Count),item);_store.Save();}catch(Exception rollback){App.Log(rollback);}}App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa xóa được nội dung");}
-    }
-    private void RestoreMedia_Click(object sender,RoutedEventArgs e)
-    {
-        if(_lastDeleted==null||_busy||_updateApplying)return;var receipt=_lastDeleted;MediaItem? item=null;bool restored=false;
-        try{item=JsonSerializer.Deserialize<MediaItem>(receipt.Metadata)??throw new InvalidDataException();if(_store.Items.Any(i=>i.Id==item.Id))throw new IOException("Nội dung đã có trong thư viện.");MediaTrash.Restore(receipt);restored=true;_store.Add(item);MediaList.SelectedItem=item;_lastDeleted=null;RestoreMediaButton.IsEnabled=false;SetStatus("Đã khôi phục nội dung và chú thích.");}
-        catch(Exception ex){if(restored){try{if(item!=null)_store.Items.Remove(item);MediaTrash.UndoRestore(receipt);}catch(Exception rollback){App.Log(rollback);}}App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa khôi phục được nội dung");}
-    }
+    private void Delete_Click(object sender,RoutedEventArgs e)=>DeleteMediaBatch(MediaList.SelectedItems.Cast<MediaItem>().ToArray());
+    private void DeleteMediaTile_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:MediaItem item})DeleteMediaBatch(MediaList.SelectedItems.Contains(item)?MediaList.SelectedItems.Cast<MediaItem>().ToArray():[item]);e.Handled=true;}
+    private void DeleteMedia(MediaItem item)=>DeleteMediaBatch([item]);
     private static void OpenFolder(string path)=>Process.Start(new ProcessStartInfo(path){UseShellExecute=true});
     private void Folder_Click(object sender,RoutedEventArgs e)=>OpenFolder(_store.Root);
     private void Video_Opened(object sender,RoutedEventArgs e){if(VideoPreview.NaturalDuration.HasTimeSpan){VideoSeek.Maximum=VideoPreview.NaturalDuration.TimeSpan.TotalSeconds;if(Selected is {IsVideo:true} i){i.Width=VideoPreview.NaturalVideoWidth;i.Height=VideoPreview.NaturalVideoHeight;i.Seconds=VideoSeek.Maximum;i.RefreshDetails();UpdateMetadata(i);_store.Save();}}}

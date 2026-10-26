@@ -25,7 +25,7 @@ public static class AppearanceManager
         var checker=new DrawingGroup();checker.Children.Add(new GeometryDrawing((Brush)r["Surface"],null,Geometry.Parse("M0,0 H16 V16 H0 Z")));checker.Children.Add(new GeometryDrawing((Brush)r["Soft"],null,Geometry.Parse("M0,0 H8 V8 H0 Z M8,8 H16 V16 H8 Z")));var grid=new DrawingBrush(checker){TileMode=TileMode.Tile,Viewport=new Rect(0,0,16,16),ViewportUnits=BrushMappingMode.Absolute};grid.Freeze();r["TransparencyGrid"]=grid;
         foreach(var key in new[]{SystemColors.WindowBrushKey,SystemColors.ControlBrushKey,SystemColors.MenuBrushKey})r[key]=r["Surface"];
         foreach(var key in new[]{SystemColors.WindowTextBrushKey,SystemColors.ControlTextBrushKey,SystemColors.MenuTextBrushKey,SystemColors.HighlightTextBrushKey,SystemColors.InactiveSelectionHighlightTextBrushKey})r[key]=r["Text"];
-        r[SystemColors.HighlightBrushKey]=r["Soft"];r[SystemColors.InactiveSelectionHighlightBrushKey]=r["Soft"];r[SystemColors.GrayTextBrushKey]=r["Muted"];
+        r[SystemColors.HighlightBrushKey]=r["Soft"];r[SystemColors.InactiveSelectionHighlightBrushKey]=r["Soft"];r[SystemColors.GrayTextBrushKey]=r["Muted"];WindowTheme.ApplyAll();
     }
 }
 public partial class MainWindow

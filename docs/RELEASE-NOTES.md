@@ -1,3 +1,3 @@
-# Captovix V1.15.1 — Capture Reliability
+# Captovix V1.20.0 — Image Release & Performance
 
-Chỉnh thời gian chờ và nấc cuộn; kiểm tra cửa sổ nguồn, tạm dừng khi mất focus/che/di chuyển; log chẩn đoán, hủy và revision an toàn hơn. Sửa dark mode hover trắng, đồng bộ màu menu/công cụ/nền ảnh; gán logo tím mới cho runtime/tray/shortcut. Thêm Giới thiệu Captovix. Hướng dẫn: docs/CAPTURE-RELIABILITY.md. Kiểm tra Windows thực tế còn chờ.
+Caption/icon/mẫu gọn; footer1dòng + …; thư viện cây năm→tháng→ngày→media. Nới canvas160px/cạnh để vẽ/edit/export ngoài ảnh, nguồn không resize, project opt-in dùng schema13. Cache budget và thumbnail nền, renderer isolation, report, last-good recovery; giữ schema12 cũ/nguồn/theme/branding/update source. Có kiểm pixel-copy4K/8K Linux; Windows desktop acceptance/profile vẫn chờ, chưa tile renderer. Xem IMAGE-RELEASE-PERFORMANCE.md.

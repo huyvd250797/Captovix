@@ -30,7 +30,7 @@ public partial class MainWindow
             Add(menu,"Ẩn đối tượng · hiện lại ở Layers",()=>{_session.Change(d=>ObjectControl.Show(d,Surface.SelectedIds,false));Surface.Refresh();SyncProperties();},active);
             Add(menu,"Tháo liên kết đường nối",()=>Surface.DetachConnectors(),active&&members.Any(a=>a.StartAnchor!=null||a.EndAnchor!=null));
             Add(menu,"Xóa đối tượng · Delete",()=>Surface.DeleteSelected(),active);menu.Items.Add(new Separator());
-            Add(menu,"Copy ảnh đã chỉnh · Ctrl+Shift+C",()=>Copy_Click(this,new()));Add(menu,"Xuất ảnh…",()=>Export_Click(this,new()));
+            Add(menu,"Copy ảnh đã chỉnh · Ctrl+Shift+C",()=>Copy_Click(this,new()));Add(menu,"Xuất ảnh…",()=>Export_Click(this,new()));Add(menu,"OCR & chỉnh chữ…",()=>Assist_Click(this,new()));AppMenus.Decorate(menu);
     }
     private void AlignObjects(string tag)
     {

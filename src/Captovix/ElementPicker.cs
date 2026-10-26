@@ -10,6 +10,9 @@ public sealed class ElementPicker : IDisposable
 {
     private readonly TaskCompletionSource<PixelRect?> _done=new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly List<Window> _outlines=[];
+    private readonly List<(Window Window,CaptureShade Shade,DisplayInfo Display)> _shades=[];
+    private nint _targetWindow;
+    private PixelRect _windowBounds;
     private readonly ElementProbeClient _probe=new();
     private readonly DispatcherTimer _timer=new(){Interval=TimeSpan.FromMilliseconds(100)};
     private readonly TextBlock _label=new(){Foreground=Brushes.White,FontSize=13,TextWrapping=TextWrapping.Wrap,MaxWidth=480,Margin=new Thickness(12)};
@@ -26,10 +29,10 @@ public sealed class ElementPicker : IDisposable
     private readonly IReadOnlyList<DisplayInfo> _displays;
     private ElementPicker(IReadOnlyList<DisplayInfo> displays)
     {
-        _displays=displays;for(int i=0;i<4;i++)_outlines.Add(Overlay(Brushes.Teal));
+        _displays=displays;foreach(var display in displays){var window=Overlay(Brushes.Transparent);var shade=new CaptureShade();window.Content=shade;Native.SetWindowPos(new WindowInteropHelper(window).Handle,-1,display.Bounds.X,display.Bounds.Y,display.Bounds.Width,display.Bounds.Height,0x10);_shades.Add((window,shade,display));}for(int i=0;i<4;i++)_outlines.Add(Overlay(Brushes.Teal));
         _hint=Overlay(new SolidColorBrush(Color.FromRgb(24,44,60)));_hint.Content=_label;
         _callback=Hook;_hook=SetWindowsHookEx(14,_callback,GetModuleHandle(null),0);if(_hook==0){Dispose();throw new InvalidOperationException("Không mở được bộ chọn phần tử. Hãy dùng Vùng chọn.");}
-        _timer.Tick+=async(_,_)=>await Poll();_timer.Start();_label.Text="Di chuột vào modal / grid · Con lăn lên: khối cha, xuống: khối con\nClick chụp · Giữ và kéo: vùng thủ công · Chuột phải / Esc: hủy";
+        _timer.Tick+=async(_,_)=>await Poll();_timer.Start();_label.Text="Rê gần cạnh / góc trên để chọn modal hoặc cửa sổ · Con lăn: đổi khối cha/con\nClick chụp · Giữ và kéo: vùng thủ công · Chuột phải / Esc: hủy";
     }
     public static async Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation)
     {
@@ -53,12 +56,12 @@ public sealed class ElementPicker : IDisposable
         try{
             var target=Native.Windows().FirstOrDefault(w=>Native.GetWindowRect(w.Handle,out var rect)&&ElementSelection.Contains(rect.Pixels,p.X,p.Y));
             if(target==null){_candidates=[];HideOutline();ShowHint(p,"Không thấy cửa sổ. Giữ chuột và kéo để chọn vùng.");return;}
-            if(!Native.GetWindowRect(target.Handle,out var window))return;if(!stationary)ShowHint(p,"Đang dò phần tử… Click sau khi khung xuất hiện; hoặc giữ và kéo vùng.");
+            if(!Native.GetWindowRect(target.Handle,out var window))return;_targetWindow=target.Handle;_windowBounds=window.Pixels;if(!stationary)ShowHint(p,"Đang dò phần tử… Click sau khi khung xuất hiện; hoặc giữ và kéo vùng.");
             var result=await _probe.QueryAsync(new((long)target.Handle,p.X,p.Y,Environment.ProcessId),_cancel.Token);
-            if(_done.Task.IsCompleted||_pressed)return;
+            if(_done.Task.IsCompleted||_pressed)return;if(!Native.GetWindowRect(target.Handle,out var fresh)||fresh.Pixels!=window.Pixels){_candidates=[];HideOutline();_lastX=int.MinValue;return;}
             Native.GetCursorPos(out var now);if(Math.Abs(now.X-p.X)>8||Math.Abs(now.Y-p.Y)>8){_lastX=int.MinValue;return;}
             var desktop=new PixelRect(_displays.Min(d=>d.Bounds.X),_displays.Min(d=>d.Bounds.Y),_displays.Max(d=>d.Bounds.Right)-_displays.Min(d=>d.Bounds.X),_displays.Max(d=>d.Bounds.Bottom)-_displays.Min(d=>d.Bounds.Y));
-            _candidates=ElementSelection.Normalize(result,p.X,p.Y,window.Pixels.Intersect(desktop));_index=previous==null?-1:Array.FindIndex(_candidates,c=>c.Bounds==previous.Bounds);if(_index<0)_index=ElementSelection.Preferred(_candidates);DrawCurrent(now);
+            _candidates=ElementSelection.Normalize(result,p.X,p.Y,window.Pixels.Intersect(desktop));_index=previous==null?-1:Array.FindIndex(_candidates,c=>c.Bounds==previous.Bounds);if(_index<0)_index=ElementSelection.PreferredAt(_candidates,p.X,p.Y,(int)Math.Round(16*(_displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,p.X,p.Y))?.DpiX??96)/96d));DrawCurrent(now);
         }catch(Exception e){if(!_done.Task.IsCompleted)App.Log(e);}
         finally{_querying=false;}
     }
@@ -73,9 +76,10 @@ public sealed class ElementPicker : IDisposable
         if(msg==0x20A){_index=ElementSelection.Cycle(_index,(short)(data.MouseDataValue>>16),_candidates.Length);Application.Current.Dispatcher.BeginInvoke(()=>{if(!_disposed)DrawCurrent(data.Point);});return 1;}
         return CallNextHookEx(_hook,code,w,l);
     }
-    private void DrawCurrent(Native.POINT p){if(_candidates.Length==0)return;var c=_candidates[_index];Draw(c.Bounds);ShowHint(p,$"{c.Label} · {c.Bounds.Width} × {c.Bounds.Height} px · {_index+1}/{_candidates.Length}\nCon lăn ↑ khối cha / ↓ khối con · Click chụp · Kéo chọn vùng · Esc hủy");}
+    private void DrawCurrent(Native.POINT p){if(_candidates.Length==0)return;var c=_candidates[_index];Draw(c.Bounds);ShowHint(p,$"{c.Label} · {c.Bounds.Width} × {c.Bounds.Height} px · {_index+1}/{_candidates.Length}\nGần cạnh/góc trên: chọn khối cha · Con lăn ↑ cha / ↓ con · Click chụp · Kéo chọn vùng · Esc hủy");}
     private void Draw(PixelRect r)
     {
+        foreach(var item in _shades){var part=r.Intersect(item.Display.Bounds);if(part.IsEmpty)item.Shade.Reveal(null);else item.Shade.Reveal(new Rect(item.Window.PointFromScreen(new(part.X,part.Y)),item.Window.PointFromScreen(new(part.Right,part.Bottom))));}
         PixelRect[] lines=[new(r.X,r.Y,r.Width,2),new(r.X,r.Bottom-2,r.Width,2),new(r.X,r.Y,2,r.Height),new(r.Right-2,r.Y,2,r.Height)];
         for(int i=0;i<4;i++){_outlines[i].Show();var b=lines[i];Native.SetWindowPos(new WindowInteropHelper(_outlines[i]).Handle,-1,b.X,b.Y,Math.Max(2,b.Width),Math.Max(2,b.Height),0x10);}
     }
@@ -85,9 +89,9 @@ public sealed class ElementPicker : IDisposable
         int x=Math.Clamp(p.X+22,d.Bounds.X+8,d.Bounds.Right-width-8),y=Math.Clamp(p.Y+28,d.Bounds.Y+8,d.Bounds.Bottom-height-8);
         Native.SetWindowPos(new WindowInteropHelper(_hint).Handle,-1,x,y,width,height,0x10);
     }
-    private void HideOutline(){foreach(var w in _outlines)w.Hide();}
-    private void Finish(PixelRect? rect){if(_done.Task.IsCompleted)return;_done.TrySetResult(rect);Dispose();}
-    public void Dispose(){if(_disposed)return;_disposed=true;_timer.Stop();if(_hook!=0){UnhookWindowsHookEx(_hook);_hook=0;}_cancel.Cancel();_probe.Dispose();foreach(var w in _outlines)w.Close();_outlines.Clear();_hint.Close();}
+    private void HideOutline(){foreach(var w in _outlines)w.Hide();foreach(var item in _shades)item.Shade.Reveal(null);}
+    private void Finish(PixelRect? rect){if(_done.Task.IsCompleted)return;if(rect!=null&&_drag==null&&(!Native.GetWindowRect(_targetWindow,out var current)||current.Pixels!=_windowBounds)){_candidates=[];HideOutline();_lastX=int.MinValue;_label.Text="Cửa sổ đã đổi vị trí. Di chuột để nhận diện lại.";return;}_done.TrySetResult(rect);Dispose();}
+    public void Dispose(){if(_disposed)return;_disposed=true;_timer.Stop();if(_hook!=0){UnhookWindowsHookEx(_hook);_hook=0;}_cancel.Cancel();_probe.Dispose();foreach(var w in _outlines)w.Close();_outlines.Clear();foreach(var item in _shades)item.Window.Close();_shades.Clear();_hint.Close();}
     private delegate nint MouseProc(int code,nint w,nint l);
     [StructLayout(LayoutKind.Sequential)]private struct MouseData {public Native.POINT Point;public uint MouseDataValue,Flags,Time;public nuint Extra;}
     [DllImport("user32.dll",SetLastError=true)]private static extern nint SetWindowsHookEx(int id,MouseProc callback,nint module,uint thread);

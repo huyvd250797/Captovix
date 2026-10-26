@@ -93,7 +93,7 @@ public partial class MainWindow
         var rect=Surface.CropDraft??_session!.Document.Viewport;_syncCrop=true;
         try{CropX.Text=rect.X.ToString(CultureInfo.InvariantCulture);CropY.Text=rect.Y.ToString(CultureInfo.InvariantCulture);CropWidth.Text=rect.Width.ToString(CultureInfo.InvariantCulture);CropHeight.Text=rect.Height.ToString(CultureInfo.InvariantCulture);}
         finally{_syncCrop=false;}
-        CropHint.Text=Surface.CropDraft==null?"Kéo trên ảnh hoặc nhập vùng rồi bấm Xem vùng.":$"Đang chọn {rect.Width} × {rect.Height} px. Áp dụng để hoàn tất.";
+        CropHint.Text=Surface.CropDraft==null?"Kéo tay nắm để chọn vùng. Enter hoặc Áp dụng để cắt.":$"Đang chọn {rect.Width} × {rect.Height} px. Áp dụng để hoàn tất.";
     }
     private bool PreviewCropFields()
     {
@@ -110,6 +110,6 @@ public partial class MainWindow
     private void RestartCrop_Click(object sender,RoutedEventArgs e){Surface.StartCrop();Surface.Focus();}
     private void CropField_KeyDown(object sender,KeyEventArgs e)
     {
-        if(e.Key!=Key.Enter)return;if(Keyboard.Modifiers.HasFlag(ModifierKeys.Control))ApplyCropFromFields();else PreviewCropFields();e.Handled=true;
+        if(e.Key!=Key.Enter)return;ApplyCropFromFields();e.Handled=true;
     }
 }

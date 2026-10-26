@@ -41,7 +41,7 @@ public partial class MainWindow
         try{
             var id=_inlineId;var text=InlineText.Text;_inlineId=null;_imeComposing=false;InlineText.Visibility=Visibility.Collapsed;
             if(commit&&_session is {} session&&session.Document.Annotations.Any(a=>a.Id==id)){
-                session.Commit();session.Change(d=>{var target=d.Annotations.First(a=>a.Id==id);target.Text=text;EditorRenderer.FitText(target,d.Viewport);});
+                session.Commit();session.Change(d=>{var target=d.Annotations.First(a=>a.Id==id);target.Text=text;EditorRenderer.FitText(target,CanvasEditing.SourceBounds(d.Viewport,d.Appearance));});
             }
             Surface.InvalidateVisual();SyncProperties();if(_session?.Dirty==true){_saveTimer.Stop();_saveTimer.Start();}
         }finally{_endingInline=false;}

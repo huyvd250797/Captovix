@@ -1,0 +1,32 @@
+{
+  "Version": "1.20.0",
+  "Host": "Ubuntu 24.04.3 LTS",
+  "Runtime": ".NET 10.0.0",
+  "Scope": "Pure native-pixel copy algorithm; not Windows WPF/GPU/capture or end-to-end memory acceptance",
+  "Results": [
+    {
+      "Width": 3840,
+      "Height": 2160,
+      "Passes": 3,
+      "Milliseconds": [
+        14.8263,
+        12.53,
+        12.6162
+      ],
+      "ExactPixels": true,
+      "AllocatedBytes": 99486424
+    },
+    {
+      "Width": 7680,
+      "Height": 4320,
+      "Passes": 3,
+      "Milliseconds": [
+        59.8294,
+        58.5262,
+        60.3874
+      ],
+      "ExactPixels": true,
+      "AllocatedBytes": 398133952
+    }
+  ]
+}

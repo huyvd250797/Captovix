@@ -9,7 +9,7 @@ foreach(int version in new[]{1,2,3,4}){
  Check(old.Version==12&&a.Id==id&&a.X1==20&&a.X2==151&&a.Color=="#ABCDEF"&&a.Stroke==6,"Schema "+version+" migrates without moving/restyling existing objects");
  Check(!a.FillEnabled&&a.StrokeEnabled&&a.StrokeOpacity==100&&a.Dash==StrokePattern.Solid,"Legacy outline appearance is retained: "+version);
 }
-var future=Doc();future.Version=13;Reject(()=>future.Validate(1920,1080,"h"),"Future schema is protected");
+var future=Doc();future.Version=14;Reject(()=>future.Validate(1920,1080,"h"),"Future schema is protected");
 foreach(var kind in ShapeStudio.Shapes.Append(AnnotationKind.Line).Append(AnnotationKind.Arrow)){
  var doc=Doc();var a=Styled(kind);doc.Annotations.Add(a);doc.Validate(1920,1080,"h");var json=doc.Serialize();var again=EditorDocument.Deserialize(json);again.Validate(1920,1080,"h");
  Check(again.Serialize()==json,"All shape/style fields survive reopen: "+kind);

@@ -1,1 +1,1 @@
-V1.15.1: 1330 logic/static assertions;11 WPF compile-only;61 updater real-package assertions (52 baseline +9 additional);44 artifact integrity checks. Approved EXE icon:9 sizes match source. Windows runtime/install/update pending. Installer unsigned. No automatic publishing.
+V1.20.0:1501 logic/static assertions;16 WPF compile-only;native pixel-copy4K/8K Linux benchmark exact;61 real-package updater checks plus artifact/feed/ZIP/PE audit required. Windows UI/render/capture/DPI/profile/install/update acceptance pending; no automatic publishing.

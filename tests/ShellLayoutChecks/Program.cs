@@ -17,4 +17,13 @@ foreach(var name in new[]{"CaptureButton","RecordButton"})Check(Named(name).Attr
 Check(Named("MediaList").Attribute("SelectionChanged")?.Value=="Media_Changed"&&Named("MediaList").Attribute("VirtualizingPanel.IsVirtualizing")?.Value=="True","Library preserves selection routing and virtualization");
 Check(Named("RestoreMediaButton").Attribute("Content")?.Value=="↶","Restore action is an icon at library footer");
 Check(doc.Descendants().Where(e=>e.Attribute(x+"Name")!=null).Select(e=>e.Attribute(x+"Name")!.Value).Distinct().Count()==doc.Descendants().Count(e=>e.Attribute(x+"Name")!=null),"Named WPF controls are unique across editor and modal modules");
+Check(Named("MediaList").Attribute("SelectionMode")?.Value=="Extended","Native Ctrl/Shift multi-selection enabled");
+Check(Named("TileStar").Attribute("Visibility")?.Value=="Hidden"&&Named("TileDelete").Attribute("Visibility")?.Value=="Hidden","Tile actions hidden by default");
+Check(Named("TileRoot").Parent!.Descendants(w+"Trigger").Any(e=>e.Attribute("Property")?.Value=="IsMouseOver"),"Tile actions reveal on hover");
+Check(Named("CalloutOptions").Ancestors().Contains(Named("VisualStudioPanel")),"Callout shape gallery follows color in common visual panel");
+Check(!Named("ObjectShadowPanel").Ancestors().Contains(Named("VisualStudioPanel"))&&Named("ObjectShadowPanel").ElementsBeforeSelf().Contains(Named("ShapeStudioPanel")),"Shadow follows shared shape/detail properties");
+var themes=XDocument.Load(Path.Combine(root.FullName,"src/Captovix/Themes.xaml"));var track=themes.Descendants(w+"Track").Single(e=>e.Attribute(x+"Name")?.Value=="PART_Track");Check(track.Attribute("Value")?.Value.Contains("Mode=TwoWay")==true&&track.Attribute("ViewportSize")!=null,"Scrollbar track explicitly synchronizes value and viewport");
+Check(Named("LibraryFooterRow").Name==w+"StackPanel"&&Named("LibraryFooterRow").Attribute("Orientation")?.Value=="Horizontal"&&Named("LibraryFooterRow").Elements(w+"Button").Count()==4,"Library footer stays one compact row with four actions");
+Check(Named("RestoreMediaButton").Ancestors().Contains(Named("LibraryMorePopup"))&&Named("BatchButton").Ancestors().Contains(Named("LibraryMorePopup")),"Secondary footer commands are available in overflow popup");
+Check(doc.Descendants(w+"MenuItem").Any(e=>e.Attribute("Click")?.Value=="ExtendCanvas_Click"),"Canvas extension has a discoverable menu command");
 Console.WriteLine($"{n} shell layout structure checks passed; rendering still requires Windows.");

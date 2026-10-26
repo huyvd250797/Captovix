@@ -14,7 +14,7 @@ public static class UpdateBackup
         {
             using (var zip = ZipFile.Open(temp, ZipArchiveMode.Create))
             {
-                foreach (var name in new[] { "library.json", "settings.json", "update-settings.json", "editor-resume.json", "annotation-presets.json", "capture-workflow.json", "style-favorites.json", "editor-layout.json" })
+                foreach (var name in new[] { "library.json", "settings.json", "update-settings.json", "editor-resume.json", "annotation-presets.json", "capture-workflow.json", "style-favorites.json", "tool-stars.json", "tool-order.json", "batch-export.json", "editor-layout.json", "media-location.json", "recent-capture-regions.json" })
                 {
                     var source = Path.Combine(root, name);
                     if (File.Exists(source)) zip.CreateEntryFromFile(source, name);
@@ -22,7 +22,7 @@ public static class UpdateBackup
                 var appearance=Path.Combine(root,"appearance-settings.json");if(File.Exists(appearance))zip.CreateEntryFromFile(appearance,"appearance-settings.json");
                 var edits = Path.Combine(root, "Edits");
                 if (Directory.Exists(edits))
-                    foreach (var source in Directory.EnumerateFiles(edits, "*.json", SearchOption.TopDirectoryOnly))
+                    foreach (var source in Directory.EnumerateFiles(edits, "*", SearchOption.TopDirectoryOnly).Where(p=>p.EndsWith(".json",StringComparison.OrdinalIgnoreCase)||p.EndsWith(".lastgood.bak",StringComparison.OrdinalIgnoreCase)))
                     {
                         if ((File.GetAttributes(source) & FileAttributes.ReparsePoint) != 0) throw new IOException("Không sao lưu liên kết ngoài thư mục dữ liệu.");
                         zip.CreateEntryFromFile(source, "Edits/" + Path.GetFileName(source));

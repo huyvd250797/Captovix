@@ -12,7 +12,8 @@ public partial class MainWindow
     private void InitializeBrand()
     {
         SourceInitialized+=(_,_)=>{
-            var file=Path.Combine(AppContext.BaseDirectory,"Assets","Captovix-brand-v114.ico");
+            WindowTheme.Apply(this);
+            var file=Path.Combine(AppContext.BaseDirectory,"Assets","Captovix-brand-v117.ico");
             var hwnd=new WindowInteropHelper(this).Handle;
             _brandSmall=BrandLoadImage(0,file,1,16,16,0x10);
             _brandLarge=BrandLoadImage(0,file,1,32,32,0x10);
@@ -24,7 +25,7 @@ public partial class MainWindow
     private void About_Click(object sender,RoutedEventArgs e)
     {
         var panel=new StackPanel{Margin=new(24)};
-        panel.Children.Add(new Image{Source=new BitmapImage(new Uri("pack://application:,,,/Captovix;component/Assets/Captovix-brand-v114.ico")),Width=64,Height=64,HorizontalAlignment=HorizontalAlignment.Left});
+        panel.Children.Add(new Image{Source=(System.Windows.Media.ImageSource)FindResource("BrandMark"),Width=64,Height=64,HorizontalAlignment=HorizontalAlignment.Left});
         panel.Children.Add(new TextBlock{Text="Captovix · V"+VersionInfo.Current,FontSize=24,Margin=new(0,16,0,10)});
         panel.Children.Add(new TextBlock{Text="Capture + Tools + Visual + eXperience",FontWeight=FontWeights.SemiBold});
         panel.Children.Add(new TextBlock{Text="Bộ công cụ chụp, ghi màn hình và biên tập hình ảnh trực quan.",TextWrapping=TextWrapping.Wrap,Margin=new(0,10,0,12)});

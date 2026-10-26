@@ -21,9 +21,11 @@ public static class RedactionRenderer
         if(right<=left||bottom<=top)return;var rect=new Rect(left,top,right-left,bottom-top);
         if(a.Kind==AnnotationKind.Cover||draft){dc.DrawRectangle(draft?Brushes.DarkSlateGray:EditorRenderer.Ink(a.Color),null,rect);return;}
         var cache=Caches.GetValue(original,_=>new Cache());var key=$"{left},{top},{right},{bottom}|{a.Kind}|{a.EffectSize}|{sampling?.Key}";
+        lock(cache){
         if(cache.Entries.TryGetValue(a.Id,out var existing)&&existing.Key==key){dc.DrawImage(existing.Image,rect);return;}
         if(cache.Entries.Remove(a.Id,out var old))cache.Bytes-=old.Bytes;
         cache.Converted??=original.Format==PixelFormats.Bgra32?original:new FormatConvertedBitmap(original,PixelFormats.Bgra32,null,0);
+        if(cache.Converted.CanFreeze)cache.Converted.Freeze();
         var image=Build(cache.Converted,left,top,right,bottom,a.EffectSize,a.Kind==AnnotationKind.Pixelate,sampling);
         long bytes=(long)(right-left)*(bottom-top)*4;
         if(bytes<=CacheBudget){
@@ -31,7 +33,7 @@ public static class RedactionRenderer
             if(cache.Bytes+bytes>CacheBudget||cache.Entries.Count>=64){cache.Entries.Clear();cache.Bytes=0;}
             cache.Entries[a.Id]=(key,image,bytes);cache.Bytes+=bytes;
         }
-        dc.DrawImage(image,rect);
+        dc.DrawImage(image,rect);}
     }
     public static void Draw(DrawingContext dc,BitmapSource original,Annotation a,bool draft=false,PrivacySampling? sampling=null)
     {

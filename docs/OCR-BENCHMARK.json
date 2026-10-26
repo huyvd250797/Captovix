@@ -1,0 +1,39 @@
+{
+  "engine": "tesseract 5.3.4",
+  "platform": "Linux; not Windows Tesseract 5.2.0 runtime acceptance",
+  "metrics": "NFC + whitespace-collapsed character edit distance; all fixtures psm6; no accuracy guarantee on other images",
+  "cases": [
+    {
+      "fixture": "english",
+      "language": "eng",
+      "characters": 48,
+      "errors": 0,
+      "CER": 0.0,
+      "recognized": "CAPTOVIX OCR TEST 2026\nCapture tools for Windows"
+    },
+    {
+      "fixture": "vietnamese",
+      "language": "vie+eng",
+      "characters": 58,
+      "errors": 0,
+      "CER": 0.0,
+      "recognized": "Chụp màn hình Captovix\nTiếng Việt có dấu: Hà Nội, Đồng Nai"
+    },
+    {
+      "fixture": "small-text",
+      "language": "vie+eng",
+      "characters": 49,
+      "errors": 0,
+      "CER": 0.0,
+      "recognized": "Mã hoạt động: EPU01-2864\nNgày bắt đầu: 26/10/2026"
+    },
+    {
+      "fixture": "dark-ui",
+      "language": "vie+eng",
+      "characters": 51,
+      "errors": 0,
+      "CER": 0.0,
+      "recognized": "Cấu hình chụp màn hình\nNhận dạng văn bản tiếng Việt"
+    }
+  ]
+}

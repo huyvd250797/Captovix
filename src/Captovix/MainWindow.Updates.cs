@@ -12,6 +12,7 @@ public partial class MainWindow
 
     private void InitializeUpdates()
     {
+        Activated+=(_,_)=>{if(_updates!=null)RenderUpdateUi();};
         CurrentVersionLabel.Text = $"Captovix V{VersionInfo.Current}";
         _updateCheckTimer.Tick += async (_, _) => await AutoCheckUpdatesAsync();
         _updateCheckTimer.Start();
@@ -93,9 +94,11 @@ public partial class MainWindow
             UpdateVersionLabel.Text = $"V{release.Version} · Gói đầy đủ {release.Bytes / 1048576d:F1} MB";
             UpdateNotes.Text = release.Notes.Length > 24000 ? release.Notes[..24000] + "\n…" : release.Notes;
         }
-        UpdateFooterButton.Content = stage == UpdateStage.Ready ? "↑ Khởi động lại để cập nhật" :
-            stage == UpdateStage.Available ? $"↑ Có bản V{release?.Version}" : stage == UpdateStage.Downloading ? "↓ Đang tải cập nhật" : "↻ Cập nhật";
+        UpdateFooterButton.Content = AppIcons.Content("Refresh",stage == UpdateStage.Ready ? "Khởi động lại để cập nhật" :
+            stage == UpdateStage.Available ? $"Có bản V{release?.Version}" : stage == UpdateStage.Downloading ? "Đang tải cập nhật" : "Cập nhật");
+        UpdateFooterButton.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty,stage is UpdateStage.Available or UpdateStage.Ready?"Accent":"Surface");UpdateFooterButton.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty,stage is UpdateStage.Available or UpdateStage.Ready?"OnAccent":"Text");
         UpdateCaptureHint.Visibility = _busy && stage == UpdateStage.Ready ? Visibility.Visible : Visibility.Collapsed;
+        QueueUpdateNotice();
         LastUpdateCheckLabel.Text = _updateSettings.LastCheckUtc is {} time ? $"Lần kiểm tra: {time.ToLocalTime():dd/MM/yyyy HH:mm}" : "Chưa kiểm tra lần nào";
     }
 
@@ -133,7 +136,7 @@ public partial class MainWindow
         finally { _updateCancellation.Dispose(); _updateCancellation = null; }
     }
     private void CancelUpdate_Click(object sender, RoutedEventArgs e) => _updateCancellation?.Cancel();
-    private void DeferUpdate_Click(object sender, RoutedEventArgs e) => _updates?.Defer();
+    private void DeferUpdate_Click(object sender, RoutedEventArgs e){var version=_updates?.Release?.Version;if(version!=null)_updatePromptPolicy.Offer(version,true,false);_settingsDialog?.Close();FlyUpdateBadge(null,version);}
     private void ApplyUpdate_Click(object sender, RoutedEventArgs e)
     {
         if (_updates == null) return;

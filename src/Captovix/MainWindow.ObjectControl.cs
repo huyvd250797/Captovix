@@ -78,7 +78,7 @@ public partial class MainWindow
         try{
             bool line=Surface.SelectedIds.Count==1&&Surface.Selected is {} selected&&ShapeStudio.IsLine(selected.Kind);
             double x=ShapeValue(ObjectX,"X",-1000000,1000000),y=ShapeValue(ObjectY,"Y",-1000000,1000000),w=ShapeValue(ObjectWidth,"Rộng",line?0:1,100000),h=ShapeValue(ObjectHeight,"Cao",line?0:1,100000),angle=ShapeValue(ObjectAngle,"Góc",-360,360);
-            var ids=Surface.SelectedIds.ToArray();EndInlineText(true);_session.Commit();_session.Change(d=>{ObjectControl.ApplyFrame(d,ids,x,y,w,h,angle,EditorRenderer.LocalBox);foreach(var target in d.Annotations.Where(a=>ids.Contains(a.Id)))EditorRenderer.FitText(target,d.Viewport);d.Validate(d.OriginalWidth,d.OriginalHeight,d.SourceHash);});Surface.Refresh();SyncProperties();return true;
+            var ids=Surface.SelectedIds.ToArray();EndInlineText(true);_session.Commit();_session.Change(d=>{ObjectControl.ApplyFrame(d,ids,x,y,w,h,angle,EditorRenderer.LocalBox);foreach(var target in d.Annotations.Where(a=>ids.Contains(a.Id)))EditorRenderer.FitText(target,CanvasEditing.SourceBounds(d.Viewport,d.Appearance));d.Validate(d.OriginalWidth,d.OriginalHeight,d.SourceHash);});Surface.Refresh();SyncProperties();return true;
         }catch(Exception ex){Surface.Refresh();SyncProperties();ObjectFrameError.Text=ex.Message;return false;}
     }
     private void ApplyObjectFrame_Click(object sender,RoutedEventArgs e)=>ApplyObjectFrame();

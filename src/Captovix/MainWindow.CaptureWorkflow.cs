@@ -130,7 +130,7 @@ public partial class MainWindow
         foreach(var action in Enum.GetValues<PhotoAction>())Add(ActionName(action),()=>_=CaptureAsync(false,action),!_busy&&!_updateApplying);
         var presets=new MenuItem{Header="Preset chụp",IsEnabled=!_busy&&!_updateApplying};foreach(var preset in _workflow.Presets){var item=new MenuItem{Header=preset.Name};item.Click+=(_,_)=>{menu.IsOpen=false;Dispatcher.BeginInvoke(()=>{try{ApplyPreset(preset);_=CaptureAsync(false);}catch(Exception e){_tray?.Notify(e.Message);}});};presets.Items.Add(item);}menu.Items.Add(presets);
         if(_busy)Add(_fidelityProcess!=null?"Hủy kiểm chứng SDR":_recordingActive?"Dừng và lưu video":"Hủy phiên chụp",CancelCapture);
-        menu.Items.Add(new Separator());Add("Thoát Captovix",RequestExit);_tray?.Foreground();menu.IsOpen=true;
+        menu.Items.Add(new Separator());Add("Thoát Captovix",RequestExit);AppMenus.Decorate(menu);_tray?.Foreground();menu.IsOpen=true;
     }
     private IReadOnlyList<WorkflowDisplay> WorkflowDisplays()=>_displays.Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity)).ToArray();
 }

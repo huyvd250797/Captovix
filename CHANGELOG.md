@@ -1,3 +1,50 @@
+# V1.20.0 — Image Release & Performance
+
+- Caption/functional icons/gallery nhỏ gọn; footer1hàng và overflow.
+- Thư viện cây năm→12tháng→đúng ngày→media, nạp nhánh/ngày theo nhu cầu, giữ multi-selection và50recent.
+- Nới canvas160/cạnh có Undo, annotate/edit/export ngoài bitmap; opt-in mới dùng schema13, project cũ schema12 giữ clipping. Không tự resize nguồn.
+- LRU thumbnail16MiB/128,2decodeworker; PNG256MiB; sampling cache thread-local, redaction cache lock/freeze; ring render64 và báo cáo cache/RAM/history.
+- Last-good sidecar có validation/fallback, backup/trash kèm recovery; limit140MB, giữ file lỗi và chặn schema14.
+- Pixel-copy4K/8K đo trên Linux; chưa Windows runtime/render/profile/peak RAM/tile engine. Checklist IMAGE-RELEASE-PERFORMANCE.md.
+
+# V1.19.0 — Batch Export & Documentation
+
+- PNG/JPEG/PDF hàng loạt, preset/naming/preview/watermark/queue/Cancel/Retry/CSV; commit không ghi đè; PDF FlateRGB lossless/A4.
+- Thanh gần đây tối đa50, lịch sử tổng nhóm ngày/tháng/năm/phân trang100mục; giữ toàn bộ metadata/file.
+- Ctrl/Shift chọn nhiều, modal xóa theo theme và receipt/khôi phục nhóm; tile-action hover/focus; sửa composition-drag bắt scrollbar.
+- Icon bo mềm; drag reorder và cấu hình thứ tự công cụ theo máy; chuẩn thứ tự thuộc tính; mẫu bounds thật, không clip Step/callout.
+- Scroll preview ẩn guide mặc định, chỉ hiện mối nối chọn khi bật. Guide không thuộc bitmap; không đổi thuật toán overlap.
+- Giữ schema12/scroll2/branding/stable update/install arguments; thêm tool-order và batch-export vào backup metadata.
+- WebP, PDF OCR text layer và tối ưu ảnh100MP chưa triển khai. Windows desktop acceptance còn chờ; xem docs/BATCH-EXPORT-DOCUMENTATION.md.
+
+# V1.18.0 — Image Library & Projects
+
+- Thêm tag, bộ sưu tập logic, favorite, bộ lọc; backup/import .cvlibrary có media gốc và sidecar/embedded layers; hash, giới hạn, staging, mã mới và rollback.
+- Sidebar/filmstrip kéo đổi kích thước, lưu layout; preview Fit sau kéo; thư viện ngang gọn; Xem ảnh gốc riêng.
+- Gộp OCR/Hỗ trợ; titlebar có X rõ sáng/tối, About dùng artwork lớn; icon vector mảnh.
+- Lưu mẫu mọi công cụ vẽ, bookmark Chọn/Crop/vùng pixel; mẫu ở đầu, bỏ tên dưới preview.
+- Ưu tiên container ở cạnh/góc trên khi chụp element; nút ↓/→ mở scroll session từ vùng chọn.
+- Viền capture mới padding0, sát ngoài ảnh; giữ ảnh cũ. Logo/runtime/setup/updater artwork đã chốt giữ nguyên.
+- Chưa nghiệm thu desktop Windows; xem docs/IMAGE-LIBRARY-PROJECTS.md và VALIDATION.md.
+
+# V1.17.0 — Assisted Image Editing
+
+- Sửa chữ OCR với gợi ý dòng, cỡ/màu, sample nền và preview; tách vùng thành lớp; một Undo; tạo bản ảnh mới khi transform không tương thích. Nền màu phẳng, không có AI inpainting tự động.
+- OCR zoom/pan/lens; popup cập nhật Later/X bay về footer, giữ badge và xác nhận restart riêng.
+- Capture/element overlay đen với cutout trong suốt; nâng UIA descendant selection, container normalization, stale-window detection và timeout helper.
+- Context menu rõ icon/tên/shortcut, controls bo góc/scrollbar/theme; tìm kiếm bằng icon; media folder cho ảnh/video mới, giữ file cũ.
+- Sửa MUI2 ghi đè logo Setup, thêm PE audit wrapper.
+- Asset v117 và refresh shortcut Captovix-owned, AppID thống nhất, branding.log; audit PE app/updater.
+- Giữ schema12 và nền capture PNG/native; chờ Windows runtime/UI/install/update acceptance. Xem ASSISTED-IMAGE-EDITING.md.
+
+# V1.16.0 — OCR & Text Extraction
+
+- Thêm OCR toàn ảnh/vùng với model Việt/Anh đóng gói, worker riêng, Hủy/timeout, sửa/copy/TXT; kiểm hash model; không đọc phần ảnh gốc nằm sau mask.
+- Crop tạo khung toàn ảnh ngay, Enter trong ô nhập cũng áp dụng; khung/tay nắm/numeric/Undo giữ pixel.
+- Titlebar native đồng bộ theme; ảnh mở mặc định100% pixel, giữ mức này sau crop nếu đang dùng. Không sharpen/upscale hoặc sửa nguồn để che blur preview.
+- Không đổi schema12; giữ dữ liệu cũ, nguồn update, installroot và logo.
+- Đã kiểm logic/build/fixture Linux; OCR/UI/titlebar/capture/cài-update Windows còn chờ. Xem VALIDATION.md và OCR-TEXT-EXTRACTION.md.
+
 # Captovix V1.15.1 — Capture Reliability
 
 Đã triển khai trong source: chỉnh thời gian đợi/số nấc cuộn; kiểm tra nguồn trước/sau nhịp, tạm dừng khi thay đổi/che/mất focus; dọn candidate, commit revision trước khi chuyển phiên; sửa kích thước overlap ngang. Dark mode đồng bộ menu, hover, công cụ và nền vùng làm việc. Logo tím gán trực tiếp khi chạy và đường dẫn ICO mới. Thêm Giới thiệu thương hiệu đã chốt. Build/logic đã kiểm; Windows thực tế còn chờ. Xem docs/CAPTURE-RELIABILITY.md.

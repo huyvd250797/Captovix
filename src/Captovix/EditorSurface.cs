@@ -28,6 +28,8 @@ public sealed partial class EditorSurface : FrameworkElement
     public bool ContentPanEnabled {get;set;}
     public bool IsInteracting=>Dragging;
     public ImageLayout? Layout=>Session==null?null:new ImageLayout(Session.Document.Viewport,Session.Document.Appearance);
+    public PixelRect EditingBounds=>Session==null?default:CanvasEditing.SourceBounds(Session.Document.Viewport,Session.Document.Appearance);
+    private bool AllowsOutside=>Session?.Document.Appearance.DrawOutsideImage==true&&Tool is not (EditorTool.Crop or EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso or EditorTool.Blur or EditorTool.Pixelate or EditorTool.Cover or EditorTool.Magnifier or EditorTool.Spotlight);
     private double InteractionScale=>Zoom*(Layout?.ScaleMin??1);
     public PixelRect? CropDraft {get;private set;}
     public event Action? CropDraftChanged;
@@ -102,7 +104,7 @@ public sealed partial class EditorSurface : FrameworkElement
     }
     private Point SourcePoint(MouseEventArgs e)
     {
-        var p=e.GetPosition(this);var v=Session!.Document.Viewport;var source=Layout!.ToSource(p.X/Zoom,p.Y/Zoom);return Tool==EditorTool.Select||_action is DragAction.None or DragAction.Move or DragAction.Resize or DragAction.Rotate?new(source.X,source.Y):new(Math.Clamp(source.X,v.X,v.Right),Math.Clamp(source.Y,v.Y,v.Bottom));
+        var p=e.GetPosition(this);var v=AllowsOutside?EditingBounds:Session!.Document.Viewport;var source=Layout!.ToSource(p.X/Zoom,p.Y/Zoom);return Tool==EditorTool.Select||_action is DragAction.None or DragAction.Move or DragAction.Resize or DragAction.Rotate?new(source.X,source.Y):new(Math.Clamp(source.X,v.X,v.Right),Math.Clamp(source.Y,v.Y,v.Bottom));
     }
     private Annotation? Hit(Point p,bool cycle=false){
         var hits=ObjectControl.CanvasCandidates(Session!.Document).OrderBy(AnnotationEditing.Tier).Reverse().Where(a=>EditorRenderer.Hit(a,p,5/InteractionScale)).ToArray();
@@ -111,7 +113,7 @@ public sealed partial class EditorSurface : FrameworkElement
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);if(Session==null)return;Focus();
-        var location=e.GetPosition(this);if(!Layout!.ContainsImage(Session.Document.Viewport,location.X/Zoom,location.Y/Zoom)&&!(Tool!=EditorTool.Crop&&!Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)&&HitHandle(SourcePoint(e))>=0)){
+        var location=e.GetPosition(this);if(!(AllowsOutside?Layout!.Canvas.Contains(location.X/Zoom,location.Y/Zoom):Layout!.ContainsImage(Session.Document.Viewport,location.X/Zoom,location.Y/Zoom))&&Hit(SourcePoint(e))==null&&!(Tool==EditorTool.Crop&&CropDraft is {} edge&&HitCropHandle(edge,SourcePoint(e))>=0)&&!(Tool!=EditorTool.Crop&&!Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)&&HitHandle(SourcePoint(e))>=0)){
             if(Tool==EditorTool.Select){_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();}e.Handled=true;return;
         }
         PointerDown(SourcePoint(e),Keyboard.Modifiers,e.ClickCount);e.Handled=true;
@@ -155,7 +157,7 @@ public sealed partial class EditorSurface : FrameworkElement
             if(Tool==EditorTool.Step)a.Number=Session.Document.NextStep();if(Tool is EditorTool.Text or EditorTool.Callout)a.Text="Nhập nội dung";
             if(Tool==EditorTool.Freehand)a.AddPoint(_start.X,_start.Y);
             Session.Document.Annotations.Add(a);_selected.Clear();_selected.Add(a.Id);_primary=_createdId=a.Id;SelectionChanged?.Invoke();
-            if(Tool is EditorTool.Text or EditorTool.Step){EditorRenderer.FitText(a,Session.Document.Viewport);Session.Commit();Refresh();if(Tool==EditorTool.Text)TextRequested?.Invoke();return;}
+            if(Tool is EditorTool.Text or EditorTool.Step){EditorRenderer.FitText(a,EditingBounds);Session.Commit();Refresh();if(Tool==EditorTool.Text)TextRequested?.Invoke();return;}
             _action=DragAction.Create;
         }
         CaptureMouse();InvalidateVisual();
@@ -188,10 +190,10 @@ public sealed partial class EditorSurface : FrameworkElement
             if(shift&&ShapeStudio.IsLine(created.Kind))end=ConstrainArrow(_start,p);
             else if(shift){double side=Math.Min(Math.Abs(p.X-_start.X),Math.Abs(p.Y-_start.Y));end=new(_start.X+Math.Sign(p.X-_start.X)*side,_start.Y+Math.Sign(p.Y-_start.Y)*side);}
             created.X2=end.X;created.Y2=end.Y;if(ShapeStudio.IsLine(created.Kind))EndConnector(created,end);
-            if(created.Kind==AnnotationKind.Callout){var v=Session.Document.Viewport;created.TailX=Math.Clamp(created.Left+created.Width*.2,v.X,v.Right);created.TailY=Math.Clamp(created.Top+created.Height+Math.Clamp(created.Height*.3,20,60),v.Y,v.Bottom);}
+            if(created.Kind==AnnotationKind.Callout){var v=EditingBounds;created.TailX=Math.Clamp(created.Left+created.Width*.2,v.X,v.Right);created.TailY=Math.Clamp(created.Top+created.Height+Math.Clamp(created.Height*.3,20,60),v.Y,v.Bottom);}
         }else if(_action==DragAction.Move){
             double dx=p.X-_start.X,dy=p.Y-_start.Y;
-            var snap=ObjectControl.Snap(_dragBounds,Session.Document.Viewport,_snapPeers,dx,dy,6/InteractionScale,shift,SnapEnabled&&!modifiers.HasFlag(ModifierKeys.Control));
+            var snap=ObjectControl.Snap(_dragBounds,EditingBounds,_snapPeers,dx,dy,6/InteractionScale,shift,SnapEnabled&&!modifiers.HasFlag(ModifierKeys.Control));
             _guideX=snap.GuideX;_guideY=snap.GuideY;
             foreach(var original in _originals){var a=Session.Document.Annotations.First(x=>x.Id==original.Id);ObjectControl.RestoreGeometry(a,original);a.Translate(snap.X,snap.Y);}
         }else if(_action==DragAction.Resize){ResizeObjectSelection(p,shift);}
@@ -201,7 +203,7 @@ public sealed partial class EditorSurface : FrameworkElement
     }
     private Point ConstrainArrow(Point start,Point end)
     {
-        var p=ShapeStudio.ConstrainedEnd(new(start.X,start.Y),new(end.X,end.Y),Session!.Document.Viewport);return new(p.X,p.Y);
+        var p=ShapeStudio.ConstrainedEnd(new(start.X,start.Y),new(end.X,end.Y),EditingBounds);return new(p.X,p.Y);
     }
     private Cursor ResizeCursor(int handle)=>handle==9?Cursors.Hand:handle==8?Cursors.Cross:_selected.Count==1&&Selected?.Kind is AnnotationKind.Arrow or AnnotationKind.Line?Cursors.Cross:HandleCursor(handle);
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
@@ -219,7 +221,7 @@ public sealed partial class EditorSurface : FrameworkElement
             _primary=_selected.LastOrDefault();_draft=null;
         }else{
             var invalid=_createdId!=null&&Selected is {} a&&(a.Kind==AnnotationKind.Freehand?a.Points.Count==0:a.Kind==AnnotationKind.Callout?a.Width<36||a.Height<36:ShapeStudio.IsLine(a.Kind)?Math.Sqrt(a.Width*a.Width+a.Height*a.Height)<2:a.Width<2||a.Height<2);
-            if(invalid){Session.Cancel();_selected.Clear();_primary=null;}else{if(action is DragAction.Create or DragAction.Resize)foreach(var target in Session.Document.Annotations.Where(a=>_selected.Contains(a.Id))){EditorRenderer.FitText(target,Session.Document.Viewport);if(action==DragAction.Create&&target.Kind==AnnotationKind.Callout){var view=Session.Document.Viewport;target.TailX=Math.Clamp(target.Left+target.Width*.25,view.X,view.Right);target.TailY=Math.Clamp(target.Top+target.Height+32,view.Y,view.Bottom);}}Session.Commit();}
+            if(invalid){Session.Cancel();_selected.Clear();_primary=null;}else{if(action is DragAction.Create or DragAction.Resize)foreach(var target in Session.Document.Annotations.Where(a=>_selected.Contains(a.Id))){EditorRenderer.FitText(target,EditingBounds);if(action==DragAction.Create&&target.Kind==AnnotationKind.Callout){var view=EditingBounds;target.TailX=Math.Clamp(target.Left+target.Width*.25,view.X,view.Right);target.TailY=Math.Clamp(target.Top+target.Height+32,view.Y,view.Bottom);}}Session.Commit();}
         }
         _originals=[];Refresh();SelectionChanged?.Invoke();if(action==DragAction.Create&&Selected?.Kind==AnnotationKind.Callout)TextRequested?.Invoke();
     }
@@ -234,7 +236,7 @@ public sealed partial class EditorSurface : FrameworkElement
     private Cursor HandleCursor(int i){var l=Layout;if(l==null)return Cursors.Arrow;double x=i is 0 or 6 or 7?-1:i is 2 or 3 or 4?1:0,y=i is 0 or 1 or 2?-1:i is 4 or 5 or 6?1:0;double angle=Math.Atan2(l.B*x+l.D*y,l.A*x+l.C*y);int axis=((int)Math.Round(angle/(Math.PI/4))+8)%4;return axis switch{0=>Cursors.SizeWE,1=>Cursors.SizeNWSE,2=>Cursors.SizeNS,_=>Cursors.SizeNESW};}
     private static Point[] CropHandles(PixelRect c)=>[new(c.X,c.Y),new(c.X+c.Width/2d,c.Y),new(c.Right,c.Y),new(c.Right,c.Y+c.Height/2d),new(c.Right,c.Bottom),new(c.X+c.Width/2d,c.Bottom),new(c.X,c.Bottom),new(c.X,c.Y+c.Height/2d)];
     private int HitCropHandle(PixelRect crop,Point p){var handles=CropHandles(crop);for(int i=0;i<8;i++)if((handles[i]-p).Length<=10/InteractionScale)return i;return -1;}
-    public void StartCrop(){CancelInteraction();Tool=EditorTool.Crop;CropDraft=null;_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();CropDraftChanged?.Invoke();}
+    public void StartCrop(){CancelInteraction();Tool=EditorTool.Crop;CropDraft=Session?.Document.Viewport;_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();CropDraftChanged?.Invoke();}
     public void ClearCropDraft(){CancelInteraction();CropDraft=null;Refresh();CropDraftChanged?.Invoke();}
     public bool SetCropDraft(PixelRect rect){if(Session==null||Dragging||!CropGeometry.IsValid(rect,Session.Document.Viewport))return false;CropDraft=rect;Refresh();CropDraftChanged?.Invoke();return true;}
     public void NudgeCrop(double dx,double dy){if(Session!=null&&CropDraft is {} rect)SetCropDraft(CropGeometry.Move(rect,dx,dy,Session.Document.Viewport));}
@@ -247,7 +249,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public void DeleteSelected(){if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return;CancelInteraction();var ids=_selected.ToHashSet();Session.Commit();Session.Change(d=>d.Annotations.RemoveAll(a=>ids.Contains(a.Id)));_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();}
     public void Nudge(double x,double y)
     {
-        if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return;var ids=_selected.ToHashSet();var delta=Layout!.SourceDelta(x,y);var move=AnnotationEditing.ClampMove(SelectionBox(),Session.Document.Viewport,delta.X,delta.Y);
+        if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return;var ids=_selected.ToHashSet();var delta=Layout!.SourceDelta(x,y);var move=AnnotationEditing.ClampMove(SelectionBox(),EditingBounds,delta.X,delta.Y);
         Session.Commit();Session.Change(d=>{ConnectorStudio.DetachForTransform(d,ids);foreach(var a in d.Annotations.Where(a=>ids.Contains(a.Id)))a.Translate(move.X,move.Y);});Refresh();SelectionChanged?.Invoke();
     }
 }

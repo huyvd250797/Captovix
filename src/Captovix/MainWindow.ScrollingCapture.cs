@@ -10,16 +10,16 @@ namespace Captovix;
 public partial class MainWindow
 {
     private void ScrollCapture_Click(object sender,RoutedEventArgs e)=>_=ScrollCaptureAsync();
-    private async Task ScrollCaptureAsync()
+    private async Task ScrollCaptureAsync(PixelRect? presetRegion=null,bool horizontal=false)
     {
         if(_busy||_updateApplying||!_captureGate.TryEnter())return;
         var previous=WindowState;ScrollSession? session=null;SetBusy(true);_settingsDialog?.Close();
         try{
             Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();_playing=false;
             _captureCancellation=new();var cancellation=_captureCancellation.Token;RegisterCaptureEscape();RefreshSources();var topology=CaptureWorkflowStore.Topology(WorkflowDisplays());
-            Hide();await Task.Delay(220,cancellation);var region=await RegionPicker.PickAsync(_displays,cancellation);if(region==null)return;
+            Hide();await Task.Delay(220,cancellation);var region=presetRegion??await RegionPicker.PickAsync(_displays,cancellation);if(region==null)return;
             ScrollStitching.OutputHeight(region.Value.Width,region.Value.Height,Array.Empty<int>());
-            session=ScrollSession.Create(region.Value,topology);Show();var options=new ScrollOptionsWindow(session){Owner=this};if(options.ShowDialog()!=true)return;session.Save();Hide();
+            session=ScrollSession.Create(region.Value,topology);session.Horizontal=horizontal;Show();var options=new ScrollOptionsWindow(session){Owner=this};if(options.ShowDialog()!=true)return;session.Save();Hide();
             var controller=new ScrollCaptureController(session,_displays,cancellation);bool finish=await controller.RunAsync();cancellation.ThrowIfCancellationRequested();
             Show();WindowState=previous==WindowState.Minimized?WindowState.Maximized:previous;Activate();ReleaseCaptureEscape();
             if(finish&&session.Count>0){var preview=new ScrollPreviewWindow(session){Owner=this};if(preview.ShowDialog()==true&&preview.Result is {} image)SaveScrollResult(session,image);}
@@ -133,6 +133,7 @@ internal sealed class ScrollPreviewWindow : Window
     private readonly CancellationTokenSource _cancel=new();
     private BitmapSource? _full;
     private bool _rendering,_closing,_updating,_actual,_editing;
+    private bool _showSeam;
     public BitmapSource? Result {get;private set;}
     public ScrollPreviewWindow(ScrollSession session)
     {
@@ -140,7 +141,8 @@ internal sealed class ScrollPreviewWindow : Window
         var layout=new Grid{Margin=new(12)};layout.ColumnDefinitions.Add(new());layout.ColumnDefinitions.Add(new(){Width=new(300)});Content=layout;
         var view=new Grid();view.Children.Add(_image);view.Children.Add(_seams);var scroll=new ScrollViewer{Content=view,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,Background=Brushes.DimGray,Margin=new(0,0,12,0)};layout.Children.Add(scroll);
         var panel=new StackPanel();Grid.SetColumn(panel,1);layout.Children.Add(new ScrollViewer{Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto}.InColumn(1));
-        panel.Children.Add(new TextBlock{Text="Ảnh dài · pixel gốc",FontSize=20,FontWeight=FontWeights.SemiBold});panel.Children.Add(new TextBlock{Text="Đường tím đánh dấu mối nối (không xuất ra ảnh). Kiểm tra chữ và đường nét, tránh thiếu/lặp hàng. Chọn overlap theo pixel nguồn.",TextWrapping=TextWrapping.Wrap,Margin=new(4,10,4,10)});
+        panel.Children.Add(new TextBlock{Text="Ảnh dài · pixel gốc",FontSize=20,FontWeight=FontWeights.SemiBold});panel.Children.Add(new TextBlock{Text="Mặc định xem ảnh sạch. Bật Hiện điểm nối để đánh dấu đường đang kiểm tra; đường hướng dẫn không xuất vào ảnh. Kiểm tra overlap theo pixel nguồn.",TextWrapping=TextWrapping.Wrap,Margin=new(4,10,4,10)});
+        var guides=new CheckBox{Content="Hiện điểm nối đang chọn",IsChecked=false,Margin=new(4,8,4,8)};panel.Children.Add(guides);guides.Checked+=(_,_)=>{_showSeam=true;ShowBitmap(_actual);};guides.Unchecked+=(_,_)=>{_showSeam=false;ShowBitmap(_actual);};
         var remove=new Button{Content="Loại khung sau của điểm nối đang chọn"};panel.Children.Add(remove);remove.Click+=async(_,_)=>{if(_rendering||_editing||_join.SelectedIndex<0)return;int removeIndex=_join.SelectedIndex+1;_editing=true;_save.IsEnabled=false;_join.IsEnabled=false;try{await Task.Run(()=>_session.RemoveFrame(removeIndex));if(_closing)return;_join.ItemsSource=Enumerable.Range(0,_session.Joins.Count).Select(i=>$"Khung {i+1} → {i+2}").ToArray();_join.SelectedIndex=_session.Joins.Count>0?0:-1;await RenderAsync(false);}catch(Exception ex){_message.Text=ex.Message;}finally{_editing=false;_join.IsEnabled=_session.Joins.Count>0;}};
         panel.Children.Add(_join);panel.Children.Add(_pair);panel.Children.Add(new TextBlock{Text="Overlap · số hàng khung sau bị bỏ"});panel.Children.Add(_overlap);panel.Children.Add(_confirm);
         var apply=new Button{Content="Cập nhật điểm nối & xem lại"};panel.Children.Add(apply);panel.Children.Add(_message);panel.Children.Add(_save);var folder=new Button{Content="Mở thư mục khung nguồn"};panel.Children.Add(folder);folder.Click+=(_,_)=>System.Diagnostics.Process.Start("explorer.exe",_session.Folder);
@@ -153,7 +155,7 @@ internal sealed class ScrollPreviewWindow : Window
         _save.Click+=(_,_)=>{if(_rendering||_editing||_full==null)return;Result=_full;DialogResult=true;};
         Loaded+=async(_,_)=>await RenderAsync(false);DpiChanged+=(_,_)=>ShowBitmap(_actual);Closed+=(_,_)=>{_closing=true;_cancel.Cancel();};
     }
-    private void SelectJoin(){int i=_join.SelectedIndex;if(i<0)return;_updating=true;_overlap.Text=_session.Joins[i].Overlap.ToString();_confirm.IsChecked=_session.Joins[i].Confirmed;_updating=false;_pair.Children.Clear();foreach(int frame in new[]{i,i+1})_pair.Children.Add(new Image{Source=MediaStore.LoadImage(_session.FramePath(frame),260),MaxHeight=150,Stretch=Stretch.Uniform,Margin=new(4)});_message.Text=_session.Joins[i].Message;}
+    private void SelectJoin(){int i=_join.SelectedIndex;if(i<0)return;_updating=true;_overlap.Text=_session.Joins[i].Overlap.ToString();_confirm.IsChecked=_session.Joins[i].Confirmed;_updating=false;_pair.Children.Clear();foreach(int frame in new[]{i,i+1})_pair.Children.Add(new Image{Source=MediaStore.LoadImage(_session.FramePath(frame),260),MaxHeight=150,Stretch=Stretch.Uniform,Margin=new(4)});_message.Text=_session.Joins[i].Message;ShowBitmap(_actual);}
     private async Task RenderAsync(bool actual)
     {
         if(_rendering)return;_rendering=true;_save.IsEnabled=false;_join.IsEnabled=false;_overlap.IsEnabled=false;_confirm.IsEnabled=false;_message.Text="Đang ghép hàng pixel…";
@@ -164,7 +166,7 @@ internal sealed class ScrollPreviewWindow : Window
     private void ShowBitmap(bool actual)
     {
         _actual=actual;if(_full==null)return;double width=actual?_full.PixelWidth/VisualTreeHelper.GetDpi(this).DpiScaleX:Math.Min(_full.PixelWidth,Math.Max(200,Width-360));double scale=width/_full.PixelWidth;_image.Source=_full;_image.Width=width;_image.Height=_full.PixelHeight*scale;_seams.Width=width;_seams.Height=_image.Height;_seams.Children.Clear();int y=_session.WorkHeight+(_session.KeepHeader?_session.Header:0);
-        foreach(var join in _session.Joins){var line=new System.Windows.Shapes.Line{X1=_session.Horizontal?y*scale:0,X2=_session.Horizontal?y*scale:width,Y1=_session.Horizontal?0:y*scale,Y2=_session.Horizontal?_image.Height:y*scale,Stroke=Brushes.MediumPurple,StrokeThickness=2};_seams.Children.Add(line);y+=_session.WorkHeight-join.Overlap;}
+        int seamIndex=0;foreach(var join in _session.Joins){if(_showSeam&&seamIndex==_join.SelectedIndex){var line=new System.Windows.Shapes.Line{X1=_session.Horizontal?y*scale:0,X2=_session.Horizontal?y*scale:width,Y1=_session.Horizontal?0:y*scale,Y2=_session.Horizontal?_image.Height:y*scale,Stroke=Brushes.MediumPurple,StrokeThickness=2};_seams.Children.Add(line);}seamIndex++;y+=_session.WorkHeight-join.Overlap;}
     }
 }
 internal static class ScrollLayoutExtensions { public static T InColumn<T>(this T element,int column) where T:FrameworkElement {Grid.SetColumn(element,column);return element;} }

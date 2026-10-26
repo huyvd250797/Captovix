@@ -9,7 +9,7 @@ public sealed class ElementProbeClient(string? executable=null,IReadOnlyList<str
     {
         try{
             if(_process==null||_process.HasExited){Dispose();var start=new ProcessStartInfo(executable??Environment.ProcessPath!){UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true};foreach(var arg in arguments??new[]{"--element-probe"})start.ArgumentList.Add(arg);_process=Process.Start(start)??throw new IOException("Không mở được bộ nhận diện phần tử.");}
-            using var timeout=CancellationTokenSource.CreateLinkedTokenSource(cancellation);timeout.CancelAfter(900);
+            using var timeout=CancellationTokenSource.CreateLinkedTokenSource(cancellation);timeout.CancelAfter(1200);
             await _process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(query).AsMemory(),timeout.Token);await _process.StandardInput.FlushAsync(timeout.Token);
             var line=await _process.StandardOutput.ReadLineAsync().WaitAsync(timeout.Token);return line==null?[]:JsonSerializer.Deserialize<ElementCandidate[]>(line)??[];
         }catch(Exception e)when(e is OperationCanceledException or IOException or InvalidOperationException or JsonException or ObjectDisposedException or System.ComponentModel.Win32Exception){Dispose();return [];}

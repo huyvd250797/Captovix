@@ -21,7 +21,7 @@ public sealed class CaptureTray : IDisposable
     public bool Ready{get;private set;}
     public CaptureTray(nint hwnd)
     {
-        _hwnd=hwnd;try{_icon=LoadImage(0,System.IO.Path.Combine(AppContext.BaseDirectory,"Assets","Captovix-brand-v114.ico"),1,32,32,0x10);_owned=_icon!=0;if(_icon==0&&ExtractIconEx(Environment.ProcessPath!,0,out var large,out var small,1)>0){_icon=small!=0?small:large;_owned=true;if(large!=0&&large!=_icon)DestroyIcon(large);}}catch{}
+        _hwnd=hwnd;try{_icon=LoadImage(0,System.IO.Path.Combine(AppContext.BaseDirectory,"Assets","Captovix-brand-v117.ico"),1,32,32,0x10);_owned=_icon!=0;if(_icon==0&&ExtractIconEx(Environment.ProcessPath!,0,out var large,out var small,1)>0){_icon=small!=0?small:large;_owned=true;if(large!=0&&large!=_icon)DestroyIcon(large);}}catch{}
         if(_icon==0)_icon=LoadIcon(0,(nint)32512);
         _data=new(){Size=(uint)Marshal.SizeOf<NotifyData>(),Window=hwnd,Id=1,Flags=1|2|4|128,Callback=Callback,Icon=_icon,Tip="Captovix · Chụp ảnh / Mở Editor",Info="",InfoTitle=""};Add();
     }

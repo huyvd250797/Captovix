@@ -12,8 +12,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
-    <ApplicationIcon>Assets/Captovix-brand-v114.ico</ApplicationIcon>
-    <Version>1.15.1</Version>
+    <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
+    <Version>1.20.0</Version>
     <StartupObject>Captovix.Program</StartupObject>
     <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
     <PublishTrimmed>false</PublishTrimmed>
@@ -21,12 +21,18 @@
     <Copyright>© 2026 HuyVo. All rights reserved.</Copyright>
   </PropertyGroup>
   <ItemGroup>
-    <Resource Include="Assets/Captovix-brand-v114.ico" />
-    <Content Include="Assets/Captovix-brand-v114.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Resource Include="Assets/Captovix-brand-v117.ico" />
+    <Content Include="Assets/Captovix-brand-v117.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets/Captovix-mark.png" />
     <Resource Include="Assets/Captovix-mark-light.png" />
+    <Content Include="tessdata/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="Tesseract" Version="5.2.0" GeneratePathProperty="true" />
     <PackageReference Include="ScreenRecorderLib" Version="7.0.1" />
     <PackageReference Include="Velopack" Version="1.2.161" />
     <None Update="update-source.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <Target Name="PublishOcrNative" AfterTargets="Publish">
+    <Copy SourceFiles="$(PkgTesseract)/x64/tesseract50.dll;$(PkgTesseract)/x64/leptonica-1.82.0.dll" DestinationFolder="$(PublishDir)x64" />
+    <RemoveDir Directories="$(PublishDir)x86" />
+  </Target>
 </Project>

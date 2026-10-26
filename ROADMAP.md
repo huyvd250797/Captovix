@@ -1,183 +1,21 @@
-# Captovix V1.15.1 — Capture Reliability
-
-Đã triển khai trong source: chỉnh thời gian đợi/số nấc cuộn; kiểm tra nguồn trước/sau nhịp, tạm dừng khi thay đổi/che/mất focus; dọn candidate, commit revision trước khi chuyển phiên; sửa kích thước overlap ngang. Dark mode đồng bộ menu, hover, công cụ và nền vùng làm việc. Logo tím gán trực tiếp khi chạy và đường dẫn ICO mới. Thêm Giới thiệu thương hiệu đã chốt. Build/logic đã kiểm; Windows thực tế còn chờ. Xem docs/CAPTURE-RELIABILITY.md.
-
-**Bản tiếp theo V1.16 — OCR & Text Extraction:** nhận chữ theo vùng hoặc toàn ảnh, copy Unicode, hỗ trợ/đánh giá tiếng Việt và Anh; lựa chọn engine và dữ liệu ngôn ngữ, thông báo lỗi khi thiếu bộ nhận dạng. OCR chưa được triển khai. Phần dưới là lịch sử các bản trước.
-
-# Captovix V1.15.0 — Advanced Capture & Stitching
-
-Đã triển khai trong source toàn bộ nhóm V1.15 Boss chọn: tự cuộn dọc/ngang, pause/resume/dừng khi không có nội dung mới; header/footer cố định; xem hai khung và loại khung lỗi; vùng cố định/gần đây, client hiển thị và menu hẹn giờ. Chưa nghiệm thu trên Windows thật. Hướng dẫn chi tiết: docs/ADVANCED-CAPTURE.md.
-
-V1.15.1 dự kiến: củng cố khả năng cuộn theo từng app sau nghiệm thu, chỉnh tốc độ/thời gian chờ và cải thiện điểm nối. Nội dung bên dưới là lịch sử nền1.14; ưu tiên hướng dẫn1.15 bên trên.
-
-# Captovix V1.14.0 — Scrolling Capture Foundation
-
-Ứng dụng Windows x64, C#/.NET 10 WPF, một Editor mở phóng to. Bàn giao đúng hai ZIP: Update-Packages (có setup) và Source. Chưa đăng Release/GitHub. Quay màn hình giữ chức năng hiện có; phát triển chuyên sâu về ảnh.
-
-## Nội dung mới
-
-- Menu **Bố cục**: tạo canvas, thêm nhiều ảnh, sắp xếp theo mẫu trực quan, đổi chỗ hai ảnh; tiêu đề, caption và ghi chú cuối là đối tượng chữ sửa được.
-- Từng ảnh là lớp riêng: Fit/Fill giữ tỷ lệ, kéo nội dung ảnh trong ô, đổi vị trí bằng thanh trượt, cắt theo pixel nguồn, thay ảnh, viền/bo góc/bóng. Ảnh nguồn nhúng trong tài liệu.
-- `.cvtemplate`: lưu bố cục và đối tượng vector, bỏ ảnh công việc và thay chữ bằng placeholder. `.cvproject`: một gói ZIP chứa ảnh gốc và tài liệu với đủ lớp ảnh; mở độc lập file nguồn ngoài máy.
-- Callout mới có đệm 30 px, tự mở rộng chiều ngang hợp lý, giới hạn chiều cao theo canvas và clip chữ trong vùng nội dung. Mẫu preview dùng chữ/đệm/cỡ mẫu riêng; dữ liệu yêu thích giữ nguyên style thực tế.
-- Màu chữ có palette và hộp chọn màu Windows. Ctrl+B/I/U cho đậm/nghiêng/gạch chân cả đối tượng, cả khi nhập inline; chưa có rich text từng từ.
-- Icon vector thống nhất cho công cụ/chụp/quay/copy/xuất/thư viện/layers; chụp teal, quay đỏ dịu. Phím tắt và chụp/quay là hai module riêng. Ẩn cấu hình và địa chỉ nguồn cập nhật; trình bày thuộc tính theo công cụ trước, layers/hình học/toàn ảnh sau.
-- Bỏ nút và phím P tạo Pixel hóa; giữ render dữ liệu Pixelate cũ. Vùng pixel chữ nhật/ellipse/lasso vẫn dùng để cắt/copy/tô/xóa pixel ảnh nền.
-
-Hướng dẫn: [IMAGE-COMPOSITION-TEMPLATES.md](docs/IMAGE-COMPOSITION-TEMPLATES.md). Bản này build và kiểm tra logic trên Linux; WPF chỉ cross-build. Chưa chạy giao diện, clipboard, hộp chọn màu native, capture/DPI, cài đặt hoặc update trên Windows thật.
-
-## Bản tiếp theo
-
-**V1.14 — Scrolling Capture Foundation:** đã triển khai trong source: chọn vùng/cuộn xuống thủ công, thu khung, matching overlap, kiểm tra/sửa điểm nối và khôi phục từ PNG/manifest/hash. Kèm logo đã chốt và màu giao diện + Light/Dark/System lưu riêng máy. Cross-build/logic không thay thế nghiệm thu Windows thật. Xem docs/SCROLLING-CAPTURE-APPEARANCE.md.
-
-
-# V1.12.0 — Selection & Pixel Editing
-
-Đã triển khai trong source: Editor/menu/modal mới, thư viện dọc/ngang, gộp công cụ; gallery10 callout và đuôi tự do; vùng chữ nhật/ellipse/lasso, copy/cắt/tô/xóa nền, dán lớp ảnh, Undo/Redo và lưu sidecar. Logic/build kiểm tra tại môi trường Linux; UI/cài đặt/input/render chỉ đạt sau nghiệm thu Windows. Xem docs/SELECTION-PIXEL-EDITOR.md về giới hạn phạm vi.
-
-**Mốc V1.13 đã triển khai trong source (23/10/2026):** thêm ảnh bằng mở/kéo thả, bố cục ảnh2/3/4 ô, căn và giãn khoảng cách, header/caption, lưu template và gói tài nguyên dự án. Tận dụng ImageLayer V1.12; xem docs/IMAGE-COMPOSITION-TEMPLATES.md. Chờ nghiệm thu Windows. Video tiếp tục sau nhánh ảnh.
-
-# V1.11.1 — Update Reliability
-
-Đã triển khai trong source: nguồn stable/hiện version nguồn/lỗi rõ ràng, xóa nội dung có Trash, điều khiển wheel mới, viền chụp, live properties, palette trong suốt, gallery có sao và bóng 9 hướng. Kết quả kiểm chứng và giới hạn Windows xem docs/VALIDATION.md.
-
-**Tiếp theo V1.12 — Selection & Pixel Editing:** chọn vùng chữ nhật/ellipse/lasso; cắt/copy/paste vùng ảnh thành lớp ảnh có thể di chuyển; tô màu, xóa vùng, Undo/Redo; giữ pixel gốc và phân biệt chọn vùng pixel với chọn đối tượng. Các mốc dài hạn bên dưới vẫn là kế hoạch. Video tiếp tục sau nhánh ảnh.
-
-# V1.11.0 — Focus & Privacy
-
-Đã triển khai kính 1.25–8×, spotlight hợp vùng, highlight opacity/hình vùng, mask ellipse/rotate và protected sampling theo tile, 5 preset, review trước chia sẻ. Schema 9 đọc 1–8, backup .pre-v1.11.bak. Logic/build đã kiểm tra trên Linux; kết quả render/input/cài đặt phải nghiệm thu Windows theo docs/FOCUS-PRIVACY.md.
-
-# V1.10.0 — Text & Callout Studio
-
-Đã triển khai typography, năm dạng callout, ba dạng bước, preset chữ, clipboard đối tượng, bỏ nền ngay và chọn/kéo đối tượng từ công cụ vẽ. Schema 8 đọc 1–7; backup .pre-v1.10.bak. Logic/build được kiểm tra trên Linux; thao tác WPF/IME/clipboard/cài đặt chờ nghiệm thu Windows theo docs/TEXT-CALLOUT-STUDIO.md.
-
-# V1.9.0 — Triển khai Arrows & Connectors
-
-22/10/2026: đã triển khai route/control/anchor, hotkey OEM và chụp phần tử UIA; chuyển các lệnh sắp xếp sang context menu. Logic/build được kiểm tra trên Linux, chờ nghiệm thu Windows thật theo docs/ARROWS-CAPTURE-WORKFLOW.md. Gấp khúc một trục và cong một control; không có auto-routing tránh vật cản. Element capture phụ thuộc provider, có window/manual fallback.
-
-## V1.8.1 — Startup Recovery (22/10/2026)
-
-Sửa NullReferenceException tại SyncProperties khi ComboBox phát SelectionChanged trong InitializeComponent. Callback chỉ chạy sau khi hoàn tất dựng XAML và nối các thành phần Editor; chặn đồng bộ lồng nhau. Giữ schema 6, ảnh gốc, sidecar, preset, URL update và đường dẫn cài.
-
-Build và kiểm tra trên Linux; bộ kiểm tra WPF được cross-build, chưa thực thi Windows. Bộ hồi quy Windows gồm khởi tạo MainWindow thật, callback trước trạng thái sẵn sàng và đổi kiểu sau khởi tạo. Cần kiểm tra mở app trên máy Windows của Boss.
-
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Cập nhật: 22/10/2026. V1.8.0 Object Control & Layers đã triển khai và kiểm tra logic/cross-build; chờ nghiệm thu Windows. Giữ V1.7 shapes, V1.6.1 capture pixel lẻ và V1.5.1 chuyển ảnh. V1.9 đã triển khai và chờ nghiệm thu Windows; V1.10 đã triển khai và chờ nghiệm thu Windows; V1.11 đã triển khai, chờ nghiệm thu Windows; V1.12/V1.13 đã triển khai trong source; V1.14–V1.20 là kế hoạch. Ma trận Windows/capture/DPI/WPF chỉ được đánh dấu đạt sau bằng chứng chạy thật.
-
-## 1. Định hướng mới
-
-Captovix là ứng dụng Windows x64 chụp và biên tập hình ảnh phục vụ tài liệu kỹ thuật, hướng dẫn, ghi nhận lỗi và trao đổi công việc. Một Editor duy nhất chứa thư viện, canvas, nhóm công cụ và thuộc tính theo đối tượng; overlay chỉ phục vụ capture. Mở thủ công mặc định phóng to. Ưu tiên toàn bộ nhánh ảnh; giữ khả năng quay hiện có và hoãn phát triển editor video cho đến sau mốc Image Release.
-
-Thứ tự mới thay roadmap cũ: V1.6 không còn là Library & Export; chuyển thành Image Fidelity. Library chuyển V1.18, Batch Export chuyển V1.19. Các số phiên bản là đề xuất; minor có thể phát hành patch sửa lỗi trước khi sang mốc mới. Không tự hứa ngày hoàn thành hay mức tương đương toàn bộ Snagit.
-
-Tham khảo nhóm tính năng/cách giải quyết công việc của Snagit; Captovix tự thiết kế giao diện, icon, shape, preset, tài nguyên và mã nguồn. Không dùng tên/định dạng dự án của Snagit cho định dạng riêng.
-
-## 2. Tiêu chuẩn chất lượng ảnh
-
-- Capture pixel vật lý của nguồn; màn hình 3840×2160 chụp toàn màn hình SDR có kích thước 3840×2160. Chụp vùng giữ đúng số pixel vùng, kể cả màn hình tọa độ âm và scale Windows khác nhau.
-- Màn hình 1920×1080 không tự có thêm chi tiết thật khi resize lên 3840×2160. Upscale và sharpen là xử lý ảnh riêng, có xem trước và undo; không đặt nhãn chụp 4K cho ảnh phóng lớn từ nguồn nhỏ.
-- PNG lossless làm bản gốc; không dùng thumbnail làm dữ liệu xuất, không tự resize hoặc chuyển JPEG trong pipeline chụp/lưu/copy.
-- Tách độ zoom của canvas, độ scale Windows và độ phân giải file. Có Actual Pixels để kiểm chứng; hình xem vừa khung có thể bị nội suy và không đại diện cho file bị mất chi tiết.
-- Chú thích lưu dưới dạng đối tượng vector có thể sửa; render lại ở kích thước đầu ra, không phóng bitmap preview. Antialias có chủ đích ở cạnh vector không được đánh đồng với lỗi mờ toàn ảnh.
-- Test nền SDR trước. HDR/wide gamut cần test và chính sách tone mapping riêng; không tuyên bố PNG 8-bit khớp tuyệt đối mọi màn hình HDR.
-- DPI in ấn không tạo thêm chi tiết pixel. Với tài liệu dài, có thể xuất nhiều trang/ảnh từng phần thay vì ép ảnh rất dài vào một trang Word.
-
-## 3. Bộ thuộc tính đối tượng mục tiêu
-
-Shape đầu tiên: rectangle, rounded rectangle, ellipse/circle, triangle, diamond, trapezoid, pentagon, hexagon, star, polygon tùy điểm. Nhóm line/arrow có công cụ riêng nhưng dùng chung thuộc tính nét.
-
-Mỗi đối tượng có ID ổn định; hình học/tọa độ theo ảnh gốc, z-order, trạng thái khóa/hiện, màu viền và fill riêng, độ dày, opacity riêng cho nét/nền, solid/dash/dot/dash-dot, góc xoay và các thuộc tính theo loại. Bán kính bo góc và đầu/cuối nét xuất hiện khi loại hình hỗ trợ. Bảng thuộc tính hiển thị mixed value khi nhiều đối tượng khác nhau được chọn.
-
-Khi chọn đối tượng, thay thuộc tính tác động đối tượng đang chọn. Khi không chọn, thuộc tính áp dụng cho lần vẽ tiếp theo. Có thao tác rõ ràng để lưu style thành preset hoặc đặt làm mặc định; không âm thầm đổi mọi đối tượng cũ.
-
-Ví dụ nghiệm thu: vẽ rectangle nền vàng nhạt, viền đỏ nét đứt 3 px → bấm vào đối tượng → kéo vị trí, đổi kích thước, đổi fill sang trong suốt → lưu và mở lại → đối tượng vẫn sửa được, undo/redo chính xác, PNG xuất đúng nét và màu.
-
-## 4. Roadmap tổng thể
-
-V1.6 ở trạng thái ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.7 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.8 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS, V1.9 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.10 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; V1.11 ĐÃ TRIỂN KHAI / CHỜ NGHIỆM THU WINDOWS; các mốc từ V1.12 ở trạng thái DỰ KIẾN. Các nền tảng di chuyển/nhóm/chú thích từ V1.1–V1.5 được kế thừa và cải thiện, không viết lại hoặc xóa chức năng chỉ vì có tên trong mốc mới.
+Hiện tại: **V1.20.0 — Image Release & Performance**, đã xây dựng và kiểm tra logic/build, chờ nghiệm thu Windows. Một Editor native Windows; mở mặc định phóng to. Ưu tiên ảnh, giữ quay màn hình hiện có; editor video chốt riêng sau khi ổn định nhánh ảnh.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật và dữ liệu | Điều kiện hoàn thành | Phụ thuộc/thứ tự |
-|---|---|---|---|---|---|
-| V1.6 — Image Fidelity | Chụp/lưu/xem/xuất rõ đúng nguồn | Pixel-native capture; Actual Pixels; thông tin kích thước; PNG gốc; copy/xuất không resize ngầm | Rà pipeline capture→file→bitmap→viewport→renderer→clipboard; test DPI; fixture pixel SDR | Đúng W×H; PNG không đổi pixel ở vùng không chỉnh trong môi trường SDR xác định; zoom không đổi file | Làm trước mọi mở rộng ảnh |
-| V1.7 — Shapes & Stroke Studio | Nhiều shape với style đầy đủ | 9 hình kín + đường/mũi tên; stroke/fill riêng; trong suốt; độ dày; solid/dash/dot/dash-dot; preset shape | Mở rộng schema annotation, geometry/path, hit testing và renderer; migration giữ file cũ | Chỉnh shape sau vẽ; lưu/mở/undo/export đúng màu, nền, nét và hình | Sau 1.6; kiểm thử transform hiện có |
-| V1.8 — Object Control & Layers | Điều khiển đối tượng chính xác | Kéo/resize/rotate; X/Y/W/H/góc số; multi-select; duplicate/group; snap/căn/chia đều; layer lock/visibility/order | Selection overlay riêng; transform/undo theo gesture; layer panel tích hợp; stable ID | 1 gesture=1 undo; chọn xuyên lớp; khóa không bị kéo nhầm; mở lại giữ nhóm/lớp | Sau schema shape 1.7; nâng các tính năng có sẵn |
-| V1.9 — Arrows, Lines & Connectors | Vẽ hướng dẫn và sơ đồ rõ | Mũi tên thẳng/gấp khúc/cong; một/hai đầu; dạng đầu; nét đứt; connector bám shape | Endpoint/control point model, liên kết theo ID; cập nhật khi di chuyển/nhân bản/undo | Kéo shape thì connector theo; xóa shape xử lý liên kết nhất quán; export không lệch | Dựa object model 1.8 |
-| V1.10 — Text & Callout Studio | Chú thích chữ dễ đọc | Font/style/căn dòng, padding; nhiều callout; chỉnh đuôi; step marker nhiều kiểu; tự đánh số | Text layout/metrics; fallback font; text và shape không flatten khi lưu | Gõ tiếng Việt/IME, đổi zoom/rotate/export không cắt chữ; callout sửa lại được | Sau 1.8–1.9; kế thừa inline text cũ |
-| V1.11 — Focus & Privacy | Nhấn đúng nội dung và che thông tin | Magnifier; spotlight; highlight theo vùng; mask blur/pixel/opaque; preset che | Object-based effect/mask; xác định thứ tự compositing; xử lý tile | Hiệu ứng đúng vị trí sau crop/rotate/resize; bản xuất che kín không chứa bản gốc ẩn | Sau object/render model ổn định; nâng mask cũ |
-| V1.12 — Selection & Pixel Editing · đã triển khai source, chờ Windows | Sửa vùng pixel có kiểm soát | Rectangle/ellipse/lasso; copy vùng hiển thị; cut/fill/erase nền; paste image layer; cut-out hàng/cột để mốc sau | Raster patch/image layer model, selection mask; giữ ảnh gốc; undo pixel có giới hạn bộ nhớ | Cắt/dán vùng không phá nguồn; Undo trong ngân sách bộ nhớ; phân biệt chọn pixel và chọn annotation | Cần layer control 1.8; rủi ro dữ liệu lớn |
-| V1.13 — Image Composition & Templates | Ghép nhiều ảnh thành tài liệu | Kéo thêm ảnh vào canvas; crop/resize từng ảnh; layout 2/3/4 ô; header/caption; template và project offline | Image object tham chiếu asset; layout/preset; đóng gói asset dự án | Mở lại đủ ảnh ghép; layer vẫn sửa được; xuất đúng kích thước | Sau 1.10/1.12 |
-| V1.14 — Scrolling Capture Foundation | Chụp nội dung dài | Người dùng chọn vùng và cuộn một chiều; ghép có overlap; xem trước và sửa điểm nối | Đăng ký/ghép khung, phát hiện trùng, cancellation, giới hạn pixel/bộ nhớ | Trang mẫu không lặp/mất đoạn; báo điểm nối không chắc; lỗi giữ các khung nguồn | Dựa fidelity 1.6; thử nghiệm có phạm vi |
-| V1.15 — Advanced Capture & Stitching | Mở rộng capture sau bản cuộn cơ bản | Cuộn tự động với ứng dụng hỗ trợ; ghép ngang; fixed-region số; window/client/menu capture; con trỏ thành object ở capture hỗ trợ | Từng adapter/capability; resize/animation detection; cursor metadata và overlay riêng | Công bố danh sách hỗ trợ; không ghép sai âm thầm; không lưu HWND lâu dài | Sau 1.14; chia patch/nhánh nếu quá rộng |
-| V1.16 — OCR & Text Extraction | Lấy chữ từ ảnh | OCR vùng chọn; Việt/Anh; copy plain text; giữ dòng; kết quả có thể sửa | Đánh giá OCR engine offline/license/model, chạy nền; ngôn ngữ tải tùy chọn | Bộ mẫu Việt/Anh có báo cáo lỗi/tỷ lệ; hủy được; nguồn ảnh không bị sửa | Sau selection; không hứa đúng 100% |
-| V1.17 — Assisted Image Editing | Hỗ trợ sửa nội dung có sẵn trong ảnh | Sửa text OCR với preview; gợi ý vùng UI để tách/di chuyển; simplify thủ công rồi bán tự động; gợi ý vùng nhạy cảm | Detection/inpainting tách module; confidence và xác nhận; local-first; data contract có version | Mọi thao tác có xem trước/undo; vùng lỗi chỉnh thủ công được; không gửi cloud ngầm | Phụ thuộc OCR 1.16; nghiên cứu khó nhất, phạm vi có thể chia |
-| V1.18 — Image Library & Projects | Quản lý kho ảnh và dự án sửa lại | Tag/folder/collection; lọc/tìm; favorite; bản gốc/bản chỉnh; project bundle; backup/import | Metadata index và migration; bundle ảnh gốc+JSON+asset; thumbnail cache độc lập | Mở lại còn object; chuyển project sang máy khác không mất asset; metadata phục hồi được | Sau mô hình project/composition; nâng thư viện hiện có |
-| V1.19 — Batch Export & Documentation | Xuất ảnh/tài liệu hàng loạt | Rename preview; preset PNG/JPEG/WebP sau kiểm chứng; kích thước/chất lượng; PDF nhiều trang; watermark; xung đột tên | Job queue có cancel/retry; render nền; format capability; không chạm ảnh gốc | Xuất đúng style/mask/chữ, hiển thị kết quả từng file; không ghi đè âm thầm; hủy giữ file hoàn tất | Sau composition/library; PDF ảnh không mặc định có text OCR |
-| V1.20 — Image Release & Performance | Hoàn thiện bộ công cụ ảnh ổn định | Tối ưu ảnh 4K/8K nguồn và ảnh cuộn; cache/tile/history budget; recovery; trợ năng; Windows matrix | Profiling theo máy chuẩn; soak/regression/migration/install-update tests; tài liệu hỗ trợ | Báo cáo RAM/thời gian/lỗi theo kích thước thật; không mất dự án khi lỗi; nghiệm thu máy Windows | Chỉ sau các mốc ảnh được nghiệm thu; rồi mới lập nhánh video |
+| --- | --- | --- | --- | --- | --- |
+| V1.16 — OCR & Text Extraction | Lấy chữ từ ảnh | Toàn ảnh/vùng chọn; Việt/Anh; sửa/copy/TXT; Hủy; Crop có khung/Enter; titlebar theme; mở100%pixel | Tesseract5.2.0 + model đóng gói/hash; worker riêng; snapshot đã render; không đổi schema12 | Logic/build đã kiểm; chờ Windows nhận dạng, hủy, Crop, theme, DPI và cài/update | Đã có từ1.16; được kế thừa |
+| V1.17 — Assisted Image Editing | Sửa nội dung screenshot có kiểm soát | Thay chữ OCR, gợi ý dòng, preview; nền màu phẳng; tách lớp ảnh; zoom/lens; update popup/fly; overlay capture; menu/controls/media folder/icon repair | Snapshot đã render;2đối tượng/1Undo; không đổi schema12; không dùng AI/cloud inpainting | Source/logic/build đã kiểm, chờ Windows. Nền phức tạp/chữ/font tự khôi phục chưa triển khai | Đã kế thừa; vá lỗi thực tế bằng patch khi cần |
+| V1.18 — Image Library & Projects | Quản lý nhiều ảnh/dự án | Tag, collection logic, favorite, tìm/lọc; ảnh gốc/bản chỉnh; .cvlibrary backup/import; sidebar resize; OCR hợp nhất; titlebar, favorite công cụ, element edge/scroll arrows, snug border | Metadata cộng thêm; cache thumbnail; bundle original bytes/sidecar/embedded layers; staging/hash/new IDs/rollback; giữ schema12 | Logic/build đã kiểm; chờ Windows chuyển máy/capture/theme/layout/install-update. Folder vật lý là thư mục media chọn sẵn, collection là nhóm logic; không tự di chuyển media cũ | Đã kế thừa; kiểm thử Windows trước triển khai rộng |
+| V1.19 — Batch Export & Documentation | Xuất hàng loạt/tài liệu, thư viện gọn | PNG/JPEG/PDF A4; preset/name preview/watermark/Cancel/Retry/CSV;50recent/archive nhóm ngày-tháng-năm; multi-delete/modal; scrollbar/hover; reorder/soft icons/common properties/sample bounds; seam guide opt-in | STA tuần tự + atomic no-overwrite; PDF losslessRGB; metadata cũ giữ; schema12/2; preference mới | Logic/build và PDF parser/render độc lập đã kiểm, chờ Windows desktop. Chưa WebP/OCR text layer/PDF>100trang/batch>40MP | Đã kế thừa; sau library/composition |
+| V1.20 — Image Release & Performance | Tối ưu cache/recovery và UX ảnh | Cache budget/nạp thumbnail nền; thread cache; render diagnostics; last-good; cây lịch sử; caption/icon/sample/footer gọn; nới canvas/ngoài ảnh | Cache16/256MiB,2worker; opt-in schema13, cũ12; không reset media; benchmark pixel-copy tổng hợp4K/8K | Logic/build đã kiểm; **chờ Windows profile/UI/install/update nghiệm thu**, chưa tile renderer/peak RAM/HDR | Bản hiện tại; patch trước mở phạm vi tiếp |
+| V1.21 — Canvas & Layout Precision | Chỉnh toàn canvas chính xác | Nới từng cạnh bằng số; crop toàn canvas cả annotation; tùy chọn tự nới mép | Cần chốt transform, export và undo theo canvas; giữ ảnh nguồn | Đề xuất, chưa xây; test pixel/crop/undo và workflow Windows | Sau phản hồi/nghiệm thu1.20 |
+| Nhánh video — chốt riêng | Biên tập video | Chốt riêng cắt video, chú thích, âm thanh và xuất | Kế hoạch riêng theo nguồn lực/nhu cầu | Boss chọn phạm vi trước xây dựng | Sau nhánh ảnh |
 
-## 5. Chi tiết ba phiên bản ưu tiên
+Đã xây dựng trước đó: V1.0–1.5 nền Editor/capture/update/annotation; V1.6 fidelity; V1.7 shape/stroke; V1.8 layers; V1.9 connectors/element capture; V1.10 text/callout; V1.11 privacy; V1.11.1 update/thuộc tính trực quan; V1.12 pixel editing; V1.13 composition/template; V1.14 scroll thủ công/logo/theme; V1.15 tự cuộn/ghép ngang; V1.15.1 capture reliability/dark mode/logo runtime; V1.16 OCR/Crop/titlebar/100%pixel. Xem lịch sử chi tiết trong docs/ROADMAP-HISTORY-pre-v1.16.md. Không suy diễn build/logic thành nghiệm thu Windows.
 
-### V1.6 — Image Fidelity
+Chuẩn xuyên suốt: PNG giữ pixel gốc, zoom không đổi file; annotation sửa lại được; không ghi đè schema mới bằng app cũ; source/project và bản ảnh đã che để chia sẻ là hai loại khác nhau. 100%pixel không tạo thêm chi tiết nguồn; HDR/wide gamut và tương thích từng app chụp cuộn cần kiểm riêng.
 
-Tách các lỗi capture bị scale, preview bị nội suy và xuất ảnh sai kích thước. Hiển thị kích thước file gốc, kích thước đầu ra và mức zoom ở các vị trí rõ ràng. Ghi nhận monitor, DPI, phương pháp capture, không đưa thông tin kỹ thuật tràn vào luồng sử dụng thông thường.
+Mỗi bản bàn giao đúng2file: Update-PackagesZIP (kèmSetup) và SourceZIP. Không tự publish/GitHub/deploy nếu chưa được giao. Phiên bản tiếp theo phải có mô tả nội dung cụ thể.
 
-Các ca test: màn hình SDR 100/125/150/175/200%, nguồn 1080p/1440p/4K, màn hình phụ tọa độ âm, di chuyển Editor qua monitor, crop, rotate/flip và xuất từ mức zoom bất kỳ. Dùng pattern 1-pixel, chữ nhỏ và thang màu để tìm resize/offset/tone-mapping ngoài ý muốn. Phải chạy trên Windows thật, không dùng build Linux thay thế bằng chứng runtime.
-
-Giới hạn: không phục hồi chi tiết chưa có trong nguồn; không khôi phục nội dung bị cửa sổ khác che trong mọi capture backend; nguồn DRM/bảo vệ có thể không chụp được. Ghi rõ backend hỗ trợ từng chế độ khi nghiệm thu.
-
-### V1.7 — Shapes & Stroke Studio
-
-Đã triển khai theo phạm vi Boss chốt: 9 hình kín (rectangle, rounded rectangle, ellipse/circle, triangle, diamond, trapezoid, pentagon, hexagon, star), line và arrow 1/2 đầu. Thuộc tính viền/nền, alpha riêng, độ dày, dash, radius, cánh/lõi sao, kiểu/cỡ đầu mũi tên. Màu HEX và bảng màu nhanh. Nút công cụ ở toolbar, picker/thuộc tính tích hợp inspector của Editor.
-
-Hình vẽ vẫn là đối tượng có ID, chọn/kéo/resize/chuyển hình/đổi style, Undo/Redo và mở lại được. Preset cũ giữ tương thích; 3 preset mới và lưu đủ style. Schema 5 đọc 1–4; backup sidecar cũ trước lần lưu mới đầu tiên. Chờ Windows kiểm thử interaction, renderer/PNG/DPI và installer/update.
-
-Polygon tự do/chỉnh từng đỉnh, eyedropper/màu gần đây và connector thông minh chưa thuộc đợt V1.7 đã chốt; các phần này cần phạm vi và kiểm thử riêng ở những mốc công cụ tiếp theo. Arrow cơ bản được đưa lên V1.7, V1.9 giữ nhóm connector/callout nâng cao.
-
-### V1.8 — Object Control & Layers
-
-Đã triển khai: bảng Layers chọn lớp bị che, Ctrl/Shift chọn nhiều; rename/lock/hide, giữ duplicate/group/order/align/distribute. Khóa/ẩn theo nhóm, layer khóa vẫn xuất và layer ẩn bị loại khỏi xuất. Canvas bỏ qua đối tượng không chỉnh được; Layers cho mở khóa/hiện lại.
-
-X/Y/W/H bằng pixel ảnh gốc và góc tuyệt đối cho một hình; nhóm dùng AABB/góc xoay thêm. Tay nắm tròn xoay, Shift 15°, resize góc và giữ tỷ lệ, nhóm có thành viên xoay không shear. Snap crop/peer có toggle lưu cấu hình và guide, Ctrl tạm bỏ snap. Input/renderer/hit dùng cùng hình học xoay.
-
-Một gesture = một Undo; lưu metadata schema 6 và backup sidecar cũ. Vùng che xoay lọc pixel ở đích và giữ lớp bảo vệ. Selection handles/guide không xuất PNG. Bộ logic đã chạy, bộ Windows cross-build; chưa nghiệm thu tương tác/DPI/WPF thật. Xem OBJECT-CONTROL-LAYERS.md.
-
-## 6. Giải thích hai loại đối tượng
-
-1. Shape/callout/text do Boss vẽ: Captovix biết ID và hình học nên chọn, di chuyển, đổi style sau vẽ được. Đây là ưu tiên V1.7–1.8.
-2. Nút/chữ đã có sẵn trong screenshot: chỉ là pixel. Để di chuyển hoặc sửa như object cần selection/cut-paste hoặc OCR/detection, và phải xử lý nền phía sau. V1.12/V1.16/V1.17 giải quyết dần; không tự biến mọi screenshot thành thiết kế editable hoàn hảo.
-
-PNG/JPEG xuất là bản ghép; mở riêng lại không phục hồi shape. Metadata dự án/sidecar hoặc project bundle giữ object. Copy ảnh ghép sang Word cũng không mang theo mô hình chỉnh sửa Captovix. Project có thể chứa ảnh gốc chưa che; bản chia sẻ an toàn cho trường hợp che thông tin là ảnh ghép đã render và kiểm tra, không phải bundle gốc.
-
-## 7. Kiến trúc tiếp tục phát triển
-
-Giữ nền native Windows C#/.NET WPF đang dùng; không chuyển Web App và không thêm database/cloud cho các thao tác ảnh offline. Trước mỗi mốc phải đọc source mới nhất và kiểm tra phần đã có.
-
-- Capture service: pixel/source/cursor/topology; không trộn với Editor zoom.
-- Document model có version: original + objects/layers/assets + image appearance, stable ID và migration.
-- Render pipeline: cùng quy tắc hình học cho preview/export/clipboard; preview cache/thumbnail không phải nguồn xuất.
-- Command/undo: ghi theo thao tác, bounded memory; lưu atomic/autosave và recovery.
-- Shape/path/hit-test dùng cùng geometry; renderer phụ thuộc Windows nhưng geometry/model có test thuần.
-- Tile/cache cho nguồn lớn: đặt giới hạn trước, báo rõ trước khi cấp phát; không quảng cáo ảnh kích thước vô hạn.
-- OCR/assisted editing là module tùy chọn; chưa chốt engine/model trước khi thử Việt/Anh và kiểm tra giấy phép/khả năng phân phối.
-- Mở tài liệu cũ có migration và backup. Phiên bản không hiểu schema mới không được âm thầm ghi đè.
-
-## 8. Rủi ro và cổng nghiệm thu
-
-- Chất lượng: số pixel đúng chưa đủ; kiểm tra offset, màu, font, nét, crop và clipboard ở Windows thật.
-- Shape và transform: xoay/flip/crop không làm lệch hit-test/mask; mỗi loại shape có test riêng.
-- Chụp cuộn: fixed header, sticky footer, animation, virtualized list, tải lazy và nội dung đổi giữa các khung có thể làm ghép sai. Ưu tiên capture một chiều có kiểm soát, giữ source frames và báo không chắc; không cam kết mọi ứng dụng.
-- OCR: độ chính xác tùy chữ, ngôn ngữ, tương phản; sửa text không bảo đảm giống font gốc. Gợi ý tự động cần người kiểm tra.
-- Che thông tin: blur/pixelation không tương đương che đặc; bản xuất che đặc phải kiểm tra pixel và không nhúng lại nguồn. Không thay đổi nguyên tắc giữ source trong dự án.
-- Dữ liệu: migration/undo/autosave và update phải giữ các ảnh/chú thích đã bàn giao; không reset thư viện để nâng cấp.
-- Nghiệm thu: build, unit/property tests, renderer Windows, thao tác người dùng, installer/updater và recovery. Phân biệt rõ kiểm thử tự động đã chạy với checklist còn chờ.
-
-## 9. Cách bàn giao mỗi bản xây dựng
-
-Chỉ hai file theo yêu cầu Boss:
-
-- Captovix-vX.X.X-Update-Packages.zip: gói phát hành updater, kèm installer canonical và hướng dẫn asset phù hợp.
-- Captovix-vX.X.X-Source.zip: source dựng lại được, README/CHANGELOG/ROADMAP, test và checklist Windows.
-
-Không gửi riêng Setup/Portable trừ khi Boss yêu cầu. Sau mỗi bản phải mô tả phiên bản kế tiếp: mục tiêu, chức năng cụ thể, cách dùng/lợi ích và phần chưa nằm trong phạm vi. Không tự code cả roadmap khi mới duyệt kế hoạch.
-
-Bản tiếp theo: V1.15 — Advanced Capture & Stitching: auto-scroll với từng app hỗ trợ; nghiên cứu ghép ngang, fixed-region nhập số, window/client/menu; phát hiện viewport đổi/animation và fallback có thông báo. Triển khai sau nghiệm thu V1.14; video tiếp tục để sau.
+Nghiên cứu tiếp ngoài phạm vi1.17: inpainting nền phức tạp, tự đoán font, tự nhận dạng mọi UI component và tự gợi ý vùng nhạy cảm. Các phần này cần đánh giá engine/dữ liệu và tiêu chí riêng, không coi là tính năng đã hoàn thành.

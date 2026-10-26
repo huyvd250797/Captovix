@@ -4,6 +4,7 @@ namespace Captovix;
 // Source image and annotations stay in original pixels. This is an output recipe.
 public sealed class ImageAppearance
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public bool DrawOutsideImage {get;set;}
     public int QuarterTurns {get;set;}
     public bool FlipHorizontal {get;set;}
     public bool FlipVertical {get;set;}

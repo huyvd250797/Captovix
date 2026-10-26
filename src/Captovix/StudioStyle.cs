@@ -28,7 +28,7 @@ public static class StudioStyle
     }
     public static Annotation Sample(Annotation style)
     {
-        var a=style.Copy();a.CalloutBodyPivot=true;a.Id="style";a.Name="";a.GroupId=null;a.Locked=false;a.Visible=true;a.Rotation=0;a.X1=10;a.Y1=15;a.X2=90;a.Y2=60;a.Text="Aa";a.Number=1;a.StartAnchor=a.EndAnchor=null;a.Control=null;a.TailX=30;a.TailY=75;a.Points=[];
+        var a=style.Copy();a.CalloutBodyPivot=true;a.Id="style";a.Name="";a.GroupId=null;a.Locked=false;a.Visible=true;a.Rotation=0;a.X1=10;a.Y1=15;a.X2=90;a.Y2=60;a.Text="Aa";a.Number=1;a.StartAnchor=a.EndAnchor=null;a.Control=null;a.TailX=30;a.TailY=75;a.Points=a.Kind==AnnotationKind.Freehand?[new(10,50),new(35,25),new(65,55),new(90,20)]:[];
         return a;
     }
     public static string LegacySignature(Annotation style){var node=System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Sample(style),EditorDocument.JsonOptions))!.AsObject();node.Remove("PixelPng");node.Remove("CalloutBodyPivot");return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(node.ToJsonString(EditorDocument.JsonOptions))));}
@@ -45,7 +45,7 @@ public static class StyleFavoriteStore
     }
     public static void Validate(IReadOnlyCollection<StyleFavorite> values)
     {
-        if(values.Count>64||values.Any(v=>v==null||string.IsNullOrWhiteSpace(v.Label)||v.Label.Length>100||v.Style==null||v.Id!=StudioStyle.Signature(v.Style)||!ShapeStudio.IsClosed(v.Style.Kind)&&!ShapeStudio.IsLine(v.Style.Kind)&&v.Style.Kind!=AnnotationKind.Callout))throw new InvalidDataException("Danh sách mẫu sao không hợp lệ.");
+        if(values.Count>64||values.Any(v=>v==null||string.IsNullOrWhiteSpace(v.Label)||v.Label.Length>100||v.Style==null||v.Id!=StudioStyle.Signature(v.Style)||!Enum.IsDefined(v.Style.Kind)||v.Style.Kind==AnnotationKind.ImageLayer))throw new InvalidDataException("Danh sách mẫu sao không hợp lệ.");
         if(values.Select(v=>v.Id).Distinct().Count()!=values.Count)throw new InvalidDataException("Mẫu sao bị trùng.");
         foreach(var v in values)new EditorDocument{OriginalWidth=200,OriginalHeight=200,Annotations=[v.Style.Copy()]}.Validate(200,200,"");
     }
