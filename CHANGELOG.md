@@ -1,3 +1,12 @@
+# V1.21.0 — Layout Precision · 26/10/2026
+
+- Thêm bốn cạnh mở rộng pixel riêng, nền màu/trong suốt, tùy chọn tự mở rộng khi tạo chú thích sát mép; vùng thao tác quanh ảnh chỉ dành cho Editor.
+- Crop theo toàn bộ đầu ra; giữ bitmap gốc và annotation editable; Undo/Redo; schema14 bảo vệ app cũ ghi đè, đọc schema12/13.
+- Chữ hoàn tất khi click ngoài và trở về Chọn; callout khởi tạo đuôi tại chỗ, hỗ trợ một click có kích thước mặc định, giữ thao tác kéo.
+- Làm gọn menu; giữ phím tắt/nút Undo/Redo; đưa Canvas sang công cụ vẽ. Cây thư viện thêm header icon/số lượng và tùy chọn ẩn ngày trống lưu trên máy.
+- Giữ stack, approved logo, ổn định nguồn update và installer chọn đường dẫn. Không tự publish, không thay engine capture/quay.
+- Logic/build/artifact verification được ghi trong docs/VALIDATION.md; nghiệm thu Windows thật còn chờ.
+
 # V1.20.0 — Image Release & Performance
 
 - Caption/functional icons/gallery nhỏ gọn; footer1hàng và overflow.

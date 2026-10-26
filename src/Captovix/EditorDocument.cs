@@ -94,7 +94,7 @@ public sealed class EditorDocument
     public EditorDocument Clone()=>Deserialize(Serialize());
     public void Validate(int width,int height,string hash)
     {
-        if(Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13))throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
+        if(Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14))throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
         if(OriginalWidth!=width||OriginalHeight!=height||SourceHash!=hash)throw new InvalidDataException("Ảnh gốc đã thay đổi. Bản chú thích cũ được giữ riêng, không tự gán lên ảnh khác.");
         if(Crop is {} c&&(c.IsEmpty||c.X<0||c.Y<0||c.Right>width||c.Bottom>height))throw new InvalidDataException("Vùng crop không hợp lệ.");
         if(Annotations==null||Annotations.Count>10000)throw new InvalidDataException("Số đối tượng vượt giới hạn tài liệu.");
@@ -115,7 +115,7 @@ public sealed class EditorDocument
         ConnectorStudio.Resolve(this);
         if(Appearance==null)throw new InvalidDataException("Thiếu cấu hình ảnh.");
         _=new ImageLayout(Viewport,Appearance);
-        PixelStudio.Validate(this);Version=Appearance.DrawOutsideImage?13:12;
+        PixelStudio.Validate(this);Version=Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
     }
     private static bool ValidColor(string color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public bool ApplyCrop(PixelRect crop)

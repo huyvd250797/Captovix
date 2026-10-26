@@ -13,7 +13,13 @@ public partial class MainWindow
     private double _panX,_panY;
     private void InitializeViewport()
     {
-        Surface.CropDraftChanged+=SyncCropProperties;
+        PreviewMouseLeftButtonDown+=(_,e)=>{
+            if(_inlineId==null)return;var point=e.GetPosition(InlineText);
+            if(new Rect(0,0,InlineText.ActualWidth,InlineText.ActualHeight).Contains(point))return;
+            EndInlineText(true);
+        };
+        Surface.CropDraftChanged+=SyncCropProperties;Surface.CanvasLimitReached+=message=>SetStatus("Không thể mở rộng thêm: "+message);
+        Surface.CanvasGrown+=(left,top)=>{ImageScroll.UpdateLayout();ImageScroll.ScrollToHorizontalOffset(ImageScroll.HorizontalOffset+left*Surface.Zoom);ImageScroll.ScrollToVerticalOffset(ImageScroll.VerticalOffset+top*Surface.Zoom);};
         ImageScroll.PreviewMouseWheel+=Viewport_Wheel;
         ImageScroll.PreviewMouseLeftButtonDown+=Viewport_PanDown;
         ImageScroll.PreviewMouseMove+=Viewport_PanMove;
@@ -25,11 +31,11 @@ public partial class MainWindow
     {
         if(_session==null||Surface.IsInteracting||_panActive)return;
         ImageScroll.UpdateLayout();var origin=Surface.TranslatePoint(new(0,0),ImageScroll);
-        var source=new Point((anchor.X-origin.X)/Surface.Zoom,(anchor.Y-origin.Y)/Surface.Zoom);
+        var source=new Point((anchor.X-origin.X-EditorSurface.WorkspacePad)/Surface.Zoom,(anchor.Y-origin.Y-EditorSurface.WorkspacePad)/Surface.Zoom);
         _fitMode=false;_actualPixels=false;Surface.SetZoom(zoom);ImageScroll.UpdateLayout();
         origin=Surface.TranslatePoint(new(0,0),ImageScroll);
-        ImageScroll.ScrollToHorizontalOffset(EditorViewportMath.AnchoredOffset(ImageScroll.HorizontalOffset,origin.X,source.X,Surface.Zoom,anchor.X,ImageScroll.ScrollableWidth));
-        ImageScroll.ScrollToVerticalOffset(EditorViewportMath.AnchoredOffset(ImageScroll.VerticalOffset,origin.Y,source.Y,Surface.Zoom,anchor.Y,ImageScroll.ScrollableHeight));
+        ImageScroll.ScrollToHorizontalOffset(EditorViewportMath.AnchoredOffset(ImageScroll.HorizontalOffset,origin.X+EditorSurface.WorkspacePad,source.X,Surface.Zoom,anchor.X,ImageScroll.ScrollableWidth));
+        ImageScroll.ScrollToVerticalOffset(EditorViewportMath.AnchoredOffset(ImageScroll.VerticalOffset,origin.Y+EditorSurface.WorkspacePad,source.Y,Surface.Zoom,anchor.Y,ImageScroll.ScrollableHeight));
         ImageScroll.UpdateLayout();
     }
     private void ZoomAtCenter(double zoom)=>ZoomAt(zoom,new(ImageScroll.ViewportWidth/2,ImageScroll.ViewportHeight/2));
@@ -50,7 +56,7 @@ public partial class MainWindow
             _spaceHeld=true;Mouse.OverrideCursor=Cursors.Hand;e.Handled=true;return true;
         }
         if(Surface.Tool==EditorTool.Crop&&_session!=null){
-            if(!typing&&e.Key==Key.A&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){Surface.SetCropDraft(_session.Document.Viewport);e.Handled=true;return true;}
+            if(!typing&&e.Key==Key.A&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){Surface.SetCropDraft(Surface.CropBounds);e.Handled=true;return true;}
             if(e.Key==Key.Escape){Surface.CancelInteraction();SelectTool(EditorTool.Select);e.Handled=true;return true;}
             if(e.Key==Key.Enter&&!typing&&!Surface.IsInteracting){ApplyCropFromFields();e.Handled=true;return true;}
             if(!typing&&e.Key is Key.Left or Key.Right or Key.Up or Key.Down){
@@ -90,7 +96,7 @@ public partial class MainWindow
         if(CropProperties==null)return;
         bool show=_session!=null&&Surface.Session!=null&&Surface.Tool==EditorTool.Crop;
         CropProperties.Visibility=show?Visibility.Visible:Visibility.Collapsed;if(!show)return;
-        var rect=Surface.CropDraft??_session!.Document.Viewport;_syncCrop=true;
+        var rect=Surface.CropDraft??Surface.CropBounds;_syncCrop=true;
         try{CropX.Text=rect.X.ToString(CultureInfo.InvariantCulture);CropY.Text=rect.Y.ToString(CultureInfo.InvariantCulture);CropWidth.Text=rect.Width.ToString(CultureInfo.InvariantCulture);CropHeight.Text=rect.Height.ToString(CultureInfo.InvariantCulture);}
         finally{_syncCrop=false;}
         CropHint.Text=Surface.CropDraft==null?"Kéo tay nắm để chọn vùng. Enter hoặc Áp dụng để cắt.":$"Đang chọn {rect.Width} × {rect.Height} px. Áp dụng để hoàn tất.";

@@ -23,10 +23,10 @@ public partial class MainWindow
     {
         if(_inlineId==null||_session==null)return;
         var a=_session.Document.Annotations.FirstOrDefault(x=>x.Id==_inlineId);if(a==null){EndInlineText(false);return;}
-        var view=_session.Document.Viewport;bool callout=a.Kind==AnnotationKind.Callout;
+        var view=Surface.EditingBounds;bool callout=a.Kind==AnnotationKind.Callout;
         var content=EditorRenderer.TextContent(a);double x=content.X,y=content.Y;
-        var layout=Surface.Layout!;InlineCanvas.RenderTransform=new MatrixTransform(EditorRenderer.LayoutMatrix(layout,Surface.Zoom));
-        var inverse=EditorRenderer.LayoutMatrix(layout);inverse.Invert();InlineCanvas.Clip=new RectangleGeometry(EditorRenderer.RectOf(layout.Canvas)){Transform=new MatrixTransform(inverse)};
+        var layout=Surface.Layout!;InlineCanvas.RenderTransform=new MatrixTransform(new Matrix(layout.A*Surface.Zoom,layout.B*Surface.Zoom,layout.C*Surface.Zoom,layout.D*Surface.Zoom,layout.Tx*Surface.Zoom+EditorSurface.WorkspacePad,layout.Ty*Surface.Zoom+EditorSurface.WorkspacePad));
+        var inverse=EditorRenderer.LayoutMatrix(layout);inverse.Invert();InlineCanvas.Clip=new RectangleGeometry(new Rect(0,0,layout.Width,layout.Height)){Transform=new MatrixTransform(inverse)};
         Canvas.SetLeft(InlineText,x);Canvas.SetTop(InlineText,y);
         var frame=EditorRenderer.LocalBox(a);InlineText.RenderTransform=new RotateTransform(a.Rotation,frame.CenterX-x,frame.CenterY-y);
         InlineText.FontSize=a.FontSize;InlineText.FontFamily=EditorRenderer.TextFont(a);InlineText.FontWeight=a.Bold?FontWeights.Bold:FontWeights.Normal;InlineText.FontStyle=a.Italic?FontStyles.Italic:FontStyles.Normal;InlineText.TextAlignment=EditorRenderer.WpfAlignment(a.TextAlignment);InlineText.Foreground=EditorRenderer.Ink(TextStudio.Foreground(a));
@@ -43,7 +43,7 @@ public partial class MainWindow
             if(commit&&_session is {} session&&session.Document.Annotations.Any(a=>a.Id==id)){
                 session.Commit();session.Change(d=>{var target=d.Annotations.First(a=>a.Id==id);target.Text=text;EditorRenderer.FitText(target,CanvasEditing.SourceBounds(d.Viewport,d.Appearance));});
             }
-            Surface.InvalidateVisual();SyncProperties();if(_session?.Dirty==true){_saveTimer.Stop();_saveTimer.Start();}
+            if(Surface.Tool is EditorTool.Text or EditorTool.Callout){Surface.Tool=EditorTool.Select;Surface.Cursor=Cursors.Arrow;foreach(var button in ToolBox.Children.OfType<Button>()){bool selected=button.Tag?.ToString()=="Select";button.SetResourceReference(Control.BackgroundProperty,selected?"Accent":"Surface");button.SetResourceReference(Control.ForegroundProperty,selected?"OnAccent":"Text");}ToolHint.Text="Chế độ Chọn · Bấm đối tượng để di chuyển hoặc sửa; chọn Chữ/Callout để tạo thêm.";}Surface.InvalidateVisual();SyncProperties();if(_session?.Dirty==true){_saveTimer.Stop();_saveTimer.Start();}
         }finally{_endingInline=false;}
     }
     private void InlineText_KeyDown(object sender,KeyEventArgs e)

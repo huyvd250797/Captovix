@@ -19,7 +19,7 @@ public partial class MainWindow
         var key=(_activeItem?.Id??d.SourceHash)+d.Viewport+JsonSerializer.Serialize(s);if(key==_appearanceKey)return;_appearanceKey=key;_syncImage=true;
         try{
             ResizeW.Text=l.ImageWidth.ToString();ResizeH.Text=l.ImageHeight.ToString();
-            CustomCanvas.IsChecked=s.CanvasWidth>0;CanvasW.Text=((int)l.Canvas.Width).ToString();CanvasH.Text=((int)l.Canvas.Height).ToString();CanvasAnchor.SelectedIndex=s.Anchor;
+            CustomCanvas.IsChecked=s.CanvasWidth>0;CanvasW.Text=((int)l.Canvas.Width-s.ExtendLeft-s.ExtendRight).ToString();CanvasH.Text=((int)l.Canvas.Height-s.ExtendTop-s.ExtendBottom).ToString();CanvasAnchor.SelectedIndex=s.Anchor;
             FramePadding.Text=s.Padding.ToString();FrameBorder.Text=s.BorderWidth.ToString();FrameBorderColor.Text=s.BorderColor;
             TransparentBackground.IsChecked=s.Transparent;FrameBackground.Text=s.BackgroundColor;
             ShadowEnabled.IsChecked=s.Shadow;ShadowBlur.Text=s.ShadowBlur.ToString();ShadowX.Text=s.ShadowX.ToString();ShadowY.Text=s.ShadowY.ToString();ShadowOpacity.Text=s.ShadowOpacity.ToString();

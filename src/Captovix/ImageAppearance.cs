@@ -5,6 +5,13 @@ namespace Captovix;
 public sealed class ImageAppearance
 {
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public bool DrawOutsideImage {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ExtendLeft {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ExtendTop {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ExtendRight {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ExtendBottom {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public bool AutoExpand {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public PixelRect? OutputCrop {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore] public bool HasPrecision=>ExtendLeft!=0||ExtendTop!=0||ExtendRight!=0||ExtendBottom!=0||AutoExpand||OutputCrop!=null;
     public int QuarterTurns {get;set;}
     public bool FlipHorizontal {get;set;}
     public bool FlipVertical {get;set;}
@@ -24,15 +31,15 @@ public sealed class ImageAppearance
     public int ShadowY {get;set;}=12;
     public int ShadowOpacity {get;set;}=25;
     public ImageAppearance Copy()=>(ImageAppearance)MemberwiseClone();
-    public bool HasEdits=>QuarterTurns!=0||FlipHorizontal||FlipVertical||ResizeWidth!=0||CanvasWidth!=0||Padding!=0||BorderWidth!=0||!Transparent||Shadow;
+    public bool HasEdits=>HasPrecision||DrawOutsideImage||QuarterTurns!=0||FlipHorizontal||FlipVertical||ResizeWidth!=0||CanvasWidth!=0||Padding!=0||BorderWidth!=0||!Transparent||Shadow;
     public static bool ValidColor(string? color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public void Validate()
     {
-        if(QuarterTurns<0||QuarterTurns>3||ResizeWidth<0||ResizeHeight<0||CanvasWidth<0||CanvasHeight<0||ResizeWidth>32768||ResizeHeight>32768||CanvasWidth>32768||CanvasHeight>32768||(ResizeWidth==0)!=(ResizeHeight==0)||(CanvasWidth==0)!=(CanvasHeight==0)||Anchor<0||Anchor>8||Padding<0||Padding>512||BorderWidth<0||BorderWidth>128||ShadowBlur<0||ShadowBlur>80||Math.Abs((long)ShadowX)>80||Math.Abs((long)ShadowY)>80||ShadowOpacity<0||ShadowOpacity>100||!ValidColor(BorderColor)||!ValidColor(BackgroundColor))throw new InvalidDataException("Thông số biến đổi/khung ảnh không hợp lệ.");
+        if(new[]{ExtendLeft,ExtendTop,ExtendRight,ExtendBottom}.Any(v=>v<0||v>32768)||OutputCrop is {} clip&&(clip.X<0||clip.Y<0||clip.Width<2||clip.Height<2||clip.X>32768||clip.Y>32768||clip.Width>32768||clip.Height>32768)||QuarterTurns<0||QuarterTurns>3||ResizeWidth<0||ResizeHeight<0||CanvasWidth<0||CanvasHeight<0||ResizeWidth>32768||ResizeHeight>32768||CanvasWidth>32768||CanvasHeight>32768||(ResizeWidth==0)!=(ResizeHeight==0)||(CanvasWidth==0)!=(CanvasHeight==0)||Anchor<0||Anchor>8||Padding<0||Padding>512||BorderWidth<0||BorderWidth>128||ShadowBlur<0||ShadowBlur>80||Math.Abs((long)ShadowX)>80||Math.Abs((long)ShadowY)>80||ShadowOpacity<0||ShadowOpacity>100||!ValidColor(BorderColor)||!ValidColor(BackgroundColor))throw new InvalidDataException("Thông số biến đổi/khung ảnh không hợp lệ.");
     }
     public void Rotate(int direction)
     {
-        QuarterTurns=(QuarterTurns+(direction%4)+4)%4;
+        OutputCrop=null;QuarterTurns=(QuarterTurns+(direction%4)+4)%4;
         if(Math.Abs(direction%2)==1){(FlipHorizontal,FlipVertical)=(FlipVertical,FlipHorizontal);(ResizeWidth,ResizeHeight)=(ResizeHeight,ResizeWidth);}
     }
 }
@@ -67,7 +74,7 @@ public sealed class ImageLayout
     {
         s.Validate();if(view.IsEmpty)throw new InvalidDataException("Vùng ảnh trống.");
         var natural=Natural(view,s);ImageWidth=s.ResizeWidth==0?natural.Width:s.ResizeWidth;ImageHeight=s.ResizeHeight==0?natural.Height:s.ResizeHeight;
-        int cw=s.CanvasWidth==0?ImageWidth:s.CanvasWidth,ch=s.CanvasHeight==0?ImageHeight:s.CanvasHeight;
+        int baseW=s.CanvasWidth==0?ImageWidth:s.CanvasWidth,baseH=s.CanvasHeight==0?ImageHeight:s.CanvasHeight;int cw=checked(baseW+s.ExtendLeft+s.ExtendRight),ch=checked(baseH+s.ExtendTop+s.ExtendBottom);
         int left=s.Shadow?Math.Max(0,s.ShadowBlur-s.ShadowX):0,right=s.Shadow?Math.Max(0,s.ShadowBlur+s.ShadowX):0;
         int top=s.Shadow?Math.Max(0,s.ShadowBlur-s.ShadowY):0,bottom=s.Shadow?Math.Max(0,s.ShadowBlur+s.ShadowY):0;
         int inset=s.BorderWidth+s.Padding,fw=cw+2*inset,fh=ch+2*inset;
@@ -76,10 +83,14 @@ public sealed class ImageLayout
         Frame=new(left,top,fw,fh);Canvas=new(left+inset,top+inset,cw,ch);
         // A half-pixel center offset blurs an otherwise unscaled screenshot.
         // Odd spare pixels are assigned to the right/bottom, keeping all anchors pixel-aligned.
-        double ox=Canvas.X+Math.Floor((cw-ImageWidth)*(s.Anchor%3)/2d),oy=Canvas.Y+Math.Floor((ch-ImageHeight)*(s.Anchor/3)/2d);
+        double ox=Canvas.X+s.ExtendLeft+Math.Floor((baseW-ImageWidth)*(s.Anchor%3)/2d),oy=Canvas.Y+s.ExtendTop+Math.Floor((baseH-ImageHeight)*(s.Anchor/3)/2d);
         ImagePoint Map(double x,double y){double u=x-view.X,v=y-view.Y;var p=s.QuarterTurns switch{1=>new ImagePoint(view.Height-v,u),2=>new(view.Width-u,view.Height-v),3=>new(v,view.Width-u),_=>new(u,v)};
             if(s.FlipHorizontal)p=p with{X=natural.Width-p.X};if(s.FlipVertical)p=p with{Y=natural.Height-p.Y};return new(ox+p.X*ImageWidth/natural.Width,oy+p.Y*ImageHeight/natural.Height);}
         var zero=Map(view.X,view.Y);var xUnit=Map(view.X+1d,view.Y);var yUnit=Map(view.X,view.Y+1d);
         A=xUnit.X-zero.X;B=xUnit.Y-zero.Y;C=yUnit.X-zero.X;D=yUnit.Y-zero.Y;Tx=zero.X-A*view.X-C*view.Y;Ty=zero.Y-B*view.X-D*view.Y;
+        if(s.OutputCrop is {} crop){
+            if((long)crop.Right>Width||(long)crop.Bottom>Height)throw new InvalidDataException("Crop canvas vượt giới hạn đầu ra.");
+            Width=crop.Width;Height=crop.Height;Frame=Frame with{X=Frame.X-crop.X,Y=Frame.Y-crop.Y};Canvas=Canvas with{X=Canvas.X-crop.X,Y=Canvas.Y-crop.Y};Tx-=crop.X;Ty-=crop.Y;
+        }
     }
 }

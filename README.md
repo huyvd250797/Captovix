@@ -1,4 +1,4 @@
-# Captovix V1.20.0 — Image Release & Performance
+# Captovix V1.21.0 — Layout Precision
 
 Windows x64 · C#/.NET10 WPF · SDK10.0.100 · runtime tự chứa10.0.13 · ScreenRecorderLib7.0.1 · Velopack1.2.161 · Tesseract5.2.0 x64 + model Việt/Anh kèm app.
 
@@ -6,20 +6,20 @@ Captovix = Capture + Tools + Visual + eXperience. Bộ công cụ chụp, ghi m�
 
 ## Chức năng mới
 
-- Caption nhỏ28DIP, nút32×26/glyph11; icon thao tác16/nét mềm1.1, giữ logo. Mẫu gallery64 và hình46×28; bounds thật không clip.
-- Thư viện tổng dạng cây năm →12tháng → đúng ngày trong tháng → ảnh/video, kể cả ngày trống; mở nhánh mới nạp, Xem thêm100mục/ngày, Ctrl/Shift nhiều ngày. Gần đây tối đa50mục giữ nguyên.
-- Footer thư viện một hàng4nút và … cho chức năng còn lại; không mất tính năng.
-- Bố cục → Vẽ ngoài ảnh / Ctrl+Alt+E: nới canvas160px mỗi cạnh, khung/callout/chữ/mũi tên nằm ngoài ảnh vẫn edit và export; nguồn không resize, kích thước xuất tăng có chủ đích, Undo được. Chưa tự mở rộng vô hạn/crop toàn canvas.
-- Cache thumbnail16MiB/128entry,2worker nền; decode PNG lớp256MiB; renderer sampling riêng thread và redaction cache đồng bộ. Báo cáo render/cache/RAM/history trong Trợ giúp.
-- Sidecar last-good và fallback có validate/hash/schema; giữ file lỗi, không giả khôi phục nét/chữ chưa lưu. Project thường schema12; project vẽ ngoài ảnh schema13 cần1.20+. Backup/import/update giữ dữ liệu nguồn, không reset thư viện.
+- Vẽ trực tiếp trong vùng thao tác quanh ảnh để tự thêm canvas, không cần lệnh trong thư viện. Vùng thao tác không tự xuất thành phần trống.
+- Nút Canvas… cùng hàng công cụ vẽ hoặc Ctrl+Alt+E: thêm phần mở rộng riêng từng cạnh, chọn màu nền/trong suốt; bật/tắt tự mở rộng khi vẽ sát mép. Không resize ảnh nguồn; Undo được.
+- Crop toàn đầu ra gồm chú thích; tay nắm, số pixel X/Y/Rộng/Cao, Enter/Áp dụng; Esc hủy. Giữ đối tượng sửa lại được, không raster hóa hoặc xóa pixel nguồn.
+- Kết thúc nhập chữ bằng click ngoài sẽ lưu và trở về Chọn, không tạo chữ thừa. Callout có vị trí đuôi ban đầu tại chỗ; một click tạo hộp mặc định, kéo để tạo kích thước riêng.
+- Thư viện dạng cây có icon/cấp/số lượng, checkbox ẩn ngày trống ghi nhớ trên máy; vẫn có12tháng và đúng số ngày. Chức năng Canvas chuyển sang công cụ vẽ. Menu bỏ nhóm Chỉnh sửa dư thừa, giữ Ctrl+Z/Ctrl+Y và nút nhanh; giữ công cụ vùng pixel.
+- Giữ cache/thumbnail nền, last-good, capture/OCR, batch và logo đã chốt của1.20. Schema14 cho mở rộng từng cạnh/crop đầu ra; dữ liệu cũ không dùng chức năng mới giữ12/13.
 
-Chi tiết và giới hạn: **docs/IMAGE-RELEASE-PERFORMANCE.md**. Giữ batchPNG/JPEG/PDF/OCR/capture/quay và các chức năng trước. Chỉ cache có budget, không là trần RAM toàn app; tile-render/HDR/Windows profiling chưa hoàn tất. `docs/PERFORMANCE-BENCHMARK.json` chỉ là pixel-copy4K/8K tổng hợp trên Linux.
+Hướng dẫn cụ thể, giới hạn và checklist Windows: **docs/LAYOUT-PRECISION.md**. Canvas vẫn có giới hạn32.768px/chiều và100MP; không là canvas vô hạn. Tự mở rộng khi tạo chú thích, chưa tự nới khi kéo/resize đối tượng cũ. Video nâng cao và HDR/màu rộng chưa thuộc bản này.
 
 ## Cài / cập nhật
 
-Giải nén Captovix-v1.20.0-Update-Packages.zip, đóng Captovix cả tray, chạy HuyVo.Captovix-win-Setup.exe. Máy mới chọn thư mục riêng, ví dụ D:\\Captovix\\Captovix; managed install cũ giữ installroot. App có .NET runtime; installer có Visual C++ prerequisite. Setup chưa có chữ ký nhà phát hành.
+Giải nén Captovix-v1.21.0-Update-Packages.zip, đóng Captovix cả tray, chạy HuyVo.Captovix-win-Setup.exe. Máy mới chọn thư mục riêng, ví dụ D:\\Captovix\\Captovix; managed install cũ giữ installroot. App có .NET runtime; installer có Visual C++ prerequisite. Setup chưa có chữ ký nhà phát hành.
 
-Hoặc publisher đăng riêng5asset trong Update-Packages lên public stable Release tag v1.20.0, Set as latest: full.nupkg, HuyVo.Captovix-win-Setup.exe, releases.win.json, assets.win.json, RELEASES. Khi đó Trợ giúp → Kiểm tra cập nhật dùng URL ổn định gắn sẵn. Source ZIP chỉ dành cho phát triển, không dùng cài app. Bản bàn giao chưa tự đăng GitHub.
+Hoặc publisher đăng riêng5asset trong Update-Packages lên public stable Release tag v1.21.0, Set as latest: full.nupkg, HuyVo.Captovix-win-Setup.exe, releases.win.json, assets.win.json, RELEASES. Khi đó Trợ giúp → Kiểm tra cập nhật dùng URL ổn định gắn sẵn. Source ZIP chỉ dành cho phát triển, không dùng cài app. Bản bàn giao chưa tự đăng GitHub.
 
 ## Build từ source
 
@@ -39,6 +39,6 @@ Kết quả ở artifacts. scripts/Run-Checks.py chạy các bộ logic và th�
 
 ## Kiểm tra và tiếp tục
 
-27 bộ logic/static đạt1501 assertions;16 bộ WPF chỉ cross-build. Main build/publish không lỗi/cảnh báo; gói updater/feed/branding được kiểm byte/hash. Chưa chạy Windows desktop: assist/render/preview, menu/animation, capture/UIA, folder và icon sau update thực tế. Xem docs/VALIDATION.md. Kiểm tra logic không thay thế nghiệm thu Windows.
+27 bộ logic/static đạt1523 assertions;16 bộ WPF chỉ cross-build. Main build/publish không lỗi/cảnh báo; gói updater/feed/branding được kiểm byte/hash. Chưa chạy Windows desktop: assist/render/preview, menu/animation, capture/UIA, folder và icon sau update thực tế. Xem docs/VALIDATION.md. Kiểm tra logic không thay thế nghiệm thu Windows.
 
-Đề xuất tiếp theo **V1.21 — Canvas & Layout Precision**: nhập khoảng nới riêng từng cạnh, crop toàn canvas gồm chú thích và tùy chọn tự nới khi chạm mép. Ưu tiên patch kết quả nghiệm thu Windows của1.20 trước khi mở thêm phạm vi. Gửi SourceZIP mới nhất này để tiếp tục; chưa tự xây1.21.
+Đề xuất tiếp theo **V1.22 — Object Editing Precision**: căn theo ảnh/đối tượng, đường gióng/bắt dính, nhập tọa độ/kích thước, cải thiện chọn lớp chồng và chỉnh nhóm. Ưu tiên patch phản hồi Windows của1.21 trước. Gửi SourceZIP mới nhất này để tiếp tục; chưa tự xây1.22.

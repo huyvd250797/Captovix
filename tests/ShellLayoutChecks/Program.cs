@@ -26,4 +26,6 @@ var themes=XDocument.Load(Path.Combine(root.FullName,"src/Captovix/Themes.xaml")
 Check(Named("LibraryFooterRow").Name==w+"StackPanel"&&Named("LibraryFooterRow").Attribute("Orientation")?.Value=="Horizontal"&&Named("LibraryFooterRow").Elements(w+"Button").Count()==4,"Library footer stays one compact row with four actions");
 Check(Named("RestoreMediaButton").Ancestors().Contains(Named("LibraryMorePopup"))&&Named("BatchButton").Ancestors().Contains(Named("LibraryMorePopup")),"Secondary footer commands are available in overflow popup");
 Check(doc.Descendants(w+"MenuItem").Any(e=>e.Attribute("Click")?.Value=="ExtendCanvas_Click"),"Canvas extension has a discoverable menu command");
+Check(Named("ExtendCanvasButton").Ancestors().Contains(Named("ToolBox"))&&!Named("ExtendCanvasButton").Ancestors().Contains(Named("LibraryMorePopup")),"Canvas control belongs to drawing tools, not media commands");
+Check(!doc.Descendants(w+"MenuItem").Any(e=>e.Attribute("Click")?.Value is "Undo_Click" or "Redo_Click"),"Redundant Undo and Redo menu commands removed; toolbar and shortcuts preserved");
 Console.WriteLine($"{n} shell layout structure checks passed; rendering still requires Windows.");

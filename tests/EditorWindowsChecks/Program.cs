@@ -58,10 +58,10 @@ internal static class Program
             var cropSession=new EditorSession(new(){OriginalWidth=80,OriginalHeight=60});var cropSurface=new EditorSurface();cropSurface.Load(patterned,cropSession);
             cropSurface.StartCrop();Check(cropSurface.SetCropDraft(new(10,12,40,24)),"Numeric crop creates an editable pending rectangle");
             Check(cropSession.Document.Crop==null&&!cropSession.CanUndo,"Crop preview does not commit document/history");
-            cropSurface.SetZoom(2);Check(cropSurface.CropDraft==new PixelRect(10,12,40,24)&&!cropSession.Dirty,"Zoom preserves pending crop in source pixels");
+            cropSurface.SetZoom(2);Check(cropSurface.CropDraft==new PixelRect(10,12,40,24)&&!cropSession.Dirty,"Zoom preserves pending crop in output pixels");
             Check(!cropSurface.SetCropDraft(new(-1,12,40,24))&&cropSurface.CropDraft==new PixelRect(10,12,40,24),"Invalid numeric crop leaves the prior preview intact");
             cropSurface.NudgeCrop(1,2);Check(cropSurface.CropDraft==new PixelRect(11,14,40,24),"Arrow nudge moves pending crop without applying it");
-            Check(cropSurface.ApplyCropDraft()&&cropSurface.CropDraft==null&&cropSession.Document.Crop==new PixelRect(11,14,40,24),"Apply crop commits exact rectangle and exits draft mode");
+            Check(cropSurface.ApplyCropDraft()&&cropSurface.CropDraft==null&&cropSession.Document.Appearance.OutputCrop==new PixelRect(11,14,40,24),"Apply crop commits exact rectangle and exits draft mode");
             Check(cropSurface.Flatten().PixelWidth==40&&cropSurface.Flatten().PixelHeight==24,"Applied numeric crop exports exact dimensions");
             cropSession.Undo();Check(cropSession.Document.Crop==null,"Crop gesture is undoable once");
             cropSurface.StartCrop();cropSurface.SetCropDraft(new(5,5,20,20));cropSurface.ClearCropDraft();

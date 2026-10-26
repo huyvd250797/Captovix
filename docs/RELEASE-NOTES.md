@@ -1,3 +1,8 @@
-# Captovix V1.20.0 — Image Release & Performance
+# Captovix V1.21.0 — Layout Precision
 
-Caption/icon/mẫu gọn; footer1dòng + …; thư viện cây năm→tháng→ngày→media. Nới canvas160px/cạnh để vẽ/edit/export ngoài ảnh, nguồn không resize, project opt-in dùng schema13. Cache budget và thumbnail nền, renderer isolation, report, last-good recovery; giữ schema12 cũ/nguồn/theme/branding/update source. Có kiểm pixel-copy4K/8K Linux; Windows desktop acceptance/profile vẫn chờ, chưa tile renderer. Xem IMAGE-RELEASE-PERFORMANCE.md.
+- Vẽ trực tiếp ngoài ảnh; mở rộng từng cạnh bằng pixel; nền màu/trong suốt; tự mở rộng khi tạo chú thích sát mép.
+- Crop toàn canvas gồm chú thích, giữ đối tượng chỉnh lại được; Undo/Redo.
+- Kết thúc chữ khi click ngoài chuyển về Chọn; sửa đuôi callout lúc tạo và hỗ trợ callout một click.
+- Cây thư viện có tùy chọn ẩn ngày trống; Canvas trên hàng công cụ vẽ; gọn menu.
+- Schema14 cho dữ liệu precision; đọc bản cũ, bảo vệ dữ liệu mới; không reset thư viện. Giữ logo, đường dẫn cài và nguồn update.
+- Windows x64 self-contained .NET10.0.13. Build/logic/artifact checks không thay cho nghiệm thu Windows desktop. Xem docs/LAYOUT-PRECISION.md.

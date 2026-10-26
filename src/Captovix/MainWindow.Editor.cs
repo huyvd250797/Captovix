@@ -46,7 +46,7 @@ public partial class MainWindow
             OriginalSizeLabel.Text=$"Gốc: {Surface.Original.PixelWidth} × {Surface.Original.PixelHeight} px";
             ImageSizeLabel.Text=$"{layout.Width} × {layout.Height} px · {session.Document.Annotations.Count} chú thích";
             ImageFidelityHint.Text=ImageFidelity.CanCopyPixels(layout)?"PNG/Copy: giữ pixel vùng không chỉnh. Vừa khung chỉ đổi cách xem.":"Xuất/Copy có resize theo thiết lập; zoom chỉ đổi cách xem.";
-            RestoreCropButton.IsEnabled=session.Document.Crop!=null;
+            RestoreCropButton.IsEnabled=session.Document.Crop!=null||session.Document.Appearance.OutputCrop!=null;
             ZoomLabel.Text=$"{Surface.PhysicalZoom*100:0.#}%";
             ZoomLabel.ToolTip=$"Zoom hiển thị đầu ra · Windows scale {Surface.DisplayScale*100:0.#}% · không đổi file ảnh";
         }else{
@@ -126,7 +126,7 @@ public partial class MainWindow
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             if(a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&AnnotationText.Text!=a.Text)AnnotationText.Text=a.Text;
             if(a?.Kind==AnnotationKind.Step)StepNumber.Text=a.Number.ToString(CultureInfo.InvariantCulture);
-            RestoreCropButton.IsEnabled=_session?.Document.Crop!=null;
+            RestoreCropButton.IsEnabled=_session?.Document.Crop!=null||_session?.Document.Appearance.OutputCrop!=null;
         }finally{_syncProperties=false;}
     }
     private static void SelectValue(ComboBox picker,double value){
@@ -163,13 +163,13 @@ public partial class MainWindow
     private void StepNumber_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Enter){CommitStep();Surface.Focus();e.Handled=true;}}
     private void CommitStep(){if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Step} a)return;if(int.TryParse(StepNumber.Text,out var n)&&n>=1&&n<=9999){var id=a.Id;_session.Change(d=>d.Annotations.First(x=>x.Id==id).Number=n);}SyncProperties();}
     private void DeleteAnnotation_Click(object sender,RoutedEventArgs e)=>Surface.DeleteSelected();
-    private void RestoreCrop_Click(object sender,RoutedEventArgs e){if(_session==null)return;SelectTool(EditorTool.Select);try{_=new ImageLayout(new PixelRect(0,0,_session.Document.OriginalWidth,_session.Document.OriginalHeight),_session.Document.Appearance);_session.Change(d=>d.Crop=null);Surface.Refresh();if(_fitMode)FitImage();}catch(Exception ex){SetStatus("Chưa khôi phục crop: "+ex.Message);}}
+    private void RestoreCrop_Click(object sender,RoutedEventArgs e){if(_session==null)return;SelectTool(EditorTool.Select);try{_=new ImageLayout(new PixelRect(0,0,_session.Document.OriginalWidth,_session.Document.OriginalHeight),_session.Document.Appearance);_session.Change(d=>{d.Crop=null;d.Appearance.OutputCrop=null;});Surface.Refresh();if(_fitMode)FitImage();}catch(Exception ex){SetStatus("Chưa khôi phục crop: "+ex.Message);}}
     private void Undo_Click(object sender,RoutedEventArgs e){FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
     private void Redo_Click(object sender,RoutedEventArgs e){FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Redo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
     private void FitImage()
     {
         _fitMode=true;_actualPixels=false;if(_session==null||Surface.Layout is not {} v)return;
-        Surface.SetZoom(Math.Min(Math.Max(40,ImageScroll.ActualWidth-65)/v.Width,Math.Max(40,ImageScroll.ActualHeight-65)/v.Height));
+        Surface.SetZoom(Math.Min(Math.Max(40,ImageScroll.ActualWidth-65-2*EditorSurface.WorkspacePad)/v.Width,Math.Max(40,ImageScroll.ActualHeight-65-2*EditorSurface.WorkspacePad)/v.Height));
     }
     private void Fit_Click(object sender,RoutedEventArgs e)=>FitImage();
     private void Actual_Click(object sender,RoutedEventArgs e){ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;}
