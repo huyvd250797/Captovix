@@ -29,7 +29,7 @@ public partial class MainWindow : Window
     private MediaItem? Selected => MediaList.SelectedItem as MediaItem;
     public MainWindow()
     {
-        InitializeComponent();InitializeEditor();_store=new();MediaList.ItemsSource=_store.Items;
+        InitializeComponent();InitializeBrand();InitializeEditor();_store=new();MediaList.ItemsSource=_store.Items;
         CollectionViewSource.GetDefaultView(_store.Items).Filter=o=>{var i=(MediaItem)o;var q=SearchBox.Text??"";return $"{i.Title} {(i.IsVideo?"video":"ảnh")} {i.Created:dd/MM/yyyy}".Contains(q,StringComparison.CurrentCultureIgnoreCase);};
         _store.Items.CollectionChanged+=(_,_)=>CountLabel.Text=_store.Items.Count.ToString();CountLabel.Text=_store.Items.Count.ToString();
         InitializeShell();InitializeComposition();InitializeIcons();Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;

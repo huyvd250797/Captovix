@@ -16,7 +16,7 @@ internal static class Program{
  var app=new App();app.InitializeComponent();var window=new MainWindow();var flags=BindingFlags.Instance|BindingFlags.NonPublic;
  object? Call(string name,params object?[] args)=>typeof(MainWindow).GetMethod(name,flags)!.Invoke(window,args);
  var session=new EditorSession(doc);typeof(MainWindow).GetField("_session",flags)!.SetValue(window,session);var surface=(EditorSurface)window.FindName("Surface");surface.Load(image,session);surface.SelectIds([shape.Id]);
- Check(window.WindowState==WindowState.Maximized&&window.Title.Contains("V1.15.0"),"Editor initializes maximized with live studio");
+ Check(window.WindowState==WindowState.Maximized&&window.Title.Contains("V1.15.1"),"Editor initializes maximized with live studio");
  Call("SetObjectPaint",null,true);Check(!surface.Selected!.FillEnabled,"Transparent fill removes existing fill");Call("SetObjectPaint","#D4E5FC",true);Check(surface.Selected!.FillEnabled&&surface.Selected.FillColor=="#D4E5FC","Palette restores chosen fill");Call("SetObjectPaint",null,false);Check(!surface.Selected!.StrokeEnabled,"Transparent border removes outline");
  ((TextBox)window.FindName("ShapeThickness")).Text="9";Call("FlushAutoProperties");Check(surface.Selected!.Stroke==9,"Thickness commits through live TextChanged without Apply");
  var style=surface.Selected!.Copy();style.Kind=AnnotationKind.RoundedRectangle;style.CornerRadius=14;Call("ChooseStyle",style);Check(surface.Selected!.Kind==AnnotationKind.RoundedRectangle&&surface.Tool==EditorTool.Shape,"Gallery switches drawing tool and preserves compatible selection");

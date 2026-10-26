@@ -5,7 +5,7 @@ Unicode true
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
 !ifndef APPVERSION
- !define APPVERSION "1.15.0"
+ !define APPVERSION "1.15.1"
 !endif
 !ifndef CORESETUP
  !define CORESETUP "..\artifacts\CoreSetup.exe"
@@ -247,8 +247,8 @@ Section "Captovix"
  legacy_done:
  WriteRegStr HKCU "Software\HuyVo\CaptovixBootstrap" "InstallLocation" "$NewPath"
  ; Old uninstall may remove the new Desktop shortcut. Recreate stable launchers.
- CreateShortcut "$DESKTOP\Captovix.lnk" "$NewPath\Update.exe" "start Captovix.exe" "$NewPath\current\Captovix.exe"
- CreateShortcut "$SMPROGRAMS\Captovix.lnk" "$NewPath\Update.exe" "start Captovix.exe" "$NewPath\current\Captovix.exe"
+ CreateShortcut "$DESKTOP\Captovix.lnk" "$NewPath\Update.exe" "start Captovix.exe" "$NewPath\current\Assets\Captovix-brand-v114.ico"
+ CreateShortcut "$SMPROGRAMS\Captovix.lnk" "$NewPath\Update.exe" "start Captovix.exe" "$NewPath\current\Assets\Captovix-brand-v114.ico"
  Goto done
  invalid_install:
   MessageBox MB_ICONSTOP "Chua tim thay file da cai. Ban cu chua bi go. Log: $CoreLog"

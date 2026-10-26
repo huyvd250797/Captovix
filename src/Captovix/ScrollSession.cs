@@ -13,6 +13,7 @@ public sealed class ScrollJoin
 public sealed partial class ScrollSession
 {
     public int Schema {get;set;}=2;
+    public CaptureTiming Timing {get;set;}=new();
     public bool Horizontal {get;set;}
     public int Header {get;set;}
     public int Footer {get;set;}
@@ -36,6 +37,7 @@ public sealed partial class ScrollSession
     {
         var info=new FileInfo(path);if(!info.Exists||info.Length>128*1024||(info.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidDataException("File phiên không hợp lệ.");
         var s=JsonSerializer.Deserialize<ScrollSession>(File.ReadAllText(path))??throw new InvalidDataException("Không đọc được phiên.");s.Folder=Path.GetDirectoryName(Path.GetFullPath(path))!;
+        s.Timing??=new();s.Timing.Validate();if(s.Header<0||s.Footer<0||(long)s.Header+s.Footer>s.Height-32||(s.Horizontal&&(s.Header!=0||s.Footer!=0)))throw new InvalidDataException("Vùng cố định trong phiên không hợp lệ.");
         if((File.GetAttributes(s.Folder)&FileAttributes.ReparsePoint)!=0||(s.Schema!=1&&s.Schema!=2)||s.Count<1||s.Count>ScrollStitching.MaxFrames||s.Joins==null||s.Joins.Count!=s.Count-1||s.Hashes==null||s.Hashes.Count!=s.Count)throw new InvalidDataException("Phiên chưa có khung hoàn chỉnh hoặc định dạng không hỗ trợ.");
         ScrollStitching.OutputHeight(s.WorkWidth,s.WorkHeight,s.Joins.Select(j=>j.Overlap).ToArray());for(int i=0;i<s.Count;i++){var frame=new FileInfo(s.FramePath(i));if(!frame.Exists||frame.Length>20_000_000||(frame.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidDataException("Thiếu hoặc vượt giới hạn khung nguồn.");}return s;
     }

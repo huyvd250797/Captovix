@@ -92,7 +92,7 @@ public partial class MainWindow
         if(tool is not (EditorTool.Select or EditorTool.Crop))Surface.SelectIds([]);
         if(tool is not (EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso))Surface.ClearPixelRegion();Surface.Tool=tool;if(tool==EditorTool.Crop)Surface.StartCrop();Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
         foreach(var button in ToolBox.Children.OfType<Button>()){
-            var selected=button.Tag?.ToString()==tool.ToString()||button.Tag?.ToString()=="PixelRectangle"&&Surface.IsPixelTool;button.Background=selected?(Brush)FindResource("Accent"):Brushes.White;button.Foreground=selected?Brushes.White:new SolidColorBrush(Color.FromRgb(36,51,72));
+            var selected=button.Tag?.ToString()==tool.ToString()||button.Tag?.ToString()=="PixelRectangle"&&Surface.IsPixelTool;button.SetResourceReference(Control.BackgroundProperty,selected?"Accent":"Surface");button.SetResourceReference(Control.ForegroundProperty,selected?"OnAccent":"Text");
         }
         SyncProperties();
         ToolHint.Text=tool switch{

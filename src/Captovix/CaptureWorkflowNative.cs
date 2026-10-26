@@ -21,7 +21,7 @@ public sealed class CaptureTray : IDisposable
     public bool Ready{get;private set;}
     public CaptureTray(nint hwnd)
     {
-        _hwnd=hwnd;try{if(ExtractIconEx(Environment.ProcessPath!,0,out var large,out var small,1)>0){_icon=small!=0?small:large;_owned=true;if(large!=0&&large!=_icon)DestroyIcon(large);}}catch{}
+        _hwnd=hwnd;try{_icon=LoadImage(0,System.IO.Path.Combine(AppContext.BaseDirectory,"Assets","Captovix-brand-v114.ico"),1,32,32,0x10);_owned=_icon!=0;if(_icon==0&&ExtractIconEx(Environment.ProcessPath!,0,out var large,out var small,1)>0){_icon=small!=0?small:large;_owned=true;if(large!=0&&large!=_icon)DestroyIcon(large);}}catch{}
         if(_icon==0)_icon=LoadIcon(0,(nint)32512);
         _data=new(){Size=(uint)Marshal.SizeOf<NotifyData>(),Window=hwnd,Id=1,Flags=1|2|4|128,Callback=Callback,Icon=_icon,Tip="Captovix · Chụp ảnh / Mở Editor",Info="",InfoTitle=""};Add();
     }
@@ -42,6 +42,7 @@ public sealed class CaptureTray : IDisposable
     }
     [DllImport("shell32.dll",EntryPoint="Shell_NotifyIconW",CharSet=CharSet.Unicode)]private static extern bool ShellNotify(uint message,ref NotifyData data);
     [DllImport("shell32.dll",EntryPoint="ExtractIconExW",CharSet=CharSet.Unicode)]private static extern uint ExtractIconEx(string file,int index,out nint large,out nint small,uint count);
+    [DllImport("user32.dll",EntryPoint="LoadImageW",CharSet=CharSet.Unicode)]private static extern nint LoadImage(nint instance,string name,uint type,int width,int height,uint flags);
     [DllImport("user32.dll")]private static extern bool DestroyIcon(nint icon);
     [DllImport("user32.dll",EntryPoint="LoadIconW")]private static extern nint LoadIcon(nint instance,nint name);
     [DllImport("user32.dll",EntryPoint="RegisterWindowMessageW",CharSet=CharSet.Unicode)]private static extern uint RegisterWindowMessage(string name);

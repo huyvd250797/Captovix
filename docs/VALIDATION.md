@@ -1,7 +1,10 @@
-# V1.15.0 — Kiểm tra ngày25/10/2026
+# V1.15.1 — Kiểm tra ngày 26/10/2026
 
-Linux x64: main app build0 lỗi/0 cảnh báo;21 bộ logic/static,1278 assertions đạt;11 bộ WPF chỉ cross-build. Bộ AdvancedScrollChecks mới gồm20 assertions ghép ngang, không mất/lặp cột, transpose roundtrip và cắt header/footer đúng từng byte. Các bộ ảnh/editor/shapes/text/clipboard/geometry/update cũ chạy lại. WPF runtime không thực thi trên Linux.
+- App WPF build và publish Windows x64 tự chứa runtime10.0.13 trên Linux: thành công, 0 lỗi/0 cảnh báo.
+- 22 bộ logic/static, 1330 assertions đạt. Gồm 52 kiểm tra mới: giới hạn thời gian chờ/nấc cuộn và mọi tổ hợp trạng thái nguồn (đóng/di chuyển/focus/che).
+- 11 bộ WPF cross-build thành công. Bổ sung kiểm tra template submenu/hover/disabled và tương phản tài nguyên ở Light/Dark vào ScrollAppearanceWindowsChecks; chưa thực thi bộ WPF trên Windows.
+- Đo 8 cặp màu chữ/nền thường, hover, selected và workspace của Light/Dark: đều >=4,5:1; Dark hover 8,33:1. Đây là kiểm tra màu khai báo, không thay thế kiểm tra render và cảm nhận trên màn hình thật.
+- Xác minh trực tiếp PE của Captovix.exe: 9 kích thước icon nhúng khớp ICO artwork tím đã chốt; ICO runtime khớp byte. Không đổi thiết kế logo.
+- Gói full.nupkg thật được chạy qua UpdateChecks; Verify-Packages kiểm tra feed/hash/size, sourceZIP, updateZIP, payload, runtime, stable URL và installer wrapper. Xem PACKAGE-VALIDATION.txt cho kết quả đóng gói.
 
-Gói nupkg thật:61 assertions UpdateChecks (52 baseline đã tính trong1278 và9 kiểm tra tích hợp thêm). Verify-Packages xác minh42 điều kiện gồm hash/size/feed, ZIPCRC, source đầy đủ, payload so byte, stable URL, installer wrapper, nền capture/native và câu lệnh installer giữ nguyên từ1.14. Kết quả đóng gói được xác nhận khi bàn giao.
-
-Chưa kiểm trên Windows thật: tự cuộn quaWM_MOUSEWHEEL/HWHEEL, pause/resume/focus, dừng cuối trang, tương thích app đích, client/menu, khôi phục và loại frame, DPI/màn phụ, cài/update. Chưa có app nào được công bố nghiệm thu. Các tiêu chí không mất/lặp dòng/cột trên trang mẫu thực tế còn chờ. Xem docs/ADVANCED-CAPTURE.md và mẫuHTML dọc/ngang. Không suy diễn kiểm tra pixel tổng hợp thành nghiệm thu Windows.
+Chưa chạy Windows desktop: hover/menu/keyboard, icon taskbar/tray/shortcut ghim cũ, cuộn và focus trên từng app, chụp/clipboard/HDR/DPI, installer/update từ1.15.0. Không tuyên bố app nguồn nào đã nghiệm thu. Checklist cụ thể trong CAPTURE-RELIABILITY.md; không thay kết quả thực tế bằng số assertions.

@@ -12,8 +12,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
-    <ApplicationIcon>Assets/Captovix.ico</ApplicationIcon>
-    <Version>1.15.0</Version>
+    <ApplicationIcon>Assets/Captovix-brand-v114.ico</ApplicationIcon>
+    <Version>1.15.1</Version>
     <StartupObject>Captovix.Program</StartupObject>
     <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
     <PublishTrimmed>false</PublishTrimmed>
@@ -21,7 +21,8 @@
     <Copyright>© 2026 HuyVo. All rights reserved.</Copyright>
   </PropertyGroup>
   <ItemGroup>
-    <Resource Include="Assets/Captovix.ico" />
+    <Resource Include="Assets/Captovix-brand-v114.ico" />
+    <Content Include="Assets/Captovix-brand-v114.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets/Captovix-mark.png" />
     <Resource Include="Assets/Captovix-mark-light.png" />
     <PackageReference Include="ScreenRecorderLib" Version="7.0.1" />

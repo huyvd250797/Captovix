@@ -1,4 +1,3 @@
-# Captovix V1.15.0 — Advanced Capture & Stitching
+# Captovix V1.15.1 — Capture Reliability
 
-Tự cuộn dọc/ngang có pause/resume, dừng khi không có nội dung mới; header/footer nhập số và giữ một lần; xem cặp khung, sửa overlap và loại khung lỗi tạo revision phục hồi. Thêm vùng cố định/gần đây, client hiển thị và menu hẹn giờ. Xem docs/ADVANCED-CAPTURE.md về giới hạn và nghiệm thu Windows còn chờ.
-
+Chỉnh thời gian chờ và nấc cuộn; kiểm tra cửa sổ nguồn, tạm dừng khi mất focus/che/di chuyển; log chẩn đoán, hủy và revision an toàn hơn. Sửa dark mode hover trắng, đồng bộ màu menu/công cụ/nền ảnh; gán logo tím mới cho runtime/tray/shortcut. Thêm Giới thiệu Captovix. Hướng dẫn: docs/CAPTURE-RELIABILITY.md. Kiểm tra Windows thực tế còn chờ.

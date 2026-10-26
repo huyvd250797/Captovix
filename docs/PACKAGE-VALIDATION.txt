@@ -1,1 +1,1 @@
-V1.15.0: xem VALIDATION.md. 1278 logic/static;11 WPF compile-only;61 updater package checks (9 additional);42 artifact integrity checks required. Windows runtime/install/update pending. Unsigned installer; no automatic publishing.
+V1.15.1: 1330 logic/static assertions;11 WPF compile-only;61 updater real-package assertions (52 baseline +9 additional);44 artifact integrity checks. Approved EXE icon:9 sizes match source. Windows runtime/install/update pending. Installer unsigned. No automatic publishing.

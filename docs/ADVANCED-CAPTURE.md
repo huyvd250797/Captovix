@@ -1,3 +1,5 @@
+> V1.15.1 bổ sung độ ổn định, thời gian chờ/nấc cuộn và giao diện: xem CAPTURE-RELIABILITY.md. Cấu hình cũ 1,4 giây đã được thay bằng thời gian chờ lựa chọn.
+
 # Captovix V1.15.0 — Advanced Capture & Stitching
 
 ## Chụp cuộn

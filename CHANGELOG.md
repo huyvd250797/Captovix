@@ -1,3 +1,9 @@
+# Captovix V1.15.1 — Capture Reliability
+
+Đã triển khai trong source: chỉnh thời gian đợi/số nấc cuộn; kiểm tra nguồn trước/sau nhịp, tạm dừng khi thay đổi/che/mất focus; dọn candidate, commit revision trước khi chuyển phiên; sửa kích thước overlap ngang. Dark mode đồng bộ menu, hover, công cụ và nền vùng làm việc. Logo tím gán trực tiếp khi chạy và đường dẫn ICO mới. Thêm Giới thiệu thương hiệu đã chốt. Build/logic đã kiểm; Windows thực tế còn chờ. Xem docs/CAPTURE-RELIABILITY.md.
+
+**Bản tiếp theo V1.16 — OCR & Text Extraction:** nhận chữ theo vùng hoặc toàn ảnh, copy Unicode, hỗ trợ/đánh giá tiếng Việt và Anh; lựa chọn engine và dữ liệu ngôn ngữ, thông báo lỗi khi thiếu bộ nhận dạng. OCR chưa được triển khai. Phần dưới là lịch sử các bản trước.
+
 # Captovix V1.15.0 — Advanced Capture & Stitching
 
 Đã triển khai trong source toàn bộ nhóm V1.15 Boss chọn: tự cuộn dọc/ngang, pause/resume/dừng khi không có nội dung mới; header/footer cố định; xem hai khung và loại khung lỗi; vùng cố định/gần đây, client hiển thị và menu hẹn giờ. Chưa nghiệm thu trên Windows thật. Hướng dẫn chi tiết: docs/ADVANCED-CAPTURE.md.

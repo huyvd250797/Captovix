@@ -17,4 +17,5 @@ png=cairosvg.svg2png(bytestring=tile.encode(),output_width=1024,output_height=10
 image=Image.open(BytesIO(png)).convert('RGBA')
 image.resize((256,256),Image.Resampling.LANCZOS).save(assets/'Captovix-app.png')
 image.save(assets/'Captovix.ico',format='ICO',sizes=[(n,n) for n in (16,20,24,32,40,48,64,128,256)])
+(assets/'Captovix-brand-v114.ico').write_bytes((assets/'Captovix.ico').read_bytes())
 print('Brand PNG, SVG, and multi-resolution ICO generated.')
