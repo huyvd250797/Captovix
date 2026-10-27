@@ -26,17 +26,22 @@ public partial class MainWindow
             if(key!=null&&Enum.TryParse<EditorTool>(key,out _))label=key switch{"Select"=>"Chọn","Arrow"=>"Mũi tên","Shape"=>"Khung","Text"=>"Chữ","Magnifier"=>"Phóng đại","Spotlight"=>"Spotlight","Highlight"=>"Highlight","Step"=>"Bước","Blur"=>"Làm mờ","Callout"=>"Callout","Freehand"=>"Vẽ tự do","Crop"=>"Crop","PixelRectangle"=>"Chọn vùng","PixelEllipse"=>"Ellipse","PixelLasso"=>"Lasso",_=>label};
             else{key=button.Name switch{"ExtendCanvasButton"=>"Expand","LibraryMoreButton"=>"More","ArchiveButton"=>"Folder","BatchButton"=>"Export","LibraryManagerButton"=>"Layers","AssistButton"=>"Ocr","LibrarySearchButton"=>"Search","MediaLocationButton"=>"SaveFolder","OcrButton"=>"Ocr","CaptureButton"=>"Camera","RecordButton"=>"Record","UndoButton"=>"Undo","RedoButton"=>"Redo","CopyButton"=>"Copy","ExportButton"=>"Export","RestoreMediaButton"=>"Undo","UpdateFooterButton"=>"Refresh",_=>null};
                 if(key==null){(key,label)=text switch{"⌫"=>("Delete",""),"▱"=>("Folder","Mở thư mục media"),"⇄"=>("Layout","Thư viện dọc / ngang"),"Mở file"=>("Folder","Mở file"),"↻"=>("Refresh",""),_=>((string?)null,label)};}
-                else label=button.Name switch{"LibrarySearchButton" or "ArchiveButton" or "LibraryMoreButton"=>"","MediaLocationButton"=>"Thư mục lưu media","LibraryManagerButton"=>"Quản lý thư viện","BatchButton"=>"Xuất nhiều / PDF","RestoreMediaButton"=>"Khôi phục lần xóa","AssistButton"=>"OCR & chỉnh chữ","CaptureButton"=>"Chụp ảnh","RecordButton"=>"Quay màn hình","UndoButton" or "RedoButton"=>"","UpdateFooterButton"=>"Cập nhật",_=>label};
+                else label=button.Name switch{"LibrarySearchButton" or "ArchiveButton" or "LibraryMoreButton"=>"","MediaLocationButton"=>"Thư mục lưu media","LibraryManagerButton"=>"Quản lý thư viện","BatchButton"=>"Xuất nhiều / PDF","RestoreMediaButton"=>"Khôi phục lần xóa","AssistButton"=>"OCR · nhận chữ","CaptureButton"=>"Chụp ảnh","RecordButton"=>"Quay màn hình","UndoButton" or "RedoButton"=>"","UpdateFooterButton"=>"Cập nhật",_=>label};
             }
             if(key==null)continue;button.Content=AppIcons.Content(key,label);button.SetValue(System.Windows.Automation.AutomationProperties.NameProperty,string.IsNullOrEmpty(label)?button.ToolTip?.ToString()??key:label);
         }
         CaptureButton.SetResourceReference(Control.BackgroundProperty,"Accent");CaptureButton.SetResourceReference(Control.ForegroundProperty,"OnAccent");
-        RecordButton.SetResourceReference(Control.BackgroundProperty,"RecordBackground");RecordButton.SetResourceReference(Control.ForegroundProperty,"RecordText");RecordButton.SetResourceReference(Control.BorderBrushProperty,"RecordText");
+        RecordButton.SetResourceReference(Control.BackgroundProperty,"RecordBackground");RecordButton.SetResourceReference(Control.ForegroundProperty,"RecordText");RecordButton.SetResourceReference(Control.BorderBrushProperty,"RecordText");_libraryLabels.Clear();ApplyLibraryLayout();
     }
 }
 public static class AppIcons
 {
     private static readonly Dictionary<string,string> Paths=new(){
+        ["Element"]="M3,8 V3 H8 M16,3 H21 V8 M3,16 V21 H8 M16,21 H21 V16 M8,8 H16 V16 H8 Z",
+        ["ScrollDown"]="M12,3 V20 M6,14 L12,20 L18,14",["ScrollRight"]="M3,12 H20 M14,6 L20,12 L14,18",
+        ["Library"]="M3,4 H8 V20 H3 Z M11,4 H16 V20 H11 Z M19,5 L22,19",
+        ["LibraryHorizontal"]="M3,3 H21 V21 H3 Z M3,15 H21 M8,15 V21 M14,15 V21",
+        ["LibraryVertical"]="M3,3 H21 V21 H3 Z M9,3 V21 M3,9 H9 M3,15 H9",
         ["Star"]="M12,2 L15,8 L22,9 L17,14 L18,21 L12,18 L6,21 L7,14 L2,9 L9,8 Z",["More"]="M5,11 A1,1 0 1 1 4.99,11 M12,11 A1,1 0 1 1 11.99,11 M19,11 A1,1 0 1 1 18.99,11",["Restore"]="M7,7 H20 V20 H7 Z M4,16 H3 V3 H16 V4",["Expand"]="M9,3 H3 V9 M15,3 H21 V9 M3,15 V21 H9 M15,21 H21 V15",["Close"]="M6,6 L18,18 M18,6 L6,18",["Minimize"]="M4,17 L20,17",["Maximize"]="M4,4 L20,4 L20,20 L4,20 Z",
         ["Ocr"]="M3,8 L3,3 L8,3 M16,3 L21,3 L21,8 M3,16 L3,21 L8,21 M16,21 L21,21 L21,16 M8,8 L16,8 M8,12 L16,12 M8,16 L13,16",
         ["Assist"]="M4,20 L17,7 L20,10 L7,23 Z M4,3 L4,7 M2,5 L6,5 M15,1 L15,5 M13,3 L17,3 M21,15 L21,19 M19,17 L23,17",

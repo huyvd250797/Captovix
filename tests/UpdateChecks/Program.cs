@@ -27,6 +27,7 @@ try
     Check(new UpdateSettings{SourceKind="Https",SourceUrl="https://example.com/feed"}.ReleasePage()=="https://example.com/feed","Custom feed keeps its manual release target");
     var now = DateTimeOffset.UtcNow;
     Check(settings.ShouldAutoCheck(now), "First daily check");
+    Check(settings.ShouldCheckInSession(now,null),"New app session checks even with a recent persisted timestamp");Check(!settings.ShouldCheckInSession(now,now.AddMinutes(-29)),"Session polls no more than every30minutes");Check(settings.ShouldCheckInSession(now,now.AddMinutes(-30)),"Session can discover a release after30minutes");settings.AutoCheck=false;Check(!settings.ShouldCheckInSession(now,null),"Session preserves explicit auto-check opt-out");settings.AutoCheck=true;
     settings.LastCheckedSource = settings.SourceKey; settings.LastCheckUtc = now;
     Check(!settings.ShouldAutoCheck(now.AddHours(23)) && settings.ShouldAutoCheck(now.AddHours(24)), "24-hour throttle");
     settings.SourceUrl = "https://github.com/HuyVo/Other";

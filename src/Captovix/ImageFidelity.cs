@@ -4,6 +4,12 @@ namespace Captovix;
 // Pure pixel math: no screen DPI, viewport zoom or WPF units enter the file pipeline.
 public static class ImageFidelity
 {
+    public static double FitZoom(int width,int height,double viewportWidth,double viewportHeight,double dpiScale)
+    {
+        if(width<1||height<1||viewportWidth<=0||viewportHeight<=0)throw new ArgumentOutOfRangeException(nameof(width));
+        // Avoid unnecessary enlargement. At 100%, one source pixel is one physical display pixel.
+        return Math.Min(ActualZoom(dpiScale),Math.Min(viewportWidth/width,viewportHeight/height));
+    }
     public static double ActualZoom(double dpiScale)=>1/ValidScale(dpiScale);
     public static double PhysicalZoom(double zoom,double dpiScale)=>zoom*ValidScale(dpiScale);
     public static double MoveZoom(double zoom,double oldScale,double newScale)=>PhysicalZoom(zoom,oldScale)/ValidScale(newScale);

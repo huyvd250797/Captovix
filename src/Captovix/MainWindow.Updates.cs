@@ -47,14 +47,15 @@ public partial class MainWindow
         catch (Exception ex) { App.Log(ex); UpdateStatus.Text = "Chưa khởi tạo được cập nhật. Hãy thử lại hoặc gửi log cho nhà phát triển."; RenderUpdateUi(); }
     }
 
+    private DateTimeOffset? _lastAutoAttempt;
     private async Task AutoCheckUpdatesAsync()
     {
         try
         {
-            // Allow the Editor to finish opening; check at most once / 24 h / source.
+            // Allow the Editor to finish opening; check once per app session, then at most every30minutes.
             await Task.Delay(1800);
-            if (_updateUiClosed || _updates == null || _updates.Stage != UpdateStage.Idle || !_updateSettings.ShouldAutoCheck(DateTimeOffset.UtcNow)) return;
-            await CheckUpdatesAsync();
+            if (_updateUiClosed || _updates == null || _updates.IsWorking || _updates.Stage==UpdateStage.Ready || !_updateSettings.ShouldCheckInSession(DateTimeOffset.UtcNow,_lastAutoAttempt)) return;
+            _lastAutoAttempt=DateTimeOffset.UtcNow;await CheckUpdatesAsync();
         }
         catch (Exception ex) { App.Log(ex); }
     }
@@ -64,7 +65,7 @@ public partial class MainWindow
         if (_updates == null || _updates.IsWorking || _updates.Stage == UpdateStage.Ready) return;
         _updateSettings.LastCheckUtc = DateTimeOffset.UtcNow; _updateSettings.LastCheckedSource = _updateSettings.SourceKey;
         try { UpdateSettingsStore.Save(App.DataRoot, _updateSettings); }
-        catch (Exception ex) { App.Log(ex); UpdateStatus.Text = "Không lưu được cấu hình cập nhật. Hãy kiểm tra quyền thư mục dữ liệu."; return; }
+        catch (Exception ex) { App.Log(ex); UpdateStatus.Text = "Không lưu được thời điểm kiểm tra; vẫn tiếp tục đọc nguồn cập nhật."; }
         await _updates.CheckAsync();
     }
 

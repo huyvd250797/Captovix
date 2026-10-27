@@ -1,22 +1,69 @@
-# Captovix V1.24.0 — Capture Precision
+# Captovix V1.26.0 — Smart Element Capture
 
-- Chụp vùng: kéo → chỉnh cạnh/góc nếu cần → Enter hoặc nút máy ảnh là chụp, bỏ bước chọn hành động dư. Nét đứt chuyển động chậm báo vùng chưa chụp. Mũi tên cuộn dọc/ngang nằm ngay vùng chọn, nền trong suốt; video chỉ có xác nhận vùng. Esc/chuột phải hủy.
-- Giữ nền capture pixel và kiểm topology/DPI sau hẹn giờ. Chọn phần tử cha/con bằng con lăn, ưu tiên cạnh/góc modal/cửa sổ; vùng cố định/gần đây kế thừa nền trước. Độ tương thích UIA phụ thuộc ứng dụng; không cam kết nhận diện mọi UI.
-- Quản lý thư viện: cây năm/tháng/ngày, ảnh dạng ô tự xuống dòng theo chiều rộng; tải100ảnh/lần, nút Xem thêm. Tùy chọn Ẩn ngày tháng không có hình bỏ cả tháng trống. Ctrl/Shift chọn nhiều, mở/xóa/xuất giữ nguyên. Bỏ đường vào màn hình quản lý bộ sưu tập cũ; dữ liệu tag/collection giữ, backup/export còn trong menu.
-- Chọn công cụ áp dụng mẫu đã lưu gần nhất trong họ công cụ; chọn mẫu cụ thể vẫn ưu tiên mẫu vừa bấm. Đã lưu mở sẵn; sao trên preview chỉ hiện hover/focus. Sắp xếp công cụ bằng kéo-thả trên thanh công cụ hoặc Hiển thị → Sắp xếp không gian → Sắp xếp công cụ cá nhân; thứ tự giữ trên máy.
-- Callout vẽ kéo giữ nguyên thân khi thả, tắt tự co chữ cho đối tượng mới để nhập không đổi thân. Bật Tự co trong thuộc tính nếu muốn. Một click giữ kích thước mặc định. Tay nắm đuôi màu cam, tay nắm thân xanh/trắng dạng tròn. Đuôi vẫn tự do.
-- Footer/nút update gọn hơn. Giới thiệu ghi: Ý tưởng, định hướng sản phẩm và thiết kế trải nghiệm: Võ Đức Huy (HuyVo). ©2026HuyVo. All rights reserved.
+Nâng cấp từ source `Captovix-v1.25.0-Source(1).zip` Boss gửi. Bản này ưu tiên Smart Element Capture thay cho đề xuất Composition trước đó. Source và gói cài/cập nhật đã xây dựng; nghiệm thu tương tác trên Windows thật còn chờ. Không tự đăng GitHub Release.
 
-## Cài/update
+## Thay đổi
 
-Giải nén Update-Packages, đóng app và chạy HuyVo.Captovix-win-Setup.exe, hoặc đăng đủ5asset lên GitHub Release stable/latest tagv1.24.0 để app kiểm tra cập nhật. Không đăng chỉ file ZIP. Source ZIP dùng phát triển, không dùng cài. Không tự publish trong lần bàn giao này. Setup chưa ký số.
+- Chế độ Vùng và Phần tử dùng cùng một lớp phủ. Ảnh vùng cũng bật nhận diện; video giữ kéo vùng thủ công.
+- Rê để gợi ý khối. Con lăn lên / phím ↑ hoặc ←: khối cha; xuống / ↓ hoặc →: khối con. Thứ tự dựa trên cây lồng nhau, có chỉ số cấp.
+- Click khóa khối, rồi kéo 8 tay nắm chỉnh cạnh/góc; kéo trong khối đã khóa để di chuyển. Góc kéo tự do; Shift giữ tỷ lệ. Enter chụp một lần, không mở bước xác nhận thứ hai.
+- Trước khi khóa, giữ chuột kéo luôn tạo vùng thủ công ngay cả trên khối đang gợi ý; không cần thoát chế độ. Tab bỏ khóa/chọn lại; S bật/tắt nhận diện; Esc/chuột phải hủy.
+- Sau khóa: phím mũi tên dịch 1 pixel; Shift + mũi tên 10 pixel; Ctrl + mũi tên thay kích thước (Ctrl+Shift: 10 pixel).
+- Gợi ý đổi khối phải có hai kết quả xác nhận liên tiếp; giữ cấp cha/con người dùng đã chọn khi còn phù hợp. Không xóa khung chỉ vì bắt đầu truy vấn. UI Automation chạy trong tiến trình phụ có giới hạn thời gian; bổ sung metadata child HWND cho ứng dụng Win32 cũ. Cửa sổ đổi vị trí phải chọn lại trước chụp.
+- Bỏ hai bảng hướng dẫn/nút lớn cố định ở góc trên. Thay bằng một thanh nhỏ có camera + Enter, thông tin kích thước/cấp và tooltip hướng dẫn. Ưu tiên ngoài vùng chụp, tự đổi phía khi sát cạnh. Ẩn toàn bộ thanh khi kéo; khung chỉ giữ tay nắm nhỏ. Khi chọn kín màn hình, không có chỗ ngoài vùng: thanh nhỏ đặt sát đáy, đóng trước lấy ảnh.
+- Thanh thư viện dọc/ngang chỉ có **Xóa – Quản lý thư viện – Đổi hướng**. Icon đổi hướng thể hiện bố cục đích, tooltip ghi rõ chuyển ngang hay dọc. Tìm, khôi phục, thư mục lưu và xuất vẫn truy cập qua menu Tệp.
+- Pixel ảnh vùng/phần tử/toàn màn hình lấy trực tiếp bằng BitBlt, không StretchBlt. Worker đặt PerMonitorV2 và khôi phục DPI context sau chụp. Kiểm tra lại toàn bộ byte BGRA sau lưu PNG; sai kích thước/pixel thì báo lỗi, không âm thầm resize.
+- Giảm khoảng trống quanh ảnh trong Editor từ48 xuống24 DIP để ảnh vừa khung lớn hơn. Ảnh nhỏ mặc định không phóng lớn vượt100% pixel; ảnh lớn vẫn thấy toàn bộ ở chế độ vừa khung. Tooltip zoom giải thích cách kiểm tra ở100%. Zoom không tham gia pipeline xuất.
 
-## Giới hạn và nghiệm thu
+## Giới hạn và kiểm chứng
 
-Build/publish Windows x64 tự chứa.NET10.0.13; giữ stack/logo/update source/schema và dữ liệu. Đã chạy7bộ logic/static liên quan,620assertions, và cross-build RefinementWindowsChecks; chưa chạy WPF/Windows desktop. Kiểm nupkg và integrity gói riêng sau đóng gói.
+Lấy đúng pixel không tạo thêm chi tiết chưa tồn tại trên màn hình. Preview vừa khung dưới100% phải thu nhỏ; đánh giá độ nét ở **Rõ nét · 100%** hoặc mở PNG gốc. Không tự sharpen/upscale vì có thể đổi chữ, viền và QR. UltraViewer/Remote Desktop/emulator có thể đã scale/nén ảnh trước khi Captovix chụp; app không khôi phục pixel gốc của máy từ xa. Màu HDR/wide gamut, nội dung bảo vệ, cửa sổ bị che và provider không hỗ trợ là trường hợp đánh giá riêng. Backend cửa sổ native và quay video giữ nguyên.
 
-Cần Windows nghiệm thu:1Enter/chuột/nút camera, hủy/countdown/quay, arrows cuộn, nhiều DPI100–200%và tọa độ âm; ảnh/clipboard/PNG đúng pixel; thư viện co giãn/lazy/empty month/multi-select/delete; chọn mẫu gần nhất sau restart/chọn mẫu thủ công; callout thân/đuôi/IME/Undo; caption/taskbar/footer/install-update. Không có screenshot UI chạy thật hoặc tuyên bố đã kiểm thị giác. Margins cũ vẫn theo giới hạn1.23.1, chữ không kéo méo glyph hai chiều.
+UIA phụ thuộc ứng dụng đích. Trình duyệt cần cung cấp cây accessibility; app tự vẽ/remote có thể chỉ cung cấp toàn cửa sổ. Khi đó tắt S hoặc kéo chọn thủ công ngay. Không cam kết nhận diện mọi modal/bảng trong mọi ứng dụng.
 
-## Tiếp theo V1.25 — Scrolling Capture Quality
+Đã chạy kiểm tra logic trên Linux và cross-build WPF. Chưa chạy overlay, UIA ứng dụng thật, GDI/PNG thực tế, clipboard, DPI màn hình thật hoặc installer GUI trên Windows trong lần bàn giao này. Xem `docs/VALIDATION.md` và checklist bên dưới.
 
-Cải thiện mối nối dọc/ngang, vùng header/footer cố định, phát hiện khung lặp/lỗi, bộ trang mẫu để kiểm không mất/lặp dòng/cột. Ưu tiên bản vá phản hồi Windows1.24 trước.
+## Cách cài / cập nhật
+
+1. Sao lưu thư viện và cấu hình. Đóng Captovix.
+2. Giải nén `Captovix-v1.26.0-Update-Packages.zip`, chạy `HuyVo.Captovix-win-Setup.exe` để cài trực tiếp; có chọn đường dẫn theo installer hiện có.
+3. Để update từ app: đăng đủ5asset trong ZIP lên Release stable/latest tag `v1.26.0` của `huyvd250797/captovix-releases`: full.nupkg, Setup.exe, RELEASES, assets.win.json, releases.win.json. Không chỉ đăng ZIP hoặc source. Chọn Kiểm tra cập nhật trong app.
+4. Source dùng phát triển; không dùng Source.zip làm gói update. Bộ cài chưa ký số. Không ghi đè dữ liệu để xử lý lỗi cài.
+
+## Dựng lại
+
+Giải nén Source ZIP, mở thư mục `Captovix-v1.26.0`. Dùng .NET SDK10.0.100, NSIS3 và vpk1.2.161; runtime self-contained10.0.13 đã pin. Không đổi dependency trong bản này.
+
+```powershell
+dotnet build src/Captovix/Captovix.csproj -c Release -p:Platform=x64
+dotnet run --project tests/SmartCaptureChecks -c Release
+dotnet run --project tests/ConnectorChecks -c Release
+dotnet run --project tests/ImageFidelityChecks -c Release
+dotnet run --project tests/ShellLayoutChecks -c Release
+dotnet run --project tests/InstallerContractChecks -c Release -- .
+# Chạy trên Windows để kiểm tra renderer/PNG (không thay cho bộ test desktop):
+dotnet run --project tests/FidelityWindowsChecks -c Release -p:Platform=x64
+# Fixture tương tác modal/bảng; mở Captovix riêng để thử chụp:
+dotnet run --project tests/SmartCaptureWindowsFixture -c Release -p:Platform=x64
+```
+
+Các script build/package Windows có trong `scripts/`. Giữ AppID, baked update-source, schema dữ liệu và logo đã duyệt. Xem hướng dẫn nền bên dưới về build/install/publish; chỉ dẫn phiên bản cũ là lịch sử, version hiện tại1.26.0.
+
+## Nghiệm thu Windows cần thực hiện
+
+| Bộ ứng dụng / điều kiện | Thao tác | Kết quả cần đạt | Trạng thái |
+| --- | --- | --- | --- |
+| Fixture WPF trong source | Modal, DataGrid, child/parent, UIA | Khối đúng vị trí/pixel, không phát sinh click vào ứng dụng đích | Chờ chạy Windows |
+| Edge/Chrome trang có modal và bảng | Rê giữa block, gần cạnh modal; wheel cha/con; khóa rồi resize | Chọn đúng cấp đã chủ động chọn, không nhảy cấp khi đứng yên | Chờ chạy Windows |
+| Explorer / ứng dụng Win32 | Cửa sổ, bảng, vùng con; fallback thủ công | Không treo provider; kéo vùng được ngay | Chờ chạy Windows |
+| UltraViewer / ứng dụng tự vẽ | Provider chỉ có khung ngoài | Không nhận nhầm widget máy từ xa; kéo chọn bằng tay thành công | Chờ chạy Windows |
+| DPI100/125/150/175/200%, màn hình tọa độ âm | Chọn/resize/move xuyên màn hình, Enter/Esc | Tọa độ và PNG đúng pixel; không còn toolbar/shade trong ảnh | Chờ chạy Windows |
+| Cửa sổ đích di chuyển trong khi khóa | Di chuyển cửa sổ rồi Enter | Từ chối vùng stale, yêu cầu chọn lại | Chờ chạy Windows |
+| GDI pattern và ảnh chữ/QR ở100% | Trợ giúp → Kiểm chứng chất lượng ảnh | PNG đúng pixel, crop/rotate/copy/export không resize ngoài ý muốn | Chờ chạy Windows |
+| Thư viện hai hướng, filmstrip96–260DIP | Đổi hướng, kéo splitter, xóa đa chọn | Luôn đúng3nút, icon đích đúng và đủ chỗ | Chờ chạy Windows |
+| Update từ1.25.0 và Setup ở ổD | Kiểm tra cập nhật/cài tại D:\Captovix\Captovix | Đúng1.26.0, giữ media/style/theme/logo/phím tắt | Chờ chạy Windows |
+
+## Tiếp theo đề xuất
+
+**V1.27 — Precision Selection & Magnifier:** kính lúp theo trỏ, nhập W×H bằng pixel, khóa riêng chiều rộng/cao, tỷ lệ thông dụng, bắt cạnh có thể tạm bỏ qua. Chỉ triển khai sau khi Boss chọn và sau nghiệm thu lớp phủ1.26 trên bộ ứng dụng mục tiêu.
+

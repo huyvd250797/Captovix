@@ -6,31 +6,44 @@ namespace Captovix;
 public partial class MainWindow
 {
     private bool _libraryBottom;
-    private double _libraryWidth=190,_filmstripHeight=160,_inspectorWidth=250;
+    private double _libraryWidth=190,_filmstripHeight=112,_inspectorWidth=250;
     private void Sidebar_Resized(object sender,System.Windows.Controls.Primitives.DragCompletedEventArgs e){if(!_libraryBottom)_libraryWidth=LibraryColumn.ActualWidth;else _filmstripHeight=FilmstripRow.ActualHeight;if(InspectorPane.Visibility==Visibility.Visible)_inspectorWidth=InspectorColumn.ActualWidth;SaveLibraryLayout();if(_session!=null){_fitMode=true;_actualPixels=false;FitImage();}}
+    private readonly System.Collections.Generic.Dictionary<Button,object> _libraryLabels=new();
     private Style? _mediaCardStyle;
     private Window? _settingsDialog;
     private void InitializeShell()
     {
-        try{var path=Path.Combine(App.DataRoot,"editor-layout.json");if(File.Exists(path)){using var d=JsonDocument.Parse(File.ReadAllText(path));_libraryBottom=d.RootElement.TryGetProperty("LibraryBottom",out var b)&&b.GetBoolean();if(d.RootElement.TryGetProperty("LibraryWidth",out var w))_libraryWidth=Math.Clamp(w.GetDouble(),140,480);if(d.RootElement.TryGetProperty("FilmstripHeight",out var h))_filmstripHeight=Math.Clamp(h.GetDouble(),110,400);if(d.RootElement.TryGetProperty("InspectorWidth",out var i))_inspectorWidth=Math.Clamp(i.GetDouble(),210,520);InspectorColumn.Width=new(_inspectorWidth);}}catch(Exception ex){App.Log(ex);}
+        try{var path=Path.Combine(App.DataRoot,"editor-layout.json");if(File.Exists(path)){using var d=JsonDocument.Parse(File.ReadAllText(path));_libraryBottom=d.RootElement.TryGetProperty("LibraryBottom",out var b)&&b.GetBoolean();if(d.RootElement.TryGetProperty("LibraryWidth",out var w))_libraryWidth=Math.Clamp(w.GetDouble(),140,480);if(d.RootElement.TryGetProperty("FilmstripHeight",out var h))_filmstripHeight=Math.Clamp(h.GetDouble(),96,260);if(!d.RootElement.TryGetProperty("LayoutVersion",out var layoutVersion)||layoutVersion.GetInt32()<125)_filmstripHeight=Math.Min(_filmstripHeight,112);if(d.RootElement.TryGetProperty("InspectorWidth",out var i))_inspectorWidth=Math.Clamp(i.GetDouble(),210,520);InspectorColumn.Width=new(_inspectorWidth);}}catch(Exception ex){App.Log(ex);}
         MediaLocationButton.ToolTip="Lưu media mới: "+_store.Root+"\nBấm để chọn thư mục khác.";ApplyLibraryLayout();LibraryMorePopup.Child.AddHandler(Button.ClickEvent,new RoutedEventHandler((_,_)=>LibraryMorePopup.IsOpen=false));
     }
     private void ApplyLibraryLayout()
     {
-        LibraryColumn.MinWidth=_libraryBottom?0:140;LibraryColumn.MaxWidth=_libraryBottom?0:480;LibraryColumn.Width=new(_libraryBottom?0:_libraryWidth);FilmstripRow.MinHeight=_libraryBottom?110:0;FilmstripRow.MaxHeight=_libraryBottom?400:0;FilmstripRow.Height=new(_libraryBottom?_filmstripHeight:0);
+        LibraryColumn.MinWidth=_libraryBottom?0:140;LibraryColumn.MaxWidth=_libraryBottom?0:480;LibraryColumn.Width=new(_libraryBottom?0:_libraryWidth);FilmstripRow.MinHeight=_libraryBottom?96:0;FilmstripRow.MaxHeight=_libraryBottom?260:0;FilmstripRow.Height=new(_libraryBottom?_filmstripHeight:0);
         LibrarySplitter.Visibility=_libraryBottom?Visibility.Collapsed:Visibility.Visible;FilmstripSplitter.Visibility=_libraryBottom?Visibility.Visible:Visibility.Collapsed;
-        InspectorColumn.MinWidth=InspectorPane.Visibility==Visibility.Visible?210:0;InspectorColumn.MaxWidth=520;MediaList.Tag=_libraryBottom?Math.Clamp(_filmstripHeight-104,45,220):76d;
+        InspectorColumn.MinWidth=InspectorPane.Visibility==Visibility.Visible?210:0;InspectorColumn.MaxWidth=520;MediaList.Tag=_libraryBottom?Math.Clamp(_filmstripHeight-70,24,180):76d;
         Grid.SetRow(LibraryPane,_libraryBottom?2:0);Grid.SetColumn(LibraryPane,0);Grid.SetColumnSpan(LibraryPane,_libraryBottom?3:1);
         Grid.SetColumn(EditorPane,_libraryBottom?0:2);Grid.SetColumnSpan(EditorPane,_libraryBottom?3:1);
+        DockPanel.SetDock(LibraryActionsHost,_libraryBottom?Dock.Left:Dock.Bottom);
+        LibraryMorePopup.IsOpen=false;
+        foreach(var button in LibraryFooterRow.Children.OfType<Button>()){
+            bool visible=button==LibraryDeleteButton||button==ArchiveButton||button==LibraryLayoutButton;
+            button.Visibility=visible?Visibility.Visible:Visibility.Collapsed;
+            if(!visible)continue;
+            var key=button==LibraryDeleteButton?"Delete":button==ArchiveButton?"Library":_libraryBottom?"LibraryVertical":"LibraryHorizontal";
+            button.Content=AppIcons.Content(key,"",17);button.Width=30;button.Height=_libraryBottom?26:30;button.MinWidth=30;button.MinHeight=_libraryBottom?26:30;button.Padding=new(2);
+        }
+        LibraryLayoutButton.ToolTip=_libraryBottom?"Chuyển sang thư viện dọc bên trái":"Chuyển sang thư viện ngang phía dưới";
+        System.Windows.Automation.AutomationProperties.SetName(LibraryLayoutButton,LibraryLayoutButton.ToolTip.ToString());
+        LibraryFooterRow.Height=double.NaN;LibraryFooterRow.Width=_libraryBottom?34:double.NaN;LibraryFooterRow.Orientation=_libraryBottom?Orientation.Vertical:Orientation.Horizontal;
         DockPanel.SetDock(LibraryHeader,Dock.Top);LibraryHeader.Width=double.NaN;LibraryHeader.Visibility=_libraryBottom?Visibility.Collapsed:Visibility.Visible;
         var factory=new FrameworkElementFactory(typeof(VirtualizingStackPanel));factory.SetValue(VirtualizingStackPanel.OrientationProperty,_libraryBottom?Orientation.Horizontal:Orientation.Vertical);MediaList.ItemsPanel=new ItemsPanelTemplate(factory);
-        _mediaCardStyle??=MediaList.ItemContainerStyle;var style=new Style(typeof(ListBoxItem),_mediaCardStyle);style.Setters.Add(new Setter(FrameworkElement.WidthProperty,_libraryBottom?Math.Clamp((_filmstripHeight-104)*1.65,120,350):double.NaN));MediaList.ItemContainerStyle=style;
+        _mediaCardStyle??=MediaList.ItemContainerStyle;var style=new Style(typeof(ListBoxItem),_mediaCardStyle);style.Setters.Add(new Setter(FrameworkElement.WidthProperty,_libraryBottom?Math.Clamp((_filmstripHeight-36)*1.4,85,250):double.NaN));MediaList.ItemContainerStyle=style;
         ScrollViewer.SetHorizontalScrollBarVisibility(MediaList,_libraryBottom?ScrollBarVisibility.Auto:ScrollBarVisibility.Disabled);ScrollViewer.SetVerticalScrollBarVisibility(MediaList,_libraryBottom?ScrollBarVisibility.Disabled:ScrollBarVisibility.Auto);
         Dispatcher.BeginInvoke(()=>{if(_fitMode&&_session!=null)FitImage();if(Selected!=null)MediaList.ScrollIntoView(Selected);});
     }
     private void LibraryLayout_Click(object sender,RoutedEventArgs e){_libraryBottom=(sender as MenuItem)?.Tag?.ToString()=="Bottom";SaveLibraryLayout();}
     private void ToggleLibrary_Click(object sender,RoutedEventArgs e){_libraryBottom=!_libraryBottom;SaveLibraryLayout();}
-    private void SaveLibraryLayout(){ApplyLibraryLayout();try{MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"editor-layout.json"),JsonSerializer.Serialize(new{LibraryBottom=_libraryBottom,LibraryWidth=_libraryWidth,FilmstripHeight=_filmstripHeight,InspectorWidth=_inspectorWidth}));}catch(Exception ex){App.Log(ex);SetStatus("Chưa lưu được bố cục thư viện: "+ex.Message);}}
+    private void SaveLibraryLayout(){ApplyLibraryLayout();try{MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"editor-layout.json"),JsonSerializer.Serialize(new{LayoutVersion=125,LibraryBottom=_libraryBottom,LibraryWidth=_libraryWidth,FilmstripHeight=_filmstripHeight,InspectorWidth=_inspectorWidth}));}catch(Exception ex){App.Log(ex);SetStatus("Chưa lưu được bố cục thư viện: "+ex.Message);}}
     private void ToggleInspector_Click(object sender,RoutedEventArgs e){bool hide=InspectorPane.Visibility==Visibility.Visible;InspectorPane.Visibility=hide?Visibility.Collapsed:Visibility.Visible;InspectorColumn.MinWidth=hide?0:210;InspectorColumn.Width=new(hide?0:_inspectorWidth);if(_fitMode)FitImage();}
     private void ExitMenu_Click(object sender,RoutedEventArgs e)=>RequestExit();
     private void SettingsMenu_Click(object sender,RoutedEventArgs e)=>OpenSettings((sender as MenuItem)?.Tag?.ToString()??"Capture");

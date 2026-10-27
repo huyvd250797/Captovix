@@ -37,6 +37,8 @@ public sealed class UpdateSettings
         return url.GetLeftPart(UriPartial.Path).TrimEnd('/');
     }
 
+    public bool ShouldCheckInSession(DateTimeOffset now,DateTimeOffset? attempt)=>AutoCheck&&IsConfigured&&(attempt==null||now-attempt.Value>=TimeSpan.FromMinutes(30)||attempt.Value>now);
+
     public bool ShouldAutoCheck(DateTimeOffset now) => AutoCheck && IsConfigured &&
         (LastCheckedSource != SourceKey || LastCheckUtc == null ||
          now - LastCheckUtc.Value >= TimeSpan.FromHours(24) || LastCheckUtc.Value > now);

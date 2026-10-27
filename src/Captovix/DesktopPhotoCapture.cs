@@ -12,6 +12,8 @@ internal static class DesktopPhotoCapture
         ImageFidelity.ValidateCapture(region,region.Width,region.Height,false);
         var parts=CaptureGeometry.Split(region,displays.Select(d=>(d.Device,d.Bounds)));
         if(parts.Count==0)throw new InvalidOperationException("Vùng chọn không nằm trên màn hình đang kết nối.");
+        nint previousDpi=SetThreadDpiAwarenessContext(new nint(-4));
+        if(previousDpi==0)throw Error("SetThreadDpiAwarenessContext");
         nint screen=0,dc=0,bitmap=0,previous=0;
         try{
             screen=GetDC(0);if(screen==0)throw Error("GetDC");
@@ -31,11 +33,15 @@ internal static class DesktopPhotoCapture
             // BI_RGB has no defined alpha; the visible desktop is opaque SDR.
             for(int i=3;i<pixels.Length;i+=4)pixels[i]=255;
             ImageTransfer.Save(ImageTransfer.Bitmap(region.Width,region.Height,pixels),path);
+            var decoded=MediaStore.LoadImage(path);
+            if(decoded.PixelWidth!=region.Width||decoded.PixelHeight!=region.Height||!pixels.AsSpan().SequenceEqual(ImageTransfer.Bgra(decoded)))
+                throw new InvalidOperationException("PNG không giữ đúng pixel nguồn. File pending được giữ để kiểm tra.");
         }finally{
             if(dc!=0&&previous!=0&&previous!=(nint)(-1))SelectObject(dc,previous);
             if(bitmap!=0)DeleteObject(bitmap);
             if(dc!=0)DeleteDC(dc);
             if(screen!=0)ReleaseDC(0,screen);
+            SetThreadDpiAwarenessContext(previousDpi);
         }
     }
     private static void DrawCursor(nint dc,PixelRect region)
@@ -53,6 +59,7 @@ internal static class DesktopPhotoCapture
         }
     }
     private static Win32Exception Error(string api)=>new(Marshal.GetLastWin32Error(),"Không thể chụp pixel màn hình ("+api+"). Hãy kiểm tra desktop đang mở khóa rồi thử lại.");
+    [DllImport("user32.dll",SetLastError=true)]private static extern nint SetThreadDpiAwarenessContext(nint context);
     [StructLayout(LayoutKind.Sequential)] private struct BitmapInfo{public uint Size;public int Width,Height;public ushort Planes,Bits;public uint Compression,ImageSize;public int XResolution,YResolution;public uint ColorsUsed,ColorsImportant;}
     [StructLayout(LayoutKind.Sequential)] private struct CursorInfo{public uint Size,Flags;public nint Handle;public int X,Y;}
     [StructLayout(LayoutKind.Sequential)] private struct IconInfo{[MarshalAs(UnmanagedType.Bool)]public bool Icon;public uint HotspotX,HotspotY;public nint Mask,Color;}

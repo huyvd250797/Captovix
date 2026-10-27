@@ -48,6 +48,7 @@ public partial class MainWindow
             ImageFidelityHint.Text=ImageFidelity.CanCopyPixels(layout)?"PNG/Copy: giữ pixel vùng không chỉnh. Vừa khung chỉ đổi cách xem.":"Xuất/Copy có resize theo thiết lập; zoom chỉ đổi cách xem.";
             RestoreCropButton.IsEnabled=session.Document.Crop!=null||session.Document.Appearance.OutputCrop!=null;
             ZoomLabel.Text=$"{Surface.PhysicalZoom*100:0.#}%";
+            ZoomLabel.ToolTip=Surface.PhysicalZoom<.999?"Ảnh đang thu nhỏ để vừa khung. Chọn Rõ nét · 100% để kiểm tra chữ và pixel gốc; file lưu giữ kích thước gốc.":"1 pixel ảnh tương ứng "+$"{Surface.PhysicalZoom:0.##}"+" pixel màn hình. Zoom không thay đổi file lưu.";
             ZoomLabel.ToolTip=$"Zoom hiển thị đầu ra · Windows scale {Surface.DisplayScale*100:0.#}% · không đổi file ảnh";
         }else{
             OriginalSizeLabel.Text=ImageSizeLabel.Text=ImageFidelityHint.Text="";ZoomLabel.Text="—";RestoreCropButton.IsEnabled=false;
@@ -169,7 +170,7 @@ public partial class MainWindow
     private void FitImage()
     {
         _fitMode=true;_actualPixels=false;if(_session==null||Surface.Layout is not {} v)return;
-        Surface.SetZoom(Math.Min(Math.Max(40,ImageScroll.ActualWidth-16-2*EditorSurface.WorkspacePad)/v.Width,Math.Max(40,ImageScroll.ActualHeight-16-2*EditorSurface.WorkspacePad)/v.Height));
+        Surface.SetZoom(ImageFidelity.FitZoom(v.Width,v.Height,Math.Max(40,ImageScroll.ActualWidth-16-2*EditorSurface.WorkspacePad),Math.Max(40,ImageScroll.ActualHeight-16-2*EditorSurface.WorkspacePad),Surface.DisplayScale));
     }
     private void Fit_Click(object sender,RoutedEventArgs e)=>FitImage();
     private void Actual_Click(object sender,RoutedEventArgs e){ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;}

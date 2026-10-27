@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -11,10 +13,27 @@ public static class ElementProbeHost
     // The Editor can terminate this process if an external provider stalls.
     public static int Run()=>Task.Run(()=>{
         string? line;while((line=Console.ReadLine())!=null){
-            try{var q=JsonSerializer.Deserialize<ElementQuery>(line)!;Console.WriteLine(JsonSerializer.Serialize(Find(q)));}
+            try{var q=JsonSerializer.Deserialize<ElementQuery>(line)!;Console.WriteLine(JsonSerializer.Serialize(FindCombined(q)));}
             catch{Console.WriteLine("[]");}
         }return 0;
     }).GetAwaiter().GetResult();
+    private delegate bool ChildProc(nint window,nint data);
+    [DllImport("user32.dll")]private static extern bool EnumChildWindows(nint parent,ChildProc callback,nint data);
+    [DllImport("user32.dll",CharSet=CharSet.Unicode)]private static extern int GetClassName(nint window,StringBuilder name,int max);
+    private static ElementCandidate[] FindCombined(ElementQuery q)
+    {
+        var result=new List<ElementCandidate>();
+        // EnumChildWindows is local window-manager metadata: it sends no messages to providers.
+        int budget=600;
+        EnumChildWindows((nint)q.Window,(h,_)=>{
+            if(--budget<0)return false;
+            if(Native.IsWindowVisible(h)&&Native.GetWindowRect(h,out var r)&&ElementSelection.Contains(r.Pixels,q.X,q.Y)){
+                var type=new StringBuilder(80);GetClassName(h,type,80);result.Add(new(r.Pixels,"Khối · "+type,true));
+            }return true;
+        },0);
+        try{result.AddRange(Find(q));}catch(ElementNotAvailableException){}catch(COMException){}
+        return result.ToArray();
+    }
     private static bool Contains(Rect r,ElementQuery q)=>!r.IsEmpty&&double.IsFinite(r.X)&&double.IsFinite(r.Y)&&double.IsFinite(r.Width)&&double.IsFinite(r.Height)&&r.Contains(q.X,q.Y);
     private static ElementCandidate? Read(AutomationElement element,ElementQuery q)
     {

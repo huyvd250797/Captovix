@@ -21,11 +21,12 @@ public static class ScrollStitching
     {
         previous.Validate();next.Validate();if(previous.Width!=next.Width||previous.Height!=next.Height)throw new InvalidDataException("Kích thước khung đã thay đổi. Dừng phiên và chọn vùng mới.");
         int w=previous.Width,h=previous.Height;
-        double Score(int shift){int rows=Math.Min(24,h-shift),cols=Math.Min(40,w);double error=0;int count=0;for(int iy=0;iy<rows;iy++){int y=(int)((iy+.5)*(h-shift)/rows);for(int ix=0;ix<cols;ix++){int x=(int)((ix+.5)*w/cols);int a=((y+shift)*w+x)*4,b=(y*w+x)*4;for(int c=0;c<3;c++){error+=Math.Abs(previous.Pixels[a+c]-next.Pixels[b+c]);count++;}}}return error/count;}
-        cancellation.ThrowIfCancellationRequested();double same=Score(0);if(same<.35)return new(ScrollMatchKind.Duplicate,h,same,"Khung không đổi hoặc đã tới cuối trang; không thêm khung trùng.");
+        double Score(int shift,bool dense=false){int rows=Math.Min(dense?96:24,h-shift),cols=Math.Min(dense?96:40,w);double error=0;int count=0;for(int iy=0;iy<rows;iy++){int y=(int)((iy+.5)*(h-shift)/rows);for(int ix=0;ix<cols;ix++){int x=(int)((ix+.5)*w/cols);int a=((y+shift)*w+x)*4,b=(y*w+x)*4;for(int c=0;c<3;c++){error+=Math.Abs(previous.Pixels[a+c]-next.Pixels[b+c]);count++;}}}return error/count;}
+        cancellation.ThrowIfCancellationRequested();if(previous.Pixels.AsSpan().SequenceEqual(next.Pixels))return new(ScrollMatchKind.Duplicate,h,0,"Khung không đổi hoặc đã tới cuối trang; không thêm khung trùng.");
         int minOverlap=Math.Max(16,h/6);var candidates=new List<(int Shift,double Error)>();
         for(int shift=1;shift<=h-minOverlap;shift++){if((shift&31)==0)cancellation.ThrowIfCancellationRequested();candidates.Add((shift,Score(shift)));}
-        var ordered=candidates.OrderBy(x=>x.Error).ToArray();var best=ordered[0];double runner=ordered.Where(x=>Math.Abs(x.Shift-best.Shift)>3).Select(x=>x.Error).DefaultIfEmpty(255).Min();
+        var shortlisted=candidates.OrderBy(x=>x.Error).Take(16).SelectMany(x=>Enumerable.Range(Math.Max(1,x.Shift-2),Math.Min(h-minOverlap,x.Shift+2)-Math.Max(1,x.Shift-2)+1)).Distinct().ToArray();
+        var ordered=shortlisted.Select(shift=>{cancellation.ThrowIfCancellationRequested();return(Shift:shift,Error:Score(shift,true));}).OrderBy(x=>x.Error).ToArray();var best=ordered[0];double runner=ordered.Where(x=>Math.Abs(x.Shift-best.Shift)>3).Select(x=>x.Error).DefaultIfEmpty(255).Min();
         bool good=best.Error<2.5&&runner-best.Error>1.5;
         return new(good?ScrollMatchKind.Matched:ScrollMatchKind.Uncertain,h-best.Shift,best.Error,good?"Đã tìm được vùng chồng lấn; vẫn nên kiểm tra bằng mắt.":"Chưa chắc điểm nối (ít chi tiết, nội dung lặp/động, cuộn ngược hoặc lệch ngang). Cần sửa và xác nhận thủ công.");
     }

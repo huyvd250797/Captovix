@@ -25,7 +25,7 @@ with zipfile.ZipFile(pkg) as z:
  nuspec=ET.fromstring(z.read(next(n for n in z.namelist() if n.endswith('.nuspec'))));fields={e.tag.rsplit('}',1)[-1]:e.text for e in nuspec.iter()}
  check(fields['id']==app and fields['version']==version,'Nuspec AppId/version verified')
  def entry(name):return next(n for n in z.namelist() if n.startswith('lib/') and n.endswith('/'+name))
- for name in ['Assets/Captovix-brand-v117.ico','Captovix.dll','Captovix.exe','ScreenRecorderLib.dll','Velopack.dll','Captovix.runtimeconfig.json','update-source.json','README.md','CHANGELOG.md','ROADMAP.md','docs/IMAGE-COMPOSITION-TEMPLATES.md','docs/SCROLLING-CAPTURE-APPEARANCE.md','docs/WINDOWS-TEST-V1.14.md','docs/VALIDATION.md','docs/CAPTURE-RELIABILITY.md','docs/OCR-TEXT-EXTRACTION.md','docs/ASSISTED-IMAGE-EDITING.md','docs/IMAGE-LIBRARY-PROJECTS.md','docs/BATCH-EXPORT-DOCUMENTATION.md','docs/IMAGE-RELEASE-PERFORMANCE.md','docs/LAYOUT-PRECISION.md','docs/OBJECT-EDITING-PRECISION.md','docs/TEXT-CALLOUT-REFINEMENT.md','docs/CAPTURE-PRECISION.md','docs/PERFORMANCE-BENCHMARK.json','Tesseract.dll','x64/tesseract50.dll','x64/leptonica-1.82.0.dll','tessdata/eng.traineddata','tessdata/vie.traineddata','tessdata/models.json','docs/RELEASE-NOTES.md']:
+ for name in ['Assets/Captovix-brand-v117.ico','Captovix.dll','Captovix.exe','ScreenRecorderLib.dll','Velopack.dll','Captovix.runtimeconfig.json','update-source.json','README.md','CHANGELOG.md','ROADMAP.md','docs/IMAGE-COMPOSITION-TEMPLATES.md','docs/SCROLLING-CAPTURE-APPEARANCE.md','docs/WINDOWS-TEST-V1.14.md','docs/VALIDATION.md','docs/CAPTURE-RELIABILITY.md','docs/OCR-TEXT-EXTRACTION.md','docs/ASSISTED-IMAGE-EDITING.md','docs/IMAGE-LIBRARY-PROJECTS.md','docs/BATCH-EXPORT-DOCUMENTATION.md','docs/IMAGE-RELEASE-PERFORMANCE.md','docs/LAYOUT-PRECISION.md','docs/OBJECT-EDITING-PRECISION.md','docs/TEXT-CALLOUT-REFINEMENT.md','docs/CAPTURE-PRECISION.md','docs/SCROLLING-CAPTURE-QUALITY.md','docs/SMART-ELEMENT-CAPTURE.md','docs/PERFORMANCE-BENCHMARK.json','Tesseract.dll','x64/tesseract50.dll','x64/leptonica-1.82.0.dll','tessdata/eng.traineddata','tessdata/vie.traineddata','tessdata/models.json','docs/RELEASE-NOTES.md']:
   check(z.read(entry(name))==(payload/name).read_bytes(),'Packaged payload matches published '+name)
  runtime=json.loads(z.read(entry('Captovix.runtimeconfig.json')));check(all(f['version']=='10.0.13' for f in runtime['runtimeOptions']['includedFrameworks']),'.NET10.0.13 self-contained runtime declared')
  source=json.loads(z.read(entry('update-source.json')));check(source['SourceKind']=='Https' and source['SourceUrl']=='https://github.com/huyvd250797/captovix-releases/releases/latest/download','Stable source baked into package')
@@ -44,10 +44,14 @@ check({x.name for x in rel.iterdir() if x.is_file() and not x.name.startswith(".
 manifest=json.loads((rel/'assets.win.json').read_text());check({x['RelativeFileName'] for x in manifest}=={pkg.name,setup.name},'Assets manifest points to canonical package and installer')
 if a.baseline_source:
  with zipfile.ZipFile(a.baseline_source) as old:
-  for path in ['src/Captovix/Native.cs','src/Captovix/DesktopPhotoCapture.cs','src/Captovix/CaptureEngine.cs','src/Captovix/ImageFidelity.cs','src/Captovix/ImageTransfer.cs','src/Captovix/CaptureKeys.cs','installer/InstallPath.nsh']:
+  for path in ['src/Captovix/Native.cs','src/Captovix/CaptureEngine.cs','src/Captovix/ImageTransfer.cs','src/Captovix/CaptureKeys.cs','installer/InstallPath.nsh']:
    prior=old.read(next(n for n in old.namelist() if n.endswith('/'+path)));check(prior==(r/path).read_bytes(),'Protected foundation unchanged: '+path)
   prior=old.read(next(n for n in old.namelist() if n.endswith('/src/Captovix/Program.cs'))).decode();check(prior.replace('VelopackApp.Build().SetAutoApplyOnStartup','VelopackApp.Build().SetAppUserModelId("velopack."+VersionInfo.AppId).SetAutoApplyOnStartup')==(r/'src/Captovix/Program.cs').read_text(),'Program changes only stable AppID; updater and worker ordering preserved')
   prior=old.read(next(n for n in old.namelist() if n.endswith('/installer/Captovix.nsi'))).decode();prior=re.sub(r'(!define APPVERSION ")[0-9.]+(")',lambda m:m[1]+version+m[2],prior);check(prior==(r/'installer/Captovix.nsi').read_text(),'Installer changes only version; core arguments and approved MUI icon retained')
+
+capture=(r/'src/Captovix/DesktopPhotoCapture.cs').read_text()
+check('SetThreadDpiAwarenessContext(previousDpi)' in capture and 'pixels.AsSpan().SequenceEqual(ImageTransfer.Bgra(decoded))' in capture,'GDI worker restores DPI context and validates PNG pixel roundtrip')
+check('StretchBlt(' not in capture and 'BitBlt(dc,part.X,part.Y,part.Crop.Width,part.Crop.Height' in capture,'Desktop photos retain unscaled physical pixel blits')
 
 for path in [a.source_zip,a.update_zip]:
  if path:

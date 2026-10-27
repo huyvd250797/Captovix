@@ -27,7 +27,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public void SetDisplayScale(double value){_=ImageFidelity.ActualZoom(value);DisplayScale=value;Refresh();}
     public bool ContentPanEnabled {get;set;}
     public bool IsInteracting=>Dragging;
-    public const double WorkspacePad=48;
+    public const double WorkspacePad=24;
     public string? InlineEditingId {get;set;}
     public ImageLayout? Layout=>Session==null?null:new ImageLayout(Session.Document.Viewport,Session.Document.Appearance);
     public PixelRect EditingBounds=>Session==null?default:CanvasEditing.SourceBounds(Session.Document.Viewport,Session.Document.Appearance);

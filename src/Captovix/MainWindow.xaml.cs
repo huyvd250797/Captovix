@@ -84,16 +84,15 @@ public partial class MainWindow : Window
             var display=DisplayPicker.SelectedItem as DisplayInfo??throw new InvalidOperationException("Không tìm thấy màn hình.");
             WindowInfo? window=null;PixelRect region=display.Bounds;
             _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);Hide();await Task.Delay(220,cancellation);
-            if(s.SourceMode==3){var chosen=await ElementPicker.PickAsync(_displays,cancellation);if(chosen==null)return;region=chosen.Value;}
+            if(s.SourceMode==3){var chosen=await ElementPicker.PickAsync(_displays,cancellation);if(chosen==null)return;region=chosen.Value;if(RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
             else if(s.SourceMode==0){
                 if(action==PhotoAction.Repeat&&CaptureWorkflowStore.CanRepeat(_workflow.LastRegion,WorkflowDisplays()))region=_workflow.LastRegion!.Bounds;
-                else{if(action==PhotoAction.Repeat)_tray?.Notify("Bố trí màn hình/DPI đã thay đổi hoặc chưa có vùng cũ. Hãy chọn vùng mới.");var chosen=await RegionPicker.PickAsync(_displays,cancellation,!video);if(chosen==null)return;region=chosen.Value;if(!video&&RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
+                else{if(action==PhotoAction.Repeat)_tray?.Notify("Bố trí màn hình/DPI đã thay đổi hoặc chưa có vùng cũ. Hãy chọn vùng mới.");var chosen=await RegionPicker.PickAsync(_displays,cancellation,!video,!video);if(chosen==null)return;region=chosen.Value;if(!video&&RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
             }else if(s.SourceMode==1){
                 window=video?WindowPicker.SelectedItem as WindowInfo:await CapturePrompts.PickWindowAsync(cancellation);
                 if(window==null)return;
                 if(!Native.IsWindow(window.Handle)||Native.IsIconic(window.Handle)||!Native.GetWindowRect(window.Handle,out var wr))throw new InvalidOperationException("Cửa sổ đã đóng hoặc thu nhỏ. Hãy chọn lại.");region=wr.Pixels;
             }
-            if(!video&&s.SourceMode==3&&action!=PhotoAction.Repeat){var choice=await CaptureActionPicker.PickAsync(region,_displays,cancellation);if(choice==null)return;if(choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=choice==CaptureChoice.Horizontal;return;}}
             if(video)region=region.Even();if(region.IsEmpty)throw new InvalidOperationException("Vùng chọn quá nhỏ.");
             await CapturePrompts.CountdownAsync(s.Delay,cancellation);await Task.Delay(220,cancellation);
             var now=Native.Displays().Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity));if(CaptureWorkflowStore.Topology(now)!=topology)throw new InvalidOperationException("Màn hình hoặc DPI đã thay đổi trong phiên chụp. Hãy thử chọn lại.");

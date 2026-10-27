@@ -53,6 +53,7 @@ internal sealed class ScrollCaptureController : Window
     private PixelRect _targetBounds;
     private readonly Button _pause=new(){Content="Tạm dừng"};
     private int _duplicates;
+    private bool _retryCurrent;
     private readonly System.Windows.Threading.DispatcherTimer _auto=new(){Interval=TimeSpan.FromMilliseconds(1400)};
     private nint _hwnd;
     private bool _takeKey,_finishKey;
@@ -99,20 +100,21 @@ internal sealed class ScrollCaptureController : Window
             if(automatic){
                 var ready=AdvancedCaptureNative.Readiness(_target,_targetBounds,_session.Region);
                 if(ready!=CaptureReadiness.Ready){PauseAuto(CaptureReliability.Explain(ready));message=_status.Text;return;}
-                if(_session.Count>0&&!AdvancedCaptureNative.Scroll(_target,_session.Horizontal,_session.Region,_session.Timing.WheelSteps)){
+                if(_session.Count>0&&!_retryCurrent&&!AdvancedCaptureNative.Scroll(_target,_session.Horizontal,_session.Region,_session.Timing.WheelSteps)){
                     PauseAuto("Ứng dụng nguồn chưa nhận lệnh cuộn. Đưa nguồn ra trước rồi tiếp tục hoặc lấy khung thủ công.");message=_status.Text;return;
                 }
-                await Task.Delay(_session.Timing.SettleMilliseconds,_cancellation);
+                _retryCurrent=true;await Task.Delay(_session.Timing.SettleMilliseconds,_cancellation);
                 ready=AdvancedCaptureNative.Readiness(_target,_targetBounds,_session.Region);
                 if(ready!=CaptureReadiness.Ready){PauseAuto(CaptureReliability.Explain(ready));message=_status.Text;return;}
             }
             var now=Native.Displays();var topology=CaptureWorkflowStore.Topology(now.Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity)));if(topology!=_session.Topology)throw new InvalidOperationException("Màn hình/DPI đã đổi. Kết thúc phiên, không ghép tiếp.");
             candidate=Path.Combine(_session.Folder,"candidate-"+Guid.NewGuid().ToString("N")+".png");await Task.Run(()=>DesktopPhotoCapture.Save(_session.Region,_displays,false,candidate),_cancellation);_cancellation.ThrowIfCancellationRequested();
+            if(automatic){bool stable=false;for(int attempt=0;attempt<3;attempt++){var before=_session.Prepare(ScrollSession.ReadFrame(candidate,_session.Width,_session.Height));await Task.Delay(180,_cancellation);var check=candidate+".check.png";try{await Task.Run(()=>DesktopPhotoCapture.Save(_session.Region,_displays,false,check),_cancellation);var after=_session.Prepare(ScrollSession.ReadFrame(check,_session.Width,_session.Height));stable=ScrollStitching.Match(before,after,_cancellation).Kind==ScrollMatchKind.Duplicate;File.Move(check,candidate,true);}finally{if(File.Exists(check))File.Delete(check);}if(stable)break;}if(!stable){PauseAuto("Nội dung vẫn đang chuyển động. Đã tạm dừng; chờ trang ổn định rồi Tiếp tục hoặc lấy thủ công.");message=_status.Text;return;}}
             var path=candidate;var match=_session.Count==0?null:await Task.Run(()=>ScrollStitching.Match(_session.Load(_session.Count-1),_session.Prepare(ScrollSession.ReadFrame(path,_session.Width,_session.Height)),_cancellation),_cancellation);
-            if(match?.Kind==ScrollMatchKind.Duplicate){File.Delete(path);message=match.Message;if(++_duplicates>=3&&_automatic){_automatic=false;_auto.Stop();message="Không có nội dung mới sau 3 lần: đã dừng tự cuộn. Kiểm tra đã tới cuối hoặc app không hỗ trợ cuộn.";}}
+            if(match?.Kind==ScrollMatchKind.Duplicate){_retryCurrent=false;File.Delete(path);message=match.Message;if(++_duplicates>=3&&_automatic){_automatic=false;_auto.Stop();message="Không có nội dung mới sau 3 lần: đã dừng tự cuộn. Kiểm tra đã tới cuối hoặc app không hỗ trợ cuộn.";}}
             else{
                 var overlaps=_session.Joins.Select(j=>j.Overlap).ToList();if(match!=null)overlaps.Add(match.Overlap);ScrollStitching.OutputHeight(_session.WorkWidth,_session.WorkHeight,overlaps);
-                _duplicates=0;_session.Append(path,match);if(match?.Kind==ScrollMatchKind.Uncertain){_automatic=false;_auto.Stop();}message=match?.Message??(_session.Horizontal?"Đã lấy khung đầu. Cuộn sang phải khoảng nửa vùng rồi lấy tiếp.":"Đã lấy khung đầu. Cuộn xuống khoảng nửa vùng rồi lấy tiếp.");
+                _duplicates=0;_session.Append(path,match);_retryCurrent=false;if(match?.Kind==ScrollMatchKind.Uncertain){_automatic=false;_auto.Stop();}message=match?.Message??(_session.Horizontal?"Đã lấy khung đầu. Cuộn sang phải khoảng nửa vùng rồi lấy tiếp.":"Đã lấy khung đầu. Cuộn xuống khoảng nửa vùng rồi lấy tiếp.");
             }
         }catch(OperationCanceledException){_finishing=false;}
         catch(Exception ex){_automatic=false;_auto.Stop();App.Log(ex);message=ex.Message+" Khung đã ghi vẫn ở thư mục phiên.";}
@@ -155,7 +157,8 @@ internal sealed class ScrollPreviewWindow : Window
         _save.Click+=(_,_)=>{if(_rendering||_editing||_full==null)return;Result=_full;DialogResult=true;};
         Loaded+=async(_,_)=>await RenderAsync(false);DpiChanged+=(_,_)=>ShowBitmap(_actual);Closed+=(_,_)=>{_closing=true;_cancel.Cancel();};
     }
-    private void SelectJoin(){int i=_join.SelectedIndex;if(i<0)return;_updating=true;_overlap.Text=_session.Joins[i].Overlap.ToString();_confirm.IsChecked=_session.Joins[i].Confirmed;_updating=false;_pair.Children.Clear();foreach(int frame in new[]{i,i+1})_pair.Children.Add(new Image{Source=MediaStore.LoadImage(_session.FramePath(frame),260),MaxHeight=150,Stretch=Stretch.Uniform,Margin=new(4)});_message.Text=_session.Joins[i].Message;ShowBitmap(_actual);}
+    private void SelectJoin(){int i=_join.SelectedIndex;if(i<0)return;_updating=true;_overlap.Text=_session.Joins[i].Overlap.ToString();_confirm.IsChecked=_session.Joins[i].Confirmed;_updating=false;_pair.Children.Clear();foreach(int frame in new[]{i,i+1})_pair.Children.Add(PairPreview(frame,frame==i));_message.Text=_session.Joins[i].Message;ShowBitmap(_actual);}
+    private FrameworkElement PairPreview(int frame,bool previous){var viewer=new ScrollViewer{Content=new Image{Source=MediaStore.LoadImage(_session.FramePath(frame)),Stretch=Stretch.None,HorizontalAlignment=HorizontalAlignment.Left},Height=170,HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,Margin=new(4)};viewer.Loaded+=(_,_)=>{if(previous){if(_session.Horizontal)viewer.ScrollToRightEnd();else viewer.ScrollToEnd();}};return viewer;}
     private async Task RenderAsync(bool actual)
     {
         if(_rendering)return;_rendering=true;_save.IsEnabled=false;_join.IsEnabled=false;_overlap.IsEnabled=false;_confirm.IsEnabled=false;_message.Text="Đang ghép hàng pixel…";
