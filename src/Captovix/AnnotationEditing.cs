@@ -51,13 +51,13 @@ public static class AnnotationEditing
         var group=Guid.NewGuid().ToString("N");foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id)))a.GroupId=group;return group;
     }
     public static void Ungroup(EditorDocument doc,IEnumerable<string> ids){if(!ObjectControl.CanEdit(doc,ids))return;var all=ExpandGroups(doc,ids);foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id)))a.GroupId=null;}
-    public static HashSet<string> Duplicate(EditorDocument doc,IEnumerable<string> ids,Func<Annotation,AnnotationBox> bounds)
+    public static HashSet<string> Duplicate(EditorDocument doc,IEnumerable<string> ids,Func<Annotation,AnnotationBox> bounds,PixelRect? movementBounds=null)
     {
         if(!ObjectControl.CanEdit(doc,ids))return [];
         var all=ExpandGroups(doc,ids);var originals=doc.Annotations.Where(a=>all.Contains(a.Id)).ToArray();
         if(doc.Annotations.Count+originals.Length>10000||doc.Annotations.Sum(a=>a.Points.Count)+originals.Sum(a=>a.Points.Count)>100000)throw new InvalidOperationException("Nhân bản vượt giới hạn tài liệu.");
         var idMap=originals.ToDictionary(a=>a.Id,_=>Guid.NewGuid().ToString("N"));var groupMap=new Dictionary<string,string>();var result=new HashSet<string>();
-        var delta=ClampMove(Union(originals.Select(bounds)),doc.Viewport,16,16);
+        var delta=ClampMove(Union(originals.Select(bounds)),movementBounds??doc.Viewport,16,16);
         foreach(var a in originals){var copy=a.Copy();copy.Id=idMap[a.Id];
             copy.StartAnchor=copy.StartAnchor is {} start&&idMap.TryGetValue(start.TargetId,out var startId)?start with{TargetId=startId}:null;
             copy.EndAnchor=copy.EndAnchor is {} end&&idMap.TryGetValue(end.TargetId,out var endId)?end with{TargetId=endId}:null;
@@ -120,6 +120,10 @@ public static class AnnotationEditing
             if(width/height>ratio)height=width/ratio;else width=height*ratio;
             if(handle is 0 or 6)left=right-width;else right=left+width;
             if(handle is 0 or 2)top=bottom-height;else bottom=top+height;
+        }
+        if(preserveRatio&&b.Width>0&&b.Height>0){double ratio=b.Width/b.Height;
+            if(handle is 1 or 5){double width=(bottom-top)*ratio;left=b.CenterX-width/2;right=b.CenterX+width/2;}
+            else if(handle is 3 or 7){double height=(right-left)/ratio;top=b.CenterY-height/2;bottom=b.CenterY+height/2;}
         }
         return new(left,top,right-left,bottom-top);
     }

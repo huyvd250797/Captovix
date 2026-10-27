@@ -26,12 +26,12 @@ public static class AnnotationClipboard
         if(packet.Version!=1||packet.SourceWidth<1||packet.SourceHeight<1||packet.Objects==null||packet.Objects.Count==0)throw new InvalidDataException("Clipboard không phải đối tượng Captovix hợp lệ.");
         new EditorDocument{OriginalWidth=packet.SourceWidth,OriginalHeight=packet.SourceHeight,Annotations=packet.Objects}.Validate(packet.SourceWidth,packet.SourceHeight,"");return packet;
     }
-    public static HashSet<string> Paste(EditorDocument doc,string json,double offset,Func<Annotation,AnnotationBox> bounds)
+    public static HashSet<string> Paste(EditorDocument doc,string json,double offset,Func<Annotation,AnnotationBox> bounds,PixelRect? movementBounds=null)
     {
         if(!double.IsFinite(offset)||Math.Abs(offset)>100000)throw new ArgumentException("Vị trí dán không hợp lệ.");
         var packet=Read(json);if(doc.Annotations.Count+packet.Objects.Count>10000||doc.Annotations.Sum(a=>a.Points.Count)+packet.Objects.Sum(a=>a.Points.Count)>100000)throw new InvalidDataException("Dán vượt giới hạn tài liệu.");
         var objects=packet.Objects;var idMap=objects.ToDictionary(a=>a.Id,_=>Guid.NewGuid().ToString("N"));var groups=new Dictionary<string,string>();
-        var box=AnnotationEditing.Union(objects.Select(bounds));var view=doc.Viewport;
+        var box=AnnotationEditing.Union(objects.Select(bounds));var view=movementBounds??doc.Viewport;
         double left=Math.Clamp(box.X+offset,view.X,view.Right-Math.Min(view.Width,box.Width)),top=Math.Clamp(box.Y+offset,view.Y,view.Bottom-Math.Min(view.Height,box.Height));
         foreach(var a in objects){
             a.Id=idMap[a.Id];a.Locked=false;a.Visible=true;

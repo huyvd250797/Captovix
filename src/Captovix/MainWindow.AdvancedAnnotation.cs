@@ -61,14 +61,14 @@ public partial class MainWindow
         EndInlineText(true);Surface.CancelInteraction();_session.Commit();var ids=Surface.SelectedIds.ToHashSet();
         try{
             if(command=="Duplicate"){
-                HashSet<string> copies=[];_session.Change(d=>copies=AnnotationEditing.Duplicate(d,ids,EditorRenderer.Box));Surface.SelectIds(copies);
+                HashSet<string> copies=[];_session.Change(d=>copies=AnnotationEditing.Duplicate(d,ids,EditorRenderer.Box,Surface.EditingBounds));Surface.SelectIds(copies);
             }else if(command=="Group"){
                 if(AnnotationEditing.Units(_session.Document,ids).Length<2)return;
                 _session.Change(d=>AnnotationEditing.Group(d,ids));Surface.SelectIds(ids);
             }else if(command=="Ungroup"){
                 _session.Change(d=>AnnotationEditing.Ungroup(d,ids));Surface.SelectIds(ids);
             }else if(command is "Horizontal" or "Vertical"){
-                bool changed=false;_session.Change(d=>{changed=AnnotationEditing.Distribute(d,ids,command=="Horizontal",EditorRenderer.Box);if(changed)ConnectorStudio.DetachForTransform(d,ids);});
+                bool changed=false;_session.Change(d=>{changed=ObjectPrecision.Distribute(d,ids,command=="Horizontal",EditorRenderer.GeometryBox);});
                 if(!changed)SetStatus("Chọn ít nhất 3 đối tượng/nhóm và để đủ khoảng trống giữa hai đầu để chia đều.");
             }else{
                 _session.Change(d=>AnnotationEditing.Reorder(d,ids,Enum.Parse<AnnotationOrder>(command)));

@@ -41,7 +41,7 @@ public partial class MainWindow : Window
         if(_loaded)return;
         RefreshSources();var s=_store.LoadSettings();SourceMode.SelectedIndex=Math.Clamp(s.SourceMode,0,3);
         DelayPicker.SelectedIndex=s.Delay==5?2:s.Delay==3?1:0;FpsPicker.SelectedIndex=s.Fps==60?2:s.Fps==15?0:1;
-        Surface.SnapEnabled=s.ObjectSnap;ObjectSnapToggle.IsChecked=s.ObjectSnap;
+        Surface.KeepAspectRatio=s.ObjectKeepRatio;_alignmentReference=(AlignmentReference)Math.Clamp(s.ObjectAlignmentReference,0,2);Surface.SnapEnabled=s.ObjectSnap;ObjectSnapToggle.IsChecked=s.ObjectSnap;
         CursorToggle.IsChecked=s.Cursor;MicToggle.IsChecked=s.Mic;SystemToggle.IsChecked=s.SystemAudio;HardwareToggle.IsChecked=s.Hardware;
         DisplayPicker.SelectedItem=_displays.FirstOrDefault(d=>d.Device==s.Display)??_displays.FirstOrDefault();
         _loaded=true;var hwnd=new WindowInteropHelper(this).Handle;HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);
@@ -64,7 +64,7 @@ public partial class MainWindow : Window
         if(msg is 0x1A or 0x31A)Dispatcher.BeginInvoke(AppearanceManager.RefreshSystem);
         return 0;
     }
-    private AppSettings Settings()=>new(){ObjectSnap=Surface.SnapEnabled,SourceMode=SourceMode.SelectedIndex,Delay=int.Parse(((ComboBoxItem)DelayPicker.SelectedItem).Tag.ToString()!),Fps=int.Parse(((ComboBoxItem)FpsPicker.SelectedItem).Tag.ToString()!),Cursor=CursorToggle.IsChecked==true,Mic=MicToggle.IsChecked==true,SystemAudio=SystemToggle.IsChecked==true,Hardware=HardwareToggle.IsChecked==true,Display=(DisplayPicker.SelectedItem as DisplayInfo)?.Device??""};
+    private AppSettings Settings()=>new(){ObjectKeepRatio=Surface.KeepAspectRatio,ObjectAlignmentReference=(int)_alignmentReference,ObjectSnap=Surface.SnapEnabled,SourceMode=SourceMode.SelectedIndex,Delay=int.Parse(((ComboBoxItem)DelayPicker.SelectedItem).Tag.ToString()!),Fps=int.Parse(((ComboBoxItem)FpsPicker.SelectedItem).Tag.ToString()!),Cursor=CursorToggle.IsChecked==true,Mic=MicToggle.IsChecked==true,SystemAudio=SystemToggle.IsChecked==true,Hardware=HardwareToggle.IsChecked==true,Display=(DisplayPicker.SelectedItem as DisplayInfo)?.Device??""};
     private bool _recordingActive;
     private async Task CaptureAsync(bool video,PhotoAction action=PhotoAction.Current)
     {

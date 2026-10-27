@@ -28,4 +28,6 @@ Check(Named("RestoreMediaButton").Ancestors().Contains(Named("LibraryMorePopup")
 Check(doc.Descendants(w+"MenuItem").Any(e=>e.Attribute("Click")?.Value=="ExtendCanvas_Click"),"Canvas extension has a discoverable menu command");
 Check(Named("ExtendCanvasButton").Ancestors().Contains(Named("ToolBox"))&&!Named("ExtendCanvasButton").Ancestors().Contains(Named("LibraryMorePopup")),"Canvas control belongs to drawing tools, not media commands");
 Check(!doc.Descendants(w+"MenuItem").Any(e=>e.Attribute("Click")?.Value is "Undo_Click" or "Redo_Click"),"Redundant Undo and Redo menu commands removed; toolbar and shortcuts preserved");
+Check(Named("ObjectKeepRatio").Attribute("Checked")?.Value=="ObjectRatio_Changed"&&Named("ObjectKeepRatio").Attribute("Unchecked")?.Value=="ObjectRatio_Changed","Ratio setting drives both numeric and drag behavior");
+Check(Named("ObjectX").Parent!.Element(w+"TextBlock")?.Attribute("Text")?.Value.Contains("canvas")==true,"Numeric position is clearly labeled in output canvas pixels");
 Console.WriteLine($"{n} shell layout structure checks passed; rendering still requires Windows.");

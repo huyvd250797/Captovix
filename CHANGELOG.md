@@ -1,3 +1,12 @@
+# V1.22.0 — Object Editing Precision · 27/10/2026
+
+- Chọn đối tượng/nhóm tại con trỏ bằng menu, hover outline, Alt+click trong Chọn; mở khóa từ danh sách mà vẫn chặn kéo đối tượng khóa.
+- Căn theo lựa chọn/ảnh/canvas; chia đều khoảng trống theo output; snap/guide theo zoom; Ctrl bypass và Shift khóa hướng màn hình.
+- Thông số khung theo pixel đầu ra; ghi rõ góc nguồn/nhóm delta; số áp dụng nguyên tử, giữ Undo/Redo và output dimensions. Đường0chiều có thể đổi chiều còn lại bằng số.
+- Giữ tỷ lệ nhập/kéo, tay nắm cạnh/góc, bù điểm click; kích thước giao diện gizmo; giới hạn font/callout trong nhóm. Resize không tự FitText làm đổi khung đã nhập.
+- Miền duplicate/paste theo canvas ngoài ảnh. Khi chủ động đặt ngoài nguồn hoặc vào khung, mở clip annotation trong cùng Undo; nguồn/hiệu ứng pixel vẫn clip đúng, không tràn vào viền.
+- Preference tỷ lệ và tham chiếu căn lưu trên máy. Giữ schema12/13/14, logo, source update, hotkey và installer; không tự publish. Docs/VALIDATION.md ghi rõ kiểm chứng và Windows còn chờ.
+
 # V1.21.0 — Layout Precision · 26/10/2026
 
 - Thêm bốn cạnh mở rộng pixel riêng, nền màu/trong suốt, tùy chọn tự mở rộng khi tạo chú thích sát mép; vùng thao tác quanh ảnh chỉ dành cho Editor.

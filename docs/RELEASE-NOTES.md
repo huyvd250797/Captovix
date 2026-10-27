@@ -1,8 +1,8 @@
-# Captovix V1.21.0 — Layout Precision
+# Captovix V1.22.0 — Object Editing Precision
 
-- Vẽ trực tiếp ngoài ảnh; mở rộng từng cạnh bằng pixel; nền màu/trong suốt; tự mở rộng khi tạo chú thích sát mép.
-- Crop toàn canvas gồm chú thích, giữ đối tượng chỉnh lại được; Undo/Redo.
-- Kết thúc chữ khi click ngoài chuyển về Chọn; sửa đuôi callout lúc tạo và hỗ trợ callout một click.
-- Cây thư viện có tùy chọn ẩn ngày trống; Canvas trên hàng công cụ vẽ; gọn menu.
-- Schema14 cho dữ liệu precision; đọc bản cũ, bảo vệ dữ liệu mới; không reset thư viện. Giữ logo, đường dẫn cài và nguồn update.
-- Windows x64 self-contained .NET10.0.13. Build/logic/artifact checks không thay cho nghiệm thu Windows desktop. Xem docs/LAYOUT-PRECISION.md.
+- Chọn lớp chồng bằng menu tại con trỏ, hover gợi ý, Alt+click trong công cụ Chọn.
+- Căn theo lựa chọn/ảnh/canvas; chia đều khoảng trống; snap/đường gióng theo output và zoom.
+- X/Y/rộng/cao theo pixel đầu ra; checkbox tỷ lệ dùng cho nhập/kéo; tay nắm chính xác, nhóm/font/callout có giới hạn hợp lý; Undo/Redo.
+- Thao tác ngoài ảnh và annotation trên khung, source bitmap vẫn clip đúng. Không tăng canvas khi chỉ di chuyển/căn/resize.
+- Giữ schema, media, logo, hotkey và nguồn update ổn định; preference máy mới cho ratio/alignment reference.
+- Build/logic/artifact checks không thay cho Windows desktop acceptance. Xem docs/OBJECT-EDITING-PRECISION.md.

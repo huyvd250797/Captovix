@@ -3,6 +3,7 @@ using System.Windows.Media;
 namespace Captovix;
 public static partial class EditorRenderer
 {
+    public static AnnotationBox GeometryBox(Annotation a){var b=Bounds(a);return new(b.X,b.Y,b.Width,b.Height);}
     public static AnnotationBox LocalBox(Annotation a){var b=LocalBounds(a);return new(b.X,b.Y,b.Width,b.Height);}
     public static Rect Bounds(Annotation a){var b=ObjectControl.RotatedBounds(LocalBox(a),a.Rotation);return new(b.X,b.Y,b.Width,b.Height);}
     public static RotateTransform ObjectTransform(Annotation a){var b=LocalBounds(a);return new(a.Rotation,b.Left+b.Width/2,b.Top+b.Height/2);}

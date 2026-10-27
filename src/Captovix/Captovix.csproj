@@ -13,7 +13,7 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
-    <Version>1.21.0</Version>
+    <Version>1.22.0</Version>
     <StartupObject>Captovix.Program</StartupObject>
     <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
     <PublishTrimmed>false</PublishTrimmed>

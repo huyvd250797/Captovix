@@ -33,11 +33,11 @@ public partial class MainWindow
             LayerMessage.Text=objects.Any(a=>a.Locked)?"Lựa chọn có đối tượng khóa. Mở khóa tại dòng layer để chỉnh.":objects.Any(a=>!a.Visible)?"Lựa chọn có đối tượng ẩn. Bật hiện tại dòng layer để chỉnh; layer ẩn không có trong ảnh xuất.":"";
             ObjectFrameError.Text="";
             if(objects.Length==0){ObjectFrameHint.Text="Chọn đối tượng trên ảnh hoặc trong Layers.";ObjectX.Text=ObjectY.Text=ObjectWidth.Text=ObjectHeight.Text=ObjectAngle.Text="";return;}
-            var frame=objects.Length==1?EditorRenderer.LocalBox(objects[0]):AnnotationEditing.Union(objects.Select(EditorRenderer.Box));
+            var frame=ObjectPrecision.Frame(doc!,Surface.SelectedIds,EditorRenderer.GeometryBox);
             _objectAspect=frame.Width>1e-9&&frame.Height>1e-9?frame.Width/frame.Height:0;ObjectX.Text=ObjectNumber(frame.X);ObjectY.Text=ObjectNumber(frame.Y);ObjectWidth.Text=ObjectNumber(frame.Width);ObjectHeight.Text=ObjectNumber(frame.Height);ObjectAngle.Text=objects.Length==1?ObjectNumber(objects[0].Rotation):"0";
-            bool force=objects.Length>1&&objects.Any(a=>Math.Abs(a.Rotation)>1e-8)||objects.Length==1&&objects[0].Kind is AnnotationKind.Text or AnnotationKind.Step;
-            if(force)ObjectKeepRatio.IsChecked=true;if(_objectAspect==0)ObjectKeepRatio.IsChecked=false;ObjectKeepRatio.IsEnabled=!force&&_objectAspect>0;
-            ObjectFrameHint.Text=objects.Length==1&&ConnectorStudio.IsPath(objects[0])?"Đường cong/gấp khúc: khung bao theo pixel gốc; góc là xoay thêm và được áp vào tọa độ điểm. Đổi khung sẽ tháo các liên kết ngoài lựa chọn.":objects.Length==1?"Khung trước xoay · pixel ảnh gốc. Góc là góc tuyệt đối; chữ/số giữ tỷ lệ theo cỡ chữ.":"Khung bao nhóm trong ảnh gốc. Góc là xoay thêm quanh tâm nhóm; nhóm có đối tượng xoay giữ tỷ lệ.";
+            bool force=ObjectPrecision.RequiresUniform(objects);
+            ObjectKeepRatio.IsChecked=_objectAspect>0&&(force||Surface.KeepAspectRatio);ObjectKeepRatio.IsEnabled=!force&&_objectAspect>0;
+            ObjectFrameHint.Text=objects.Length==1&&ConnectorStudio.IsPath(objects[0])?"Đường cong/gấp khúc: khung bao theo pixel canvas đầu ra; góc là xoay thêm và được áp vào tọa độ điểm. Đổi khung sẽ tháo các liên kết ngoài lựa chọn.":objects.Length==1?"Khung bao đang thấy · pixel canvas đầu ra. X/Y là góc trên trái. Góc đối tượng trong hệ ảnh gốc; xoay làm đổi kích thước khung bao.":"Khung bao nhóm · pixel canvas đầu ra. Góc là xoay thêm trong hệ ảnh gốc, sau áp dụng về 0. Nhóm có chữ/đối tượng xoay giữ tỷ lệ.";
             ObjectFrameError.Text="";
         }finally{_syncLayers=false;}
     }
@@ -78,7 +78,7 @@ public partial class MainWindow
         try{
             bool line=Surface.SelectedIds.Count==1&&Surface.Selected is {} selected&&ShapeStudio.IsLine(selected.Kind);
             double x=ShapeValue(ObjectX,"X",-1000000,1000000),y=ShapeValue(ObjectY,"Y",-1000000,1000000),w=ShapeValue(ObjectWidth,"Rộng",line?0:1,100000),h=ShapeValue(ObjectHeight,"Cao",line?0:1,100000),angle=ShapeValue(ObjectAngle,"Góc",-360,360);
-            var ids=Surface.SelectedIds.ToArray();EndInlineText(true);_session.Commit();_session.Change(d=>{ObjectControl.ApplyFrame(d,ids,x,y,w,h,angle,EditorRenderer.LocalBox);foreach(var target in d.Annotations.Where(a=>ids.Contains(a.Id)))EditorRenderer.FitText(target,CanvasEditing.SourceBounds(d.Viewport,d.Appearance));d.Validate(d.OriginalWidth,d.OriginalHeight,d.SourceHash);});Surface.Refresh();SyncProperties();return true;
+            var ids=Surface.SelectedIds.ToArray();EndInlineText(true);_session.Commit();_session.Change(d=>{ObjectPrecision.ApplyFrame(d,ids,x,y,w,h,angle,EditorRenderer.GeometryBox,EditorRenderer.LocalBox);d.Validate(d.OriginalWidth,d.OriginalHeight,d.SourceHash);});Surface.Refresh();SyncProperties();return true;
         }catch(Exception ex){Surface.Refresh();SyncProperties();ObjectFrameError.Text=ex.Message;return false;}
     }
     private void ApplyObjectFrame_Click(object sender,RoutedEventArgs e)=>ApplyObjectFrame();

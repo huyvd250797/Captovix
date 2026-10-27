@@ -21,22 +21,22 @@ public static partial class EditorRenderer
     public static void Draw(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
         source=RasterPixels.Source(source,doc);var view=doc.Viewport;
-        dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));
+        dc.PushClip(new RectangleGeometry(SourceCanvas(doc)));dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));
         dc.DrawImage(source,new Rect(0,0,doc.OriginalWidth,doc.OriginalHeight));
-        if(doc.Appearance.DrawOutsideImage){dc.Pop();DrawOverlays(dc,source,doc,draftIds);}else{DrawOverlays(dc,source,doc,draftIds);dc.Pop();}
+        dc.Pop();dc.Pop();if(doc.Appearance.DrawOutsideImage)DrawOverlays(dc,source,doc,draftIds);else{dc.PushClip(new RectangleGeometry(SourceCanvas(doc)));dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));DrawOverlays(dc,source,doc,draftIds);dc.Pop();dc.Pop();}
     }
     private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
     {
-        ConnectorStudio.Resolve(doc);
+        ConnectorStudio.Resolve(doc);var sourceClip=new RectangleGeometry(SourceCanvas(doc));sourceClip.Freeze();
         source=RasterSampling(source,doc);var sampling=FocusStudio.Sampling(doc);
-        DrawSpotlights(dc,doc);
+        dc.PushClip(sourceClip);DrawSpotlights(dc,doc);dc.Pop();
         DrawingGroup? protectedSource=doc.Annotations.Any(a=>a.Visible&&a.Kind==AnnotationKind.Magnifier)?ProtectedSource(source,doc,draftIds,sampling):null;
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction&&a.Kind!=AnnotationKind.Spotlight)){
-            if(a.Kind==AnnotationKind.Magnifier)DrawMagnifier(dc,protectedSource!,a);else DrawAnnotation(dc,a);
+            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);DrawMagnifier(dc,protectedSource!,a);dc.Pop();}else DrawAnnotation(dc,a);
         }
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
-            RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true,sampling);
+            {dc.PushClip(sourceClip);RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true,sampling);dc.Pop();}
     }
     private static void DrawLocalAnnotation(DrawingContext dc,Annotation a)
     {
@@ -78,6 +78,8 @@ public static partial class EditorRenderer
         var delta=end-start;if(delta.LengthSquared<.001)return(p-start).Length;
         return(p-(start+delta*Math.Clamp(Vector.Multiply(p-start,delta)/delta.LengthSquared,0,1))).Length;
     }
+    public static Rect OutputClip(ImageLayout l,ImageAppearance style)=>style.DrawOutsideImage?new Rect(0,0,l.Width,l.Height):RectOf(l.Canvas);
+    private static Rect SourceCanvas(EditorDocument doc){var l=new ImageLayout(doc.Viewport,doc.Appearance);var b=ObjectPrecision.Map(new(l.Canvas.X,l.Canvas.Y,l.Canvas.Width,l.Canvas.Height),l,true);return new(b.X,b.Y,b.Width,b.Height);}
     public static Matrix LayoutMatrix(ImageLayout l,double zoom=1)=>new(l.A*zoom,l.B*zoom,l.C*zoom,l.D*zoom,l.Tx*zoom,l.Ty*zoom);
     public static Rect RectOf(ImageRect r)=>new(r.X,r.Y,r.Width,r.Height);
     public static void DrawFrame(DrawingContext dc,ImageLayout layout,ImageAppearance style)
@@ -93,7 +95,7 @@ public static partial class EditorRenderer
     public static void Compose(DrawingContext dc,BitmapSource source,EditorDocument doc)
     {
         var l=new ImageLayout(doc.Viewport,doc.Appearance);DrawFrame(dc,l,doc.Appearance);
-        dc.PushClip(new RectangleGeometry(RectOf(l.Canvas)));dc.PushTransform(new MatrixTransform(LayoutMatrix(l)));Draw(dc,source,doc);dc.Pop();dc.Pop();
+        dc.PushClip(new RectangleGeometry(OutputClip(l,doc.Appearance)));dc.PushTransform(new MatrixTransform(LayoutMatrix(l)));Draw(dc,source,doc);dc.Pop();dc.Pop();
     }
     public static BitmapSource Render(BitmapSource source,EditorDocument doc,int maxWidth=0)
     {
@@ -118,7 +120,7 @@ public static partial class EditorRenderer
         source=RasterPixels.Source(source,doc);var pixels=ImageFidelity.CopyPixels(ImageTransfer.Bgra(source),source.PixelWidth,source.PixelHeight,doc.Viewport,layout,frame);
         if(doc.Annotations.Count>0){
             var overlay=new DrawingVisual();using(var dc=overlay.RenderOpen()){
-                dc.PushClip(new RectangleGeometry(RectOf(layout.Canvas)));dc.PushTransform(new MatrixTransform(LayoutMatrix(layout)));
+                dc.PushClip(new RectangleGeometry(OutputClip(layout,doc.Appearance)));dc.PushTransform(new MatrixTransform(LayoutMatrix(layout)));
                 if(!doc.Appearance.DrawOutsideImage)dc.PushClip(new RectangleGeometry(new Rect(doc.Viewport.X,doc.Viewport.Y,doc.Viewport.Width,doc.Viewport.Height)));DrawOverlays(dc,source,doc);if(!doc.Appearance.DrawOutsideImage)dc.Pop();dc.Pop();dc.Pop();
             }
             var bitmap=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);bitmap.Render(overlay);var bytes=new byte[checked(layout.Width*layout.Height*4)];bitmap.CopyPixels(bytes,checked(layout.Width*4),0);ImageFidelity.OverlayPremultiplied(pixels,bytes);

@@ -6,6 +6,8 @@ public sealed partial class EditorSurface
     public bool SnapEnabled {get;set;}=true;
     private double? _guideX,_guideY;
     private AnnotationBox[] _snapPeers=[];
+    private AnnotationBox[] _snapOutputPeers=[];
+    private Vector _resizePointerOffset;
     private AnnotationPoint _rotationPivot;
     private double _rotationStart;
     private Point[] ObjectHandles()
@@ -22,27 +24,31 @@ public sealed partial class EditorSurface
     private static Point[] BoxHandles(AnnotationBox b)=>[new(b.X,b.Y),new(b.CenterX,b.Y),new(b.Right,b.Y),new(b.Right,b.CenterY),new(b.Right,b.Bottom),new(b.CenterX,b.Bottom),new(b.X,b.Bottom),new(b.X,b.CenterY)];
     private Point RotationHandle()
     {
-        if(_selected.Count==1&&Selected is {} a){var b=EditorRenderer.LocalBox(a);return EditorRenderer.WorldPoint(a,new(b.CenterX,b.Y-28/InteractionScale));}
-        var box=SelectionBox();return new(box.CenterX,box.Y-28/InteractionScale);
+        Point top,center;if(_selected.Count==1&&Selected is {} a){var b=EditorRenderer.LocalBox(a);top=EditorRenderer.WorldPoint(a,new(b.CenterX,b.Y));center=EditorRenderer.WorldPoint(a,new(b.CenterX,b.CenterY));}else{var b=SelectionBox();top=new(b.CenterX,b.Y);center=new(b.CenterX,b.CenterY);}
+        var l=Layout!;var delta=top-center;double x=l.A*delta.X+l.C*delta.Y,y=l.B*delta.X+l.D*delta.Y,length=Math.Sqrt(x*x+y*y);if(length<1e-9){x=0;y=-1;length=1;}var offset=l.SourceDelta(x/length*28/Zoom,y/length*28/Zoom);return new(top.X+offset.X,top.Y+offset.Y);
     }
     private void DrawObjectFrame(DrawingContext dc)
     {
-        var canEdit=ObjectControl.CanEdit(Session!.Document,_selected);var pen=new Pen(canEdit?Brushes.DodgerBlue:Brushes.SlateGray,1/InteractionScale){DashStyle=DashStyles.Dash};
+        var canEdit=ObjectControl.CanEdit(Session!.Document,_selected);var pen=new Pen(canEdit?Brushes.DodgerBlue:Brushes.SlateGray,1/Zoom){DashStyle=DashStyles.Dash};
         Point[] corners;if(_selected.Count==1&&Selected is {} a){var b=EditorRenderer.LocalBox(a);corners=new[]{new Point(b.X,b.Y),new(b.Right,b.Y),new(b.Right,b.Bottom),new(b.X,b.Bottom)}.Select(p=>EditorRenderer.WorldPoint(a,p)).ToArray();}
         else{var b=SelectionBox();corners=[new(b.X,b.Y),new(b.Right,b.Y),new(b.Right,b.Bottom),new(b.X,b.Bottom)];}
+        var l=Layout!;Point Output(Point p){var q=l.ToOutput(p.X,p.Y);return new(q.X,q.Y);}corners=corners.Select(Output).ToArray();var inverse=EditorRenderer.LayoutMatrix(l);inverse.Invert();dc.PushTransform(new MatrixTransform(inverse));
         var path=new StreamGeometry();using(var c=path.Open()){c.BeginFigure(corners[0],false,true);c.PolyLineTo(corners.Skip(1).ToArray(),true,false);}dc.DrawGeometry(null,pen,path);
-        if(canEdit&&!(Selected is {} line&&ConnectorStudio.IsPath(line))){var top=new Point((corners[0].X+corners[1].X)/2,(corners[0].Y+corners[1].Y)/2);var rotate=RotationHandle();dc.DrawLine(new Pen(Brushes.DodgerBlue,1/InteractionScale),top,rotate);dc.DrawEllipse(Brushes.White,new Pen(Brushes.DodgerBlue,1/InteractionScale),rotate,5/InteractionScale,5/InteractionScale);}
+        if(canEdit&&!(_selected.Count==1&&Selected is {} line&&ConnectorStudio.IsPath(line))){var top=new Point((corners[0].X+corners[1].X)/2,(corners[0].Y+corners[1].Y)/2);var rotate=Output(RotationHandle());dc.DrawLine(new Pen(Brushes.DodgerBlue,1/Zoom),top,rotate);dc.DrawEllipse(Brushes.White,new Pen(Brushes.DodgerBlue,1/Zoom),rotate,5/Zoom,5/Zoom);}
+        dc.Pop();
     }
     private void DrawSnapGuides(DrawingContext dc,PixelRect view)
     {
-        var pen=new Pen(Brushes.DeepPink,1/InteractionScale){DashStyle=DashStyles.Dash};
-        if(_guideX is {} x)dc.DrawLine(pen,new(x,view.Y),new(x,view.Bottom));if(_guideY is {} y)dc.DrawLine(pen,new(view.X,y),new(view.Right,y));
+        var l=Layout!;var matrix=EditorRenderer.LayoutMatrix(l);matrix.Invert();dc.PushTransform(new MatrixTransform(matrix));var pen=new Pen(Brushes.MediumVioletRed,1/Zoom){DashStyle=DashStyles.Dash};
+        if(_guideX is {} x)dc.DrawLine(pen,new(x,0),new(x,l.Height));if(_guideY is {} y)dc.DrawLine(pen,new(0,y),new(l.Width,y));dc.Pop();
     }
+
     private void PrepareObjectGesture()
     {
         var center=_originals.Length==1?EditorRenderer.LocalBox(_originals[0]):_dragBounds;_rotationPivot=new(center.CenterX,center.CenterY);
         _rotationStart=Math.Atan2(_start.Y-_rotationPivot.Y,_start.X-_rotationPivot.X)*180/Math.PI;
-        _snapPeers=Session!.Document.Annotations.Where(a=>a.Visible&&!_selected.Contains(a.Id)).Select(EditorRenderer.Box).ToArray();_guideX=_guideY=null;
+        _resizePointerOffset=_handle>=0&&_handle<Handles().Length?_start-Handles()[_handle]:new Vector();
+        _snapPeers=Session!.Document.Annotations.Where(a=>a.Visible&&!_selected.Contains(a.Id)).Select(EditorRenderer.Box).ToArray();var layout=Layout!;_snapOutputPeers=_snapPeers.Select(b=>ObjectPrecision.Map(b,layout)).Concat(ObjectPrecision.VisibleImage(Session.Document) is {} image?new[]{image}:Array.Empty<AnnotationBox>()).ToArray();_guideX=_guideY=null;
     }
     private void RotateObjectSelection(Point p,bool shift)
     {
@@ -52,6 +58,7 @@ public sealed partial class EditorSurface
     }
     private void ResizeObjectSelection(Point p,bool shift)
     {
+        p-=_resizePointerOffset;
         if(_originals.Length==1){
             var original=_originals[0];var a=Session!.Document.Annotations.First(x=>x.Id==original.Id);var local=EditorRenderer.LocalPoint(original,p);var box=EditorRenderer.LocalBox(original);
             ObjectControl.RestoreGeometry(a,original);
@@ -70,12 +77,11 @@ public sealed partial class EditorSurface
                 if(_handle==0){a.X1=end.X;a.Y1=end.Y;}else{a.X2=end.X;a.Y2=end.Y;}
                 var updated=EditorRenderer.LocalBox(a);var center=ObjectControl.RotatePoint(new(updated.CenterX,updated.CenterY),new(box.CenterX,box.CenterY),original.Rotation);a.Translate(center.X-updated.CenterX,center.Y-updated.CenterY);
             }else{
-                var target=AnnotationEditing.Resize(box,_handle,local.X,local.Y,shift||original.Kind is AnnotationKind.Text or AnnotationKind.Step);ObjectControl.ResizeSingle(a,original,box,target,EditorRenderer.LocalBox);
+                bool uniform=shift||KeepAspectRatio||ObjectPrecision.RequiresUniform([original]);var target=AnnotationEditing.Resize(box,_handle,local.X,local.Y,uniform);target=ObjectPrecision.LimitResize([original],box,target,_handle,uniform);ObjectControl.ResizeSingle(a,original,box,target,EditorRenderer.LocalBox);
             }
         }else{
-            bool uniform=shift||_originals.Any(a=>Math.Abs(a.Rotation)>1e-8);
-            var target=AnnotationEditing.Resize(_dragBounds,_handle,p.X,p.Y,uniform);
-            if(uniform&&_handle is 1 or 3 or 5 or 7){double ratio=_dragBounds.Width/Math.Max(1,_dragBounds.Height);if(_handle is 3 or 7)target=target with{Height=target.Width/ratio};else target=target with{Width=target.Height*ratio};}
+            bool uniform=shift||KeepAspectRatio||ObjectPrecision.RequiresUniform(_originals);
+            var target=AnnotationEditing.Resize(_dragBounds,_handle,p.X,p.Y,uniform);target=ObjectPrecision.LimitResize(_originals,_dragBounds,target,_handle,uniform);
             foreach(var original in _originals)AnnotationEditing.Transform(Session!.Document.Annotations.First(x=>x.Id==original.Id),original,_dragBounds,target);
         }
     }

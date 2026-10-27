@@ -1,3 +1,13 @@
+# V1.22.0 — Kiểm tra ngày27/10/2026
+
+- 28 bộ logic/static,1615 assertions:90 kiểm tra ObjectPrecision mới; thêm2shell contract. Bao gồm xoay/lật/resize toàn ảnh, vị trí/kích thước theo output, align/image/canvas/selection, group/distribute/lock, font/callout limits, ngoài ảnh và zero-axis line, snapshot Undo/Redo, snap/bypass.
+- 17 bộ WPF cross-build trên Linux; PrecisionWindowsChecks thêm hit stack/ẩn/khóa, số so với bounds thực, nudge, giữ tỷ lệ/tay nắm, nhóm, annotation trên khung và clip nguồn. **Không thực thi WPF hoặc kiểm thử Windows desktop tại môi trường này.**
+- Main Windows x64 publish tự chứa.NET10.0.13; các dependency được giữ pin, không nâng stack. Capture/hotkey/native pixel-copy/install-path foundations và logo giữ từ ZIP1.21 Boss gửi.
+- Gói updater thực tế chạy riêng qua UpdateChecks; kiểm hash/feed/payload/models/PE icons/source tree/installer/ZIP bằng Verify-Packages.py. Không tự publish.
+- Nghiệm thu còn chờ: Windows install/update, thao tác chuột/menu/IME, nhiều DPI/màn hình, render/clipboard/PDF và fidelity. Chi tiết docs/OBJECT-EDITING-PRECISION.md. Benchmark cũ1.20 không phải benchmark UI1.22.
+
+## Lịch sử kiểm chứng trước
+
 # V1.21.0 — Kiểm tra ngày26/10/2026
 
 - Logic/static: 27 bộ,1523 assertions; thêm20 kiểm tra margins/crop pixel/rotation/flip/schema14/Undo/Redo và2contract UI. Các phần đã kiểm từ1.20 tiếp tục kế thừa.

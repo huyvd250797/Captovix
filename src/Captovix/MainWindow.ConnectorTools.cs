@@ -5,13 +5,14 @@ public partial class MainWindow
 {
     private void InitializeCanvasMenu()
     {
+        Surface.PreviewMouseRightButtonDown+=(_,_)=>{FlushAutoProperties();EndInlineText(true);};
         var menu=new ContextMenu();menu.Items.Add(new MenuItem{Header="Thao tác ảnh"});Surface.ContextMenu=menu;
         Surface.ContextMenuOpening+=(_,e)=>{if(!_editorReady||_session==null){e.Handled=true;return;}BuildCanvasMenu();};
     }
     private void BuildCanvasMenu()
     {
         if(!_editorReady||_session==null||Surface.ContextMenu is not {} menu)return;
-        EndInlineText(true);menu.Items.Clear();
+        EndInlineText(true);menu.Items.Clear();AddPrecisionMenu(menu);
             bool active=ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)&&Surface.Tool!=EditorTool.Crop;
             var units=AnnotationEditing.Units(_session.Document,Surface.SelectedIds);
             MenuItem Add(ItemsControl owner,string title,Action action,bool enabled=true){var item=new MenuItem{Header=title,IsEnabled=enabled};item.Click+=(_,_)=>action();owner.Items.Add(item);return item;}
@@ -22,7 +23,7 @@ public partial class MainWindow
             Add(menu,"Bỏ nhóm · Ctrl+Shift+G",()=>ObjectCommand("Ungroup"),active&&units.Any(u=>u.Any(a=>a.GroupId!=null)));
             var order=new MenuItem{Header="Sắp xếp lớp",IsEnabled=active};menu.Items.Add(order);
             foreach(var (title,command) in new[]{("Lên trước cùng","Front"),("Lên một lớp","Forward"),("Xuống một lớp","Backward"),("Xuống sau cùng","Back")})Add(order,title,()=>ObjectCommand(command));
-            var align=new MenuItem{Header="Căn chỉnh",IsEnabled=active};menu.Items.Add(align);
+            var align=new MenuItem{Header="Căn chỉnh",IsEnabled=active};menu.Items.Add(align);AddAlignmentReference(align);
             foreach(var (title,command) in new[]{("Trái","Left"),("Giữa ngang","CenterX"),("Phải","Right"),("Trên","Top"),("Giữa dọc","CenterY"),("Dưới","Bottom")})Add(align,title,()=>AlignObjects(command));
             Add(align,"Chia đều ngang",()=>ObjectCommand("Horizontal"),units.Length>=3);Add(align,"Chia đều dọc",()=>ObjectCommand("Vertical"),units.Length>=3);
             var members=ObjectControl.Members(_session.Document,Surface.SelectedIds);bool unlock=members.Any(a=>a.Locked);
@@ -36,7 +37,7 @@ public partial class MainWindow
     {
         if(_session==null||Surface.Tool==EditorTool.Crop||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds))return;
         EndInlineText(true);Surface.CancelInteraction();var ids=Surface.SelectedIds.ToHashSet();_session.Commit();
-        _session.Change(d=>{ConnectorStudio.DetachForTransform(d,ids);AnnotationEditing.Align(d,ids,Enum.Parse<AnnotationAlignment>(tag),EditorRenderer.Box);});Surface.Refresh();SyncProperties();Surface.Focus();
+        _session.Change(d=>{ObjectPrecision.Align(d,ids,Enum.Parse<AnnotationAlignment>(tag),_alignmentReference,EditorRenderer.GeometryBox);});Surface.Refresh();SyncProperties();Surface.Focus();
     }
     private void SyncConnectorTools()
     {

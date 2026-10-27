@@ -39,7 +39,7 @@ public sealed partial class EditorSurface
     protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseRightButtonDown(e);if(Session==null)return;CancelInteraction();Session.Commit();Focus();
-        var p=SourcePoint(e);var hit=Hit(p);
+        if(Tool==EditorTool.Crop)return;var p=SourcePoint(e);ContextSourcePoint=p;var hit=HitStack(p,true).FirstOrDefault();
         if(hit!=null&&!_selected.Contains(hit.Id))SelectIds([hit.Id],hit.Id);
         // Keep a multi-selection on its blank interior; click elsewhere clears it.
         else if(hit==null&&(_selected.Count==0||!new Rect(SelectionBox().X,SelectionBox().Y,SelectionBox().Width,SelectionBox().Height).Contains(p)))SelectIds([]);
