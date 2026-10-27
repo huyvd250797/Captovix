@@ -18,8 +18,7 @@ public partial class MainWindow
         var error=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,6)};error.SetResourceReference(TextBlock.ForegroundProperty,"Warning");
         var add=new Button{Content="Thêm phần mở rộng",HorizontalAlignment=HorizontalAlignment.Left};root.Children.Add(add);
         add.Click+=(_,_)=>{try{var n=values.Select(v=>int.Parse(v.Text,System.Globalization.CultureInfo.InvariantCulture)).ToArray();session.Change(d=>{d.Appearance=CanvasEditing.Expand(d.Viewport,d.Appearance,n[0],n[1],n[2],n[3]);d.Version=14;});foreach(var v in values)v.Text="0";Surface.Refresh();SyncProperties();FitImage();error.Text="Đã mở rộng · Ctrl+Z để hoàn tác.";}catch(Exception ex){error.Text=ex.Message;}};
-        var auto=new CheckBox{Content="Tự mở rộng khi vẽ sát mép",IsChecked=session.Document.Appearance.AutoExpand,Margin=new(2,14,2,8)};root.Children.Add(auto);
-        auto.Click+=(_,_)=>{session.Change(d=>{d.Appearance.AutoExpand=auto.IsChecked==true;d.Version=14;});SyncProperties();};
+        root.Children.Add(new TextBlock{Text="Kéo đối tượng vượt mép sẽ tự mở đúng cạnh cần dùng, theo kích thước đối tượng; không thêm khoảng đệm cố định.",TextWrapping=TextWrapping.Wrap,Margin=new(2,14,2,8)});
         var color=new Button{Content=AppIcons.Content("Fill","Nền canvas · chọn màu / trong suốt"),HorizontalAlignment=HorizontalAlignment.Left};root.Children.Add(color);
         color.Click+=(_,_)=>OpenPaint(color,value=>{session.Change(d=>{d.Appearance.Transparent=value==null;if(value!=null)d.Appearance.BackgroundColor=value;});Surface.Refresh();SyncProperties();});
         root.Children.Add(new TextBlock{Text="Có thể vẽ trực tiếp trong khoảng trống quanh ảnh. Crop dùng tọa độ đầu ra, bao gồm cả chú thích. Nền và tự mở rộng áp dụng ngay.",TextWrapping=TextWrapping.Wrap,Margin=new(0,12,0,0)});root.Children.Add(error);

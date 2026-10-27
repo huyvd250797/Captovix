@@ -8,6 +8,9 @@ public static class TextStudio
 {
     public static bool IsText(AnnotationKind kind)=>kind is AnnotationKind.Text or AnnotationKind.Callout or AnnotationKind.Step;
     public static double Padding(Annotation a)=>a.TextPadding??(a.Kind==AnnotationKind.Callout?12:a.Kind==AnnotationKind.Step?3:0);
+    public static double ContentFraction(CalloutStyle style)=>style is CalloutStyle.EllipseSpeech or CalloutStyle.Ellipse?.707106:style==CalloutStyle.DiamondSpeech?.5:style==CalloutStyle.HexagonSpeech?.64:1;
+    public static double MinimumBodyWidth(Annotation a)=>(Math.Max(80,a.FontSize*4)+2*Padding(a))/ContentFraction(a.CalloutStyle);
+    public static double FittedBodyHeight(Annotation a,double measuredHeight,double overhang)=>Math.Clamp((measuredHeight+Math.Max(0,overhang)+2*Padding(a))/ContentFraction(a.CalloutStyle),36,100000);
     public static string Foreground(Annotation a)=>a.TextColor??(a.Kind==AnnotationKind.Step?"#FFFFFF":a.Color);
     public static void CopyStyle(Annotation from,Annotation to)
     {

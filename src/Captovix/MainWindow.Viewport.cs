@@ -18,7 +18,7 @@ public partial class MainWindow
             if(new Rect(0,0,InlineText.ActualWidth,InlineText.ActualHeight).Contains(point))return;
             EndInlineText(true);
         };
-        Surface.CropDraftChanged+=SyncCropProperties;Surface.CanvasLimitReached+=message=>SetStatus("Không thể mở rộng thêm: "+message);
+        Surface.CropDraftChanged+=SyncCropProperties;Surface.CanvasCommitted+=()=>Dispatcher.BeginInvoke(()=>{if(_fitMode)FitImage();});Surface.CanvasLimitReached+=message=>SetStatus("Không thể mở rộng thêm: "+message);
         Surface.CanvasGrown+=(left,top)=>{ImageScroll.UpdateLayout();ImageScroll.ScrollToHorizontalOffset(ImageScroll.HorizontalOffset+left*Surface.Zoom);ImageScroll.ScrollToVerticalOffset(ImageScroll.VerticalOffset+top*Surface.Zoom);};
         ImageScroll.PreviewMouseWheel+=Viewport_Wheel;
         ImageScroll.PreviewMouseLeftButtonDown+=Viewport_PanDown;

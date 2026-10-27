@@ -21,7 +21,7 @@ Check(Named("MediaList").Attribute("SelectionMode")?.Value=="Extended","Native C
 Check(Named("TileStar").Attribute("Visibility")?.Value=="Hidden"&&Named("TileDelete").Attribute("Visibility")?.Value=="Hidden","Tile actions hidden by default");
 Check(Named("TileRoot").Parent!.Descendants(w+"Trigger").Any(e=>e.Attribute("Property")?.Value=="IsMouseOver"),"Tile actions reveal on hover");
 Check(Named("CalloutOptions").Ancestors().Contains(Named("VisualStudioPanel")),"Callout shape gallery follows color in common visual panel");
-Check(!Named("ObjectShadowPanel").Ancestors().Contains(Named("VisualStudioPanel"))&&Named("ObjectShadowPanel").ElementsBeforeSelf().Contains(Named("ShapeStudioPanel")),"Shadow follows shared shape/detail properties");
+Check(!Named("ObjectShadowPanel").Ancestors().Contains(Named("VisualStudioPanel"))&&Named("EditableObjectProperties").Descendants().ToList().IndexOf(Named("ObjectShadowPanel"))>Named("EditableObjectProperties").Descendants().ToList().IndexOf(Named("ShapeStudioPanel")),"Shadow follows shared shape/detail properties");
 var themes=XDocument.Load(Path.Combine(root.FullName,"src/Captovix/Themes.xaml"));var track=themes.Descendants(w+"Track").Single(e=>e.Attribute(x+"Name")?.Value=="PART_Track");Check(track.Attribute("Value")?.Value.Contains("Mode=TwoWay")==true&&track.Attribute("ViewportSize")!=null,"Scrollbar track explicitly synchronizes value and viewport");
 Check(Named("LibraryFooterRow").Name==w+"StackPanel"&&Named("LibraryFooterRow").Attribute("Orientation")?.Value=="Horizontal"&&Named("LibraryFooterRow").Elements(w+"Button").Count()==4,"Library footer stays one compact row with four actions");
 Check(Named("RestoreMediaButton").Ancestors().Contains(Named("LibraryMorePopup"))&&Named("BatchButton").Ancestors().Contains(Named("LibraryMorePopup")),"Secondary footer commands are available in overflow popup");
@@ -30,4 +30,8 @@ Check(Named("ExtendCanvasButton").Ancestors().Contains(Named("ToolBox"))&&!Named
 Check(!doc.Descendants(w+"MenuItem").Any(e=>e.Attribute("Click")?.Value is "Undo_Click" or "Redo_Click"),"Redundant Undo and Redo menu commands removed; toolbar and shortcuts preserved");
 Check(Named("ObjectKeepRatio").Attribute("Checked")?.Value=="ObjectRatio_Changed"&&Named("ObjectKeepRatio").Attribute("Unchecked")?.Value=="ObjectRatio_Changed","Ratio setting drives both numeric and drag behavior");
 Check(Named("ObjectX").Parent!.Element(w+"TextBlock")?.Attribute("Text")?.Value.Contains("canvas")==true,"Numeric position is clearly labeled in output canvas pixels");
+Check(Named("InlineText").Attribute("Background")?.Value=="Transparent"&&Named("InlineText").Attribute("BorderThickness")?.Value=="0"&&Named("InlineText").Attribute("Style")?.Value=="{StaticResource InlineTextEditor}","Inline editing has no opaque input rectangle");
+Check(Named("ImageScroll").Elements(w+"Border").Single().Attribute("Background")?.Value=="{DynamicResource Workspace}","Viewport gutter is plain workspace rather than checkerboard");
+Check(doc.Descendants(w+"Menu").Single().Elements(w+"MenuItem").All(e=>e.Elements(w+"MenuItem").Any(child=>child.Elements(w+"MenuItem").Any())),"Every top menu exposes functional command groups");
+Check(Named("TileRoot").Descendants(w+"TextBlock").Any(e=>e.Attribute("Text")?.Value=="{Binding CompactDetail}"),"Media cards use a compact detail line");
 Console.WriteLine($"{n} shell layout structure checks passed; rendering still requires Windows.");

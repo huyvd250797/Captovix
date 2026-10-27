@@ -18,27 +18,27 @@ public static partial class EditorRenderer
         return new(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
     }
     public static AnnotationBox Box(Annotation a){var b=Bounds(a);return ObjectControl.SelectionBounds(new(b.X,b.Y,b.Width,b.Height));}
-    public static void Draw(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
+    public static void Draw(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null,string? editingTextId=null)
     {
         source=RasterPixels.Source(source,doc);var view=doc.Viewport;
         dc.PushClip(new RectangleGeometry(SourceCanvas(doc)));dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));
         dc.DrawImage(source,new Rect(0,0,doc.OriginalWidth,doc.OriginalHeight));
-        dc.Pop();dc.Pop();if(doc.Appearance.DrawOutsideImage)DrawOverlays(dc,source,doc,draftIds);else{dc.PushClip(new RectangleGeometry(SourceCanvas(doc)));dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));DrawOverlays(dc,source,doc,draftIds);dc.Pop();dc.Pop();}
+        dc.Pop();dc.Pop();if(doc.Appearance.DrawOutsideImage)DrawOverlays(dc,source,doc,draftIds,editingTextId);else{dc.PushClip(new RectangleGeometry(SourceCanvas(doc)));dc.PushClip(new RectangleGeometry(new Rect(view.X,view.Y,view.Width,view.Height)));DrawOverlays(dc,source,doc,draftIds,editingTextId);dc.Pop();dc.Pop();}
     }
-    private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null)
+    private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null,string? editingTextId=null)
     {
         ConnectorStudio.Resolve(doc);var sourceClip=new RectangleGeometry(SourceCanvas(doc));sourceClip.Freeze();
         source=RasterSampling(source,doc);var sampling=FocusStudio.Sampling(doc);
         dc.PushClip(sourceClip);DrawSpotlights(dc,doc);dc.Pop();
         DrawingGroup? protectedSource=doc.Annotations.Any(a=>a.Visible&&a.Kind==AnnotationKind.Magnifier)?ProtectedSource(source,doc,draftIds,sampling):null;
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction&&a.Kind!=AnnotationKind.Spotlight)){
-            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);DrawMagnifier(dc,protectedSource!,a);dc.Pop();}else DrawAnnotation(dc,a);
+            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);DrawMagnifier(dc,protectedSource!,a);dc.Pop();}else DrawAnnotation(dc,a,a.Id==editingTextId);
         }
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
             {dc.PushClip(sourceClip);RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true,sampling);dc.Pop();}
     }
-    private static void DrawLocalAnnotation(DrawingContext dc,Annotation a)
+    private static void DrawLocalAnnotation(DrawingContext dc,Annotation a,bool suppressText=false)
     {
         if(ConnectorStudio.IsPath(a)){DrawConnector(dc,a);return;}
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind)){DrawStrokeShape(dc,a);return;}
@@ -51,10 +51,10 @@ public static partial class EditorRenderer
                 if(a.Points.Count==1){dc.DrawEllipse(brush,null,new(a.Points[0].X,a.Points[0].Y),a.Stroke/2,a.Stroke/2);break;}
                 if(a.Points.Count>1){var path=new StreamGeometry();using(var ctx=path.Open()){ctx.BeginFigure(new(a.Points[0].X,a.Points[0].Y),false,false);ctx.PolyLineTo(a.Points.Skip(1).Select(p=>new Point(p.X,p.Y)).ToArray(),true,false);}path.Freeze();dc.DrawGeometry(null,pen,path);}break;
             case AnnotationKind.Callout:
-                dc.DrawGeometry(a.FillEnabled?ShapeInk(a.FillColor,a.FillOpacity):null,a.StrokeEnabled?ShapePen(a):null,CalloutGeometry(a));DrawStyledText(dc,a);break;
+                dc.DrawGeometry(a.FillEnabled?ShapeInk(a.FillColor,a.FillOpacity):null,a.StrokeEnabled?ShapePen(a):null,CalloutGeometry(a));DrawStyledText(dc,a,suppressText);break;
             case AnnotationKind.Highlight:
                 dc.DrawGeometry(ShapeInk(a.Color,a.FocusOpacity),null,RegionGeometry(a));break;
-            case AnnotationKind.Text:DrawStyledText(dc,a);break;
+            case AnnotationKind.Text:DrawStyledText(dc,a,suppressText);break;
             case AnnotationKind.Step:
                 dc.DrawGeometry(brush,new Pen(Brushes.White,Math.Max(1,a.Stroke/2)),StepGeometry(a));
                 var number=TextLayout(a,a.Number.ToString(CultureInfo.InvariantCulture));dc.DrawText(number,new(p1.X-number.WidthIncludingTrailingWhitespace/2,p1.Y-number.Height/2));break;

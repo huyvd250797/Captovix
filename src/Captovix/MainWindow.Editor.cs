@@ -19,7 +19,7 @@ public partial class MainWindow
     private void InitializeEditor()
     {
         _saveTimer.Tick+=(_,_)=>{_saveTimer.Stop();if(_session?.InTransaction==true||_inlineId!=null)return;FlushEdits(false);};
-        _textTimer.Tick+=(_,_)=>{_textTimer.Stop();_session?.Commit();};
+        _textTimer.Tick+=(_,_)=>{_textTimer.Stop();if(_session?.InTransaction==true)Surface.FitSelectionCanvas();_session?.Commit();};
         Surface.SelectionChanged+=SyncProperties;
         Surface.VisualChanged+=UpdateEditorReadout;
         Surface.TextRequested+=BeginInlineText;
@@ -81,8 +81,8 @@ public partial class MainWindow
         var bitmap=MediaStore.LoadImage(item.FilePath);var session=DocumentStore.Load(item,bitmap,out var warning);
         _activeItem=item;_session=session;session.Changed+=Session_Changed;
         ImageScroll.Visibility=ImageTools.Visibility=ZoomTools.Visibility=EditorProperties.Visibility=Visibility.Visible;
-        Surface.SetDisplayScale(VisualTreeHelper.GetDpi(this).DpiScaleX);Surface.Load(bitmap,session);SelectTool(EditorTool.Select);_fitMode=false;_actualPixels=true;
-        Dispatcher.BeginInvoke(()=>{if(ReferenceEquals(_session,session))Actual_Click(this,new RoutedEventArgs());},DispatcherPriority.Loaded);
+        Surface.SetDisplayScale(VisualTreeHelper.GetDpi(this).DpiScaleX);Surface.Load(bitmap,session);SelectTool(EditorTool.Select);_fitMode=true;_actualPixels=false;
+        Dispatcher.BeginInvoke(()=>{if(ReferenceEquals(_session,session))FitImage();},DispatcherPriority.Loaded);
         if(warning!=null){if(session.Dirty){SavedLabel.Text="Đã khôi phục · Ctrl+S để lưu";SavedLabel.SetResourceReference(TextBlock.ForegroundProperty,"Warning");}SetStatus("Kiểm tra trạng thái khôi phục tài liệu.");MessageBox.Show(this,warning,"Kiểm tra dữ liệu chỉnh sửa",MessageBoxButton.OK,MessageBoxImage.Warning);}
     }
     private void SelectTool(EditorTool tool)
@@ -90,7 +90,7 @@ public partial class MainWindow
         if(Surface==null)return;FlushAutoProperties();EndInlineText(true);Surface.CancelInteraction();
         if(Surface.Tool==EditorTool.Crop&&tool!=EditorTool.Crop)Surface.ClearCropDraft();
         if(tool is not (EditorTool.Select or EditorTool.Crop))Surface.SelectIds([]);
-        if(tool is not (EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso))Surface.ClearPixelRegion();Surface.Tool=tool;if(tool==EditorTool.Crop)Surface.StartCrop();Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
+        if(tool is not (EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso))Surface.ClearPixelRegion();Surface.Tool=tool;ApplyLatestSavedStyle(tool);if(tool==EditorTool.Crop)Surface.StartCrop();Surface.Cursor=tool==EditorTool.Select?Cursors.Arrow:Cursors.Cross;
         foreach(var button in ToolBox.Children.OfType<Button>()){
             var selected=button.Tag?.ToString()==tool.ToString()||button.Tag?.ToString()=="PixelRectangle"&&Surface.IsPixelTool;button.SetResourceReference(Control.BackgroundProperty,selected?"Accent":"Surface");button.SetResourceReference(Control.ForegroundProperty,selected?"OnAccent":"Text");
         }
@@ -145,15 +145,15 @@ public partial class MainWindow
     {
         if(!_editorReady||_syncProperties)return;
         var stroke=PickedValue(StrokePicker,4);var font=PickedValue(FontPicker,28);Surface.StrokeSize=stroke;Surface.TextSize=font;
-        ChangeSelected(a=>{a.Stroke=stroke;a.FontSize=font;if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds);});
+        ChangeSelected(a=>{a.Stroke=stroke;a.FontSize=font;if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds,true);});
         Surface.Refresh();SyncProperties();
     }
     private void AnnotationText_Changed(object sender,TextChangedEventArgs e)
     {
         if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Text or AnnotationKind.Callout} a)return;
-        _session.Begin();a.Text=AnnotationText.Text.Length>20000?AnnotationText.Text[..20000]:AnnotationText.Text;EditorRenderer.FitText(a,Surface.EditingBounds);SavedLabel.Text="Đang chỉnh sửa…";Surface.InvalidateVisual();_textTimer.Stop();_textTimer.Start();
+        _session.Begin();a.Text=AnnotationText.Text.Length>20000?AnnotationText.Text[..20000]:AnnotationText.Text;EditorRenderer.FitText(a,Surface.EditingBounds,true);SavedLabel.Text="Đang chỉnh sửa…";Surface.InvalidateVisual();_textTimer.Stop();_textTimer.Start();
     }
-    private void PropertyText_LostFocus(object sender,KeyboardFocusChangedEventArgs e){_textTimer.Stop();_session?.Commit();}
+    private void PropertyText_LostFocus(object sender,KeyboardFocusChangedEventArgs e){_textTimer.Stop();if(_session?.InTransaction==true)Surface.FitSelectionCanvas();_session?.Commit();}
     private void PropertyText_KeyDown(object sender,KeyEventArgs e)
     {
         if(e.Key==Key.Escape){_textTimer.Stop();_session?.Cancel();Surface.Refresh();SyncProperties();SavedLabel.Text=_session?.Dirty==true?"Đang lưu…":"✓ Đã lưu";Surface.Focus();e.Handled=true;}
@@ -169,7 +169,7 @@ public partial class MainWindow
     private void FitImage()
     {
         _fitMode=true;_actualPixels=false;if(_session==null||Surface.Layout is not {} v)return;
-        Surface.SetZoom(Math.Min(Math.Max(40,ImageScroll.ActualWidth-65-2*EditorSurface.WorkspacePad)/v.Width,Math.Max(40,ImageScroll.ActualHeight-65-2*EditorSurface.WorkspacePad)/v.Height));
+        Surface.SetZoom(Math.Min(Math.Max(40,ImageScroll.ActualWidth-16-2*EditorSurface.WorkspacePad)/v.Width,Math.Max(40,ImageScroll.ActualHeight-16-2*EditorSurface.WorkspacePad)/v.Height));
     }
     private void Fit_Click(object sender,RoutedEventArgs e)=>FitImage();
     private void Actual_Click(object sender,RoutedEventArgs e){ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;}

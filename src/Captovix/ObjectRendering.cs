@@ -9,11 +9,15 @@ public static partial class EditorRenderer
     public static RotateTransform ObjectTransform(Annotation a){var b=LocalBounds(a);return new(a.Rotation,b.Left+b.Width/2,b.Top+b.Height/2);}
     public static Point WorldPoint(Annotation a,Point p){var b=LocalBox(a);var q=ObjectControl.RotatePoint(new(p.X,p.Y),new(b.CenterX,b.CenterY),a.Rotation);return new(q.X,q.Y);}
     public static Point LocalPoint(Annotation a,Point p){var b=LocalBox(a);var q=ObjectControl.RotatePoint(new(p.X,p.Y),new(b.CenterX,b.CenterY),-a.Rotation);return new(q.X,q.Y);}
-    public static void DrawAnnotation(DrawingContext dc,Annotation a)
+    public static void DrawAnnotation(DrawingContext dc,Annotation a,bool suppressText=false)
     {
         if(!a.Visible)return;DrawObjectShadow(dc,a);
-        if(Math.Abs(a.Rotation)<1e-9){DrawLocalAnnotation(dc,a);return;}
-        dc.PushTransform(ObjectTransform(a));try{DrawLocalAnnotation(dc,a);}finally{dc.Pop();}
+        if(Math.Abs(a.Rotation)<1e-9){DrawLocalAnnotation(dc,a,suppressText);return;}
+        dc.PushTransform(ObjectTransform(a));try{DrawLocalAnnotation(dc,a,suppressText);}finally{dc.Pop();}
+    }
+    public static Rect ContentBounds(Annotation a)
+    {
+        var drawing=new DrawingGroup();using(var context=drawing.Open())DrawAnnotation(context,a);return drawing.Bounds;
     }
     public static bool Hit(Annotation a,Point p,double tolerance)=>a.Visible&&!a.Locked&&HitLocal(a,LocalPoint(a,p),tolerance);
 }

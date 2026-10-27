@@ -14,6 +14,13 @@ public static class CanvasEditing
         if(next.OutputCrop is {} crop)next.OutputCrop=crop with{Width=checked(crop.Width+left+right),Height=checked(crop.Height+top+bottom)};
         _=new ImageLayout(view,next);return next;
     }
+    public static ImageAppearance FitContent(PixelRect view,ImageAppearance current,ImageRect source)
+    {
+        if(new[]{source.X,source.Y,source.Width,source.Height}.Any(v=>!double.IsFinite(v))||source.Width<0||source.Height<0)throw new ArgumentException("Khung đối tượng không hợp lệ.");
+        var l=new ImageLayout(view,current);var points=new[]{l.ToOutput(source.X,source.Y),l.ToOutput(source.Right,source.Y),l.ToOutput(source.Right,source.Bottom),l.ToOutput(source.X,source.Bottom)};
+        int left=checked((int)Math.Ceiling(Math.Max(0,-points.Min(p=>p.X)-1e-7))),top=checked((int)Math.Ceiling(Math.Max(0,-points.Min(p=>p.Y)-1e-7))),right=checked((int)Math.Ceiling(Math.Max(0,points.Max(p=>p.X)-l.Width-1e-7))),bottom=checked((int)Math.Ceiling(Math.Max(0,points.Max(p=>p.Y)-l.Height-1e-7)));
+        return left+top+right+bottom==0?current.Copy():Expand(view,current,left,top,right,bottom);
+    }
     public static ImageAppearance CropOutput(PixelRect view,ImageAppearance current,PixelRect crop)
     {
         var layout=new ImageLayout(view,current);if(crop.Width<2||crop.Height<2||crop.X<0||crop.Y<0||crop.Right>layout.Width||crop.Bottom>layout.Height)throw new ArgumentException("Crop phải nằm trong toàn canvas và tối thiểu 2 × 2 px.");

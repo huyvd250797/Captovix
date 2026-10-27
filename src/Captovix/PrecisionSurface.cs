@@ -4,7 +4,7 @@ using System.Windows.Media;
 namespace Captovix;
 public sealed partial class EditorSurface
 {
-    public bool KeepAspectRatio {get;set;}=true;
+    public bool KeepAspectRatio {get;set;}=false;
     public Point? ContextSourcePoint {get;private set;}
     private string? _hoveredId;
     private double ScreenDistance(Point a,Point b){var l=Layout!;double x=a.X-b.X,y=a.Y-b.Y;return Math.Sqrt(Math.Pow(l.A*x+l.C*y,2)+Math.Pow(l.B*x+l.D*y,2))*Zoom;}
@@ -32,7 +32,7 @@ public sealed partial class EditorSurface
     {
         var l=Layout!;var box=ObjectPrecision.Map(_dragBounds,l);double ox=l.A*dx+l.C*dy,oy=l.B*dx+l.D*dy;
         var targets=_snapOutputPeers;
-        var result=ObjectControl.Snap(box,new(0,0,l.Width,l.Height),targets,ox,oy,6/Zoom,shift,enabled);var delta=l.SourceDelta(result.X,result.Y);_guideX=result.GuideX;_guideY=result.GuideY;
+        var result=ObjectControl.Snap(box,new(0,0,l.Width,l.Height),targets,ox,oy,6/Zoom,shift,enabled,false);var delta=l.SourceDelta(result.X,result.Y);_guideX=result.GuideX;_guideY=result.GuideY;
         foreach(var original in _originals){var a=Session!.Document.Annotations.First(x=>x.Id==original.Id);ObjectControl.RestoreGeometry(a,original);a.Translate(delta.X,delta.Y);}
     }
 }

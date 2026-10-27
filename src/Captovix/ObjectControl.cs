@@ -69,16 +69,16 @@ public static class ObjectControl
             var pivot=new AnnotationPoint(next.CenterX,next.CenterY);for(int i=0;i<objects.Length;i++){var snapshot=objects[i].Copy();Rotate(objects[i],snapshot,angle,pivot,localBounds);}
         }
     }
-    public static SnapResult Snap(AnnotationBox box,PixelRect view,IEnumerable<AnnotationBox> peers,double dx,double dy,double tolerance,bool axisLock,bool enabled)
+    public static SnapResult Snap(AnnotationBox box,PixelRect view,IEnumerable<AnnotationBox> peers,double dx,double dy,double tolerance,bool axisLock,bool enabled,bool clamp=true)
     {
         if(axisLock){if(Math.Abs(dx)>=Math.Abs(dy))dy=0;else dx=0;}
-        if(!enabled){var free=AnnotationEditing.ClampMove(box,view,dx,dy);return new(free.X,free.Y);}
+        if(!enabled){var free=clamp?AnnotationEditing.ClampMove(box,view,dx,dy):(X:dx,Y:dy);return new(free.X,free.Y);}
         double bestX=tolerance+1,bestY=tolerance+1,offsetX=0,offsetY=0;double? guideX=null,guideY=null;
         void Consider(double edge,bool horizontal){for(int i=0;i<3;i++){double own=(horizontal?box.X+dx:box.Y+dy)+(horizontal?box.Width:box.Height)*i/2;double diff=edge-own;if(Math.Abs(diff)>tolerance)continue;if(horizontal&&Math.Abs(diff)<bestX){bestX=Math.Abs(diff);offsetX=diff;guideX=edge;}if(!horizontal&&Math.Abs(diff)<bestY){bestY=Math.Abs(diff);offsetY=diff;guideY=edge;}}}
         void Target(AnnotationBox b){Consider(b.X,true);Consider(b.CenterX,true);Consider(b.Right,true);Consider(b.Y,false);Consider(b.CenterY,false);Consider(b.Bottom,false);}
         Target(new(view.X,view.Y,view.Width,view.Height));foreach(var peer in peers)Target(peer);
         if(axisLock&&dx==0){offsetX=0;guideX=null;}if(axisLock&&dy==0){offsetY=0;guideY=null;}
-        var actual=AnnotationEditing.ClampMove(box,view,dx+offsetX,dy+offsetY);
+        var actual=clamp?AnnotationEditing.ClampMove(box,view,dx+offsetX,dy+offsetY):(X:dx+offsetX,Y:dy+offsetY);
         if(Math.Abs(actual.X-(dx+offsetX))>1e-8)guideX=null;if(Math.Abs(actual.Y-(dy+offsetY))>1e-8)guideY=null;
         return new(actual.X,actual.Y,guideX,guideY);
     }

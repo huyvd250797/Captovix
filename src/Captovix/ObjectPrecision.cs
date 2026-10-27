@@ -14,7 +14,7 @@ public static class ObjectPrecision
         var l=new ImageLayout(doc.Viewport,doc.Appearance);var b=Map(new(doc.Viewport.X,doc.Viewport.Y,doc.Viewport.Width,doc.Viewport.Height),l);
         double x=Math.Max(Math.Max(0,l.Canvas.X),b.X),y=Math.Max(Math.Max(0,l.Canvas.Y),b.Y),right=Math.Min(Math.Min(l.Width,l.Canvas.Right),b.Right),bottom=Math.Min(Math.Min(l.Height,l.Canvas.Bottom),b.Bottom);return right>x&&bottom>y?new(x,y,right-x,bottom-y):null;
     }
-    public static bool RequiresUniform(IEnumerable<Annotation> objects)=>objects.Any(a=>Math.Abs(a.Rotation)>1e-8||a.Kind is AnnotationKind.Text or AnnotationKind.Step);
+    public static bool RequiresUniform(IEnumerable<Annotation> objects)=>false;
     private static void Move(IEnumerable<Annotation> objects,ImageLayout l,double x,double y){var delta=l.SourceDelta(x,y);foreach(var a in objects)a.Translate(delta.X,delta.Y);}
     public static void RevealOutside(EditorDocument doc,IEnumerable<string> ids,Func<Annotation,AnnotationBox> bounds)
     {

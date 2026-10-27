@@ -77,10 +77,10 @@ public sealed partial class EditorSurface
                 if(_handle==0){a.X1=end.X;a.Y1=end.Y;}else{a.X2=end.X;a.Y2=end.Y;}
                 var updated=EditorRenderer.LocalBox(a);var center=ObjectControl.RotatePoint(new(updated.CenterX,updated.CenterY),new(box.CenterX,box.CenterY),original.Rotation);a.Translate(center.X-updated.CenterX,center.Y-updated.CenterY);
             }else{
-                bool uniform=shift||KeepAspectRatio||ObjectPrecision.RequiresUniform([original]);var target=AnnotationEditing.Resize(box,_handle,local.X,local.Y,uniform);target=ObjectPrecision.LimitResize([original],box,target,_handle,uniform);ObjectControl.ResizeSingle(a,original,box,target,EditorRenderer.LocalBox);
+                bool uniform=shift;var target=AnnotationEditing.Resize(box,_handle,local.X,local.Y,uniform);target=ObjectPrecision.LimitResize([original],box,target,_handle,uniform);ObjectControl.ResizeSingle(a,original,box,target,EditorRenderer.LocalBox);
             }
         }else{
-            bool uniform=shift||KeepAspectRatio||ObjectPrecision.RequiresUniform(_originals);
+            bool uniform=shift;
             var target=AnnotationEditing.Resize(_dragBounds,_handle,p.X,p.Y,uniform);target=ObjectPrecision.LimitResize(_originals,_dragBounds,target,_handle,uniform);
             foreach(var original in _originals)AnnotationEditing.Transform(Session!.Document.Annotations.First(x=>x.Id==original.Id),original,_dragBounds,target);
         }

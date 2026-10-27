@@ -35,6 +35,7 @@ public sealed class MediaItem : INotifyPropertyChanged
     [JsonIgnore] public string Month=>Created.ToLocalTime().ToString("MM/yyyy");
     [JsonIgnore] public string Day=>Created.ToLocalTime().ToString("dd/MM/yyyy");
     [JsonIgnore] public string Badge => IsVideo ? "▶ VIDEO" : "▧ ẢNH";
+    [JsonIgnore] public string CompactDetail=>$"{Created:HH:mm} · {(IsVideo?$"{Seconds:F0}s":$"{Width}×{Height}")}";
     [JsonIgnore] public string Detail => $"{Created:dd/MM HH:mm} · {(IsVideo?$"{Seconds:F0} giây":$"{Width}×{Height}")}";
 }
 public sealed class AppSettings

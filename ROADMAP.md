@@ -1,6 +1,33 @@
+# Captovix V1.24.0 — Capture Precision
+
+- Chụp vùng: kéo → chỉnh cạnh/góc nếu cần → Enter hoặc nút máy ảnh là chụp, bỏ bước chọn hành động dư. Nét đứt chuyển động chậm báo vùng chưa chụp. Mũi tên cuộn dọc/ngang nằm ngay vùng chọn, nền trong suốt; video chỉ có xác nhận vùng. Esc/chuột phải hủy.
+- Giữ nền capture pixel và kiểm topology/DPI sau hẹn giờ. Chọn phần tử cha/con bằng con lăn, ưu tiên cạnh/góc modal/cửa sổ; vùng cố định/gần đây kế thừa nền trước. Độ tương thích UIA phụ thuộc ứng dụng; không cam kết nhận diện mọi UI.
+- Quản lý thư viện: cây năm/tháng/ngày, ảnh dạng ô tự xuống dòng theo chiều rộng; tải100ảnh/lần, nút Xem thêm. Tùy chọn Ẩn ngày tháng không có hình bỏ cả tháng trống. Ctrl/Shift chọn nhiều, mở/xóa/xuất giữ nguyên. Bỏ đường vào màn hình quản lý bộ sưu tập cũ; dữ liệu tag/collection giữ, backup/export còn trong menu.
+- Chọn công cụ áp dụng mẫu đã lưu gần nhất trong họ công cụ; chọn mẫu cụ thể vẫn ưu tiên mẫu vừa bấm. Đã lưu mở sẵn; sao trên preview chỉ hiện hover/focus. Sắp xếp công cụ bằng kéo-thả trên thanh công cụ hoặc Hiển thị → Sắp xếp không gian → Sắp xếp công cụ cá nhân; thứ tự giữ trên máy.
+- Callout vẽ kéo giữ nguyên thân khi thả, tắt tự co chữ cho đối tượng mới để nhập không đổi thân. Bật Tự co trong thuộc tính nếu muốn. Một click giữ kích thước mặc định. Tay nắm đuôi màu cam, tay nắm thân xanh/trắng dạng tròn. Đuôi vẫn tự do.
+- Footer/nút update gọn hơn. Giới thiệu ghi: Ý tưởng, định hướng sản phẩm và thiết kế trải nghiệm: Võ Đức Huy (HuyVo). ©2026HuyVo. All rights reserved.
+
+## Cài/update
+
+Giải nén Update-Packages, đóng app và chạy HuyVo.Captovix-win-Setup.exe, hoặc đăng đủ5asset lên GitHub Release stable/latest tagv1.24.0 để app kiểm tra cập nhật. Không đăng chỉ file ZIP. Source ZIP dùng phát triển, không dùng cài. Không tự publish trong lần bàn giao này. Setup chưa ký số.
+
+## Giới hạn và nghiệm thu
+
+Build/publish Windows x64 tự chứa.NET10.0.13; giữ stack/logo/update source/schema và dữ liệu. Đã chạy7bộ logic/static liên quan,620assertions, và cross-build RefinementWindowsChecks; chưa chạy WPF/Windows desktop. Kiểm nupkg và integrity gói riêng sau đóng gói.
+
+Cần Windows nghiệm thu:1Enter/chuột/nút camera, hủy/countdown/quay, arrows cuộn, nhiều DPI100–200%và tọa độ âm; ảnh/clipboard/PNG đúng pixel; thư viện co giãn/lazy/empty month/multi-select/delete; chọn mẫu gần nhất sau restart/chọn mẫu thủ công; callout thân/đuôi/IME/Undo; caption/taskbar/footer/install-update. Không có screenshot UI chạy thật hoặc tuyên bố đã kiểm thị giác. Margins cũ vẫn theo giới hạn1.23.1, chữ không kéo méo glyph hai chiều.
+
+## Tiếp theo V1.25 — Scrolling Capture Quality
+
+Cải thiện mối nối dọc/ngang, vùng header/footer cố định, phát hiện khung lặp/lỗi, bộ trang mẫu để kiểm không mất/lặp dòng/cột. Ưu tiên bản vá phản hồi Windows1.24 trước.
+
+## Lịch sử phiên bản trước
+
+Bản vá hiện tại **V1.23.1 — Resize & Capture UX**: resize tự do/Shift, vùng chụp chờ xác nhận, pixel selection handles, tự thu margins mới, thông báo update và dọn inspector. Chờ nghiệm thu Windows. Tiếp theo V1.24 Capture Precision: cha/con phần tử, vùng cố định/gần đây, nhiều màn hình và DPI.
+
 # Captovix — Roadmap chuyên sâu về ảnh
 
-Hiện tại: **V1.22.0 — Object Editing Precision**, đã xây dựng và kiểm tra logic/build, chờ nghiệm thu Windows. Một Editor native Windows; mở mặc định phóng to. Ưu tiên ảnh, giữ quay màn hình hiện có; editor video chốt riêng sau khi ổn định nhánh ảnh.
+Hiện tại: **V1.23.1 — Text & Callout Refinement**, đã xây dựng và kiểm tra logic/build, chờ nghiệm thu Windows. Một Editor native Windows; mở mặc định phóng to. Ưu tiên ảnh, giữ quay màn hình hiện có; editor video chốt riêng sau khi ổn định nhánh ảnh.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật và dữ liệu | Điều kiện hoàn thành | Phụ thuộc/thứ tự |
 | --- | --- | --- | --- | --- | --- |
@@ -11,7 +38,7 @@ Hiện tại: **V1.22.0 — Object Editing Precision**, đã xây dựng và ki�
 | V1.20 — Image Release & Performance | Tối ưu cache/recovery và UX ảnh | Cache budget/nạp thumbnail nền; thread cache; render diagnostics; last-good; cây lịch sử; caption/icon/sample/footer gọn; nới canvas/ngoài ảnh | Cache16/256MiB,2worker; opt-in schema13, cũ12; không reset media; benchmark pixel-copy tổng hợp4K/8K | Logic/build đã kiểm; **chờ Windows profile/UI/install/update nghiệm thu**, chưa tile renderer/peak RAM/HDR | Đã kế thừa; patch phản hồi Windows khi cần |
 | V1.21 — Layout Precision | Chỉnh toàn canvas chính xác | Bốn cạnh bằng số, nền màu/trong suốt; crop cả annotation; vẽ trực tiếp ngoài ảnh/tự nới mép; sửa chữ/callout; cây thư viện ẩn ngày trống | Pixel đầu ra, giữ source/annotation, schema14; không reset media | Logic/build kiểm tại bản này; chờ Windows UX/DPI/render/install/update | Đã xây dựng; patch phản hồi Windows trước |
 | V1.22 — Object Editing Precision | Bố trí/chọn/chỉnh đối tượng chính xác | Hit stack/hover; căn3tham chiếu, chia đều theo output; snap/guide; trường số; tỷ lệ cạnh/góc, nhóm/font/callout; ngoài ảnh | Giữ schema12/13/14, thêm settings máy; không resize nguồn/canvas; Undo/Redo | Logic/build và gói kiểm tại bản này; chờ Windows mouse/DPI/render/install/update | Đã xây dựng; patch Windows trước1.23 |
-| V1.23 — Text & Callout Refinement | Chữ cân đối, dễ sửa | Căn lề/giãn dòng/đệm, đuôi tự do, khung co theo chữ, mẫu nhất quán | Text layout và hit-test | Dự kiến; IME và render không lệch | Sau1.22 |
+| V1.23 — Text & Callout Refinement | Chữ dễ sửa, workspace gọn | Nhập chữ trong suốt, tự co thân/giữ đích đuôi; exact-edge canvas; Fit, compact metadata, inspector/menu/caption/work area | Giữ schema12/13/14; native IME,1Undo; không tự thu canvas | Logic/build/package kiểm; chờ Windows IME/render/taskbar/DPI/install-update | Đã xây dựng; patch Windows trước1.24 |
 | V1.24 — Capture Precision | Chụp vùng chính xác | Chuyển phần tử con/cha; vùng cố định/gần đây; nhiều màn hình | UIA/native fallback theo app | Dự kiến; đo pixel/capture mẫu | Sau1.23 |
 | V1.25 — Scrolling Capture Quality | Cải thiện mối nối | Ghép dọc/ngang, khung cố định, phát hiện lặp và cảnh báo | Bộ mẫu cuộn và sửa mối nối | Dự kiến; không mất/lặp dòng/cột trên mẫu hỗ trợ | Sau1.24 |
 | V1.26 — Image Composition Studio | Ghép ảnh hướng dẫn | Lưới/hàng/cột, khoảng cách, nền/viền/bóng, tiêu đề/số bước | Lớp ảnh và mẫu | Dự kiến; ghép/export/project khớp | Sau1.25 |

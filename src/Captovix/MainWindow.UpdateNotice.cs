@@ -16,7 +16,7 @@ public partial class MainWindow
         _updatePromptQueued=true;
         Dispatcher.BeginInvoke(()=>{
             _updatePromptQueued=false;if(_updateUiClosed||_updates?.Release?.Version!=release.Version||_updates.Stage!=UpdateStage.Available)return;
-            if(_busy||!IsVisible||_settingsDialog!=null){_updatePromptPolicy.Release(release.Version);return;}
+            if(_busy||!IsVisible||!IsActive||_settingsDialog!=null){_updatePromptPolicy.Release(release.Version);return;}
             var panel=new StackPanel{Margin=new(24)};panel.Children.Add(AppIcons.Content("Refresh","Có phiên bản Captovix mới"));panel.Children.Add(new TextBlock{Text="V"+release.Version,FontSize=28,FontWeight=FontWeights.SemiBold,Margin=new(0,16,0,12)});
             panel.Children.Add(new TextBlock{Text="Bản đang dùng: V"+VersionInfo.Current+" · có thể cập nhật hoặc để sau.",TextWrapping=TextWrapping.Wrap,Margin=new(0,0,0,12)});
             panel.Children.Add(new ScrollViewer{Content=new TextBlock{Text=release.Notes.Length>5000?release.Notes[..5000]+"…":release.Notes,TextWrapping=TextWrapping.Wrap},MaxHeight=210,VerticalScrollBarVisibility=ScrollBarVisibility.Auto});
@@ -28,7 +28,7 @@ public partial class MainWindow
     }
     private void OpenSettingsAndDownload()
     {
-        if(_updates?.CanApply==true&&_updates.Stage==UpdateStage.Available){Dispatcher.BeginInvoke(()=>DownloadUpdate_Click(this,new RoutedEventArgs()));OpenSettings("Updates");}
+        if(_updates?.CanApply==true&&_updates.Stage==UpdateStage.Available){OpenSettings("Updates");}
         else OpenRelease_Click(this,new RoutedEventArgs());
     }
     private void FlyUpdateBadge(Point? screen,string? version)

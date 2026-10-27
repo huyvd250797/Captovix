@@ -6,11 +6,12 @@ namespace Captovix;
 public partial class MainWindow
 {
     private bool _imeComposing;
+    private System.Windows.Input.TextComposition? _activeComposition;
     private AnnotationKind CurrentTextKind()=>Surface.Selected is {} a&&TextStudio.IsText(a.Kind)?a.Kind:Surface.Tool==EditorTool.Callout?AnnotationKind.Callout:Surface.Tool==EditorTool.Step?AnnotationKind.Step:AnnotationKind.Text;
     private void InitializeTextStudio()
     {
-        System.Windows.Input.TextCompositionManager.AddPreviewTextInputStartHandler(InlineText,(_,_)=>_imeComposing=true);
-        System.Windows.Input.TextCompositionManager.AddPreviewTextInputHandler(InlineText,(_,_)=>_imeComposing=false);
+        System.Windows.Input.TextCompositionManager.AddPreviewTextInputStartHandler(InlineText,(_,e)=>{_imeComposing=true;_activeComposition=e.TextComposition;});
+        System.Windows.Input.TextCompositionManager.AddPreviewTextInputHandler(InlineText,(_,_)=>{_imeComposing=false;_activeComposition=null;});
         TextFontPicker.ItemsSource=Fonts.SystemFontFamilies.Select(f=>f.Source).Where(n=>n.Length<=80&&n.All(c=>char.IsLetterOrDigit(c)||c is ' ' or '-' or '_' or '.' or '(' or ')')).Distinct().OrderBy(n=>n).ToArray();
     }
     private void SyncTextStudio()
@@ -25,7 +26,7 @@ public partial class MainWindow
         CalloutKindPicker.SelectedIndex=(int)a.CalloutStyle;StepKindPicker.SelectedIndex=(int)a.StepStyle;
         TextStudioMessage.Text=selected==null?"Kiểu cho đối tượng mới. Chọn đối tượng đã vẽ để sửa.":$"Đang chỉnh {ShapeStudio.Label(kind)} · kéo vùng trống để vẽ bằng công cụ đang chọn.";
         if(!EditorRenderer.HasTextFont(a))TextStudioMessage.Text+=" Máy này chưa có font đã lưu; xem/xuất dùng Segoe UI.";
-        if(selected!=null&&_session!=null){var b=EditorRenderer.Bounds(a);var v=_session.Document.Viewport;if(b.Left<v.X||b.Top<v.Y||b.Right>v.Right||b.Bottom>v.Bottom)TextStudioMessage.Text+=" Nội dung vượt vùng ảnh/crop; hãy di chuyển, giảm cỡ chữ hoặc tăng khung trước khi xuất.";if(kind==AnnotationKind.Callout&&EditorRenderer.TextLayout(a).Height>EditorRenderer.TextContent(a).Height+1)TextStudioMessage.Text+=" Chữ cao hơn hộp; bật giãn hộp hoặc tăng chiều cao.";}
+        if(selected!=null&&_session!=null){var b=EditorRenderer.Bounds(a);var v=Surface.EditingBounds;if(b.Left<v.X||b.Top<v.Y||b.Right>v.Right||b.Bottom>v.Bottom)TextStudioMessage.Text+=" Nội dung vượt vùng ảnh/crop; hãy di chuyển, giảm cỡ chữ hoặc tăng khung trước khi xuất.";if(kind==AnnotationKind.Callout&&EditorRenderer.TextLayout(a).Height>EditorRenderer.TextContent(a).Height+1)TextStudioMessage.Text+=" Chữ cao hơn hộp; bật giãn hộp hoặc tăng chiều cao.";}
         TextStudioError.Text="";
     }
     private bool ApplyTextStudio()
@@ -37,7 +38,7 @@ public partial class MainWindow
             style.TextPadding=ShapeValue(TextPaddingField,"Đệm chữ",0,200);style.TextWidth=ShapeValue(TextWrapWidth,"Rộng chữ",0,100000);style.LineSpacing=ShapeValue(TextSpacing,"Giãn dòng",0,3);style.AutoFitText=TextAutoFit.IsChecked==true;
             style.CalloutStyle=(CalloutStyle)CalloutKindPicker.SelectedIndex;style.StepStyle=(StepStyle)StepKindPicker.SelectedIndex;style.FillColor=TextBackgroundHex.Text.Trim().ToUpperInvariant();style.FillOpacity=ShapeValue(TextBackgroundOpacity,"Đậm nền",0,100);style.FillEnabled=TextBackgroundToggle.IsChecked==true;style.StrokeEnabled=TextBorderToggle.IsChecked==true;
             TextStudio.Validate(style);ShapeStudio.ValidateStyle(style);
-            void Apply(Annotation a){TextStudio.CopyStyle(style,a);a.FillEnabled=style.FillEnabled;a.FillColor=style.FillColor;a.FillOpacity=style.FillOpacity;if(a.Kind==AnnotationKind.Callout)a.StrokeEnabled=style.StrokeEnabled;if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds);}
+            void Apply(Annotation a){TextStudio.CopyStyle(style,a);a.FillEnabled=style.FillEnabled;a.FillColor=style.FillColor;a.FillOpacity=style.FillOpacity;if(a.Kind==AnnotationKind.Callout)a.StrokeEnabled=style.StrokeEnabled;if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds,true);}
             Apply(Surface.TextDefaultsFor(kind));ChangeSelected(a=>{if(TextStudio.IsText(a.Kind))Apply(a);});Surface.Refresh();SyncProperties();SetStatus("Đã áp dụng kiểu chữ/callout · Ctrl+Z hoàn tác.");return true;
         }catch(Exception e){TextStudioError.Text=e.Message;return false;}
     }

@@ -9,7 +9,11 @@ public sealed class ImageAppearance
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ExtendTop {get;set;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ExtendRight {get;set;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ExtendBottom {get;set;}
-    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public bool AutoExpand {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int AutoLeft {get;set;}
+    public int AutoTop {get;set;}
+    public int AutoRight {get;set;}
+    public int AutoBottom {get;set;}
+    public bool AutoExpand {get;set;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public PixelRect? OutputCrop {get;set;}
     [System.Text.Json.Serialization.JsonIgnore] public bool HasPrecision=>ExtendLeft!=0||ExtendTop!=0||ExtendRight!=0||ExtendBottom!=0||AutoExpand||OutputCrop!=null;
     public int QuarterTurns {get;set;}

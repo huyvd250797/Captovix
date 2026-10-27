@@ -32,7 +32,7 @@ public partial class MainWindow
     private void ChangeSelected(Action<Annotation> change)
     {
         if(_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds))return;var ids=Surface.SelectedIds.ToHashSet();
-        _session.Commit();_session.Change(d=>{foreach(var a in d.Annotations.Where(a=>ids.Contains(a.Id)))change(a);});
+        _session.Commit();_session.Change(d=>{foreach(var a in d.Annotations.Where(a=>ids.Contains(a.Id)))change(a);Surface.FitSelectionCanvas();});
     }
     private void Effect_Changed(object sender,SelectionChangedEventArgs e)
     {
@@ -47,7 +47,7 @@ public partial class MainWindow
         if(preset.Focus is {} focus){preset.Apply(Surface.FocusDefaultsFor(focus.Kind));}
         if(preset.Typography!=null)foreach(var style in new[]{Surface.TextDefaults,Surface.CalloutDefaults,Surface.StepDefaults})preset.Apply(style);
         if(sender is Button {Tag:"Defaults"}){Surface.SelectIds([]);if(preset.Shape!=null)SelectTool(EditorTool.Shape);else if(preset.Focus is {} effect)SelectTool(Enum.Parse<EditorTool>(effect.Kind.ToString()));}
-        else ChangeSelected(a=>{preset.Apply(a);if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds);});
+        else ChangeSelected(a=>{preset.Apply(a);if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds,true);});
         Surface.Refresh();SyncProperties();SetStatus($"Đã áp dụng preset {preset.Name}.");
     }
     private void SavePreset_Click(object sender,RoutedEventArgs e)

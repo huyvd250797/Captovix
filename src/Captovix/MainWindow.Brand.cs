@@ -30,6 +30,7 @@ public partial class MainWindow
         panel.Children.Add(new TextBlock{Text="Capture + Tools + Visual + eXperience",FontWeight=FontWeights.SemiBold});
         panel.Children.Add(new TextBlock{Text="Bộ công cụ chụp, ghi màn hình và biên tập hình ảnh trực quan.",TextWrapping=TextWrapping.Wrap,Margin=new(0,10,0,12)});
         var dialog=new Window{Title="Giới thiệu Captovix",Owner=this,Width=470,SizeToContent=SizeToContent.Height,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterOwner,Content=panel};
+        panel.Children.Add(new TextBlock{Text="Ý tưởng, định hướng sản phẩm và thiết kế trải nghiệm: Võ Đức Huy (HuyVo).\n© 2026 HuyVo. All rights reserved.",TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,16),FontSize=12});
         var close=new Button{Content="Đóng",HorizontalAlignment=HorizontalAlignment.Right,IsCancel=true};close.Click+=(_,_)=>dialog.Close();panel.Children.Add(close);dialog.ShowDialog();
     }
     [DllImport("user32.dll",EntryPoint="LoadImageW",CharSet=CharSet.Unicode)]private static extern nint BrandLoadImage(nint instance,string file,uint type,int width,int height,uint flags);
