@@ -99,7 +99,7 @@ public partial class MainWindow
         var rect=Surface.CropDraft??Surface.CropBounds;_syncCrop=true;
         try{CropX.Text=rect.X.ToString(CultureInfo.InvariantCulture);CropY.Text=rect.Y.ToString(CultureInfo.InvariantCulture);CropWidth.Text=rect.Width.ToString(CultureInfo.InvariantCulture);CropHeight.Text=rect.Height.ToString(CultureInfo.InvariantCulture);}
         finally{_syncCrop=false;}
-        CropHint.Text=Surface.CropDraft==null?"Kéo tay nắm để chọn vùng. Enter hoặc Áp dụng để cắt.":$"Đang chọn {rect.Width} × {rect.Height} px. Áp dụng để hoàn tất.";
+        CropHint.Text=Surface.CropDraft==null?"Kéo vùng hoặc tay nắm rồi thả chuột để crop ngay.":$"Đang chọn {rect.Width} × {rect.Height} px. Kéo/thả để crop ngay; nhập số dùng Áp dụng kích thước.";
     }
     private bool PreviewCropFields()
     {

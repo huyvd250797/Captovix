@@ -1,18 +1,7 @@
-Captovix V1.29.1 — Serverless Licensing
+Captovix V1.31.0 — Quick Capture Experience
 
-The Update-Packages ZIP contains the canonical Setup.exe and update assets.
-Before publishing, configure Supabase, keep the signing private key only in Edge
-Secrets, embed the PUBLIC app config, build and test on real Windows machines.
-The delivered review build has an empty production URL/public key and only
-allows manual region capture. It is not a pre-activated customer release.
+Đóng app và chạy HuyVo.Captovix-win-Setup.exe để nâng vào đường dẫn hiện tại. Giữ media/license. Không cần migration hoặc redeploy Supabase/Pages.
 
-See docs/SERVERLESS-LICENSING.md in Source ZIP for Dashboard/Cloudflare setup.
-Upload the FIVE release assets after configuration and acceptance:
-HuyVo.Captovix-1.29.1-full.nupkg
-HuyVo.Captovix-win-Setup.exe
-RELEASES
-assets.win.json
-releases.win.json
+Để update trong app: giải nén ZIP và upload ĐỦ năm assets lên stable Release v1.31.0: HuyVo.Captovix-1.31.0-full.nupkg, HuyVo.Captovix-win-Setup.exe, RELEASES, assets.win.json, releases.win.json. Không dùng Source ZIP thay binary và không chỉ upload ZIP update.
 
-Source ZIP is for development. Never upload private keys, edge-secrets.env,
-Supabase service_role/secret keys, admin passwords or test fixtures to Releases.
+Step style mới dùng sidecar schema16; app cũ không đọc schema này. Giữ backup trước khi rollback. Setup/clipboard/overlay/DPI cần nghiệm thu trên Windows thật trước phát hành rộng.

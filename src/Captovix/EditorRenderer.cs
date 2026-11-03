@@ -56,7 +56,8 @@ public static partial class EditorRenderer
                 dc.DrawGeometry(ShapeInk(a.Color,a.FocusOpacity),null,RegionGeometry(a));break;
             case AnnotationKind.Text:DrawStyledText(dc,a,suppressText);break;
             case AnnotationKind.Step:
-                dc.DrawGeometry(brush,new Pen(Brushes.White,Math.Max(1,a.Stroke/2)),StepGeometry(a));
+                bool customStep=a.StepStrokeColor!=null||a.StepFillVisible!=null;
+                dc.DrawGeometry(!customStep?brush:a.StepFillVisible==false?null:ShapeInk(a.Color,a.FillOpacity),!customStep?new Pen(Brushes.White,Math.Max(1,a.Stroke/2)):a.StrokeEnabled?new Pen(a.StepStrokeColor==null?Brushes.White:ShapeInk(a.StepStrokeColor,a.StrokeOpacity),Math.Max(1,a.Stroke/2)):null,StepGeometry(a));
                 var number=TextLayout(a,a.Number.ToString(CultureInfo.InvariantCulture));dc.DrawText(number,new(p1.X-number.WidthIncludingTrailingWhitespace/2,p1.Y-number.Height/2));break;
         }
     }

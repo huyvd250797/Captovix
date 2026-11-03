@@ -1,1 +1,3 @@
-V1.20.0:1501 logic/static assertions;16 WPF compile-only;native pixel-copy4K/8K Linux benchmark exact;61 real-package updater checks plus artifact/feed/ZIP/PE audit required. Windows UI/render/capture/DPI/profile/install/update acceptance pending; no automatic publishing.
+Captovix V1.30.0 — Capture Fidelity & Reliability
+Current package built from attached configured V1.29.1 source. Public license authority/config unchanged; no migration/deploy. See docs/VALIDATION.md for executed checks and pending Windows runtime acceptance.
+Use scripts/Verify-Packages.py for manifest/CRC/PE icon/source/payload checks; UpdateChecks verifies the actual generated nupkg. No Windows install/capture execution is implied by package integrity.

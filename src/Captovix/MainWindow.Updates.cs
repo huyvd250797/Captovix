@@ -93,7 +93,7 @@ public partial class MainWindow
         if (release != null)
         {
             UpdateVersionLabel.Text = $"V{release.Version} · Gói đầy đủ {release.Bytes / 1048576d:F1} MB";
-            UpdateNotes.Text = release.Notes.Length > 24000 ? release.Notes[..24000] + "\n…" : release.Notes;
+            UpdateNotes.Text = ReleaseNotesPresentation.Text(release.Notes);
         }
         UpdateFooterButton.Content = AppIcons.Content("Refresh",stage == UpdateStage.Ready ? "Khởi động lại để cập nhật" :
             stage == UpdateStage.Available ? $"Có bản V{release?.Version}" : stage == UpdateStage.Downloading ? "Đang tải cập nhật" : "Cập nhật");

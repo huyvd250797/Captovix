@@ -37,6 +37,18 @@ public partial class MainWindow
 public static class AppIcons
 {
     private static readonly Dictionary<string,string> Paths=new(){
+        ["Stamp"]="M8,3 H16 V8 L14,11 V14 H10 V11 L8,8 Z M6,14 H18 L21,20 H3 Z M5,23 H19",
+        ["StudioColor"]="M4,3 V21 M12,3 V21 M20,3 V21 M1,7 H7 M9,16 H15 M17,10 H23",
+        ["StudioClone"]="M3,3 H13 V13 H3 Z M16,11 H21 V21 H11 V16 M7,17 V21 M17,7 H21",
+        ["StudioPerspective"]="M4,6 L20,2 L22,20 L2,22 Z M8,7 L8,18 M15,5 L16,18 M6,12 H18",
+        ["StudioRotate"]="M4,8 A9,9 0 1 1 3,16 M4,2 V8 H10 M9,10 L16,8 L18,15 L11,17 Z",
+        ["StudioBackground"]="M3,3 H21 V21 H3 Z M7,16 L11,8 L16,16 Z M2,22 L22,2",
+        ["StudioMask"]="M3,3 H21 V21 H3 Z M12,6 A6,6 0 1 1 11.99,6",
+        ["StudioComparison"]="M3,4 H21 V20 H3 Z M12,2 V22 M6,9 L9,12 L6,15 M18,9 L15,12 L18,15",
+        ["StudioWatermark"]="M3,5 H21 V19 H3 Z M7,10 L9,15 L12,9 L15,15 L17,10",
+        ["StudioReset"]="M4,4 V10 H10 M4,10 A8,8 0 1 1 5,18",
+
+        ["Crosshair"]="M12,2 V9 M12,15 V22 M2,12 H9 M15,12 H22 M10,10 H14 V14 H10 Z",
         ["Eyedropper"]="M14,3 L21,10 M17,2 L22,7 L10,19 L5,19 L5,14 Z M5,19 L2,22",
         ["Element"]="M3,8 V3 H8 M16,3 H21 V8 M3,16 V21 H8 M16,21 H21 V16 M8,8 H16 V16 H8 Z",
         ["ScrollDown"]="M12,3 V20 M6,14 L12,20 L18,14",["ScrollRight"]="M3,12 H20 M14,6 L20,12 L14,18",

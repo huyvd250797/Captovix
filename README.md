@@ -1,8 +1,71 @@
+# Captovix V1.31.0 — Quick Capture Experience
+
+Nâng từ source V1.30 có payload DLL khớp gói update Boss đính kèm. Giữ nguyên public license config, Supabase/Pages và dữ liệu media. **Không cần chạy migration mới hoặc redeploy backend/admin.**
+
+- Chụp vùng: thanh gọn, ưu tiên ngoài vùng; kéo/chỉnh cạnh rồi Enter một lần chụp. Viền tương phản mảnh theo DPI, resize cursor theo cạnh/góc.
+- Đường X/Y theo con trỏ; H bật/tắt. Kính lúp112 ×138 DIP, viền mảnh; M bật/tắt; nhớ lựa chọn. Space + phím mũi tên hỗ trợ chọn vùng bằng bàn phím.
+- Nhớ chế độ chụp được chọn; giữ pipeline snapshot/pixel V1.30 để toolbar/kính/tọa độ không vào PNG.
+- Crop kéo rồi thả áp dụng ngay, Ctrl+Z hoàn tác; nhập số dùng Áp dụng kích thước.
+- Bước chọn màu viền/nền riêng, hỗ trợ Trong suốt và màu số. Sidecar mới dùng schema16 khi có kiểu Bước mới; ảnh cũ giữ hiển thị cũ. Bản cũ không đọc schema16, cần backup trước rollback.
+- Stamp mở bằng một nút, có12 hình vector mới gồm check xanh và X đỏ; preview và hình chèn thống nhất.
+- Ô công cụ động ngay trái Thêm nhớ công cụ chọn gần nhất, icon riêng; dùng lại không cần mở Thêm.
+- Nội dung cập nhật trong Settings/popup dùng chung định dạng dễ đọc, không hiện dấu Markdown thô.
+
+Hướng dẫn thao tác/kiểm thử: [docs/QUICK-CAPTURE-EXPERIENCE.md](docs/QUICK-CAPTURE-EXPERIENCE.md). Đóng app, giải nén Update-Packages và chạy HuyVo.Captovix-win-Setup.exe vào đường dẫn cũ. Để update qua app, đăng năm assets lên stable Release v1.31.0; không chỉ upload ZIP. Không tự publish lần này.
+
+Build .NET10 SDK/Windows x64/NSIS3 như hướng dẫn trước. `python scripts/Run-Checks.py` chạy logic và cross-build WPF trên Linux; WPF/input/DPI/Setup cần nghiệm thu Windows thật. Bàn giao đúng hai ZIP update và source, Setup ở trong ZIP update.
+
+Kế tiếp đề xuất **V1.32 — Capture Presets & Repeat**: mẫu kích thước/tỷ lệ, nhập X/Y/W/H trong selector, chọn vùng gần đây và quản lý chụp lại nhanh; giữ kiểm tra pixel và nghiệm thu đa màn hình. Chưa triển khai.
+
+## Lịch sử và hướng dẫn cấu hình trước đó
+
+# Captovix V1.30.0 — Capture Fidelity & Reliability
+
+Nâng từ source V1.29.1 Boss cung cấp. Giữ nguyên public license config đã gắn; backend Supabase/Pages, authority, dữ liệu bản quyền và media không thay đổi. **Không cần chạy migration mới hoặc redeploy backend/admin.**
+
+## Các thay đổi
+
+- Chụp vùng/phần tử dùng một snapshot desktop giữ trong RAM trước selector, Enter lấy đúng pixel từ snapshot thay vì chụp lại sau khi chọn. Kèm kính lúp15×15pixel, X/Y, phím M ẩn/hiện. Ghi thời điểm giữ ảnh vào metadata.
+- PNG gốc đúng pixel vật lý và kích thước vùng chọn; giám sát topology/DPI, hỗ trợ tọa độ âm, không silently downscale. Ngưỡng64MP cho snapshot để giới hạn bộ nhớ.
+- Editor phân biệt Vừa khung /100% /Tùy chỉnh; nút chế độ có trạng thái chọn. Zoom không đi vào pipeline file/copy. Save PNG kiểm tra cả kích thước và BGRA đọc lại.
+- Giữ các công cụ ảnh, bản quyền/khôi phục/serverless và updater từ V1.29.1; không đụng private key hoặc tạo key/trial trên production.
+
+Hướng dẫn và ma trận nghiệm thu: [docs/CAPTURE-FIDELITY-RELIABILITY.md](docs/CAPTURE-FIDELITY-RELIABILITY.md). Ảnh desktop là SDR8; HDR/WCG đánh giá riêng. Chụp cuộn, video và native-window capture tiếp tục dùng nguồn live riêng.
+
+## Cài/cập nhật
+
+Đóng Captovix → giải nén Update-Packages → chạy `HuyVo.Captovix-win-Setup.exe` → chọn đường dẫn cũ, ví dụ D:\Captovix\Captovix. Giữ thư mục dữ liệu và license; không gỡ app/xóa dữ liệu. Setup nằm trong ZIP update, chỉ bàn giao hai file Source và Update-Packages. Để cập nhật qua app, upload năm release assets trong ZIP lên stable GitHub Release v1.30.0 như hướng dẫn README-PUBLISH.txt.
+
+## Build và kiểm tra
+
+Dùng .NET10 SDK và Windows x64; runtime Windows10.0.13, dependencies pin từV1.29.1. Dùng NSIS3 để dựng bộ cài. Source có GitHub Actions chạy build Windows bằng public Variables đã hướng dẫn ở bản trước, không tự publish Release. Khi chỉ nâng app, không ghi đè admin/config.json mẫu lên Pages đang chạy.
+
+```powershell
+python scripts/Run-Checks.py
+powershell -ExecutionPolicy Bypass -File scripts/Build-Windows.ps1
+```
+
+Kết quả Source: `Captovix V1.30.0 — Capture Fidelity & Reliability.zip`; update: `Captovix-v1.30.0-Update-Packages.zip`. Không đưa private key/service-role/password vào source hoặc Actions Variables. Hướng dẫn serverless cũ bên dưới chỉ dành cấu hình lần đầu; **lần nâng này không cần thực hiện lại**.
+
+Kiểm tra Linux chỉ chạy được logic/geometry và cross-build WPF; chưa thay cho nghiệm thu Windows100–200%, GDI/clipboard/multi-monitor/Setup. Xem docs/VALIDATION.md. Chưa push GitHub/deploy/publish Release trong lần bàn giao.
+
+## Bản kế tiếp đề xuất
+
+**V1.31 — Capture Workflow & Precision:** nhập trực tiếp X/Y/W/H trong selector, mẫu kích thước/tỷ lệ và chọn nhanh vùng gần đây ngay lúc chụp; tiếp tục nghiệm thu Windows theo bộ ảnh kiểm thử. Chưa xây bản này.
+
+## Hướng dẫn hệ thống trước đó
+
 # Captovix V1.29.1 — Serverless Licensing
 
 Ứng dụng chụp/chỉnh ảnh Windows với Editor thống nhất. Bản này chuyển dịch vụ bản quyền V1.29.0 sang **Supabase Edge Functions + PostgreSQL**, trang quản trị **Cloudflare Pages**, giữ các công cụ ảnh/capture và giao thức RSA-PSS hiện có.
 
-**Source/build bàn giao chưa kết nối Supabase/Cloudflare production.** `src/Captovix/license-config.json` và `admin/config.json` còn trống. Gói Setup review chỉ mở chụp vùng thủ công lưu PNG gốc; trial/key cần hoàn tất cấu hình và build lại. Không đăng review package này lên Release dùng chung.
+**Bản cấu hình cho hệ thống của Boss:** `src/Captovix/license-config.json` đã được thay bằng cấu hình công khai Boss cung cấp và nhúng vào app lúc build. API `/health` và `/ready` đã trả HTTP 200 khi kiểm tra ngày 03/11/2026. Giữ nguyên issuer/public key, không tạo lại private key và không đổi dữ liệu license trên server.
+
+`admin/config.json` trong source vẫn là mẫu trống; trang admin Boss đã deploy đang có cấu hình riêng. Không upload đè thư mục admin mẫu này lên Pages đang hoạt động. Lần bàn giao này chỉ cấu hình/build Windows; không deploy lại Edge Function/admin, không cần chạy migration mới.
+
+Nâng cấp từ V1.27.2: đóng Captovix/kết thúc quay, chạy Setup mới, chọn đường dẫn cài hiện có (ví dụ D:\Captovix\Captovix), không gỡ app hay xóa thư mục dữ liệu. Mở Bản quyền & khôi phục để dùng thử hoặc nhập key đã tạo trên trang quản trị. Chưa kiểm thử WPF/DPAPI/Setup trên Windows thật; việc API sẵn sàng chưa chứng minh toàn bộ luồng kích hoạt hoặc private key server khớp public key đã nhận.
+
+Đọc [docs/CONFIGURED-WINDOWS-BUILD.md](docs/CONFIGURED-WINDOWS-BUILD.md) để cài/cập nhật. Giữ version V1.29.1 cho bản cấu hình đầu tiên này; không phát hành song song review chưa cấu hình cùng version. Nếu review V1.29.1 đã được đăng cho người dùng, cần tăng version trước khi phát hành gói khác.
 
 ## Triển khai không cần Docker/VPS
 

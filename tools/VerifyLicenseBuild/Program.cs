@@ -1,0 +1,15 @@
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Security.Cryptography;
+using System.Text.Json;
+if(args.Length!=2)throw new ArgumentException("Usage: VerifyLicenseBuild Captovix.dll public-license-config.json");
+using var file=File.OpenRead(args[0]);using var pe=new PEReader(file);var metadata=pe.GetMetadataReader();
+var found=metadata.ManifestResources.Select(metadata.GetManifestResource).Single(r=>metadata.GetString(r.Name)=="Captovix.license-config.json");
+if(!found.Implementation.IsNil)throw new InvalidDataException("Config must be embedded in app assembly");
+var block=pe.GetSectionData(pe.PEHeaders.CorHeader!.ResourcesDirectory.RelativeVirtualAddress);var reader=block.GetReader((int)found.Offset,block.Length-(int)found.Offset);int size=reader.ReadInt32();var embedded=reader.ReadBytes(size);var expected=File.ReadAllBytes(args[1]);
+if(!embedded.SequenceEqual(expected))throw new InvalidDataException("Embedded config differs from supplied public config");
+using var json=JsonDocument.Parse(embedded);var c=json.RootElement;var uri=new Uri(c.GetProperty("apiUrl").GetString()!);if(uri.Scheme!="https"||uri.UserInfo!=""||uri.Query!=""||uri.Fragment!="")throw new InvalidDataException("Invalid API URL");
+var pem=c.GetProperty("publicKeyPem").GetString()!;if(pem.Contains("PRIVATE KEY"))throw new InvalidDataException("Private key is forbidden");using var key=RSA.Create();key.ImportFromPem(pem);if(key.KeySize<3072)throw new InvalidDataException("RSA key too small");
+if(string.IsNullOrWhiteSpace(c.GetProperty("issuer").GetString()))throw new InvalidDataException("Missing issuer");
+Console.WriteLine("PASS: actual PE resource exactly matches supplied public configuration");Console.WriteLine("PASS: HTTPS, issuer, public-only RSA "+key.KeySize+" bits; assembly "+metadata.GetAssemblyDefinition().Version);
+Console.WriteLine("Config SHA256 "+Convert.ToHexStringLower(SHA256.HashData(embedded)));

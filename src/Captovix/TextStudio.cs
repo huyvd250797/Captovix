@@ -14,10 +14,11 @@ public static class TextStudio
     public static string Foreground(Annotation a)=>a.TextColor??(a.Kind==AnnotationKind.Step?"#FFFFFF":a.Color);
     public static void CopyStyle(Annotation from,Annotation to)
     {
-        to.FontFamily=from.FontFamily;to.Bold=from.Bold;to.Italic=from.Italic;to.Underline=from.Underline;to.TextColor=from.TextColor;to.TextAlignment=from.TextAlignment;to.VerticalAlignment=from.VerticalAlignment;to.TextPadding=from.TextPadding;to.TextWidth=from.TextWidth;to.LineSpacing=from.LineSpacing;to.CalloutStyle=from.CalloutStyle;to.StepStyle=from.StepStyle;to.AutoFitText=from.AutoFitText;
+        to.StepStrokeColor=from.StepStrokeColor;to.StepFillVisible=from.StepFillVisible;to.FontFamily=from.FontFamily;to.Bold=from.Bold;to.Italic=from.Italic;to.Underline=from.Underline;to.TextColor=from.TextColor;to.TextAlignment=from.TextAlignment;to.VerticalAlignment=from.VerticalAlignment;to.TextPadding=from.TextPadding;to.TextWidth=from.TextWidth;to.LineSpacing=from.LineSpacing;to.CalloutStyle=from.CalloutStyle;to.StepStyle=from.StepStyle;to.AutoFitText=from.AutoFitText;
     }
     public static void Validate(Annotation a)
     {
+        if(a.StepStrokeColor!=null&&!StudioStyle.Hex(a.StepStrokeColor))throw new InvalidDataException("Màu viền bước không hợp lệ.");
         if(string.IsNullOrWhiteSpace(a.FontFamily)||a.FontFamily.Length>80||a.FontFamily.Any(c=>!(char.IsLetterOrDigit(c)||c is ' ' or '-' or '_' or '.' or '(' or ')'))||!Enum.IsDefined(a.TextAlignment)||!Enum.IsDefined(a.VerticalAlignment)||!Enum.IsDefined(a.CalloutStyle)||!Enum.IsDefined(a.StepStyle)||a.TextPadding is {} p&&(!double.IsFinite(p)||p<0||p>200)||!double.IsFinite(a.TextWidth)||a.TextWidth<0||a.TextWidth>100000||!double.IsFinite(a.LineSpacing)||a.LineSpacing!=0&&(a.LineSpacing<.8||a.LineSpacing>3)||a.TextColor!=null&&!(a.TextColor.Length==7&&a.TextColor[0]=='#'&&a.TextColor.AsSpan(1).ToString().All(Uri.IsHexDigit)))throw new InvalidDataException("Thuộc tính chữ/callout không hợp lệ.");
     }
     public static void MigrateLegacy(Annotation a)

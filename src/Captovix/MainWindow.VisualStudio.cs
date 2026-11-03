@@ -30,12 +30,12 @@ public partial class MainWindow
     }
     private void SyncVisualStudio()
     {
-        var a=StudioTarget();bool active=ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind)||a.Kind is AnnotationKind.Callout or AnnotationKind.Text;
+        var a=StudioTarget();bool active=ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind)||a.Kind is AnnotationKind.Callout or AnnotationKind.Text or AnnotationKind.Step;
         CalloutOptions.Visibility=a.Kind==AnnotationKind.Callout?Visibility.Visible:Visibility.Collapsed;VisualStudioPanel.Visibility=active?Visibility.Visible:Visibility.Collapsed;
         PaintButton(FrameStrokePaint,"Viền ảnh",_session?.Document.Appearance is {BorderWidth:>0} frame?frame.BorderColor:null);PaintButton(FrameFillPaint,"Nền ảnh",_session?.Document.Appearance is {Transparent:false} fill?fill.BackgroundColor:null);
         if(_session?.Document.Appearance is {} appearance){if(appearance.BorderWidth>0)_lastFrameBorder=appearance.BorderWidth;if(appearance.ShadowX!=0||appearance.ShadowY!=0)_frameShadowDistance=Math.Max(Math.Abs(appearance.ShadowX),Math.Abs(appearance.ShadowY));int dir=(Math.Sign(appearance.ShadowY)+1)*3+Math.Sign(appearance.ShadowX)+1;MarkDirection(FrameShadowDirections,appearance.Shadow,dir);}
         ObjectShadowPanel.Visibility=active&&StudioStyle.SupportsShadow(a.Kind)?Visibility.Visible:Visibility.Collapsed;SyncAllFavorites(a);if(!active)return;bool text=a.Kind==AnnotationKind.Text;
-        PaintButton(StrokePaintButton,text?"Chữ":"Viền",text?TextStudio.Foreground(a):a.StrokeEnabled?a.Color:null);PaintButton(FillPaintButton,"Nền",a.FillEnabled?a.FillColor:null);FillPaintButton.IsEnabled=ShapeStudio.IsClosed(a.Kind)||a.Kind is AnnotationKind.Text or AnnotationKind.Callout;
+        PaintButton(StrokePaintButton,text?"Chữ":"Viền",text?TextStudio.Foreground(a):a.StrokeEnabled?(a.Kind==AnnotationKind.Step?a.StepStrokeColor??"#FFFFFF":a.Color):null);PaintButton(FillPaintButton,"Nền",a.Kind==AnnotationKind.Step?(a.StepFillVisible==false?null:a.Color):a.FillEnabled?a.FillColor:null);FillPaintButton.IsEnabled=ShapeStudio.IsClosed(a.Kind)||a.Kind is AnnotationKind.Text or AnnotationKind.Callout or AnnotationKind.Step;
         ObjectShadowPanel.Visibility=StudioStyle.SupportsShadow(a.Kind)?Visibility.Visible:Visibility.Collapsed;_shadowDirection=a.Shadow.Direction;ObjectShadowEnabled.IsChecked=a.Shadow.Enabled;ObjectShadowDistance.Text=ShapeNumber(a.Shadow.Distance);ObjectShadowBlur.Text=ShapeNumber(a.Shadow.Blur);ObjectShadowOpacity.Text=ShapeNumber(a.Shadow.Opacity);MarkDirection(ObjectShadowDirections,a.Shadow.Enabled,a.Shadow.Direction);
         string key=StudioStyle.Signature(a)+"|"+string.Join(",",_favorites.Select(f=>f.Id));if(key==_galleryKey)return;_galleryKey=key;ShapeTileGrid.Children.Clear();VariantTileGrid.Children.Clear();CalloutTileGrid.Children.Clear();
         if(a.Kind==AnnotationKind.Callout)foreach(var callout in Enum.GetValues<CalloutStyle>()){var preview=a.Copy();preview.CalloutStyle=callout;AddStyleTile(CalloutTileGrid,preview,CalloutLabel(callout),()=>ChooseStyle(preview));}
@@ -80,8 +80,8 @@ public partial class MainWindow
     private void SetObjectPaint(string? color,bool fill)
     {
         FlushAutoProperties();var kind=StudioTarget().Kind;
-        void Apply(Annotation a){if(fill){a.FillEnabled=color!=null;if(color!=null)a.FillColor=color;}else if(a.Kind==AnnotationKind.Text){if(color!=null)a.TextColor=color;}else{a.StrokeEnabled=color!=null;if(color!=null)a.Color=color;}}
-        var defaults=TextStudio.IsText(kind)?Surface.TextDefaultsFor(kind):Surface.ShapeDefaults;Apply(defaults);if(!fill&&color!=null)Surface.InkColor=color;ChangeSelected(Apply);Surface.Refresh();SyncProperties();
+        void Apply(Annotation a){if(a.Kind==AnnotationKind.Step){if(fill){a.StepFillVisible=color!=null;if(color!=null)a.Color=color;}else{a.StrokeEnabled=color!=null;a.StepStrokeColor=color??a.StepStrokeColor??"#FFFFFF";}return;}if(fill){a.FillEnabled=color!=null;if(color!=null)a.FillColor=color;}else if(a.Kind==AnnotationKind.Text){if(color!=null)a.TextColor=color;}else{a.StrokeEnabled=color!=null;if(color!=null)a.Color=color;}}
+        var defaults=TextStudio.IsText(kind)?Surface.TextDefaultsFor(kind):Surface.ShapeDefaults;Apply(defaults);if(color!=null&&(kind!=AnnotationKind.Step?!fill:fill))Surface.InkColor=color;ChangeSelected(Apply);Surface.Refresh();SyncProperties();
     }
     private void FrameStrokePaint_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;OpenPaint(FrameStrokePaint,color=>ApplyAppearance(a=>{a.BorderWidth=color==null?0:a.BorderWidth>0?a.BorderWidth:_lastFrameBorder;if(color!=null)a.BorderColor=color;}));}
     private void FrameFillPaint_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;OpenPaint(FrameFillPaint,color=>ApplyAppearance(a=>{a.Transparent=color==null;if(color!=null)a.BackgroundColor=color;}));}

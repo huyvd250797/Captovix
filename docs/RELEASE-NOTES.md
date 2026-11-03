@@ -1,5 +1,9 @@
-# Captovix V1.29.1 — Serverless Licensing
+# Captovix V1.31.0 — Quick Capture Experience
 
-Dịch vụ bản quyền chuyển sang Supabase Edge Functions/PostgreSQL, quản trị bằng Supabase Auth và Cloudflare Pages. Có offline key generator, migration additive, audit theo người quản trị và GitHub Actions build Windows bằng cấu hình công khai. Giữ giao thức chứng nhận và các công cụ ảnh.
-
-Review build chưa có production URL/public key: chỉ chụp vùng. Làm theo docs/SERVERLESS-LICENSING.md, cấu hình backend, build và nghiệm thu Windows trước phát hành. Không đưa private key/service-role vào Source/Release/Pages. Chưa deploy Supabase/Cloudflare/Actions trong tài khoản Boss.
+- Chụp gọn hơn: thanh điều khiển ưu tiên ngoài vùng chọn, chỉnh biên rồi Enter một lần để chụp.
+- Đường tọa độ X/Y theo chuột; kính lúp nhỏ và viền mảnh hơn. H/M bật tắt nhanh, nhớ lựa chọn và chế độ chụp gần nhất.
+- Crop kéo và thả để áp dụng ngay; Ctrl+Z hoàn tác.
+- Công cụ Bước chọn màu viền, nền và trong suốt độc lập.
+- Bộ Stamp mới có check xanh, X đỏ và các dấu trực quan; mở danh sách từ nút Stamp.
+- Ô công cụ gần nhất cạnh Thêm giúp gọi lại Stamp, Watermark và các công cụ khác nhanh hơn.
+- Nội dung cập nhật dễ đọc và thống nhất giữa popup với Thiết lập.

@@ -1,3 +1,46 @@
+# V1.31.0 — Quick Capture Experience: xác minh và giới hạn
+
+- Source nền V1.30 được đối chiếu Captovix.dll và Licensing.Shared.dll với full.nupkg trong Update-Packages Boss gửi: khớp byte. Không thay cấu hình bản quyền/backend/admin/supabase/migrations/dependencies.
+- Đã chạy Run-Checks.py: các suite logic/contract chạy trên Linux, suite WPF chỉ cross-build. Có bộ mới QuickCaptureChecks20 tình huống: outside toolbar, fallback góc xa, tọa độ âm, seed keyboard, notes chung, catalog tool/icon/stamp, chọn/chỉnh vùng. CompositionChecks thêm schema16, màu Bước/transparent/copy/invalid color/legacy preservation.
+- QuickCaptureWindowsChecks đã cross-build: mouse-up crop/Undo, màu Step qua handler thực, stamp pixels và vị trí ô công cụ động. Chưa thực thi WPF trên Windows. Test authority fixture chỉ trong test assembly, không tạo trial/key trên server sản xuất.
+- App Windows x64 được self-contained publish với runtime10.0.13, giữ pin Tesseract/Velopack/ScreenRecorderLib. Không nâng runtime/package trong bản này.
+- Verify-Packages đối chiếu sourceZIP, payload, CRC/hash/feed/nuspec, canonical installer wrapper/logo, OCR models và giữ public license/LicenseRuntime/Edge/admin config từ nguồn nền. Updater checks chạy với nupkg vừa tạo. Không mô tả bước này là đã chạy Setup.
+- Build/cross-build không chứng minh toàn bộ UI/input/native capture: bắt buộc nghiệm thu Windows100–200%, nhiều màn hình âm, chụp bằng chuột/bàn phím/Enter một lần, full-screen toolbar, contrast/cursor/lens/crosshair không vào PNG, crop thả/Undo, Step màu/copy/reopen, các stamp, recent tool sau restart và reorder, update popup/settings/theme.
+- Giữ GDI/snapshot/PNG invariants của V1.30, không resize file do zoom. HDR/WCG, video, window/scroll live vẫn cần ma trận riêng; không hứa toàn bộ ứng dụng UIA đều có cây phần tử hoàn hảo.
+- Không cần migration mới, không deploy lại Edge/admin, không push/publish GitHub Release. Hai ZIP bàn giao, Setup trong Update-Packages. Schema16 chỉ xuất khi dùng kiểu Bước mới; app cũ không đọc được sidecar này, cần backup trước rollback.
+
+Hướng dẫn và điều kiện nghiệm thu: docs/QUICK-CAPTURE-EXPERIENCE.md.
+
+---
+
+# V1.30.0 — Validation hiện tại
+
+Source nền là ZIP V1.29.1 Boss đính kèm. Đối chiếu byte cho thấy public license config, LicenseRuntime, Licensing.Shared, Supabase/backend và admin không thay đổi. Không gọi API để tạo trial/key, không redeploy hoặc chạy migration. Không cần migration mới.
+
+- Chạy đủ56project qua Run-Checks: 35suite logic/contract thực thi Linux;21suite WPF chỉ cross-build. Không đánh đồng compile với runtime acceptance.
+- FrozenCaptureChecks:16 kiểm tra, gồm500crop ngẫu nhiên, negative bounds, edge pixels/magnifier, output không sửa snapshot, guard crop/cap, save snapshot lifecycle. Không có giả lập này nào chứng minh GDI thật đã chạy.
+- ImageFidelityChecks122, Geometry/CaptureWorkflow/SmartCapture/Viewport và các suite cũ đã qua. ImageFidelity kiểm tra exact BGRA crop/90°/flip/alpha và toán DPI100–200%/chuyển màn. WPF suite mới chứa20tổ hợp zoom/DPI nhân tạo qua Editor/PNG và clipboard tùy chọn; chỉ cross-build ở đây.
+- Build/publish Windows x64 thành công trên Linux, giữ runtime10.0.13. Package kiểm tra CRC, SHA256/SHA1, app/version, icon approved, wrapperSetup, nguồn update, modelOCR, sourceZIP đầy đủ/byte-identical và các file mới có trong payload. Updater SDK kiểm tra chính full.nupkg bàn giao trước upload. Setup chưa được thực thi trênWindows.
+- Giữ pipeline PNG đúng kích thước và kiểm tra BGRA decode trước ghi đè. SnapshotGDI, UIA live/frozen overlay, clipboard, scaleWindows thực, taskbar nhiều màn/negative và hiệu năng RAM/latency cần nghiệm thu theo docs/CAPTURE-FIDELITY-RELIABILITY.md.
+
+**Điều kiện nghiệm thu Windows còn chờ:** ảnh PNG đúng W/H vùng đã chọn, không đổi pixel vùng không chỉnh, giữ khoảnh khắc khi đợi/notification, kính lúp đúng pixel, thay zoom không đổi output, nhiều màn100–200%/tọa độ âm, cancel/retry/disconnect không lấy frame cũ. HDR/WCG riêng. Tất cả hàng runtime trong matrix ở trạng thái Chờ Windows, không tự đánh dấu đạt.
+
+Không publish GitHub Release hoặc deploy trong lần bàn giao này. Cài đè Setup từ Update-Packages và giữ dữ liệu/license; SourceZIP có README, roadmap và checklist/harnessWindows để tiếp tục nghiệm thu.
+
+## Lịch sử kiểm tra các bản trước
+
+# V1.29.1 — Configured Windows build validation (03/11/2026)
+
+- Nhúng file public config Boss gửi, không thay code capture/editor/giao thức/backend/SQL.
+- Cấu hình HTTPS đúng dạng, issuer captovix-production, SPKI RSA public key 3072-bit; không có private key.
+- GET /health và /ready trên API Boss trả HTTP 200; ready:true. Không tạo key/trial/lượt máy mới hoặc sửa database production để kiểm tra.
+- App Windows x64 self-contained cross-publish thành công. Công cụ tools/VerifyLicenseBuild đọc ManifestResource từ PE Captovix.dll thực tế, so byte-for-byte với file Boss gửi; SHA256 cấu hình 46b916ca0db15843394a475c82f0b562740a31e232ea67ac4e716656e82cd4e4.
+- 18 cryptographic protocol checks và 25 installer contract checks qua. Package được kiểm tra lại CRC/hash/version/icon/source/payload và updater với chính full.nupkg vừa dựng.
+- Không cần chạy migration mới. Không push GitHub/deploy lại Cloudflare/Supabase. admin/config.json trong source vẫn là mẫu, không upload đè trang admin đang chạy.
+- Chưa chạy WPF/DPAPI/Setup trên Windows, chưa dùng key thật hoặc trial để nhận chứng nhận từ API Boss. Health/ready không xác nhận cặp signing key server khớp public key; luồng kích hoạt trên Windows cần xác minh điều này.
+
+## Lịch sử kiểm tra source nền
+
 # V1.29.1 — Validation và giới hạn
 
 - TypeScript strict check thành công. Edge production source một file, không import dependency runtime; Deno bootstrap đăng ký handler khi module được import.

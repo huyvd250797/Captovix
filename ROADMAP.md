@@ -1,3 +1,33 @@
+# Roadmap Captovix — V1.31.0
+
+| Phiên bản | Mục tiêu | Chức năng | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/phụ thuộc |
+| --- | --- | --- | --- | --- | --- |
+| V1.30.0 | Capture Fidelity & Reliability | Snapshot/pixel, zoom rõ ràng | Giữ nền capture và config | Ma trận Windows/multi-DPI | Source nền đã đối chiếu update Boss gửi |
+| V1.31.0 | Quick Capture Experience | Toolbar gọn, crosshair, lens nhỏ, keyboard capture, nhớ mode; crop release; Step paints; stamp gallery/dynamic tool; update notes | Client preferences, optional schema16 cho kiểu Bước; không DB/backend change | Chuột/phím chụp Enter một lần; overlay không vào ảnh; crop/Undo; paint/stamp/recent tool đúng; Windows QA | Đã triển khai; build/logic xác minh ở môi trường phát triển, Windows native còn chờ |
+| V1.32 (đề xuất) | Capture Presets & Repeat | Tỷ lệ/kích thước, nhập X/Y/W/H ngay selector, vùng gần đây/chụp lại | Preferences theo máy, pixel geometry và topology guard | Chọn nhanh không vượt màn hình, giữ pixel, mouse/keyboard parity | Chưa xây; sau khi Boss chọn |
+
+Giữ backlog key rotation/MFA/ops của licensing; không triển khai ngầm. Hai ZIP bàn giao; không cần migration mới hoặc redeploy backend/admin. Không tự đăng GitHub Release.
+
+## Lịch sử
+
+# Roadmap Captovix — cập nhật V1.30.0
+
+| Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/phụ thuộc |
+| --- | --- | --- | --- | --- | --- |
+| V1.29.1 | Serverless Licensing | API Supabase, admin Pages, app public config | Giữ authority/dữ liệu đã có | Hệ thống bản quyền nghiệm thu trên Windows | Source Boss gửi làm nền; không deploy lại |
+| V1.30.0 | Capture Fidelity & Reliability | Giữ ảnh trước selector, pixel magnifier; rõ Vừa khung/100%; PNG/zoom pixel invariant | Snapshot RAM, GDI vật lý, bounded memory, topology/DPI guard, kiểm tra PNG | PNG đúng kích thước; pixel không chỉnh giữ nguyên; đổi zoom không đổi output; ma trận Windows100–200% và nhiều màn đạt | Đã triển khai; build/logic kiểm tra ở Linux; nghiệm thu Windows thật còn chờ |
+| V1.31 (đề xuất) | Capture Workflow & Precision | Nhập X/Y/W/H ngay selector; preset kích thước/tỷ lệ; vùng gần đây ngay selector | UI/persistence client, không buộc DB mới | Luồng chụp nhanh/canh chính xác, giữ pixel; Windows QA | Chưa xây; sau V1.30 |
+
+Boss chọn V1.30 cho capture thay đề xuất Licensing Hardening trước đó. Key rotation/MFA/ops vẫn là backlog, không triển khai ngầm trong bản này. Bàn giao hai ZIP; không cần migration mới, không push/deploy/publish khi chưa giao.
+
+## Lịch sử
+
+# Bản cấu hình Windows V1.29.1
+
+Đã nhận public config của Boss; nhúng vào app Windows, kiểm tra endpoint health/ready. Không cần chạy migration mới. Backend/admin do Boss triển khai trước đó; lần này không deploy lại. Nghiệm thu kích hoạt/trial/chuyển máy trên Windows còn chờ.
+
+Phiên bản tiếp theo đề xuất vẫn là V1.30 — Licensing Hardening & Release: luân chuyển khóa ký, MFA/phân quyền admin, giám sát dịch vụ và phục hồi thiết bị. Chưa triển khai.
+
 # Roadmap hiện tại
 
 | Phiên bản | Mục tiêu | Nội dung | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/phụ thuộc |

@@ -149,7 +149,7 @@ public sealed partial class EditorSurface : FrameworkElement
             }
         }else if(Tool==EditorTool.Crop){
             _selected.Clear();_primary=null;_cropBefore=CropDraft;_handle=CropDraft is {} crop?HitCropHandle(crop,_start):-1;
-            _action=_handle>=0?DragAction.CropResize:CropDraft is {} current&&new Rect(current.X,current.Y,current.Width,current.Height).Contains(_start)?DragAction.CropMove:DragAction.Crop;
+            _action=_handle>=0?DragAction.CropResize:CropDraft is {} current&&current!=CropBounds&&new Rect(current.X,current.Y,current.Width,current.Height).Contains(_start)?DragAction.CropMove:DragAction.Crop;
             if(_action==DragAction.Crop)CropDraft=null;SelectionChanged?.Invoke();CropDraftChanged?.Invoke();
         }
         else{
@@ -218,7 +218,7 @@ public sealed partial class EditorSurface : FrameworkElement
         if(!Dragging||Session==null)return;PointerMove(p,modifiers);
         if(_action==DragAction.PixelRegion){_action=DragAction.None;ReleaseMouseCapture();try{PixelRegion?.Validate(Session.Document.Viewport);}catch{PixelRegion=null;}InvalidateVisual();SelectionChanged?.Invoke();return;}
         var action=_action;_action=DragAction.None;_guideX=_guideY=null;ReleaseMouseCapture();
-        if(action is DragAction.Crop or DragAction.CropMove or DragAction.CropResize){CropDraftChanged?.Invoke();
+        if(action is DragAction.Crop or DragAction.CropMove or DragAction.CropResize){CropDraftChanged?.Invoke();if((p-_start).Length>0.5&&CropDraft is {} ready&&CropGeometry.IsValid(ready,CropBounds)){_originals=[];ApplyCropDraft();return;}
         }else if(action==DragAction.Marquee&&_draft is {} marquee){
             if(marquee.Width>=2||marquee.Height>=2)foreach(var a in ObjectControl.CanvasCandidates(Session.Document))if(marquee.IntersectsWith(EditorRenderer.Bounds(a)))_selected.Add(a.Id);
             _primary=_selected.LastOrDefault();_draft=null;

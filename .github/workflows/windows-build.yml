@@ -31,4 +31,5 @@ jobs:
           name: Captovix-Windows-x64
           path: |
             artifacts/Captovix-*.exe
-            artifacts/Captovix-*.zip
+            artifacts/Captovix-v*-Update-Packages.zip
+            artifacts/Captovix V* — *.zip

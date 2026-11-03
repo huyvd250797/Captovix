@@ -1,5 +1,5 @@
 {
-  "apiUrl": "",
+  "apiUrl": "https://posuflcnaycpsnxbofzh.supabase.co/functions/v1/licensing",
   "issuer": "captovix-production",
-  "publicKeyPem": ""
+  "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAvj2Y8wXO8eKLkhOlMeqp\nRmrcCe5O2F8kWbNX3rPXyLsvC4INSv4fEuORwoyp50pIV6S56yavkY5wWgrWd4br\nwr4bl9XHth804NbbTJcjt3jEemLkSQjI3Z/l5s9EbaTmBNShQT6Ot3TuzHt2nQxU\n9YxW6Z0GNasur790jwjK+BPiENEndFzJKHHLoC7mSdKaVCnl32zeUxnbKyqruwKi\nOUw6ijBwbdyOi5a+3nPZuuhfrIjuLRwq1C6L0GNGmQyPc4Ys6mVWoDIyIAq+iPrQ\nxn3Vp6sF5mhdDiF2h7Yzm2ifNIFBg6rOLTT5z6wh6mevw0vN2fTQ/KZC0JSGFcs6\nXK+SOXAWzQtG1w160dDrp2UXjlOBT+Tg4QQSjnFqdyuvss463VvgZodj9G/LDbVA\nQHTV3945KGMvIX/bmis8zZr6qpMXAekAWNVoX6ig8e0kSzh1cBKPBe+T5EBgYAwY\nDxLgqVefRHAkdpoS13RaNfsHFrkh5Q33sDRvK/p8f+njAgMBAAE=\n-----END PUBLIC KEY-----"
 }

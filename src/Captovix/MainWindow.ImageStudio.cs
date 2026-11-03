@@ -21,7 +21,7 @@ public partial class MainWindow
         }catch(Exception ex){App.Log(ex);SetStatus("Chưa thực hiện: "+ex.Message);}
     }
     private void AddStudioObjects(params Annotation[] items){if(_session==null)return;_session.Change(d=>{d.Annotations.AddRange(items);d.Validate(d.OriginalWidth,d.OriginalHeight,d.SourceHash);});SelectTool(EditorTool.Select);Surface.SelectIds(items.Select(a=>a.Id));Surface.Refresh();SyncProperties();}
-    private void StampStudio()=>StudioMore_Click(StudioMoreButton,new());
+    private void StampStudio()=>OpenStampGallery(RecentStudioButton);
     private void MaskStudio()
     {
 

@@ -37,7 +37,7 @@ public static class ImageTransfer
                 var pixels=ImageFidelity.WhiteRgb(Bgra(source));var flat=BitmapSource.Create(source.PixelWidth,source.PixelHeight,96,96,PixelFormats.Bgr24,null,pixels,checked(source.PixelWidth*3));
                 var encoder=new JpegBitmapEncoder{QualityLevel=95};encoder.Frames.Add(BitmapFrame.Create(flat));using var output=File.Create(temp);encoder.Save(output);
             }else File.WriteAllBytes(temp,Png(source));
-            using(var check=File.OpenRead(temp)){var decoded=BitmapDecoder.Create(check,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];if(decoded.PixelWidth!=source.PixelWidth||decoded.PixelHeight!=source.PixelHeight)throw new IOException("Kích thước file xuất khác ảnh đã render.");}
+            using(var check=File.OpenRead(temp)){var decoded=BitmapDecoder.Create(check,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];if(decoded.PixelWidth!=source.PixelWidth||decoded.PixelHeight!=source.PixelHeight)throw new IOException("Kích thước file xuất khác ảnh đã render.");if(!jpeg&&!Bgra(decoded).AsSpan().SequenceEqual(Bgra(source)))throw new IOException("PNG khác pixel ảnh đã render. Không thay file đích.");}
             File.Move(temp,path,true);
         }finally{if(File.Exists(temp))File.Delete(temp);}
     }

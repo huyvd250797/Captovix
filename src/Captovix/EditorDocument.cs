@@ -28,6 +28,8 @@ public sealed class Annotation
     public double LineSpacing {get;set;}
     public bool AutoFitText {get;set;}=true;
     public CalloutStyle CalloutStyle {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? StepStrokeColor {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public bool? StepFillVisible {get;set;}
     public StepStyle StepStyle {get;set;}
     public ConnectorRoute Route {get;set;}
     public AnnotationPoint? Control {get;set;}
@@ -71,14 +73,14 @@ public sealed class Annotation
     [JsonIgnore] public double Top=>Math.Min(Y1,Y2);
     [JsonIgnore] public double Width=>Math.Abs(X2-X1);
     [JsonIgnore] public double Height=>Math.Abs(Y2-Y1);
-    public Annotation Copy()=>new(){ImagePlaceholder=ImagePlaceholder,ImageStyle=ImageStyle?.Copy(),CalloutBodyPivot=CalloutBodyPivot,PixelPng=PixelPng,Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
+    public Annotation Copy()=>new(){ImagePlaceholder=ImagePlaceholder,ImageStyle=ImageStyle?.Copy(),CalloutBodyPivot=CalloutBodyPivot,PixelPng=PixelPng,Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,StepStrokeColor=StepStrokeColor,StepFillVisible=StepFillVisible,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
     public void Translate(double dx,double dy){X1+=dx;X2+=dx;Y1+=dy;Y2+=dy;if(Control is {} c)Control=new(c.X+dx,c.Y+dy);if(Kind==AnnotationKind.Callout){TailX+=dx;TailY+=dy;}for(int i=0;i<Points.Count;i++)Points[i]=new(Points[i].X+dx,Points[i].Y+dy);}
     public void AddPoint(double x,double y){if(Points.Count>=MaxPoints)return;Points.Add(new(x,y));if(Points.Count==1){X1=X2=x;Y1=Y2=y;}else{X1=Math.Min(X1,x);Y1=Math.Min(Y1,y);X2=Math.Max(X2,x);Y2=Math.Max(Y2,y);}}
 }
 
 public sealed class EditorDocument
 {
-    public const int MaximumSupportedVersion=15;
+    public const int MaximumSupportedVersion=16;
     public string? PixelBasePng {get;set;}
     public int Version {get;set;}=12;
     public int OriginalWidth {get;set;}
@@ -116,7 +118,7 @@ public sealed class EditorDocument
         ConnectorStudio.Resolve(this);
         if(Appearance==null)throw new InvalidDataException("Thiếu cấu hình ảnh.");
         _=new ImageLayout(Viewport,Appearance);
-        PixelStudio.Validate(this);Version=Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
+        PixelStudio.Validate(this);Version=Annotations.Any(a=>a.Kind==AnnotationKind.Step&&(a.StepStrokeColor!=null||a.StepFillVisible!=null))?16:Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
     }
     private static bool ValidColor(string color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public bool ApplyCrop(PixelRect crop)

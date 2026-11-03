@@ -9,6 +9,18 @@ internal static class DesktopPhotoCapture
 {
     public static void Save(PixelRect region,IReadOnlyList<DisplayInfo> displays,bool cursor,string path)
     {
+        var pixels=ReadPixels(region,displays,cursor);
+        SavePixels(region.Width,region.Height,pixels,path);
+    }
+    internal static void SavePixels(int width,int height,byte[] pixels,string path)
+    {
+        ImageTransfer.Save(ImageTransfer.Bitmap(width,height,pixels),path);
+        var decoded=MediaStore.LoadImage(path);
+        if(decoded.PixelWidth!=width||decoded.PixelHeight!=height||!pixels.AsSpan().SequenceEqual(ImageTransfer.Bgra(decoded)))
+            throw new InvalidOperationException("PNG không giữ đúng pixel nguồn. File pending được giữ để kiểm tra.");
+    }
+    internal static byte[] ReadPixels(PixelRect region,IReadOnlyList<DisplayInfo> displays,bool cursor)
+    {
         ImageFidelity.ValidateCapture(region,region.Width,region.Height,false);
         var parts=CaptureGeometry.Split(region,displays.Select(d=>(d.Device,d.Bounds)));
         if(parts.Count==0)throw new InvalidOperationException("Vùng chọn không nằm trên màn hình đang kết nối.");
@@ -32,10 +44,7 @@ internal static class DesktopPhotoCapture
             Marshal.Copy(bits,pixels,0,pixels.Length);
             // BI_RGB has no defined alpha; the visible desktop is opaque SDR.
             for(int i=3;i<pixels.Length;i+=4)pixels[i]=255;
-            ImageTransfer.Save(ImageTransfer.Bitmap(region.Width,region.Height,pixels),path);
-            var decoded=MediaStore.LoadImage(path);
-            if(decoded.PixelWidth!=region.Width||decoded.PixelHeight!=region.Height||!pixels.AsSpan().SequenceEqual(ImageTransfer.Bgra(decoded)))
-                throw new InvalidOperationException("PNG không giữ đúng pixel nguồn. File pending được giữ để kiểm tra.");
+            return pixels;
         }finally{
             if(dc!=0&&previous!=0&&previous!=(nint)(-1))SelectObject(dc,previous);
             if(bitmap!=0)DeleteObject(bitmap);

@@ -1,3 +1,34 @@
+# V1.31.0 — Quick Capture Experience
+
+- Thu gọn overlay controls, thêm crosshair X/Y và lựa chọn M/H được nhớ; thêm chọn vùng bằng bàn phím và nhớ chế độ chụp.
+- Viền chọn vùng và kính lúp mảnh hơn; lens nhỏ hơn, giữ snapshot RAM/cắt pixel gốc.
+- Crop mouse-up tự áp dụng một giao dịch Undo; nhập số vẫn xác nhận riêng. Kéo trong khung full ban đầu tạo vùng mới.
+- Bước chọn viền/nền độc lập, trường optional schema16; giữ legacy rendering khi chưa sửa, bảo vệ sidecar mới khỏi app cũ.
+- Stamp gallery12 vector mới trong nút riêng; ô công cụ động trái Thêm, persistence và icon riêng, giữ cặp khi đổi bố cục toolbar.
+- Update Settings/popup dùng chung chuẩn hóa ghi chú và typography.
+- Giữ nguyên licensing/backend/admin/migrations/public config/runtime/dependencies/installer path và logo từ V1.30.
+- Không cần migration mới, không deploy/publish. Native Windows acceptance vẫn cần thực hiện.
+
+---
+
+# V1.30.0 — Capture Fidelity & Reliability
+
+- Desktop snapshot RAM trước lưu Editor/selector; bỏ capture live lần hai khi Enter cho vùng/element/display/repeat. Hẹn giờ trước snapshot, giữ topology và thời điểm.
+- Backdrop opaque từ snapshot, kính lúp pixel15×15, X/Y thực (âm khi màn phụ), M ẩn/hiện; giữ tay nắm/nét đứt/Enter một lần; bỏ animations và tham chiếu bitmap khi kết thúc overlay.
+- PNG lưu kiểm tra BGRA decode bằng ảnh render, original capture không resize. Giữ đường nguyên pixel crop/rotate/flip, nguyên pipeline clipboardPNG96DPI.
+- Zoom readout phân biệt Vừa khung/100%/Tùy chỉnh; đánh dấu nút chế độ và tooltip về DPI/file output.
+- Thêm FrozenCaptureChecks, CaptureFidelityWindowsChecks và checklist Windows; không tuyên bố đã chạy Windows thực từ cross-build.
+- License config/backend/Supabase migrations và schema ảnh15 giữ nguyên. Không cần migration mới. Không deploy production.
+
+---
+
+# V1.29.1 — Configured Windows build
+
+- Nhúng đúng license-config.json công khai Boss cung cấp: URL Supabase Edge, issuer và RSA public key 3072 bit.
+- Giữ nguyên chương trình, giao thức bản quyền, authority và database; không phát sinh migration, không tạo trial/key giả trên production.
+- Endpoint health/ready đã được kiểm tra HTTP 200. Luồng kích hoạt/cài đặt trên Windows thật còn cần Boss nghiệm thu.
+- Bàn giao Setup trực tiếp, Update-Packages và source đã cấu hình. Không thay admin/config.json mẫu hoặc redeploy hệ thống Boss đang chạy.
+
 # V1.29.1 — Serverless Licensing
 
 - Thay backend ASP.NET Core/admin token bằng Edge Function TypeScript và Supabase Auth + allowlist; bỏ yêu cầu Docker/VPS khỏi quy trình hiện hành.

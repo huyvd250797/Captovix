@@ -47,9 +47,11 @@ public partial class MainWindow
             ImageSizeLabel.Text=$"{layout.Width} × {layout.Height} px · {session.Document.Annotations.Count} chú thích";
             ImageFidelityHint.Text=ImageFidelity.CanCopyPixels(layout)?"PNG/Copy: giữ pixel vùng không chỉnh. Vừa khung chỉ đổi cách xem.":"Xuất/Copy có resize theo thiết lập; zoom chỉ đổi cách xem.";
             RestoreCropButton.IsEnabled=session.Document.Crop!=null||session.Document.Appearance.OutputCrop!=null;
-            ZoomLabel.Text=$"{Surface.PhysicalZoom*100:0.#}%";
+            ZoomLabel.Text=_actualPixels?"100% · pixel thật":$"{(_fitMode?"Vừa khung":"Tùy chỉnh")} · {Surface.PhysicalZoom*100:0.#}%";
+            FitViewButton.SetResourceReference(Control.BackgroundProperty,_fitMode?"Accent":"Surface");FitViewButton.SetResourceReference(Control.ForegroundProperty,_fitMode?"OnAccent":"Text");
+            ActualViewButton.SetResourceReference(Control.BackgroundProperty,_actualPixels?"Accent":"Surface");ActualViewButton.SetResourceReference(Control.ForegroundProperty,_actualPixels?"OnAccent":"Text");
             ZoomLabel.ToolTip=Surface.PhysicalZoom<.999?"Ảnh đang thu nhỏ để vừa khung. Chọn Rõ nét · 100% để kiểm tra chữ và pixel gốc; file lưu giữ kích thước gốc.":"1 pixel ảnh tương ứng "+$"{Surface.PhysicalZoom:0.##}"+" pixel màn hình. Zoom không thay đổi file lưu.";
-            ZoomLabel.ToolTip=$"Zoom hiển thị đầu ra · Windows scale {Surface.DisplayScale*100:0.#}% · không đổi file ảnh";
+            ZoomLabel.ToolTip=$"Zoom xem {Surface.PhysicalZoom*100:0.#}% · Windows scale {Surface.DisplayScale*100:0.#}%. Vừa khung có thể làm chữ trông nhỏ/mềm hơn; 100% = 1 pixel ảnh trên 1 pixel màn hình. Copy/PNG dùng kích thước Xuất / Copy, không dùng zoom.";
         }else{
             OriginalSizeLabel.Text=ImageSizeLabel.Text=ImageFidelityHint.Text="";ZoomLabel.Text="—";RestoreCropButton.IsEnabled=false;
         }
@@ -105,7 +107,7 @@ public partial class MainWindow
             EditorTool.Callout=>"Kéo hộp để tạo callout và nhập chữ • Chọn rồi kéo tay nắm ở đầu đuôi để đổi điểm chỉ • Double-click sửa chữ.",
             EditorTool.Freehand=>"Giữ chuột trái để vẽ tự do • Thả chuột kết thúc nét • Esc hủy nét đang vẽ.",
             EditorTool.Step=>"Click để đặt số bước tự tăng. Có thể sửa số ở bảng thuộc tính.",
-            EditorTool.Crop=>"Khung có sẵn → kéo tay nắm hoặc nhập kích thước → Enter/Áp dụng • Esc hủy • Space kéo khung nhìn.",
+            EditorTool.Crop=>"Kéo vùng hoặc tay nắm rồi thả chuột để crop ngay • Nhập kích thước dùng Áp dụng • Esc hủy • Space kéo khung nhìn.",
             EditorTool.Magnifier=>"Kéo vùng đặt kính tại chỗ • Chỉnh 1.25–8× và hình vùng bên phải • Alt+kéo để đặt kính lên đối tượng có sẵn.",
             EditorTool.Spotlight=>"Kéo vùng giữ sáng • Chỉnh độ tối bên phải • Nhiều vùng sáng được hợp lại; màu/độ tối theo Spotlight trên cùng.",
             EditorTool.Highlight=>"Kéo phủ vùng cần làm nổi bật. Chọn màu ở bảng thuộc tính.",
@@ -137,7 +139,7 @@ public partial class MainWindow
     private static double PickedValue(ComboBox picker,double fallback)=>picker.SelectedItem is ComboBoxItem i&&double.TryParse(i.Tag?.ToString(),NumberStyles.Float,CultureInfo.InvariantCulture,out var v)?v:fallback;
     private void Color_Click(object sender,RoutedEventArgs e)
     {if(!RequireLicense())return;
-        if(sender is not Button {Tag:string color})return;Surface.InkColor=color;
+        if(sender is not Button {Tag:string color})return;if(StudioTarget().Kind==AnnotationKind.Step){SetObjectPaint(color,true);return;}Surface.InkColor=color;
         ChangeSelected(a=>{a.Color=color;if(a.Kind==AnnotationKind.Text)a.TextColor=color;});
         if(Surface.Tool==EditorTool.Text&&Surface.SelectedIds.Count==0)Surface.TextDefaults.TextColor=color;
         Surface.Refresh();SyncProperties();
@@ -173,7 +175,7 @@ public partial class MainWindow
         Surface.SetZoom(ImageFidelity.FitZoom(v.Width,v.Height,Math.Max(40,ImageScroll.ActualWidth-16-2*EditorSurface.WorkspacePad),Math.Max(40,ImageScroll.ActualHeight-16-2*EditorSurface.WorkspacePad),Surface.DisplayScale));
     }
     private void Fit_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FitImage();}
-    private void Actual_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;}
+    private void Actual_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;UpdateEditorReadout();}
     private void ZoomOut_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ZoomAtCenter(Surface.Zoom/1.25);}
     private void ZoomIn_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ZoomAtCenter(Surface.Zoom*1.25);}
     protected override void OnDpiChanged(DpiScale oldDpi,DpiScale newDpi)

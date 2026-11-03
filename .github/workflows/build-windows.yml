@@ -44,5 +44,5 @@ jobs:
           name: Captovix-Windows-configured
           path: |
             artifacts/Captovix-v*-Update-Packages.zip
-            artifacts/Captovix-v*-Source.zip
+            artifacts/Captovix V* — *.zip
           if-no-files-found: error
