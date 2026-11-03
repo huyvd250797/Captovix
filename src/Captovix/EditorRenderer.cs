@@ -11,7 +11,7 @@ public static partial class EditorRenderer
     {
         if(ConnectorStudio.IsPath(a)){var box=ConnectorStudio.Bounds(a);return new(box.X,box.Y,box.Width,box.Height);}
         if(ShapeStudio.IsLine(a.Kind))return new(a.Left,a.Top,a.Width,a.Height);
-        if(a.Kind==AnnotationKind.Callout){var b=a.CalloutBodyPivot?new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height)):CalloutGeometry(a).Bounds;return Rect.Union(b,TextInkBounds(a));}
+        if(a.Kind==AnnotationKind.Callout){if(a.CalloutBodyPivot)return new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));return Rect.Union(CalloutGeometry(a).Bounds,TextInkBounds(a));}
         if(a.Kind==AnnotationKind.Freehand)return new(a.Left-a.Stroke/2,a.Top-a.Stroke/2,Math.Max(1,a.Width)+a.Stroke,Math.Max(1,a.Height)+a.Stroke);
         if(a.Kind==AnnotationKind.Text){if(a.TextFrame&&a.Width>=2&&a.Height>=2)return new(a.Left,a.Top,a.Width,a.Height);var b=TextInkBounds(a);if(a.FillEnabled)b.Inflate(TextStudio.Padding(a),TextStudio.Padding(a));return b;}
         if(a.Kind==AnnotationKind.Step)return StepGeometry(a).Bounds;
@@ -51,7 +51,7 @@ public static partial class EditorRenderer
                 if(a.Points.Count==1){dc.DrawEllipse(brush,null,new(a.Points[0].X,a.Points[0].Y),a.Stroke/2,a.Stroke/2);break;}
                 if(a.Points.Count>1){var path=new StreamGeometry();using(var ctx=path.Open()){ctx.BeginFigure(new(a.Points[0].X,a.Points[0].Y),false,false);ctx.PolyLineTo(a.Points.Skip(1).Select(p=>new Point(p.X,p.Y)).ToArray(),true,false);}path.Freeze();dc.DrawGeometry(null,pen,path);}break;
             case AnnotationKind.Callout:
-                dc.DrawGeometry(a.FillEnabled?ShapeInk(a.FillColor,a.FillOpacity):null,a.StrokeEnabled?ShapePen(a):null,CalloutGeometry(a));DrawStyledText(dc,a,suppressText);break;
+                DrawCachedCallout(dc,a,suppressText);break;
             case AnnotationKind.Highlight:
                 dc.DrawGeometry(ShapeInk(a.Color,a.FocusOpacity),null,RegionGeometry(a));break;
             case AnnotationKind.Text:DrawStyledText(dc,a,suppressText);break;
@@ -61,7 +61,16 @@ public static partial class EditorRenderer
                 var number=TextLayout(a,a.Number.ToString(CultureInfo.InvariantCulture));dc.DrawText(number,new(p1.X-number.WidthIncludingTrailingWhitespace/2,p1.Y-number.Height/2));break;
         }
     }
+    [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,CalloutGeometryEntry>? _calloutGeometries;
+    private sealed class CalloutGeometryEntry { public CalloutGeometryEntry(){} public object? Key;public Geometry? Shape;}
     public static Geometry CalloutGeometry(Annotation a)
+    {
+        var entry=(_calloutGeometries??=new()).GetOrCreateValue(a);
+        object key=(CacheCoordinate(a.Width),CacheCoordinate(a.Height),CacheCoordinate(a.TailX-a.Left),CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius);
+        if(!Equals(entry.Key,key)||entry.Shape==null){var local=a.Copy();local.Translate(-a.Left,-a.Top);entry.Shape=BuildCalloutGeometry(local);entry.Shape.Freeze();entry.Key=key;}
+        var result=entry.Shape.Clone();result.Transform=new TranslateTransform(a.Left,a.Top);result.Freeze();return result;
+    }
+    private static Geometry BuildCalloutGeometry(Annotation a)
     {
         if(a.CalloutStyle!=CalloutStyle.Speech)return StyledCalloutGeometry(a);
         var b=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));var tail=new Point(a.TailX,a.TailY);

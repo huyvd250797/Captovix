@@ -8,8 +8,14 @@ public static partial class EditorRenderer
     public static FontFamily TextFont(Annotation a)=>InstalledFonts.Value.TryGetValue(a.FontFamily,out var font)?font:new FontFamily("Segoe UI");
     public static TextAlignment WpfAlignment(TextAlign align)=>align==TextAlign.Center?TextAlignment.Center:align==TextAlign.Right?TextAlignment.Right:TextAlignment.Left;
     public static bool HasTextFont(Annotation a)=>InstalledFonts.Value.ContainsKey(a.FontFamily);
+    [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,LayoutEntry>? _layouts;
+    private sealed class LayoutEntry { public LayoutEntry(){}  public object? Key;public FormattedText? Layout;public Rect? InkBounds; }
+    private static double CacheCoordinate(double value)=>Math.Round(value,6);
+    private static object LayoutKey(Annotation a)=> (a.Text,a.FontFamily,a.FontSize,a.Bold,a.Italic,a.Underline,a.LineSpacing,a.TextAlignment,TextStudio.Foreground(a),CacheCoordinate(a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth),CultureInfo.CurrentUICulture.Name);
     public static FormattedText TextLayout(Annotation a,string? text=null,Brush? ink=null)
     {
+        LayoutEntry? cached=null;object? key=null;
+        if(text==null&&ink==null){cached=(_layouts??=new()).GetOrCreateValue(a);key=LayoutKey(a);if(Equals(cached.Key,key)&&cached.Layout!=null)return cached.Layout;}
         var typeface=new Typeface(TextFont(a),a.Italic?FontStyles.Italic:FontStyles.Normal,a.Bold?FontWeights.Bold:FontWeights.Normal,FontStretches.Normal);
         var layout=new FormattedText(text??a.Text,CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,typeface,a.FontSize,ink??Ink(TextStudio.Foreground(a)),1.0){Trimming=TextTrimming.None};
         if(a.Underline)layout.SetTextDecorations(TextDecorations.Underline);
@@ -17,7 +23,7 @@ public static partial class EditorRenderer
         if(text==null){
             double width=a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth;
             if(width>0){layout.MaxTextWidth=Math.Max(1,width);layout.TextAlignment=WpfAlignment(a.TextAlignment);}
-        }return layout;
+        }if(cached!=null){cached.Key=key;cached.Layout=layout;cached.InkBounds=null;}return layout;
     }
     public static Rect TextContent(Annotation a)
     {
@@ -33,7 +39,7 @@ public static partial class EditorRenderer
     public static Rect TextInkBounds(Annotation a)
     {
         var text=TextLayout(a);var origin=TextOrigin(a,text);var logical=new Rect(origin.X,origin.Y,Math.Max(10,a.TextWidth>0&&a.Kind==AnnotationKind.Text?a.TextWidth:text.WidthIncludingTrailingWhitespace),Math.Max(a.FontSize,text.Height));
-        var ink=text.BuildGeometry(origin).Bounds;return ink.IsEmpty?logical:Rect.Union(logical,ink);
+        var entry=(_layouts??=new()).GetOrCreateValue(a);var ink=entry.InkBounds??=text.BuildGeometry(new Point()).Bounds;if(!ink.IsEmpty)ink.Offset(origin.X,origin.Y);return ink.IsEmpty?logical:Rect.Union(logical,ink);
     }
     public static double StepRadius(Annotation a)
     {
@@ -48,11 +54,24 @@ public static partial class EditorRenderer
     }
     private static void DrawStyledText(DrawingContext dc,Annotation a,bool suppressText=false)
     {
-        var text=TextLayout(a);var inkBounds=TextInkBounds(a);double pad=TextStudio.Padding(a);
-        if(a.Kind==AnnotationKind.Text&&a.FillEnabled){var bg=a.TextFrame?new Rect(a.Left,a.Top,a.Width,a.Height):inkBounds;if(!a.TextFrame)bg.Inflate(pad,pad);dc.DrawRectangle(ShapeInk(a.FillColor,a.FillOpacity),null,bg);}
+        var text=TextLayout(a);double pad=TextStudio.Padding(a);
+        if(a.Kind==AnnotationKind.Text&&a.FillEnabled){var bg=a.TextFrame?new Rect(a.Left,a.Top,a.Width,a.Height):TextInkBounds(a);if(!a.TextFrame)bg.Inflate(pad,pad);dc.DrawRectangle(ShapeInk(a.FillColor,a.FillOpacity),null,bg);}
         bool framed=a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2&&a.Height>=2;
         if(framed)dc.PushClip(new RectangleGeometry(TextContent(a)));
         if(!suppressText)dc.DrawText(text,TextOrigin(a,text));if(framed)dc.Pop();
+    }
+    [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,CalloutDrawingEntry>? _calloutDrawings;
+    private sealed class CalloutDrawingEntry { public CalloutDrawingEntry(){} public object? Key;public DrawingGroup? Drawing;}
+    private static void DrawCachedCallout(DrawingContext dc,Annotation a,bool suppressText)
+    {
+        var entry=(_calloutDrawings??=new()).GetOrCreateValue(a);
+        object key=(LayoutKey(a),a.VerticalAlignment,a.TextPadding,CacheCoordinate(a.Width),CacheCoordinate(a.Height),CacheCoordinate(a.TailX-a.Left),CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius,a.FillEnabled,a.FillColor,a.FillOpacity,a.StrokeEnabled,a.Color,a.Stroke,a.StrokeOpacity,a.Dash,suppressText);
+        if(!Equals(entry.Key,key)||entry.Drawing==null){
+            var local=a.Copy();local.Translate(-a.Left,-a.Top);var drawing=new DrawingGroup();
+            using(var context=drawing.Open()){context.DrawGeometry(local.FillEnabled?ShapeInk(local.FillColor,local.FillOpacity):null,local.StrokeEnabled?ShapePen(local):null,CalloutGeometry(local));if(!suppressText)DrawStyledText(context,local);}
+            drawing.Freeze();entry.Drawing=drawing;entry.Key=key;
+        }
+        dc.PushTransform(new TranslateTransform(a.Left,a.Top));dc.DrawDrawing(entry.Drawing);dc.Pop();
     }
     private static Geometry StyledCalloutGeometry(Annotation a)
     {
@@ -77,7 +96,7 @@ public static partial class EditorRenderer
         if(a.Kind==AnnotationKind.Callout){
             bool pin=preserveTail&&a.CalloutBodyPivot&&a.CalloutStyle is not(CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse);var old=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));var tail=WorldPoint(a,new(a.TailX,a.TailY));bool below=pin&&a.TailY>old.Bottom,right=pin&&a.TailX>old.Right;
             double width=Math.Min(100000,Math.Max(Math.Max(36,a.Width),TextStudio.MinimumBodyWidth(a)));double left=right?old.Right-width:old.Left,top=old.Top;a.X1=left;a.Y1=top;a.X2=left+width;
-            var text=TextLayout(a);double height=TextStudio.FittedBodyHeight(a,text.Height,text.OverhangAfter);if(below)top=old.Bottom-height;a.Y1=top;a.Y2=top+height;
+            var text=TextLayout(a);double height=Math.Max(old.Height,TextStudio.FittedBodyHeight(a,text.Height,text.OverhangAfter));if(below)top=old.Bottom-height;a.Y1=top;a.Y2=top+height;
             if(pin){var local=LocalPoint(a,tail);a.TailX=local.X;a.TailY=local.Y;}
 
         }

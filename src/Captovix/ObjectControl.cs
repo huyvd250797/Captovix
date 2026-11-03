@@ -40,6 +40,12 @@ public static class ObjectControl
         if(ConnectorStudio.IsPath(original)){RestoreGeometry(target,original);var s=RotatePoint(ConnectorStudio.Start(original),pivot,delta);var e=RotatePoint(ConnectorStudio.End(original),pivot,delta);target.X1=s.X;target.Y1=s.Y;target.X2=e.X;target.Y2=e.Y;target.Control=RotatePoint(ConnectorStudio.Control(original),pivot,delta);target.Rotation=0;return;}
         RestoreGeometry(target,original);var b=localBounds(original);var center=new AnnotationPoint(b.CenterX,b.CenterY);var next=RotatePoint(center,pivot,delta);target.Translate(next.X-center.X,next.Y-center.Y);target.Rotation=Normalize(original.Rotation+delta);
     }
+    public static void PinCalloutTail(Annotation target,Annotation original,Func<Annotation,AnnotationBox> bounds,double dx=0,double dy=0)
+    {
+        if(original.Kind!=AnnotationKind.Callout||!original.CalloutBodyPivot)return;
+        var old=bounds(original);var next=bounds(target);var world=RotatePoint(new(original.TailX,original.TailY),new(old.CenterX,old.CenterY),original.Rotation);
+        var local=RotatePoint(new(world.X+dx,world.Y+dy),new(next.CenterX,next.CenterY),-target.Rotation);target.TailX=local.X;target.TailY=local.Y;
+    }
     public static void ResizeSingle(Annotation target,Annotation original,AnnotationBox localBox,AnnotationBox newBox,Func<Annotation,AnnotationBox>? actualBounds=null)
     {
         AnnotationEditing.Transform(target,original,localBox,newBox);
@@ -47,6 +53,7 @@ public static class ObjectControl
         // so the opposite handle stays fixed in world/source coordinates.
         var actual=actualBounds?.Invoke(target)??newBox;var desired=RotatePoint(new(actual.CenterX,actual.CenterY),new(localBox.CenterX,localBox.CenterY),original.Rotation);
         target.Translate(desired.X-actual.CenterX,desired.Y-actual.CenterY);
+        PinCalloutTail(target,original,actualBounds??(a=>new(a.Left,a.Top,a.Width,a.Height)));
     }
     public static void ApplyFrame(EditorDocument doc,IEnumerable<string> ids,double x,double y,double width,double height,double angle,Func<Annotation,AnnotationBox> localBounds)
     {

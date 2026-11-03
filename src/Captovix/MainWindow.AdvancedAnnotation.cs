@@ -9,6 +9,7 @@ public partial class MainWindow
 {
     private string? _inlineId;
     private bool _endingInline,_syncInline;
+    private bool _inlineRefreshQueued;
     private void BeginInlineText()
     {if(!RequireLicense())return;
         EndInlineText(true);
@@ -24,7 +25,7 @@ public partial class MainWindow
         if(_inlineId==null||_session==null)return;
         var a=_session.Document.Annotations.FirstOrDefault(x=>x.Id==_inlineId);if(a==null){EndInlineText(false);return;}
         var view=Surface.EditingBounds;bool callout=a.Kind==AnnotationKind.Callout;
-        var content=EditorRenderer.TextContent(a);var textLayout=EditorRenderer.TextLayout(a);var origin=EditorRenderer.TextOrigin(a,textLayout);double x=origin.X,y=origin.Y;
+        var content=EditorRenderer.TextContent(a);var textLayout=EditorRenderer.TextLayout(a);var origin=EditorRenderer.TextOrigin(a,textLayout);double x=origin.X,y=origin.Y;if(callout){x=content.X;y=content.Y;}
         var layout=Surface.Layout!;InlineCanvas.RenderTransform=new MatrixTransform(new Matrix(layout.A*Surface.Zoom,layout.B*Surface.Zoom,layout.C*Surface.Zoom,layout.D*Surface.Zoom,layout.Tx*Surface.Zoom+EditorSurface.WorkspacePad,layout.Ty*Surface.Zoom+EditorSurface.WorkspacePad));
         var inverse=EditorRenderer.LayoutMatrix(layout);inverse.Invert();InlineCanvas.Clip=new RectangleGeometry(new Rect(-EditorSurface.WorkspacePad/Surface.Zoom,-EditorSurface.WorkspacePad/Surface.Zoom,layout.Width+2*EditorSurface.WorkspacePad/Surface.Zoom,layout.Height+2*EditorSurface.WorkspacePad/Surface.Zoom)){Transform=new MatrixTransform(inverse)};
         Canvas.SetLeft(InlineText,x);Canvas.SetTop(InlineText,y);
@@ -34,14 +35,16 @@ public partial class MainWindow
         System.Windows.Documents.TextElement.SetFontFamily(InlineText,InlineText.FontFamily);
         InlineText.TextWrapping=callout||a.TextWidth>0?TextWrapping.Wrap:TextWrapping.NoWrap;
         InlineText.Width=Math.Max(24,callout?content.Width:a.TextWidth>0?a.TextWidth:Math.Max(160,textLayout.WidthIncludingTrailingWhitespace+40));
-        InlineText.Height=a.TextFrame&&a.Kind==AnnotationKind.Text?Math.Max(1,content.Height):Math.Max(a.FontSize+4,textLayout.Height+4);
+        InlineText.VerticalContentAlignment=callout?a.VerticalAlignment==TextVertical.Center?VerticalAlignment.Center:a.VerticalAlignment==TextVertical.Bottom?VerticalAlignment.Bottom:VerticalAlignment.Top:VerticalAlignment.Top;
+        InlineText.Height=callout?Math.Max(1,content.Height):a.TextFrame&&a.Kind==AnnotationKind.Text?Math.Max(1,content.Height):Math.Max(a.FontSize+4,textLayout.Height+4);
         if(a.TextFrame&&a.Kind==AnnotationKind.Text){InlineText.Width=Math.Max(1,content.Width);InlineText.TextWrapping=TextWrapping.Wrap;InlineText.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;}else InlineText.VerticalScrollBarVisibility=ScrollBarVisibility.Hidden;
         InlineText.MaxHeight=100000;
     }
     private void EndInlineText(bool commit)
     {
-        if(_endingInline||_inlineId==null)return;if(commit&&_imeComposing&&_activeComposition is {} composition)TextCompositionManager.CompleteComposition(composition);_endingInline=true;
+        if(_endingInline||_inlineId==null)return;_endingInline=true;
         try{
+            if(commit&&_imeComposing&&_activeComposition is {} composition)TextCompositionManager.CompleteComposition(composition);
             var id=_inlineId;var text=InlineText.Text;_inlineId=null;_imeComposing=false;_activeComposition=null;InlineText.Visibility=Visibility.Collapsed;Surface.InlineEditingId=null;
             if(_session is {} session){if(commit&&session.Document.Annotations.FirstOrDefault(a=>a.Id==id) is {} target){target.Text=text;if(target.Kind==AnnotationKind.Text&&string.IsNullOrWhiteSpace(text))session.Document.Annotations.Remove(target);else EditorRenderer.FitText(target,Surface.EditingBounds,true);Surface.FitSelectionCanvas();session.Commit();}else session.Cancel();}
             if(Surface.Tool is EditorTool.Text or EditorTool.Callout){Surface.Tool=EditorTool.Select;Surface.Cursor=Cursors.Arrow;foreach(var button in ToolBox.Children.OfType<Button>()){bool selected=button.Tag?.ToString()=="Select";button.SetResourceReference(Control.BackgroundProperty,selected?"Accent":"Surface");button.SetResourceReference(Control.ForegroundProperty,selected?"OnAccent":"Text");}ToolHint.Text="Chế độ Chọn · Bấm đối tượng để di chuyển hoặc sửa; chọn Chữ/Callout để tạo thêm.";}Surface.InvalidateVisual();SyncProperties();SavedLabel.Text=_session?.Dirty==true?"Đang lưu…":"✓ Đã lưu";if(_session?.Dirty==true){_saveTimer.Stop();_saveTimer.Start();}
@@ -50,7 +53,9 @@ public partial class MainWindow
     private void InlineText_Changed(object sender,TextChangedEventArgs e)
     {
         if(_syncInline||_endingInline||_imeComposing||_inlineId==null||_session?.Document.Annotations.FirstOrDefault(a=>a.Id==_inlineId) is not {} a)return;
-        _session.Begin();a.Text=InlineText.Text;EditorRenderer.FitText(a,Surface.EditingBounds,true);Surface.Refresh();SavedLabel.Text="Đang nhập…";
+        _session.Begin();a.Text=InlineText.Text;SavedLabel.Text="Đang nhập…";
+        if(_inlineRefreshQueued)return;_inlineRefreshQueued=true;
+        Dispatcher.BeginInvoke(()=>{_inlineRefreshQueued=false;if(_inlineId==null||_imeComposing||_endingInline||_session?.Document.Annotations.FirstOrDefault(x=>x.Id==_inlineId) is not {} target)return;target.Text=InlineText.Text;double width=target.Width,height=target.Height;EditorRenderer.FitText(target,Surface.EditingBounds,true);if(target.Width!=width||target.Height!=height)Surface.FitSelectionCanvas();Surface.Refresh();},DispatcherPriority.Render);
     }
     private void InlineText_KeyDown(object sender,KeyEventArgs e)
     {

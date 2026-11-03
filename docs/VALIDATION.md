@@ -1,3 +1,17 @@
+# V1.36.0 — Validation
+
+- 60 suites biên dịch thành công; 36 bộ logic chạy thành công trên Linux, 24 bộ Windows/WPF chỉ biên dịch. scripts/Run-Checks.py kết thúc ALL_CHECKS_OK.
+- EditorCoreChecks thêm tạo Callout4hướng, điểm đuôi giữ nguyên và thân căn dọc giữa. PrecisionChecks thêm resize rộng riêng, giữ chiều cao/đệm/font và tail ở góc0/25/90°.
+- TextStudioWindowsChecks mở rộng: giữ kích thước hộp với chữ ngắn, chữ dài tự nở và đủ dòng, giữ đuôi xoay, cache dàn chữ khi dịch chuyển phân số, thay chữ/màu không giữ hình cũ, pixel khớp khi kéo về chỗ cũ; có phép đo120lần di chuyển Callout20.000ký tự. Chỉ biên dịch tại Linux; không có số đo hiệu năng Windows để kết luận hết lag trên mọi máy.
+- ShellLayoutChecks kiểm logo/tên và loại các lệnh chẩn đoán/hướng dẫn khỏi XAML; mọi menu công cụ/chụp/cập nhật/bản quyền vẫn giữ.
+- UpdateChecks dùng SDK thật xác định đích từ1.31 tới1.33/1.36 với feed chỉ có Full mới nhất, không bản trung gian; updater dùng UpdateInfo không chứa chuỗi delta. Sau đóng gói chạy lại với nupkg1.36 thực để kiểm tải/SHA-256/AppId/version. Không chạy Update.exe hoặc Setup trên Linux.
+- Pixel capture/copy/PNG giữ pipeline physical snapshot và RenderExact sẵn có; kiểm pixel đầy đủ không phụ thuộc display zoom. Không thay bằng sharpen hoặc giảm độ phân giải. HDR/WCG cần nghiệm thu riêng.
+- Sau hiệu chỉnh cache/input cuối, cross-build lại TextStudioWindowsChecks và publish app; Verify-Packages đối chiếu payload/feed/source/ZIP, icon, OCR và public license/backend từ source1.33.
+- Không migration DB, không thay endpoint/public key/admin/Supabase; không gọi API production tạo key/trial. Chưa push/deploy/publish release.
+- Còn chờ Windows thật: WPF/input tiếng Việt và IME, bố cục/caret/DPI, kéo20ktext và đo frame, native chụp/clipboard/Word/Drive, cài đè và restart cập nhật1.31→1.36. Checklist docs/TEXT-CALLOUT-POLISH-V136.md. Cross-build không thay nghiệm thu này.
+
+## Lịch sử kiểm tra
+
 # V1.33.0 — Validation
 
 - 60 suites biên dịch thành công; 36 bộ logic thực thi trên Linux và 24 bộ Windows/WPF chỉ biên dịch.

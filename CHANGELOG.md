@@ -1,3 +1,18 @@
+# Captovix V1.36.0 — Text & Callout Polish
+
+Nâng thẳng từ source V1.33.0 theo yêu cầu Boss, bỏ qua phát hành V1.34.0 và V1.35.0. Giữ chức năng đã có; không tuyên bố hoàn thành các phạm vi bị bỏ qua.
+
+- Callout bắt đầu từ đuôi: điểm nhấn đầu tiên được giữ cố định, kéo để tạo thân ở bên trái/phải. Thân mặc định căn giữa theo chiều dọc quanh điểm đuôi, đệm30px, tối thiểu172×96px; bấm đơn tạo thân220×120px. Đuôi có node riêng; resize thân không kéo theo đuôi (kể cả khi xoay).
+- Auto-fit mặc định giữ kích thước đã vẽ và chỉ nở thêm theo nội dung đang nhập, xuống dòng theo chiều rộng. Không tự co hộp khi xóa chữ; vẫn sửa rộng/cao độc lập bằng node/các trường thuộc tính. Mẫu đã lưu giữ lựa chọn bật/tắt auto-fit của người dùng.
+- Nhập trực tiếp trên ảnh: có chữ Việt/IME, căn dọc của con trỏ theo hộp; click ngoài/Ctrl+Enter hoàn tất, Esc hủy, Enter xuống dòng. Composition được hoàn tất trước khi đóng phiên nhập; không lưu chữ preedit dở.
+- Di chuyển Callout dài tái sử dụng dàn chữ và bản vẽ đã đóng băng; không dựng lại outline toàn bộ glyph hay ghép hình đuôi mỗi lần đổi vị trí. Cập nhật khi gõ gộp theo nhịp render, không chờ bộ hẹn giờ400ms của thuộc tính. Cache yếu theo đối tượng và riêng từng thread, không giữ lịch sử chữ không giới hạn.
+- Thuộc tính/preset áp dụng đúng loại Chữ/Callout/Bước; chọn mẫu Callout cập nhật bố cục và tự nở nếu cần, không đổi vị trí đuôi. Không đổi schema17 hay phá mẫu cũ.
+- Khôi phục logo và tên Captovix gọn ở góc trái hàng menu; bỏ menu chẩn đoán, báo cáo hiệu năng và hướng dẫn kiểm thử, cùng mục Máy & màn hình trong Thiết lập. Giữ công cụ chụp/chỉnh ảnh, khôi phục, cập nhật và bản quyền.
+- Tọa độ chụp dùng lõi vàng2pixel vật lý, viền đen0.25pixel mỗi bên thay lõi cam1pixel/viền0.5pixel trước đây.
+- Giữ snapshot ảnh ở pixel vật lý và xuất PNG/copy không giảm theo zoom. Xem100% để đánh giá pixel thật; Vừa khung là bản xem đã thu nhỏ. Không tăng nét giả hay upscale nguồn.
+- Updater luôn chọn gói Full của stable mới nhất, không bắt cài bản trung gian. V1.31→V1.33/V1.36 được kiểm thử chọn đích bằng SDK thật; gói V1.36 được kiểm tra tải/hash với locator V1.31. Backup dữ liệu trước áp dụng và xác minh SHA-256 giữ nguyên.
+
+
 # Captovix V1.33.0 — Scrolling Capture Quality
 
 - Chụp cuộn: đối chiếu dày theo các hàng của vùng overlap và nhiều dải cột; khung lệch ngang hoặc mối nối không chắc chắn cần kiểm tra/xác nhận. Không kéo giãn, nội suy hay tự làm mờ pixel để che mối nối.

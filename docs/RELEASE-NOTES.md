@@ -1,17 +1,23 @@
-# Captovix V1.33.0 — Scrolling Capture Quality
+# Captovix V1.36.0 — Text & Callout Polish
 
-- Chụp cuộn: đối chiếu dày theo các hàng của vùng overlap và nhiều dải cột; khung lệch ngang hoặc mối nối không chắc chắn cần kiểm tra/xác nhận. Không kéo giãn, nội suy hay tự làm mờ pixel để che mối nối.
-- Lấy khung thủ công và tự động đều đợi ổn định, kiểm tra từng vùng nhỏ để tránh bỏ qua loading/animation; không thêm khung chưa ổn định sau thời gian chờ. Giới hạn kiểm tra ổn định không đảm bảo nhận ra trang vẫn đang chờ dữ liệu mạng khi hình đang đứng yên; có thể lấy lại khung.
-- Tự phát hiện header/footer cố định khi hai khung đủ chi tiết và ghép phần thân chắc chắn; giữ vùng đầu/cuối một lần. Có tùy chọn tắt và nhập số pixel thủ công, hỗ trợ cả cuộn dọc/ngang.
-- Xem trước mối nối, bật dấu chỉ dẫn, sửa overlap và xác nhận các điểm chưa chắc; bỏ khung bất kỳ trong phiên. Nguồn gốc và phiên trước được giữ khi tạo revision mới để khôi phục.
-- Chụp ảnh được chính Captovix: giữ giao diện app/popup hiện có trong nền đã đóng băng. Chọn nguồn cửa sổ có thể bao gồm Captovix; selector/kính lúp/thanh điều khiển vẫn không lọt vào file chụp.
-- Công cụ đưa lên hàng Chụp/Quay theo thứ tự: Khung, Callout, Mũi tên, Chữ, Crop, Làm mờ, Chọn vùng, Bước, Nhận chữ, ô công cụ động, Thêm. Chọn vùng là vùng pixel trên ảnh; Chọn đối tượng có trong Thêm và phím V.
-- Thêm chứa các công cụ phụ (Chọn đối tượng, Phóng đại, Spotlight, Highlight, Vẽ tự do, Canvas…) và các Studio/Stamp hiện có; dùng lại bằng ô công cụ động cạnh Thêm.
-- Bỏ nút Mở file/Copy ảnh/Xuất file khỏi hàng công cụ. Các lệnh vẫn có trong menu Tệp và phím tắt tương ứng. Thuộc tính bên phải kéo lên ngang hàng công cụ; kích thước/zoom thu gọn một dòng, tăng chiều cao canvas.
-- Kéo công cụ A lên B để xem trước hoán đổi; thả lưu vị trí, Esc hủy về bố cục trước. Thêm và ô công cụ động giữ ở cuối. Bố cục V1.33 dùng file riêng để lần đầu hiện đúng thứ tự mới; giữ file bố cục cũ.
-- Giữ ảnh thư viện khoảng 160ms rồi kéo: cung cấp PNG đã có chú thích qua FileDrop/Bitmap cho Word, Explorer, trình duyệt upload Drive và ứng dụng hỗ trợ kéo file. Không tự tải lên Drive. Kéo nội bộ vào canvas vẫn giữ cơ chế ghép ảnh.
-- Popup bản quyền có logo/tiêu đề/mô tả ngắn, ô KEY và nút Kích hoạt; chức năng nâng cao ở Xem thêm. Link không có KEY hiển thị lời mời hoặc lịch sử dùng thử.
-- Máy đã trial không được kích hoạt lại 30 ngày: chặn trong UI và Request dưới khóa đồng thời, lưu chứng nhận trial đã ký ở registry DPAPI; hiển thị ngày bắt đầu (hạn gốc trừ 30 ngày) và ngày hết hạn. Backend hiện có giữ nguyên hạn gốc khi nhận lại trial, không reset 30 ngày. Không thay cặp khóa hoặc dữ liệu server.
-- Trạng thái vĩnh viễn còn quyền: đèn xanh lá có quầng sáng + Đã kích hoạt. Trial còn quyền: đèn vàng; trạng thái hết hạn/chờ xác minh hiển thị riêng.
+Nâng thẳng từ source V1.33.0 theo yêu cầu Boss, bỏ qua phát hành V1.34.0 và V1.35.0. Giữ chức năng đã có; không tuyên bố hoàn thành các phạm vi bị bỏ qua.
 
-Không cần chạy migration mới. Không cần deploy lại backend/admin bản quyền. Không thay mô hình đóng gói/dung lượng đã tạm giữ.
+- Callout bắt đầu từ đuôi: điểm nhấn đầu tiên được giữ cố định, kéo để tạo thân ở bên trái/phải. Thân mặc định căn giữa theo chiều dọc quanh điểm đuôi, đệm30px, tối thiểu172×96px; bấm đơn tạo thân220×120px. Đuôi có node riêng; resize thân không kéo theo đuôi (kể cả khi xoay).
+- Auto-fit mặc định giữ kích thước đã vẽ và chỉ nở thêm theo nội dung đang nhập, xuống dòng theo chiều rộng. Không tự co hộp khi xóa chữ; vẫn sửa rộng/cao độc lập bằng node/các trường thuộc tính. Mẫu đã lưu giữ lựa chọn bật/tắt auto-fit của người dùng.
+- Nhập trực tiếp trên ảnh: có chữ Việt/IME, căn dọc của con trỏ theo hộp; click ngoài/Ctrl+Enter hoàn tất, Esc hủy, Enter xuống dòng. Composition được hoàn tất trước khi đóng phiên nhập; không lưu chữ preedit dở.
+- Di chuyển Callout dài tái sử dụng dàn chữ và bản vẽ đã đóng băng; không dựng lại outline toàn bộ glyph hay ghép hình đuôi mỗi lần đổi vị trí. Cập nhật khi gõ gộp theo nhịp render, không chờ bộ hẹn giờ400ms của thuộc tính. Cache yếu theo đối tượng và riêng từng thread, không giữ lịch sử chữ không giới hạn.
+- Thuộc tính/preset áp dụng đúng loại Chữ/Callout/Bước; chọn mẫu Callout cập nhật bố cục và tự nở nếu cần, không đổi vị trí đuôi. Không đổi schema17 hay phá mẫu cũ.
+- Khôi phục logo và tên Captovix gọn ở góc trái hàng menu; bỏ menu chẩn đoán, báo cáo hiệu năng và hướng dẫn kiểm thử, cùng mục Máy & màn hình trong Thiết lập. Giữ công cụ chụp/chỉnh ảnh, khôi phục, cập nhật và bản quyền.
+- Tọa độ chụp dùng lõi vàng2pixel vật lý, viền đen0.25pixel mỗi bên thay lõi cam1pixel/viền0.5pixel trước đây.
+- Giữ snapshot ảnh ở pixel vật lý và xuất PNG/copy không giảm theo zoom. Xem100% để đánh giá pixel thật; Vừa khung là bản xem đã thu nhỏ. Không tăng nét giả hay upscale nguồn.
+- Updater luôn chọn gói Full của stable mới nhất, không bắt cài bản trung gian. V1.31→V1.33/V1.36 được kiểm thử chọn đích bằng SDK thật; gói V1.36 được kiểm tra tải/hash với locator V1.31. Backup dữ liệu trước áp dụng và xác minh SHA-256 giữ nguyên.
+
+## Cài đặt và bàn giao
+
+- `Captovix-v1.36.0-Update-Packages.zip`: giải nén, thoát Captovix, chạy `HuyVo.Captovix-win-Setup.exe`, giữ đường dẫn cài hiện tại. Không uninstall.
+- `Captovix V1.36.0 — Text & Callout Polish.zip`: source, tests và hướng dẫn build. Windows x64/.NET10 SDK/NSIS3; chạy `python scripts/Run-Checks.py`, sau đó `powershell -ExecutionPolicy Bypass -File scripts/Build-Windows.ps1`.
+- Cập nhật trong app chỉ thấy bản mới sau khi publisher đưa đủ5assets trong ZIP lên stable release v1.36.0. Không upload duy nhất ZIP hoặc source thay assets. Không tự push/publish trong lần bàn giao này.
+- Không migration DB; không redeploy Supabase/admin. Public config bản quyền, dữ liệu và endpoint update giữ nguyên từ source Boss gửi. Không gọi production để tạo KEY/trial khi kiểm thử.
+- Build/logic/package đã kiểm theo `docs/VALIDATION.md`. Chưa thực thi WPF/Setup/IME native tại Linux; checklist Windows ở `docs/TEXT-CALLOUT-POLISH-V136.md`.
+- Phiên bản tiếp theo theo roadmap đã có: **V1.37.0 — Image Tools & OCR Usability**: kéo vùng nhận chữ/copy, zoom/pan và khả năng xem trước/hoàn tác các công cụ pixel. Chưa xây phiên bản này.
+

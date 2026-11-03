@@ -16,6 +16,7 @@ session.Undo();session.Change(d=>d.Annotations[0].Color="#EA5362");Check(!sessio
 session.Begin();session.Document.Annotations[0].Color="#008B92";session.Cancel();Check(session.Document.Annotations[0].Color=="#EA5362","Cancel restores the pre-gesture state");
 session.MarkSaved();Check(!session.Dirty,"Successful save clears dirty state");
 session.Undo();Check(session.Dirty,"Undo after save requires persistence");
+foreach(var dx in new[]{-250d,250d})foreach(var dy in new[]{-100d,100d}){var bubble=new Annotation{Kind=AnnotationKind.Callout};CalloutGesture.Place(bubble,400,300,400+dx,300+dy);Check(bubble.TailX==400&&bubble.TailY==300&&bubble.Width>=172&&bubble.Height>=96&&bubble.Top+bubble.Height/2==300,"Tail-first callout remains centered and anchored in every quadrant");Check(dx<0?bubble.Left+bubble.Width<400:bubble.Left>400,"Callout body stays outside tail anchor");}
 var doc=New();doc.Annotations.Add(new(){Kind=AnnotationKind.Text,X1=100,Y1=150,Text="Hướng dẫn bước 1\nDòng thứ hai",FontSize=36});
 var original=doc.Annotations[0].Copy();
 Check(doc.ApplyCrop(new(80,100,400,300)),"Crop accepts a valid physical-pixel region");

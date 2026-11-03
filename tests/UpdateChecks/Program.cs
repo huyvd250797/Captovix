@@ -107,9 +107,9 @@ try
         } } }));
         WriteFeed(asset);
         var packagesDir = Path.Combine(root, "packages"); Directory.CreateDirectory(packagesDir);
-        var locator = new TestVelopackLocator(VersionInfo.AppId, "1.1.0", packagesDir);
+        var locator = new TestVelopackLocator(VersionInfo.AppId, "1.31.0", packagesDir);
         var source = new SimpleFileSource(new DirectoryInfo(sourceDir));
-        var sdk = new VelopackUpdateBackend(new() { SourceKind = "Https", SourceUrl = "https://example.com/feed" }, locator, "1.1.0", source);
+        var sdk = new VelopackUpdateBackend(new() { SourceKind = "Https", SourceUrl = "https://example.com/feed" }, locator, "1.31.0", source);
         Check(sdk.CanApply, "SDK recognizes test installed app");
         var release = await sdk.CheckAsync(); Check(release?.Version == actualVersion.ToString(), "SDK discovers real packaged version");
         await sdk.DownloadAsync(release!, _ => { }, default);
@@ -125,7 +125,7 @@ try
         Check(rejected, "Another app package is never offered");
         asset.PackageId = VersionInfo.AppId; asset.Version = SemanticVersion.Parse("0.9.0"); WriteFeed(asset);
         Check(await sdk.CheckAsync() == null, "SDK does not offer older release");
-        asset.Version = SemanticVersion.Parse("1.1.0"); WriteFeed(asset);
+        asset.Version = SemanticVersion.Parse("1.31.0"); WriteFeed(asset);
         Check(await sdk.CheckAsync() == null, "SDK does not offer the same version");
         asset.Version = SemanticVersion.Parse("99.0.0-beta.1"); WriteFeed(asset);
         rejected = false; try { rejected = await sdk.CheckAsync() == null; } catch { rejected = true; }
@@ -133,6 +133,13 @@ try
         asset.Version = actualVersion; asset.SHA256 = ""; WriteFeed(asset);
         rejected = false; try { await sdk.CheckAsync(); } catch { rejected = true; }
         Check(rejected, "Feed without SHA-256 is rejected");
+    }
+    var jump=Path.Combine(root,"direct-jump");Directory.CreateDirectory(jump);
+    foreach(var target in new[]{"1.33.0","1.36.0"}){
+        File.WriteAllText(Path.Combine(jump,"releases.win.json"),JsonSerializer.Serialize(new{Assets=new[]{new{PackageId=VersionInfo.AppId,Version=target,Type="Full",FileName=$"HuyVo.Captovix-{target}-full.nupkg",SHA256=new string('A',64),SHA1=new string('B',40),Size=100}}}));
+        var installed=new TestVelopackLocator(VersionInfo.AppId,"1.31.0",Path.Combine(root,"jump-"+target));
+        var direct=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl=UpdateSettings.StableFeed},installed,"1.31.0",new SimpleFileSource(new DirectoryInfo(jump)));
+        Check((await direct.CheckAsync())?.Version==target,"Installed1.31 directly targets"+target+" without intermediate packages");
     }
     // The newest version is deliberately beyond the first ten feed entries.
     var many=Path.Combine(root,"many");Directory.CreateDirectory(many);

@@ -60,6 +60,7 @@ public static class ObjectPrecision
         var pivotBox=AnnotationEditing.Union(objects.Select(worldBounds));var pivot=new AnnotationPoint(pivotBox.CenterX,pivotBox.CenterY);
         foreach(var a in objects){double delta=objects.Length==1&&!ConnectorStudio.IsPath(a)?ObjectControl.Normalize(angle-a.Rotation):angle;var before=a.Copy();ObjectControl.Rotate(a,before,delta,pivot,localBounds);}
         var actual=Map(AnnotationEditing.Union(objects.Select(worldBounds)),l);Move(objects,l,x-actual.X,y-actual.Y);
+        if(objects.Length==1&&(Math.Abs(sx-1)>1e-8||Math.Abs(sy-1)>1e-8)){var offset=l.SourceDelta(x-output.X,y-output.Y);ObjectControl.PinCalloutTail(objects[0],originals[0],localBounds,offset.X,offset.Y);}
         RevealOutside(doc,selected,worldBounds);doc.Validate(doc.OriginalWidth,doc.OriginalHeight,doc.SourceHash);
     }
 }

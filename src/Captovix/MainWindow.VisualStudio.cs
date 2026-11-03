@@ -65,8 +65,8 @@ public partial class MainWindow
         bool Compatible(Annotation a)=>(ShapeStudio.IsClosed(a.Kind)&&ShapeStudio.IsClosed(next.Kind))||(ShapeStudio.IsLine(a.Kind)&&ShapeStudio.IsLine(next.Kind))||(a.Kind==AnnotationKind.Callout&&next.Kind==AnnotationKind.Callout);
         var ids=Surface.SelectedIds.ToArray();var primary=Surface.Selected?.Id;
         bool retain=ids.Length>0&&_session!=null&&_session.Document.Annotations.Where(a=>ids.Contains(a.Id)).All(Compatible);
-        if(next.Kind==AnnotationKind.Callout){ShapeStudio.CopyStyle(next,Surface.CalloutDefaults);TextStudio.CopyStyle(next,Surface.CalloutDefaults);}
-        if(retain)ChangeSelected(a=>{if(!Compatible(a))return;if(a.Kind==AnnotationKind.Callout){TextStudio.CopyStyle(next,a);ShapeStudio.CopyStyle(next,a);a.Color=next.Color;a.Stroke=next.Stroke;return;}a.Kind=next.Kind;if(ShapeStudio.IsLine(a.Kind)){a.Route=next.Route;a.Control=null;}a.Color=next.Color;a.Stroke=next.Stroke;ShapeStudio.CopyStyle(next,a);});
+        if(next.Kind==AnnotationKind.Callout){ShapeStudio.CopyStyle(next,Surface.CalloutDefaults);TextStudio.CopyStyle(next,Surface.CalloutDefaults);Surface.CalloutDefaults.FontSize=next.FontSize;Surface.TextSize=next.FontSize;}
+        if(retain)ChangeSelected(a=>{if(!Compatible(a))return;if(a.Kind==AnnotationKind.Callout){TextStudio.CopyStyle(next,a);ShapeStudio.CopyStyle(next,a);a.Color=next.Color;a.Stroke=next.Stroke;a.FontSize=next.FontSize;if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds,true);return;}a.Kind=next.Kind;if(ShapeStudio.IsLine(a.Kind)){a.Route=next.Route;a.Control=null;}a.Color=next.Color;a.Stroke=next.Stroke;ShapeStudio.CopyStyle(next,a);});
         _skipSavedStyle=true;try{SelectTool(next.Kind==AnnotationKind.Callout?EditorTool.Callout:ShapeStudio.IsClosed(next.Kind)?EditorTool.Shape:EditorTool.Arrow);}finally{_skipSavedStyle=false;}
         if(retain)Surface.SelectIds(ids,primary);
         Surface.Refresh();SyncProperties();

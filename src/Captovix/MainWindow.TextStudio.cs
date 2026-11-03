@@ -11,7 +11,8 @@ public partial class MainWindow
     private void InitializeTextStudio()
     {
         System.Windows.Input.TextCompositionManager.AddPreviewTextInputStartHandler(InlineText,(_,e)=>{_imeComposing=true;_activeComposition=e.TextComposition;});
-        System.Windows.Input.TextCompositionManager.AddPreviewTextInputHandler(InlineText,(_,_)=>{_imeComposing=false;_activeComposition=null;});
+        System.Windows.Input.TextCompositionManager.AddPreviewTextInputUpdateHandler(InlineText,(_,e)=>{_imeComposing=true;_activeComposition=e.TextComposition;});
+        System.Windows.Input.TextCompositionManager.AddPreviewTextInputHandler(InlineText,(_,_)=>{_imeComposing=false;_activeComposition=null;Dispatcher.BeginInvoke(()=>InlineText_Changed(InlineText,new TextChangedEventArgs(TextBox.TextChangedEvent,System.Windows.Controls.UndoAction.None)),System.Windows.Threading.DispatcherPriority.Input);});
         TextFontPicker.ItemsSource=Fonts.SystemFontFamilies.Select(f=>f.Source).Where(n=>n.Length<=80&&n.All(c=>char.IsLetterOrDigit(c)||c is ' ' or '-' or '_' or '.' or '(' or ')')).Distinct().OrderBy(n=>n).ToArray();
     }
     private void SyncTextStudio()

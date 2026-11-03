@@ -39,7 +39,7 @@ public sealed class VelopackUpdateBackend : IUpdateBackend, IUpdateDiagnostics
         if(CanApply){
             var info=await _manager.CheckForUpdatesAsync().WaitAsync(TimeSpan.FromSeconds(25));
             if(info==null)throw new InvalidDataException("Feed có bản mới nhưng bộ cài chưa chọn được gói phù hợp. Kiểm tra AppId/kênh và bản cài đang chạy.");
-            Validate(info.TargetFullRelease);return Describe(info.TargetFullRelease,info);
+            Validate(info.TargetFullRelease);return Describe(info.TargetFullRelease,new UpdateInfo(info.TargetFullRelease,false,null,null));
         }
         Validate(latest);return Describe(latest,latest);
     }

@@ -45,7 +45,7 @@ public partial class MainWindow
         if(PresetPicker.SelectedItem is not AnnotationPreset preset)return;
         Surface.InkColor=preset.Color;Surface.StrokeSize=preset.Stroke;Surface.TextSize=preset.FontSize;Surface.EffectSize=preset.EffectSize;Surface.ShapeDefaults=preset.ToStyle();if(preset.Shape is {} kind)Surface.ShapeKind=kind;
         if(preset.Focus is {} focus){preset.Apply(Surface.FocusDefaultsFor(focus.Kind));}
-        if(preset.Typography!=null)foreach(var style in new[]{Surface.TextDefaults,Surface.CalloutDefaults,Surface.StepDefaults})preset.Apply(style);
+        if(preset.Typography!=null){var textKind=preset.ToolKind is {} savedKind&&TextStudio.IsText(savedKind)?savedKind:CurrentTextKind();preset.Apply(Surface.TextDefaultsFor(textKind));}
         if(sender is Button {Tag:"Defaults"}){Surface.SelectIds([]);if(preset.Shape!=null)SelectTool(EditorTool.Shape);else if(preset.Focus is {} effect)SelectTool(Enum.Parse<EditorTool>(effect.Kind.ToString()));}
         else ChangeSelected(a=>{preset.Apply(a);if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds,true);});
         Surface.Refresh();SyncProperties();SetStatus($"Đã áp dụng preset {preset.Name}.");

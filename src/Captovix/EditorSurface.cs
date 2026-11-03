@@ -198,7 +198,7 @@ public sealed partial class EditorSurface : FrameworkElement
             if(shift&&ShapeStudio.IsLine(created.Kind))end=ConstrainArrow(_start,p);
             else if(shift){double side=Math.Min(Math.Abs(p.X-_start.X),Math.Abs(p.Y-_start.Y));end=new(_start.X+Math.Sign(p.X-_start.X)*side,_start.Y+Math.Sign(p.Y-_start.Y)*side);}
             created.X2=end.X;created.Y2=end.Y;if(created.Kind==AnnotationKind.Text){created.X1=Math.Min(_start.X,end.X);created.Y1=Math.Min(_start.Y,end.Y);created.X2=Math.Max(_start.X,end.X);created.Y2=Math.Max(_start.Y,end.Y);created.TextWidth=Math.Max(1,created.Width-2*TextStudio.Padding(created));}if(ShapeStudio.IsLine(created.Kind))EndConnector(created,end);
-            if(created.Kind==AnnotationKind.Callout){var v=EditingBounds;created.TailX=created.Left+created.Width*.25;created.TailY=created.Top+created.Height+24;}
+            if(created.Kind==AnnotationKind.Callout)CalloutGesture.Place(created,_start.X,_start.Y,end.X,end.Y);
         }else if(_action==DragAction.Move){
             double dx=p.X-_start.X,dy=p.Y-_start.Y;
             SnapObjectMove(dx,dy,shift,SnapEnabled&&!modifiers.HasFlag(ModifierKeys.Control));
@@ -227,9 +227,9 @@ public sealed partial class EditorSurface : FrameworkElement
             _primary=_selected.LastOrDefault();_draft=null;
         }else{
             if(action==DragAction.Create&&Selected is {Kind:AnnotationKind.Text} textClick&&textClick.Width<4&&textClick.Height<4){textClick.X2=textClick.X1+220;textClick.Y2=textClick.Y1+72;textClick.TextWidth=Math.Max(1,220-2*TextStudio.Padding(textClick));}
-            if(action==DragAction.Create&&Selected is {Kind:AnnotationKind.Callout} click&&click.Width<4&&click.Height<4){click.X2=click.X1+220;click.Y2=click.Y1+120;}
+            if(action==DragAction.Create&&Selected is {Kind:AnnotationKind.Callout} click&&(p-_start).Length<4)CalloutGesture.Place(click,_start.X,_start.Y,_start.X+244,_start.Y+60);
             var invalid=_createdId!=null&&Selected is {} a&&(a.Kind==AnnotationKind.Freehand?a.Points.Count==0:a.Kind==AnnotationKind.Callout?a.Width<36||a.Height<36:ShapeStudio.IsLine(a.Kind)?Math.Sqrt(a.Width*a.Width+a.Height*a.Height)<2:a.Width<2||a.Height<2);
-            if(invalid){Session.Cancel();_selected.Clear();_primary=null;}else{if(action==DragAction.Create)foreach(var target in Session.Document.Annotations.Where(a=>_selected.Contains(a.Id))){if(target.Kind!=AnnotationKind.Callout)EditorRenderer.FitText(target,EditingBounds);else target.AutoFitText=false;if(action==DragAction.Create&&target.Kind==AnnotationKind.Callout){var view=EditingBounds;target.TailX=target.Left+target.Width*.25;target.TailY=target.Top+target.Height+24;}}if(_moved&&(action is DragAction.Move or DragAction.Resize or DragAction.Rotate))ObjectPrecision.RevealOutside(Session.Document,_selected,EditorRenderer.GeometryBox);if(action==DragAction.Create||_moved)FitSelectionCanvas();Session.Commit();}
+            if(invalid){Session.Cancel();_selected.Clear();_primary=null;}else{if(action==DragAction.Create)foreach(var target in Session.Document.Annotations.Where(a=>_selected.Contains(a.Id))){EditorRenderer.FitText(target,EditingBounds,true);}if(_moved&&(action is DragAction.Move or DragAction.Resize or DragAction.Rotate))ObjectPrecision.RevealOutside(Session.Document,_selected,EditorRenderer.GeometryBox);if(action==DragAction.Create||_moved)FitSelectionCanvas();Session.Commit();}
         }
         _originals=[];Refresh();SelectionChanged?.Invoke();if(action==DragAction.Create&&Selected?.Kind is AnnotationKind.Callout or AnnotationKind.Text)TextRequested?.Invoke();
     }
