@@ -8,3 +8,14 @@ prerequisites/
 *_wpftmp.csproj
 
 tests/InstallerPathChecks/InstallerPathChecks.exe
+
+# Licensing secrets remain outside the repo
+server.env
+*.private.pem
+captovix-signing.pem
+.env
+secrets/
+
+node_modules/
+edge-secrets.env
+.env.local

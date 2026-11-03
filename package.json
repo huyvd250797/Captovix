@@ -1,0 +1,19 @@
+{
+  "devDependencies": {
+    "jsdom": "26.1.0",
+    "postgres": "3.4.7",
+    "typescript": "5.9.3"
+  },
+  "name": "captovix-serverless-licensing",
+  "version": "1.29.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "check": "tsc --noEmit --strict --target ES2022 --module ESNext --moduleResolution bundler --lib ES2022,DOM supabase/functions/licensing/index.ts",
+    "test": "node --experimental-strip-types --test tests/serverless/*.test.mjs",
+    "test:integration": "node --experimental-strip-types tests/serverless/integration.mjs"
+  }
+}

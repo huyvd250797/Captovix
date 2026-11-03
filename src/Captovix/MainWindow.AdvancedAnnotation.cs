@@ -10,7 +10,7 @@ public partial class MainWindow
     private string? _inlineId;
     private bool _endingInline,_syncInline;
     private void BeginInlineText()
-    {
+    {if(!RequireLicense())return;
         EndInlineText(true);
         if(_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {} a||a.Kind is not (AnnotationKind.Text or AnnotationKind.Callout))return;
         _textTimer.Stop();_session.Commit();_saveTimer.Stop();
@@ -58,10 +58,10 @@ public partial class MainWindow
         else if(e.Key==Key.Enter&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){EndInlineText(true);Surface.Focus();e.Handled=true;}
     }
     private void InlineText_LostFocus(object sender,KeyboardFocusChangedEventArgs e){if(!InlineText.IsKeyboardFocusWithin)EndInlineText(true);}
-    private void EditOnImage_Click(object sender,RoutedEventArgs e)=>BeginInlineText();
+    private void EditOnImage_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;BeginInlineText();}
     private void SyncAdvancedAnnotation()=>SyncConnectorTools();
     private void ObjectCommand(string command)
-    {
+    {if(!RequireLicense())return;
         if(_session==null||Surface.Tool==EditorTool.Crop||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds))return;
         EndInlineText(true);Surface.CancelInteraction();_session.Commit();var ids=Surface.SelectedIds.ToHashSet();
         try{
@@ -82,5 +82,5 @@ public partial class MainWindow
             Surface.Refresh();SyncProperties();Surface.Focus();
         }catch(Exception ex){SetStatus("Chưa thực hiện được: "+ex.Message);}
     }
-    private void ObjectCommand_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:string command})ObjectCommand(command);}
+    private void ObjectCommand_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;if(sender is Button {Tag:string command})ObjectCommand(command);}
 }

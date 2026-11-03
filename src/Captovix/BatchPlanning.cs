@@ -1,9 +1,9 @@
 using System.IO;
 using System.Text.RegularExpressions;
 namespace Captovix;
-public sealed record BatchOptions(string Format="PNG",string NamePattern="{date}-{n}-{name}",int LongEdge=0,string Watermark="",int WatermarkSize=28)
+public sealed record BatchOptions(string Format="PNG",string NamePattern="{date}-{n}-{name}",int LongEdge=0,string Watermark="",int WatermarkSize=28,int WatermarkPosition=8,double WatermarkOpacity=.6,string? LogoPng=null)
 {
-    public void Validate(){if(Format is not ("PNG" or "JPEG" or "PDF")||NamePattern.Length>160||string.IsNullOrWhiteSpace(NamePattern)||LongEdge<0||LongEdge>7680||Watermark.Length>80||WatermarkSize<8||WatermarkSize>96)throw new InvalidDataException("Kiểm tra định dạng, tên, cạnh dài0–7680 và watermark tối đa80 ký tự.");if(Regex.Replace(NamePattern,@"\{(date|name|n)\}","").IndexOfAny(['{','}'])>=0)throw new InvalidDataException("Tên chỉ hỗ trợ {date}, {name}, {n}.");}
+    public void Validate(){if(WatermarkPosition<0||WatermarkPosition>8||!double.IsFinite(WatermarkOpacity)||WatermarkOpacity<0||WatermarkOpacity>1||LogoPng?.Length>8_000_000)throw new InvalidDataException("Vị trí / độ hiện / logo watermark không hợp lệ.");if(Format is not ("PNG" or "JPEG" or "PDF")||NamePattern.Length>160||string.IsNullOrWhiteSpace(NamePattern)||LongEdge<0||LongEdge>7680||Watermark.Length>80||WatermarkSize<8||WatermarkSize>96)throw new InvalidDataException("Kiểm tra định dạng, tên, cạnh dài0–7680 và watermark tối đa80 ký tự.");if(Regex.Replace(NamePattern,@"\{(date|name|n)\}","").IndexOfAny(['{','}'])>=0)throw new InvalidDataException("Tên chỉ hỗ trợ {date}, {name}, {n}.");}
 }
 public static class BatchNaming
 {

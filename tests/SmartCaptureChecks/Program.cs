@@ -36,7 +36,7 @@ bar=CaptureSelection.Toolbar(screen,screen,350,36);Check(bar.Intersect(screen)==
 bar=CaptureSelection.Toolbar(new(0,0,200,100),new(0,0,200,100),450,36);Check(bar.Width==200&&bar.X==0,"Toolbar clamps on small display");
 var child=new ElementCandidate(new(-1700,180,300,200),"Bảng",true);var modal=new ElementCandidate(new(-1800,100,700,500),"Modal",true);
 var items=ElementSelection.Normalize([modal,child],-1600,220,screen);
-var state=new ElementSuggestion();Check(!state.Offer(items,-1600,220,16)&&state.Current==null,"First changed suggestion waits for confirmation");
+var state=new ElementSuggestion();Check(state.Offer(items,-1600,220,16)&&state.Current?.Bounds==child.Bounds,"First suggestion appears without a second provider roundtrip");
 Check(state.Offer(items,-1600,220,16)&&state.Current?.Bounds==child.Bounds,"Repeated provider result stabilizes suggestion");
 state.Cycle(120);Check(state.Current?.Bounds==modal.Bounds,"Wheel selects parent");
 state.Offer(items,-1600,220,16);Check(state.Current?.Bounds==modal.Bounds,"Polling preserves deliberate parent selection");

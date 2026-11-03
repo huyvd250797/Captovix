@@ -42,7 +42,7 @@ public partial class MainWindow
             Apply(Surface.TextDefaultsFor(kind));ChangeSelected(a=>{if(TextStudio.IsText(a.Kind))Apply(a);});Surface.Refresh();SyncProperties();SetStatus("Đã áp dụng kiểu chữ/callout · Ctrl+Z hoàn tác.");return true;
         }catch(Exception e){TextStudioError.Text=e.Message;return false;}
     }
-    private void ApplyTextStudio_Click(object sender,RoutedEventArgs e)=>ApplyTextStudio();
+    private void ApplyTextStudio_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ApplyTextStudio();}
     private void TextStyle_KeyDown(object sender,System.Windows.Input.KeyEventArgs e){if(e.Key==System.Windows.Input.Key.Enter){ApplyTextStudio();e.Handled=true;}else if(e.Key==System.Windows.Input.Key.Escape){SyncProperties();e.Handled=true;}}
     private void ToggleTextBackground(object sender,RoutedEventArgs e)
     {
@@ -52,9 +52,9 @@ public partial class MainWindow
     {
         if(!_editorReady||_syncProperties)return;bool enabled=ShapeFillEnabled.IsChecked==true;Surface.ShapeDefaults.FillEnabled=enabled;ChangeSelected(a=>{if(ShapeStudio.IsClosed(a.Kind))a.FillEnabled=enabled;});Surface.Refresh();SyncProperties();
     }
-    private void NoShapeFill_Click(object sender,RoutedEventArgs e){if(!_editorReady)return;ShapeFillEnabled.IsChecked=false;ToggleShapeFill(sender,e);}
+    private void NoShapeFill_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;if(!_editorReady)return;ShapeFillEnabled.IsChecked=false;ToggleShapeFill(sender,e);}
     private void RenumberSteps_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_session==null)return;try{if(!int.TryParse(StepStart.Text,NumberStyles.Integer,CultureInfo.InvariantCulture,out var start))throw new ArgumentException("Nhập số bắt đầu 1–9999.");EndInlineText(true);Surface.CancelInteraction();int count=0;_session.Change(d=>count=TextStudio.Renumber(d,Surface.SelectedIds,start));Surface.Refresh();SyncProperties();SetStatus($"Đã đánh lại số {count} bước.");}catch(Exception ex){TextStudioError.Text=ex.Message;}
     }
 }

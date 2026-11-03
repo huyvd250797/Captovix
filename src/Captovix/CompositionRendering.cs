@@ -10,7 +10,7 @@ public static partial class EditorRenderer
         if(style==null){dc.DrawImage(source,rect);return;}
         BitmapSource pixels=source;if(style.Crop is {} c){pixels=new CroppedBitmap(source,new(c.X,c.Y,c.Width,c.Height));pixels.Freeze();}
         var placement=CompositionStudio.ImagePlacement(new(rect.X,rect.Y,rect.Width,rect.Height),source.PixelWidth,source.PixelHeight,style);var destination=new Rect(placement.X,placement.Y,placement.Width,placement.Height);
-        var body=new RectangleGeometry(rect,style.Radius,style.Radius);dc.PushClip(body);dc.DrawImage(pixels,destination);dc.Pop();
+        Geometry body=style.Mask==LayerMask.Ellipse?new EllipseGeometry(rect):new RectangleGeometry(rect,style.Radius,style.Radius);dc.PushOpacity(style.Opacity);dc.PushClip(body);dc.DrawImage(pixels,destination);dc.Pop();dc.Pop();
         if(style.Border>0)dc.DrawGeometry(null,new Pen(Ink(style.BorderColor),style.Border),body);
     }
 }

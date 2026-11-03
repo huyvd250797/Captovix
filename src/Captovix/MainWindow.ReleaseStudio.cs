@@ -5,9 +5,9 @@ using System.Windows.Controls;
 namespace Captovix;
 public partial class MainWindow
 {
-    private void LibraryMore_Click(object sender,RoutedEventArgs e)=>LibraryMorePopup.IsOpen=!LibraryMorePopup.IsOpen;
+    private void LibraryMore_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;LibraryMorePopup.IsOpen=!LibraryMorePopup.IsOpen;}
     private void ExtendCanvas_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_session==null||_busy)return;EndInlineText(true);Surface.CancelInteraction();
         var session=_session;var w=new Window{Owner=this,Title="Canvas · Lề và nền",Width=460,Height=500,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterOwner};
         var root=new StackPanel{Margin=new(20)};w.Content=root;
@@ -26,7 +26,7 @@ public partial class MainWindow
     }
 
     private void PerformanceReport_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         var report=new{Version=VersionInfo.Current,Runtime=System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,MemoryManaged=GC.GetTotalMemory(false),MemoryProcess=Environment.WorkingSet,Media=_store.Items.Count,Recent=_recentItems.Count,Thumbnails=_store.ThumbnailCacheStats,Decoded=RasterPixels.CacheStats,Renders=RenderMetrics.Snapshot(),History=_session?.HistoryStats,WindowsDesktopAcceptance="Chưa tự kết luận; xem checklist V1.21"};string json=JsonSerializer.Serialize(report,new JsonSerializerOptions{WriteIndented=true});var box=new TextBox{Text=json,IsReadOnly=true,AcceptsReturn=true,TextWrapping=TextWrapping.Wrap,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};var w=new Window{Owner=this,Title="Captovix · Hiệu năng thực tế trên máy này",Width=660,Height=540,WindowStartupLocation=WindowStartupLocation.CenterOwner};var panel=new DockPanel{Margin=new(14)};w.Content=panel;var copy=new Button{Content="Copy báo cáo",HorizontalAlignment=HorizontalAlignment.Left};DockPanel.SetDock(copy,Dock.Bottom);panel.Children.Add(copy);copy.Click+=(_,_)=>Clipboard.SetText(json);panel.Children.Add(box);w.ShowDialog();
     }
 }

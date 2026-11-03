@@ -5,6 +5,7 @@ using System.Windows.Input;
 namespace Captovix;
 public partial class MainWindow
 {
+    private void FocusPaint_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;OpenPaint(FocusPaintButton,color=>{if(color!=null){FocusColorField.Text=color;ApplyFocus_Click(this,new());}},false);}
     private AnnotationKind? CurrentFocusKind()=>Surface.Selected is {} a?FocusStudio.Supports(a.Kind)?a.Kind:null:Enum.TryParse<AnnotationKind>(Surface.Tool.ToString(),out var kind)&&FocusStudio.Supports(kind)?kind:null;
     private void SyncFocusStudio()
     {
@@ -14,6 +15,7 @@ public partial class MainWindow
         EffectProperties.Visibility=Visibility.Collapsed;var defaults=Surface.FocusDefaultsFor(kind.Value);var a=Surface.Selected??defaults;
         if(Surface.Selected!=null){FocusStudio.CopyStyle(a,defaults);defaults.Color=a.Color;defaults.EffectSize=a.EffectSize;defaults.Stroke=a.Stroke;defaults.StrokeEnabled=a.StrokeEnabled;}
         FocusRegionPicker.SelectedIndex=(int)a.RegionShape;FocusOpacityField.Text=ShapeNumber(a.FocusOpacity);FocusZoomField.Text=ShapeNumber(a.Magnification);FocusColorField.Text=Surface.Selected==null?Surface.InkColor:a.Color;FocusStrength.Text=a.EffectSize.ToString(CultureInfo.InvariantCulture);FocusBorder.IsChecked=a.StrokeEnabled;FocusBorderWidth.Text=ShapeNumber(a.Stroke);
+        PaintButton(FocusPaintButton,"Màu vùng / viền",FocusColorField.Text);
         FocusOpacityPanel.Visibility=kind is AnnotationKind.Highlight or AnnotationKind.Spotlight?Visibility.Visible:Visibility.Collapsed;
         FocusLensPanel.Visibility=kind==AnnotationKind.Magnifier?Visibility.Visible:Visibility.Collapsed;
         FocusPrivacyPanel.Visibility=a.IsRedaction?Visibility.Visible:Visibility.Collapsed;FocusMaskKind.SelectedIndex=kind==AnnotationKind.Blur?0:kind==AnnotationKind.Pixelate?1:2;
@@ -21,7 +23,7 @@ public partial class MainWindow
         FocusError.Text="";
     }
     private void ApplyFocus_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(!_editorReady||_syncProperties||CurrentFocusKind() is not {} kind)return;
         try{
             EndInlineText(true);Surface.CancelInteraction();var style=Surface.FocusDefaultsFor(kind).Copy();style.Kind=kind;
@@ -35,7 +37,7 @@ public partial class MainWindow
     }
     private void FocusField_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Enter){ApplyFocus_Click(sender,e);e.Handled=true;}else if(e.Key==Key.Escape){SyncProperties();e.Handled=true;}}
     private void PrivacyReview_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_session==null||!PrepareCropForExport())return;Surface.CancelInteraction();SelectTool(EditorTool.Select);Surface.SelectIds([]);Actual_Click(sender,e);SyncProperties();SetStatus(FocusStudio.Review(_session.Document));Surface.Focus();
     }
     private string PrivacyExportStatus()=>_session?.Document.Annotations.Any(a=>a.IsRedaction)==true?" · "+FocusStudio.Review(_session.Document):"";

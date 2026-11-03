@@ -63,6 +63,7 @@ public sealed class ElementSuggestion
     public bool Offer(ElementCandidate[] list,int x,int y,int tolerance)
     {
         if(list.Length==0)return false;
+        if(Current==null){Candidates=list;Index=ElementSelection.PreferredAt(list,x,y,tolerance);return true;}
         int retained=Current==null?-1:Array.FindIndex(list,c=>c.Bounds==Current.Bounds);
         int preferred=retained>=0&&_manual?retained:ElementSelection.PreferredAt(list,x,y,tolerance);
         var next=list[preferred];

@@ -1,0 +1,30 @@
+using Captovix.Licensing;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+int count=0;void Check(bool value,string label){if(!value)throw new Exception(label);Console.WriteLine("PASS "+label);count++;}
+void Reject(Action action,string label){try{action();}catch{Check(true,label);return;}throw new Exception("Accepted: "+label);}
+using var signing=RSA.Create(3072);using var a=RSA.Create(2048);using var b=RSA.Create(2048);var now=DateTimeOffset.UtcNow;
+string aid=Protocol.Hash("test-machine-a-"+Guid.NewGuid());string bid=Protocol.Hash("test-machine-b-"+Guid.NewGuid());
+var c=new Claims(1,Protocol.Product,"test","license","activation",aid,Protocol.Hash(a.ExportSubjectPublicKeyInfoPem()),"trial","active",now,now.AddHours(48),now.AddDays(30));
+var envelope=Protocol.Sign(signing,c);var publicPem=signing.ExportSubjectPublicKeyInfoPem();
+Check(Protocol.Verify(envelope,publicPem,"test",aid,c.PublicKeyHash)==c,"Signed certificate roundtrip");
+Reject(()=>Protocol.Verify(envelope with{Payload=Convert.ToBase64String(Encoding.UTF8.GetBytes("{}"))},publicPem,"test",aid,c.PublicKeyHash),"Edited payload rejected");
+Reject(()=>Protocol.Verify(envelope,publicPem,"wrong",aid,c.PublicKeyHash),"Wrong issuer rejected");
+Reject(()=>Protocol.Verify(envelope,publicPem,"test",bid,c.PublicKeyHash),"Different machine rejected");
+Reject(()=>Protocol.Verify(envelope,publicPem,"test",aid,Protocol.Hash(b.ExportSubjectPublicKeyInfoPem())),"Different device private key rejected");
+Check(Protocol.FullAccess(c,now.AddHours(1)),"Active trial works offline within signed lease");
+Check(!Protocol.FullAccess(c,now.AddHours(48)),"Lease expires exactly at boundary");
+Check(!Protocol.FullAccess(c with{LeaseUntil=now.AddDays(30)},now.AddDays(30)),"Trial expires at exact 30-day boundary");
+Check(!Protocol.FullAccess(c with{Status="revoked"},now),"Revoked certificate restricts");
+Check(!Protocol.FullAccess(c with{Status="released"},now),"Released certificate restricts");
+Check(!Protocol.FullAccess(null,now),"No certificate is restricted");
+var proof=Protocol.SignRequest(a,"trial",new(aid,"A"),now);
+Check(Protocol.VerifyRequest(proof,"trial",now).DeviceId==aid,"Device proof verifies");
+Reject(()=>Protocol.VerifyRequest(proof,"release",now),"Cross-operation proof rejected");
+Reject(()=>Protocol.VerifyRequest(proof,"trial",now.AddMinutes(6)),"Stale timestamp rejected");
+Reject(()=>Protocol.VerifyRequest(proof with{Payload=proof.Payload.Replace("\"A\"","\"B\"")},"trial",now),"Altered request rejected");
+Reject(()=>Protocol.Verify(Protocol.Sign(signing,c with{LeaseUntil=now.AddDays(35)}),publicPem,"test",aid,c.PublicKeyHash),"Unbounded offline lease rejected");
+Reject(()=>Protocol.Verify(Protocol.Sign(signing,c with{IssuedAt=DateTimeOffset.MinValue,LeaseUntil=DateTimeOffset.MinValue.AddDays(1)}),publicPem,"test",aid,c.PublicKeyHash),"Invalid certificate epoch rejected");
+Check(!Protocol.FullAccess(c,DateTimeOffset.MinValue),"Very old system clock restricts without overflow");
+Console.WriteLine($"{count} cryptographic protocol checks passed. Serverless SQL/HTTP checks run via npm run test:integration.");

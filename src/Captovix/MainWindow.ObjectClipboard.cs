@@ -8,7 +8,7 @@ public partial class MainWindow
     private int _pasteCount;
     private static bool HasObjectClipboard(){try{return Clipboard.ContainsData(AnnotationClipboard.Format);}catch{return false;}}
     private void CopyObjects()
-    {
+    {if(!RequireLicense())return;
         if(_session==null||Surface.SelectedIds.Count==0)return;
         try{
             EndInlineText(true);Surface.CancelInteraction();_session.Commit();var json=AnnotationClipboard.Copy(_session.Document,Surface.SelectedIds);var data=new DataObject();
@@ -17,7 +17,7 @@ public partial class MainWindow
         }catch(Exception e){SetStatus("Chưa copy được đối tượng: "+e.Message);}
     }
     private void PasteObjects()
-    {
+    {if(!RequireLicense())return;
         if(_session==null||Surface.Tool==EditorTool.Crop||_busy)return;
         try{
             var raw=Clipboard.GetDataObject()?.GetData(AnnotationClipboard.Format,false);string? json=raw switch{MemoryStream stream when stream.Length<=AnnotationClipboard.MaxChars*4L=>Encoding.UTF8.GetString(stream.ToArray()),byte[] bytes when bytes.Length<=AnnotationClipboard.MaxChars*4L=>Encoding.UTF8.GetString(bytes),string value when value.Length<=AnnotationClipboard.MaxChars=>value,_=>null};

@@ -11,7 +11,7 @@ public partial class MainWindow
     private void LoadUtilityStars(){try{string p=Path.Combine(App.DataRoot,"tool-stars.json");if(File.Exists(p)){var list=JsonSerializer.Deserialize<List<string>>(File.ReadAllText(p))??throw new InvalidDataException();if(list.Count>16||list.Any(t=>!Enum.TryParse<EditorTool>(t,out _))||list.Distinct().Count()!=list.Count)throw new InvalidDataException();_utilityStars=list;}}catch{_utilityStarsReadOnly=true;VisualStudioError.Text="Chưa đọc được công cụ đã lưu; giữ file cũ.";}}
     private bool UtilityTool=>Surface.Tool is EditorTool.Select or EditorTool.Crop or EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso;
     private void SaveToolStar_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         FlushAutoProperties();try{
             if(UtilityTool&&Surface.Selected==null){if(_utilityStarsReadOnly)return;var list=_utilityStars.ToList();string tool=Surface.Tool.ToString();if(!list.Remove(tool))list.Add(tool);MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"tool-stars.json"),JsonSerializer.Serialize(list));_utilityStars=list;}
             else{if(_favoritesReadOnly)return;var a=StudioStyle.Sample(StudioTarget());if(a.Kind==AnnotationKind.ImageLayer){SetStatus("Lớp ảnh được lưu trong dự án, không đưa dữ liệu ảnh vào mẫu công cụ.");return;}string id=StudioStyle.Signature(a);var list=_favorites.ToList();if(list.Any(f=>f.Id==id))list.RemoveAll(f=>f.Id==id);else list.Add(new(id,a.Kind.ToString(),a));StyleFavoriteStore.Save(App.DataRoot,list);_favorites=list;}

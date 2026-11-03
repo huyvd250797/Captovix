@@ -41,7 +41,7 @@ public partial class MainWindow
         ChangeSelected(a=>{if(a.Kind is AnnotationKind.Blur or AnnotationKind.Pixelate)a.EffectSize=strength;});Surface.Refresh();
     }
     private void ApplyPreset_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(PresetPicker.SelectedItem is not AnnotationPreset preset)return;
         Surface.InkColor=preset.Color;Surface.StrokeSize=preset.Stroke;Surface.TextSize=preset.FontSize;Surface.EffectSize=preset.EffectSize;Surface.ShapeDefaults=preset.ToStyle();if(preset.Shape is {} kind)Surface.ShapeKind=kind;
         if(preset.Focus is {} focus){preset.Apply(Surface.FocusDefaultsFor(focus.Kind));}
@@ -51,7 +51,7 @@ public partial class MainWindow
         Surface.Refresh();SyncProperties();SetStatus($"Đã áp dụng preset {preset.Name}.");
     }
     private void SavePreset_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_presetsUnavailable)return;
         try{
             var style=Surface.Selected is {} target&&(TextStudio.IsText(target.Kind)||FocusStudio.Supports(target.Kind))?target.Copy():Surface.Selected==null&&CurrentFocusKind() is {} fk&&FocusStudio.Supports(fk)?Surface.FocusDefaultsFor(fk).Copy():Surface.Selected==null&&Surface.Tool is EditorTool.Text or EditorTool.Callout or EditorTool.Step?Surface.TextDefaultsFor(CurrentTextKind()).Copy():Surface.ShapeDefaults.Copy();if(Surface.Selected==null&&CurrentFocusKind() is {} currentEffect)style.Kind=currentEffect;style.Color=Surface.InkColor;style.Stroke=Surface.StrokeSize;style.FontSize=Surface.TextSize;style.EffectSize=Surface.EffectSize;
@@ -62,7 +62,7 @@ public partial class MainWindow
         }catch(Exception ex){SetStatus("Chưa lưu preset: "+ex.Message);}
     }
     private void DeletePreset_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_presetsUnavailable||PresetPicker.SelectedItem is not AnnotationPreset preset)return;
         if(!_customPresets.Contains(preset)){SetStatus("Preset có sẵn được giữ. Chọn một preset riêng để xóa.");return;}
         try{
@@ -71,7 +71,7 @@ public partial class MainWindow
         }catch(Exception ex){SetStatus("Chưa xóa preset: "+ex.Message);}
     }
     private void Align_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_session==null||Surface.SelectedIds.Count==0||sender is not Button {Tag:string tag})return;
         var ids=Surface.SelectedIds.ToHashSet();_session.Commit();
         _session.Change(d=>AnnotationEditing.Align(d,ids,Enum.Parse<AnnotationAlignment>(tag),EditorRenderer.Box));

@@ -48,13 +48,13 @@ public partial class MainWindow
         SelectTool(EditorTool.Select);Surface.SelectIds(ids,primary);SyncProperties();
     }
     private void LayerToggle_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_session==null||sender is not Button {CommandParameter:string id,Tag:string command}||Surface.IsInteracting)return;
         EndInlineText(true);var a=_session.Document.Annotations.FirstOrDefault(a=>a.Id==id);if(a==null)return;bool next=command=="Lock"?!a.Locked:!a.Visible;
         _session.Commit();_session.Change(d=>{if(command=="Lock")ObjectControl.Lock(d,[id],next);else ObjectControl.Show(d,[id],next);});Surface.Refresh();SyncProperties();e.Handled=true;
     }
     private void RenameLayer_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_session==null||Surface.Selected is not {} a||Surface.IsInteracting)return;var name=LayerName.Text;var id=a.Id;
         try{_session.Commit();_session.Change(d=>ObjectControl.Rename(d.Annotations.First(a=>a.Id==id),name));Surface.Refresh();SyncProperties();}catch(Exception ex){LayerMessage.Text=ex.Message;}
     }
@@ -81,6 +81,6 @@ public partial class MainWindow
             var ids=Surface.SelectedIds.ToArray();EndInlineText(true);_session.Commit();_session.Change(d=>{ObjectPrecision.ApplyFrame(d,ids,x,y,w,h,angle,EditorRenderer.GeometryBox,EditorRenderer.LocalBox);d.Validate(d.OriginalWidth,d.OriginalHeight,d.SourceHash);});Surface.Refresh();SyncProperties();return true;
         }catch(Exception ex){Surface.Refresh();SyncProperties();ObjectFrameError.Text=ex.Message;return false;}
     }
-    private void ApplyObjectFrame_Click(object sender,RoutedEventArgs e)=>ApplyObjectFrame();
+    private void ApplyObjectFrame_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ApplyObjectFrame();}
     private void ObjectField_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Enter){ApplyObjectFrame();e.Handled=true;}else if(e.Key==Key.Escape){SyncProperties();e.Handled=true;}}
 }

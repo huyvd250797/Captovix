@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup Condition="'$(UseWPF)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)WindowsLicenseFixture.cs" Link="WindowsLicenseFixture.cs" />
+  </ItemGroup>
+</Project>

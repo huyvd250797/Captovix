@@ -35,7 +35,7 @@ public partial class MainWindow
         }catch(Exception ex){SetStatus("Chưa áp dụng: "+ex.Message);}
     }
     private void AppearanceAction_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(sender is not Button {Tag:string tag})return;
         if(tag=="ResetAll"){
             if(MessageBox.Show(this,"Đặt lại xoay/lật, kích thước và kiểu khung? Chú thích và crop vẫn giữ nguyên.","Đặt lại trình bày ảnh",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
@@ -54,15 +54,15 @@ public partial class MainWindow
         var l=Surface.Layout!;double ratio=(double)l.ImageWidth/l.ImageHeight;_syncImage=true;
         try{if(ReferenceEquals(sender,ResizeW))ResizeH.Text=Math.Clamp(Math.Round(n/ratio),1,32768).ToString(CultureInfo.InvariantCulture);else ResizeW.Text=Math.Clamp(Math.Round(n*ratio),1,32768).ToString(CultureInfo.InvariantCulture);}finally{_syncImage=false;}
     }
-    private void ApplyResize_Click(object sender,RoutedEventArgs e)=>ApplyAppearance(s=>{s.ResizeWidth=ImageNumber(ResizeW,1,32768);s.ResizeHeight=ImageNumber(ResizeH,1,32768);});
-    private void ApplyCanvas_Click(object sender,RoutedEventArgs e)=>ApplyAppearance(s=>{s.CanvasWidth=CustomCanvas.IsChecked==true?ImageNumber(CanvasW,1,32768):0;s.CanvasHeight=CustomCanvas.IsChecked==true?ImageNumber(CanvasH,1,32768):0;s.Anchor=Math.Clamp(CanvasAnchor.SelectedIndex,0,8);});
-    private void ApplyFrame_Click(object sender,RoutedEventArgs e)=>ApplyAppearance(s=>{
+    private void ApplyResize_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ApplyAppearance(s=>{s.ResizeWidth=ImageNumber(ResizeW,1,32768);s.ResizeHeight=ImageNumber(ResizeH,1,32768);});}
+    private void ApplyCanvas_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ApplyAppearance(s=>{s.CanvasWidth=CustomCanvas.IsChecked==true?ImageNumber(CanvasW,1,32768):0;s.CanvasHeight=CustomCanvas.IsChecked==true?ImageNumber(CanvasH,1,32768):0;s.Anchor=Math.Clamp(CanvasAnchor.SelectedIndex,0,8);});}
+    private void ApplyFrame_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ApplyAppearance(s=>{
         s.Padding=ImageNumber(FramePadding,0,512);s.BorderWidth=ImageNumber(FrameBorder,0,128);s.BorderColor=FrameBorderColor.Text.Trim().ToUpperInvariant();
         s.Transparent=TransparentBackground.IsChecked==true;s.BackgroundColor=FrameBackground.Text.Trim().ToUpperInvariant();
         s.Shadow=ShadowEnabled.IsChecked==true;s.ShadowBlur=ImageNumber(ShadowBlur,0,80);s.ShadowX=ImageNumber(ShadowX,-80,80);s.ShadowY=ImageNumber(ShadowY,-80,80);s.ShadowOpacity=ImageNumber(ShadowOpacity,0,100);
-    });
+    });}
     private void FramePreset_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(sender is not Button {Tag:string tag})return;
         ApplyAppearance(s=>{s.Padding=tag=="Clear"?0:32;s.BorderWidth=tag=="Clear"?0:1;s.BorderColor=tag=="Dark"?"#48566A":"#DCE3E9";s.Transparent=tag=="Clear";s.BackgroundColor=tag=="Dark"?"#182332":"#F4F7FA";s.Shadow=tag!="Clear";s.ShadowBlur=16;s.ShadowX=8;s.ShadowY=12;s.ShadowOpacity=25;});
     }

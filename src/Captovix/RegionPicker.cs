@@ -20,7 +20,7 @@ public sealed class RegionPicker : Window
         public readonly ElementSuggestion Suggestion=new();
         private readonly ElementProbeClient _probe=new();
         private readonly CancellationTokenSource _cancel=new();
-        private readonly DispatcherTimer _timer=new(){Interval=TimeSpan.FromMilliseconds(120)};
+        private readonly DispatcherTimer _timer=new(){Interval=TimeSpan.FromMilliseconds(40)};
         public PixelRect Current,Before;
         public CaptureHandle Handle;
         public Native.POINT Start;
@@ -28,7 +28,8 @@ public sealed class RegionPicker : Window
         private CaptureGesture? _gesture;
         private bool _querying,_disposed;
         private int _x=int.MinValue,_y=int.MinValue;
-        private long _stableSince;
+        private long _stableSince,_lastQuery,_lastWindows;
+        private List<WindowInfo> _windows=[];
         private nint _target,_lockedTarget;
         private PixelRect _targetBounds,_lockedBounds;
         private string _status="Kéo chọn vùng · Esc hủy";
@@ -41,14 +42,21 @@ public sealed class RegionPicker : Window
         public void Cycle(int wheel){if(Locked||Dragging||!Smart)return;Suggestion.Cycle(wheel);Current=Suggestion.Current?.Bounds??default;Draw();}
         private async Task Poll()
         {
-            if(_disposed||_querying||Locked||Dragging||!Smart||!Native.GetCursorPos(out var p))return;
+            if(_disposed||Locked||Dragging||!Smart||!Native.GetCursorPos(out var p))return;
             if(Windows.Any(w=>w.OverToolbar(p)))return;
             long now=Environment.TickCount64;
-            if(Math.Abs((long)p.X-_x)>3||Math.Abs((long)p.Y-_y)>3){_x=p.X;_y=p.Y;_stableSince=now;return;}
-            if(now-_stableSince<120)return;
+            if(Math.Abs((long)p.X-_x)>3||Math.Abs((long)p.Y-_y)>3){_x=p.X;_y=p.Y;_stableSince=now;}
+            // Reuse the known hierarchy immediately while the pointer stays in its window.
+            if(_target!=0&&ElementSelection.Contains(_targetBounds,p.X,p.Y)&&Suggestion.Candidates.Length>0){
+                var cached=Suggestion.Candidates.Where(c=>ElementSelection.Contains(c.Bounds,p.X,p.Y)).ToArray();
+                if(cached.Length>0&&Suggestion.Offer(cached,p.X,p.Y,16)){var rect=Suggestion.Current!.Bounds;if(rect!=Current){Current=rect;Draw();}}
+            }
+            if(_querying||now-_stableSince<65||now-_lastQuery<180)return;
+            _lastQuery=now;
             _querying=true;
             try{
-                var target=Native.Windows().FirstOrDefault(w=>Native.GetWindowRect(w.Handle,out var r)&&ElementSelection.Contains(r.Pixels,p.X,p.Y));
+                if(now-_lastWindows>300){_windows=Native.Windows();_lastWindows=now;}
+                var target=_windows.FirstOrDefault(w=>Native.GetWindowRect(w.Handle,out var r)&&ElementSelection.Contains(r.Pixels,p.X,p.Y));
                 if(target==null){Suggestion.Clear();Current=default;_status="Không có khối · Kéo chọn vùng";Draw();return;}
                 if(!Native.GetWindowRect(target.Handle,out var bounds))return;
                 if(_target!=target.Handle||_targetBounds!=bounds.Pixels){Suggestion.Clear();Current=default;_target=target.Handle;_targetBounds=bounds.Pixels;Draw();}
@@ -94,6 +102,7 @@ public sealed class RegionPicker : Window
     private readonly DisplayInfo _display;
     private readonly Canvas _canvas=new();
     private readonly CaptureShade _shade=new();
+    private readonly Rectangle _contrast=new(){Stroke=Brushes.Black,StrokeThickness=3.5,Fill=Brushes.Transparent,IsHitTestVisible=false,Visibility=Visibility.Collapsed};
     private readonly Rectangle _selection=new(){Stroke=Brushes.White,StrokeThickness=1.5,Fill=Brushes.Transparent,Visibility=Visibility.Collapsed,IsHitTestVisible=false};
     private readonly Border _toolbar;
     private readonly TextBlock _label=new(){Foreground=Brushes.White,FontSize=11,MaxWidth=175,TextTrimming=TextTrimming.CharacterEllipsis,VerticalAlignment=VerticalAlignment.Center,Margin=new(4,0,7,0)};
@@ -115,7 +124,7 @@ public sealed class RegionPicker : Window
     {
         _display=display;_session=session;
         WindowStyle=WindowStyle.None;ResizeMode=ResizeMode.NoResize;AllowsTransparency=true;Background=Brushes.Transparent;Topmost=true;ShowInTaskbar=false;Cursor=Cursors.Cross;
-        Content=_canvas;_canvas.Children.Add(_shade);_canvas.Children.Add(_selection);
+        Content=_canvas;_canvas.Children.Add(_shade);_canvas.Children.Add(_contrast);_canvas.Children.Add(_selection);
         _selection.StrokeDashArray=new DoubleCollection{4,3};_selection.BeginAnimation(Shape.StrokeDashOffsetProperty,new DoubleAnimation(0,-14,TimeSpan.FromSeconds(2.4)){RepeatBehavior=RepeatBehavior.Forever});
         for(int i=0;i<8;i++){var handle=new Ellipse{Width=7,Height=7,Fill=Brushes.White,Stroke=Brushes.MediumPurple,StrokeThickness=1,IsHitTestVisible=false,Visibility=Visibility.Collapsed};_handles.Add(handle);_canvas.Children.Add(handle);}
         var actions=new WrapPanel{Orientation=Orientation.Horizontal};
@@ -132,7 +141,7 @@ public sealed class RegionPicker : Window
         SourceInitialized+=(_,_)=>Position();Loaded+=(_,_)=>{Position();Focus();};
         PreviewKeyDown+=KeyDownOverlay;
         MouseLeftButtonDown+=(_,e)=>{if(IsToolbarSource(e.OriginalSource as DependencyObject))return;Native.GetCursorPos(out var p);session.Begin(p,Tolerance);CaptureMouse();e.Handled=true;};
-        MouseMove+=(_,_)=>{Native.GetCursorPos(out var p);if(session.Dragging){session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);return;}Cursor=CursorAt(p);if(!session.Locked)session.Draw();};
+        MouseMove+=(_,_)=>{Native.GetCursorPos(out var p);if(session.Dragging){session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);return;}Cursor=CursorAt(p);};
         MouseLeftButtonUp+=(_,e)=>{if(!session.Dragging)return;Native.GetCursorPos(out var p);session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);ReleaseMouseCapture();session.End();e.Handled=true;};
         MouseWheel+=(_,e)=>{session.Cycle(e.Delta);e.Handled=true;};MouseRightButtonDown+=(_,_)=>session.Close(null);
     }
@@ -160,10 +169,10 @@ public sealed class RegionPicker : Window
         if(_placing||!IsLoaded)return;_placing=true;
         try{
             var s=_session;var r=s.Current.Intersect(_display.Bounds);var valid=CaptureSelection.Valid(s.Current);
-            _selection.Visibility=r.IsEmpty?Visibility.Collapsed:Visibility.Visible;
+            _contrast.Visibility=_selection.Visibility=r.IsEmpty?Visibility.Collapsed:Visibility.Visible;
             foreach(var h in _handles)h.Visibility=Visibility.Collapsed;
             if(r.IsEmpty)_shade.Reveal(null);else{
-                var a=PointFromScreen(new(r.X,r.Y));var b=PointFromScreen(new(r.Right,r.Bottom));_shade.Reveal(new Rect(a,b));Canvas.SetLeft(_selection,a.X);Canvas.SetTop(_selection,a.Y);_selection.Width=Math.Max(0,b.X-a.X);_selection.Height=Math.Max(0,b.Y-a.Y);
+                var a=PointFromScreen(new(r.X,r.Y));var b=PointFromScreen(new(r.Right,r.Bottom));_shade.Reveal(new Rect(a,b));Canvas.SetLeft(_selection,a.X);Canvas.SetTop(_selection,a.Y);_selection.Width=Math.Max(0,b.X-a.X);_selection.Height=Math.Max(0,b.Y-a.Y);Canvas.SetLeft(_contrast,a.X);Canvas.SetTop(_contrast,a.Y);_contrast.Width=_selection.Width;_contrast.Height=_selection.Height;
                 if(s.Locked&&valid){var c=s.Current;int[] xs=[c.X,c.X+c.Width/2,c.Right,c.Right,c.Right,c.X+c.Width/2,c.X,c.X];int[] ys=[c.Y,c.Y,c.Y,c.Y+c.Height/2,c.Bottom,c.Bottom,c.Bottom,c.Y+c.Height/2];for(int i=0;i<8;i++)if(ElementSelection.Contains(_display.Bounds,xs[i],ys[i])){var p=PointFromScreen(new(xs[i],ys[i]));Canvas.SetLeft(_handles[i],p.X-3.5);Canvas.SetTop(_handles[i],p.Y-3.5);_handles[i].Visibility=Visibility.Visible;}}
             }
             Native.GetCursorPos(out var cursor);var owner=valid?s.Displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,s.Current.X+s.Current.Width/2,s.Current.Y+s.Current.Height/2)):s.Displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,cursor.X,cursor.Y));owner??=s.Displays[0];

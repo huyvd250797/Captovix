@@ -1,0 +1,28 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createHandler,verifyProof,importSigner,signReply} from '../../supabase/functions/licensing/index.ts';
+import {identity,proof,authority,request} from './helpers.mjs';
+const id=await identity();const auth=await authority();
+const env={SUPABASE_URL:'https://p.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'server-only-test-key',LICENSE_ISSUER:'test',LICENSE_SIGNING_KEY_B64:auth.b64,ADMIN_ORIGINS:'https://admin.pages.dev'};
+const rpc=async name=>name==='cvx_license_rate'?true:name==='cvx_license_admin_allowed'?false:{ready:true};
+test('valid RSA proof binds input and public-key hash',async()=>{const p=await proof(id,'trial',{key:'  CVX-KEY\r\n',recoveryCode:'\tcode\n'});const v=await verifyProof(p,'trial');assert.equal(v.input.deviceId,id.deviceId);assert.equal(v.publicHash,id.publicHash);assert.equal(v.input.key,'CVX-KEY');assert.equal(v.input.recoveryCode,'code')});
+test('wrong operation rejects cross-route reuse',async()=>assert.rejects(()=>proof(id,'trial').then(p=>verifyProof(p,'release')),/PROOF_INVALID/));
+test('altered payload rejected',async()=>{const p=await proof(id,'trial');p.payload=p.payload.replace('machine','forged')+' ';await assert.rejects(()=>verifyProof(p,'trial'),/PROOF_INVALID/)});
+test('stale timestamp rejected',async()=>assert.rejects(()=>proof(id,'trial',{},Date.now()-360000).then(p=>verifyProof(p,'trial')),/REQUEST_INVALID_OR_CLOCK/));
+test('malformed PEM/base64 signature rejected',async()=>{const p=await proof(id,'trial');p.publicKey='invalid';await assert.rejects(()=>verifyProof(p,'trial'),/PROOF_INVALID/)});
+test('small RSA key rejected',async()=>{const weak=await identity('weak',1024);await assert.rejects(()=>proof(weak,'trial').then(p=>verifyProof(p,'trial')),/PROOF_INVALID/)});
+test('invalid nonce rejected before mutation',async()=>{const p=await proof(id,'trial');p.nonce='x';await assert.rejects(()=>verifyProof(p,'trial'),/REQUEST_INVALID_OR_CLOCK/)});
+test('signer requires at least RSA3072',async()=>{const weak=await crypto.subtle.exportKey('pkcs8',id.key.privateKey);await assert.rejects(()=>importSigner(Buffer.from(weak).toString('base64')),/CONFIG_INVALID/)});
+test('signed certificate verifies over UTF8 base64 payload',async()=>{const value=await signReply(await importSigner(auth.b64),{deviceId:id.deviceId},'test');const bytes=Buffer.from(value.certificate.signature,'base64');assert(await crypto.subtle.verify({name:'RSA-PSS',saltLength:32},auth.keys.publicKey,bytes,new TextEncoder().encode(value.certificate.payload)));assert.equal(JSON.parse(Buffer.from(value.certificate.payload,'base64')).issuer,'test')});
+test('health works before configuration without opening tools',async()=>{const response=await createHandler({})(request('/health'));assert.equal(response.status,200);assert.equal((await response.json()).version,'1.29.1')});
+test('missing config fails restricted',async()=>assert.equal((await createHandler({})(request('/v1/trial',await proof(id,'trial')))).status,503));
+test('CORS denies unknown origin',async()=>assert.equal((await createHandler(env,fetch,rpc)(request('/ready',null,{Origin:'https://evil.example'}))).status,403));
+test('CORS allows only exact configured origin',async()=>{const r=await createHandler(env,fetch,rpc)(new Request('https://p.supabase.co/licensing/admin/me',{method:'OPTIONS',headers:{Origin:'https://admin.pages.dev'}}));assert.equal(r.status,204);assert.equal(r.headers.get('access-control-allow-origin'),'https://admin.pages.dev');assert.equal(r.headers.get('access-control-allow-credentials'),null)});
+test('admin route without session rejected',async()=>assert.equal((await createHandler(env,fetch,rpc)(request('/admin/licenses'))).status,401));
+test('authenticated non-admin rejected',async()=>{const fake=async()=>new Response(JSON.stringify({id:'00000000-0000-4000-8000-000000000001'}));assert.equal((await createHandler(env,fake,rpc)(request('/admin/licenses',null,{Authorization:'Bearer fake.jwt'}))).status,403)});
+test('invalid session cannot claim admin membership',async()=>{let reached=false;const h=createHandler(env,async()=>new Response('{}',{status:401}),async name=>{if(name==='cvx_license_admin_allowed')reached=true;return true});assert.equal((await h(request('/admin/me',null,{Authorization:'Bearer forged.jwt'}))).status,401);assert.equal(reached,false)});
+test('distributed quota returns 429 and Retry-After',async()=>{const r=await createHandler(env,fetch,async()=>false)(request('/v1/trial',await proof(id,'trial')));assert.equal(r.status,429);assert.equal(r.headers.get('Retry-After'),'60')});
+test('unknown errors do not expose secrets',async()=>{const r=await createHandler(env,fetch,async()=>{throw Error('server-only-test-key')})(request('/ready'));assert.equal(r.status,503);assert.equal(await r.text(),'{"code":"SERVICE_UNAVAILABLE"}')});
+test('payload actual size is bounded',async()=>{const r=await createHandler(env,fetch,rpc)(request('/v1/trial',{x:'x'.repeat(17000)}));assert.equal(r.status,413)});
+test('desktop endpoint never accepts unsigned key alone',async()=>{const r=await createHandler(env,fetch,rpc)(request('/v1/activate',{key:'CVX-ANYTHING'}));assert.equal(r.status,400)});
+
+test('Deno worker registers handler even when entry is imported',async()=>{let registered;globalThis.Deno={env:{toObject:()=>({})},serve:h=>{registered=h}};try{await import('../../supabase/functions/licensing/index.ts?deno-bootstrap-test');assert.equal(typeof registered,'function');assert.equal((await registered(request('/health'))).status,200)}finally{delete globalThis.Deno}});

@@ -13,7 +13,7 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
-    <Version>1.26.0</Version>
+    <Version>1.29.1</Version>
     <StartupObject>Captovix.Program</StartupObject>
     <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
     <PublishTrimmed>false</PublishTrimmed>
@@ -29,6 +29,8 @@
     <PackageReference Include="Tesseract" Version="5.2.0" GeneratePathProperty="true" />
     <PackageReference Include="ScreenRecorderLib" Version="7.0.1" />
     <PackageReference Include="Velopack" Version="1.2.161" />
+    <ProjectReference Include="../Licensing.Shared/Licensing.Shared.csproj" />
+    <EmbeddedResource Include="license-config.json" LogicalName="Captovix.license-config.json" />
     <None Update="update-source.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="PublishOcrNative" AfterTargets="Publish">

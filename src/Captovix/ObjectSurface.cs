@@ -40,7 +40,15 @@ public sealed partial class EditorSurface
     private void DrawSnapGuides(DrawingContext dc,PixelRect view)
     {
         var l=Layout!;var matrix=EditorRenderer.LayoutMatrix(l);matrix.Invert();dc.PushTransform(new MatrixTransform(matrix));var pen=new Pen(Brushes.MediumVioletRed,1/Zoom){DashStyle=DashStyles.Dash};
-        if(_guideX is {} x)dc.DrawLine(pen,new(x,0),new(x,l.Height));if(_guideY is {} y)dc.DrawLine(pen,new(0,y),new(l.Width,y));dc.Pop();
+        if(_guideX is {} x)dc.DrawLine(pen,new(x,0),new(x,l.Height));if(_guideY is {} y)dc.DrawLine(pen,new(0,y),new(l.Width,y));
+        if(_action==DragAction.Move&&SnapEnabled&&_selected.Count>0){
+            var box=ObjectPrecision.Map(SelectionBox(),l);
+            var horizontal=_snapOutputPeers.Where(b=>b.Bottom>box.Y&&b.Y<box.Bottom&&(b.Right<=box.X||b.X>=box.Right)).OrderBy(b=>Math.Min(Math.Abs(box.X-b.Right),Math.Abs(b.X-box.Right))).FirstOrDefault();
+            if(horizontal.Width>0){double from=horizontal.Right<=box.X?horizontal.Right:box.Right,to=horizontal.Right<=box.X?box.X:horizontal.X;Spacing(new(from,box.CenterY),new(to,box.CenterY));}
+            var vertical=_snapOutputPeers.Where(b=>b.Right>box.X&&b.X<box.Right&&(b.Bottom<=box.Y||b.Y>=box.Bottom)).OrderBy(b=>Math.Min(Math.Abs(box.Y-b.Bottom),Math.Abs(b.Y-box.Bottom))).FirstOrDefault();
+            if(vertical.Height>0){double from=vertical.Bottom<=box.Y?vertical.Bottom:box.Bottom,to=vertical.Bottom<=box.Y?box.Y:vertical.Y;Spacing(new(box.CenterX,from),new(box.CenterX,to));}
+            void Spacing(Point from,Point to){double distance=(to-from).Length;if(distance<1)return;dc.DrawLine(pen,from,to);var text=new FormattedText($"{distance:0} px",System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),11/Zoom,Brushes.MediumVioletRed,1);var at=new Point((from.X+to.X)/2+3/Zoom,(from.Y+to.Y)/2-14/Zoom);dc.DrawRoundedRectangle(Brushes.White,null,new Rect(at.X-2/Zoom,at.Y-1/Zoom,text.Width+4/Zoom,text.Height+2/Zoom),2/Zoom,2/Zoom);dc.DrawText(text,at);}
+        }dc.Pop();
     }
 
     private void PrepareObjectGesture()

@@ -15,7 +15,7 @@ public partial class MainWindow
     }
     private void OpenHistoryItem(MediaItem item){if(_busy||!FlushEdits())return;_historyPin=item;_libraryFilter=0;_collectionFilter=_tagFilter="";SearchBox.Clear();RebuildRecent();RefreshLibrary();MediaList.SelectedItems.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);}
     private void Archive_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_busy||!FlushEdits())return;var archive=new ArchiveWindow(_store,items=>{if(DeleteMediaBatch(items))RebuildRecent();},items=>OpenBatchExport(items)){Owner=this};archive.OpenItem=OpenHistoryItem;archive.ShowDialog();foreach(var item in _recentItems)_store.RequestThumbnail(item);
     }
 }

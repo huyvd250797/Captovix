@@ -4,7 +4,7 @@ using Microsoft.Win32;
 namespace Captovix;
 public partial class MainWindow
 {
-    private void SearchLibrary_Click(object sender,RoutedEventArgs e){LibrarySearchPopup.IsOpen=!LibrarySearchPopup.IsOpen;if(LibrarySearchPopup.IsOpen)Dispatcher.BeginInvoke(()=>SearchBox.Focus());}
+    private void SearchLibrary_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;LibrarySearchPopup.IsOpen=!LibrarySearchPopup.IsOpen;if(LibrarySearchPopup.IsOpen)Dispatcher.BeginInvoke(()=>SearchBox.Focus());}
     private void ChooseMediaFolder_Click(object sender,RoutedEventArgs e)
     {
         if(_busy||_updateApplying)return;

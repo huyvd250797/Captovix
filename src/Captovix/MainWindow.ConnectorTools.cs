@@ -55,5 +55,5 @@ public partial class MainWindow
         EndInlineText(true);Surface.SetConnectorRoute((ConnectorRoute)ConnectorRoutePicker.SelectedIndex);SyncProperties();
     }
     private void ConnectorAttach_Changed(object sender,RoutedEventArgs e){if(_editorReady&&!_syncProperties)Surface.ConnectToShapes=ConnectorAttachToggle.IsChecked==true;}
-    private void DetachConnector_Click(object sender,RoutedEventArgs e)=>Surface.DetachConnectors();
+    private void DetachConnector_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;Surface.DetachConnectors();}
 }

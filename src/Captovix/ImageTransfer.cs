@@ -6,6 +6,7 @@ namespace Captovix;
 
 public static class ImageTransfer
 {
+    public static Func<bool> AuthorizeCopy {get;set;}=()=>true;
     public static byte[] Bgra(BitmapSource source)
     {
         var bitmap=source.Format==PixelFormats.Bgra32?source:new FormatConvertedBitmap(source,PixelFormats.Bgra32,null,0);
@@ -22,6 +23,7 @@ public static class ImageTransfer
     }
     public static void Copy(BitmapSource source)
     {
+        if(!AuthorizeCopy())throw new InvalidOperationException("Copy ảnh đang khóa theo trạng thái bản quyền.");
         // PNG is the lossless, alpha-preserving representation. Bitmap remains
         // available for consumers that do not understand the registered PNG format.
         var normalized=Bitmap(source.PixelWidth,source.PixelHeight,Bgra(source));

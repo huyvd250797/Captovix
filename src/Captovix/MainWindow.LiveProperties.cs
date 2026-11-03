@@ -50,7 +50,7 @@ public partial class MainWindow
     {
         try{var c=_workflow.Clone();c.PhotoStyle.BorderEnabled=CaptureBorderEnabled.IsChecked==true;c.PhotoStyle.BorderWidth=ImageNumber(CaptureBorderWidth,1,128);SaveWorkflow(c);SyncCaptureBorder();WorkflowStatus.Text="Đã lưu kiểu chụp; ảnh mới nhận viền và có thể sửa lại trong Editor.";}catch(Exception e){WorkflowStatus.Text=e.Message;}
     }
-    private void CaptureBorderColor_Click(object sender,RoutedEventArgs e)=>OpenPaint(CaptureBorderColor,color=>{
+    private void CaptureBorderColor_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;OpenPaint(CaptureBorderColor,color=>{
         if(_workflowReadOnly)return;var c=_workflow.Clone();c.PhotoStyle.BorderEnabled=color!=null;if(color!=null)c.PhotoStyle.BorderColor=color;try{SaveWorkflow(c);SyncCaptureBorder();}catch(Exception ex){WorkflowStatus.Text=ex.Message;}
-    });
+    });}
 }

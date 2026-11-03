@@ -1,5 +1,6 @@
 param(
     [switch]$SkipInstaller,
+    [switch]$AllowUnconfiguredLicensing,
     [string]$UpdateSource = '',
     [ValidateSet('GitHub','Https')][string]$UpdateKind = 'GitHub',
     [string]$PreviousReleases = ''
@@ -12,7 +13,13 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) { throw 'Install .N
 [xml]$project = Get-Content src/Captovix/Captovix.csproj
 $version = [string]$project.Project.PropertyGroup.Version
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Use stable three-component version in Captovix.csproj.' }
-$artifactRoot = Join-Path $projectRoot 'artifacts'
+$licenseConfig = Get-Content src/Captovix/license-config.json -Raw | ConvertFrom-Json
+if (-not $AllowUnconfiguredLicensing -and (-not $licenseConfig.apiUrl -or -not $licenseConfig.publicKeyPem)) { throw 'Configure src/Captovix/license-config.json before a production release. -AllowUnconfiguredLicensing is for foundation/review builds; only manual region capture will work.' }
+if (-not $AllowUnconfiguredLicensing) {
+    dotnet run --project tools/LicenseBootstrap -- --validate src/Captovix/license-config.json
+    if ($LASTEXITCODE -ne 0) { throw 'Invalid public license configuration.' }
+}
+$artifactRoot = Join-Path $projectRoot 'artifacts' 
 $payload = Join-Path $artifactRoot 'win-x64'
 $releases = Join-Path $artifactRoot 'releases'
 foreach ($folder in @($payload,$releases)) {
@@ -82,6 +89,9 @@ if (Test-Path $releaseZip) { Remove-Item $releaseZip }
 $releaseAssets = @(
     Get-ChildItem $releases -File | Where-Object { $_.Name -like '*.nupkg' -or $_.Name -in @('HuyVo.Captovix-win-Setup.exe','RELEASES','assets.win.json','releases.win.json') } | ForEach-Object { $_.FullName }
 )
+$releaseAssets += (Join-Path $projectRoot 'scripts/README-PUBLISH.txt')
 Compress-Archive -Path $releaseAssets -DestinationPath $releaseZip -CompressionLevel Optimal
+python scripts/Package-Source.py
+if ($LASTEXITCODE -ne 0) { throw 'Source packaging refused or failed.' }
 Get-ChildItem $artifactRoot -File | Where-Object Name -ne 'CoreSetup.exe' | ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 } | Format-Table
 Write-Host 'Build complete. Windows desktop install/update/capture validation is required before broad rollout.'

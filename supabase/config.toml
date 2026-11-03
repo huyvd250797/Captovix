@@ -1,0 +1,6 @@
+project_id = "captovix-licensing"
+
+[functions.licensing]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/licensing/index.ts"

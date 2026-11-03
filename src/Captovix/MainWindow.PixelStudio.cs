@@ -7,12 +7,12 @@ namespace Captovix;
 public partial class MainWindow
 {
     private string _pixelFill="#008B92";
-    private void PixelTool_Click(object sender,RoutedEventArgs e){var tag=sender is Button b?b.Tag:sender is MenuItem m?m.Tag:null;if(tag is string text&&Enum.TryParse<EditorTool>(text,out var tool)){if(Surface.Tool!=tool)Surface.ClearPixelRegion();SelectTool(tool);Surface.Focus();}}
+    private void PixelTool_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;var tag=sender is Button b?b.Tag:sender is MenuItem m?m.Tag:null;if(tag is string text&&Enum.TryParse<EditorTool>(text,out var tool)){if(Surface.Tool!=tool)Surface.ClearPixelRegion();SelectTool(tool);Surface.Focus();}}
     private void SyncPixelStudio(){InkControlsPanel.Visibility=Surface.IsPixelTool||Surface.Selected?.Kind==AnnotationKind.ImageLayer?Visibility.Collapsed:Visibility.Visible;PixelPanel.Visibility=Surface.IsPixelTool?Visibility.Visible:Visibility.Collapsed;PixelSummary.Text=Surface.PixelRegion is {} r?$"{(r.Kind==PixelSelectionKind.Rectangle?"Chữ nhật":r.Kind==PixelSelectionKind.Ellipse?"Ellipse":"Lasso")} · {r.Bounds.Width} × {r.Bounds.Height} px · ({r.Bounds.X}, {r.Bounds.Y})":"Kéo trên ảnh để chọn vùng pixel.";PaintButton(PixelFillPaint,"Màu tô",_pixelFill);}
-    private void PixelFillPaint_Click(object sender,RoutedEventArgs e)=>OpenPaint(PixelFillPaint,c=>{if(c!=null){_pixelFill=c;SyncPixelStudio();}},false);
-    private void PixelAction_Click(object sender,RoutedEventArgs e){var tag=sender is Button b?b.Tag:sender is MenuItem m?m.Tag:null;if(tag is string action)PixelAction(action);}
+    private void PixelFillPaint_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;OpenPaint(PixelFillPaint,c=>{if(c!=null){_pixelFill=c;SyncPixelStudio();}},false);}
+    private void PixelAction_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;var tag=sender is Button b?b.Tag:sender is MenuItem m?m.Tag:null;if(tag is string action)PixelAction(action);}
     private void PixelAction(string action)
-    {
+    {if(!RequireLicense())return;
         if(_session==null||Surface.Original==null||_busy)return;
         try{
             FlushAutoProperties();if(action=="Paste"){PastePixelImage();return;}if(action=="Clear"){Surface.ClearPixelRegion();return;}
@@ -28,7 +28,7 @@ public partial class MainWindow
         }catch(Exception ex){App.Log(ex);SetStatus("Chưa thực hiện chỉnh pixel: "+ex.Message);}
     }
     private void PastePixelImage()
-    {
+    {if(!RequireLicense())return;
         if(_session==null)return;if((long)_session.Document.OriginalWidth*_session.Document.OriginalHeight>PixelStudio.MaxPixels)throw new InvalidDataException("Dán lớp ảnh hỗ trợ canvas tối đa 40 triệu pixel.");BitmapSource? image=null;var value=Clipboard.GetDataObject()?.GetData("PNG");
         if(value is Stream stream){if(stream.Length>72_000_000)throw new InvalidDataException("PNG clipboard quá lớn.");if(stream.CanSeek)stream.Position=0;using var bytes=new MemoryStream();stream.CopyTo(bytes);image=RasterPixels.Decode(Convert.ToBase64String(bytes.ToArray()));}
         image??=Clipboard.GetImage();if(image==null){SetStatus("Clipboard chưa có ảnh. Copy vùng pixel hoặc ảnh từ ứng dụng khác trước.");return;}

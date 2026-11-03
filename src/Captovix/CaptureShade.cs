@@ -4,7 +4,7 @@ namespace Captovix;
 internal sealed class CaptureShade:FrameworkElement
 {
     public Rect? Hole {get;set;}
-    public void Reveal(Rect? rect){Hole=rect;InvalidateVisual();}
+    public void Reveal(Rect? rect){if(Hole==rect)return;Hole=rect;InvalidateVisual();}
     protected override void OnRender(DrawingContext dc)
     {
         dc.DrawRectangle(Brushes.Transparent,null,new Rect(0,0,ActualWidth,ActualHeight));

@@ -52,7 +52,7 @@ public partial class MainWindow
             Surface.Refresh();SyncProperties();SetStatus(Surface.SelectedIds.Count>0?"Đã cập nhật kiểu đối tượng. Ctrl+Z để hoàn tác.":"Đã đặt kiểu cho nét tiếp theo.");return true;
         }catch(Exception ex){ShapeStyleError.Text=ex.Message;return false;}
     }
-    private void ApplyShapeStyle_Click(object sender,RoutedEventArgs e)=>ApplyShapeStyle();
+    private void ApplyShapeStyle_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ApplyShapeStyle();}
     private void ShapeField_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Enter){ApplyShapeStyle();e.Handled=true;}else if(e.Key==Key.Escape){SyncProperties();e.Handled=true;}}
-    private void FillSwatch_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:string color}){ShapeFillHex.Text=color;ShapeFillEnabled.IsChecked=true;ApplyShapeStyle();}}
+    private void FillSwatch_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;if(sender is Button {Tag:string color}){ShapeFillHex.Text=color;ShapeFillEnabled.IsChecked=true;ApplyShapeStyle();}}
 }

@@ -118,6 +118,7 @@ public partial class MainWindow
     private void Assist_Click(object sender,RoutedEventArgs e)=>OpenOcr(true);
     private void OpenOcr(bool assist)
     {
+        if(!RequireLicense())return;
         if(_busy||_updateApplying||_session==null||!PrepareCropForExport()||!_captureGate.TryEnter())return;
         Surface.CancelInteraction();_session.Commit();
         SetBusy(true);

@@ -6,7 +6,7 @@ namespace Captovix;
 public partial class MainWindow
 {
     private async void AdvancedCapture_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_busy||_updateApplying||!_captureGate.TryEnter())return;SetBusy(true);_settingsDialog?.Close();
         try{
             Surface.CancelInteraction();if(!FlushEdits())return;_captureCancellation=new();var token=_captureCancellation.Token;RegisterCaptureEscape();RefreshSources();var mode=(sender as MenuItem)?.Tag?.ToString();PixelRect region;

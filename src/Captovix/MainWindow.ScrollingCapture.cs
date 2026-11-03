@@ -9,9 +9,9 @@ using Microsoft.Win32;
 namespace Captovix;
 public partial class MainWindow
 {
-    private void ScrollCapture_Click(object sender,RoutedEventArgs e)=>_=ScrollCaptureAsync();
+    private void ScrollCapture_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;_=ScrollCaptureAsync();}
     private async Task ScrollCaptureAsync(PixelRect? presetRegion=null,bool horizontal=false)
-    {
+    {if(!RequireLicense())return;
         if(_busy||_updateApplying||!_captureGate.TryEnter())return;
         var previous=WindowState;ScrollSession? session=null;SetBusy(true);_settingsDialog?.Close();
         try{
@@ -34,7 +34,7 @@ public partial class MainWindow
         var item=new MediaItem{FilePath=path,Title="Ảnh cuộn "+DateTime.Now.ToString("dd-MM HH:mm:ss"),Width=image.PixelWidth,Height=image.PixelHeight,Source=$"{(session.Horizontal?"Cuộn ngang":"Cuộn dọc")} · {session.Count} khung · pixel gốc SDR8 · nguồn: {session.Folder}"};_store.Add(item);SearchBox.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);
     }
     private void RecoverScroll_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_busy||_updateApplying)return;Surface.CancelInteraction();if(!FlushEdits()||!_captureGate.TryEnter())return;SetBusy(true);_settingsDialog?.Close();
         try{var picker=new OpenFileDialog{Title="Mở session.json của phiên chụp cuộn",Filter="Phiên chụp cuộn|session.json",InitialDirectory=Directory.Exists(ScrollSession.Root)?ScrollSession.Root:App.DataRoot};if(picker.ShowDialog(this)!=true)return;var session=ScrollSession.Open(picker.FileName);var preview=new ScrollPreviewWindow(session){Owner=this};if(preview.ShowDialog()==true&&preview.Result is {} image)SaveScrollResult(session,image);}catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không khôi phục được phiên");}finally{SetBusy(false);_captureGate.Exit();if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);}
     }

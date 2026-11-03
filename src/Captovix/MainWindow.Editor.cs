@@ -60,7 +60,7 @@ public partial class MainWindow
         UndoButton.IsEnabled=_session?.CanUndo==true;RedoButton.IsEnabled=_session?.CanRedo==true;
         Surface.Refresh();SyncProperties();_saveTimer.Stop();_saveTimer.Start();
     }
-    private bool FlushEdits(bool report=true)
+    private bool FlushEditsCore(bool report=true)
     {
         FlushAutoProperties();
         EndInlineText(true);_textTimer.Stop();_session?.Commit();_saveTimer.Stop();
@@ -112,7 +112,7 @@ public partial class MainWindow
             EditorTool.Blur or EditorTool.Pixelate=>"Kéo vùng cần xử lý • Khi kéo vùng tạm che kín; thả chuột để áp dụng • Chỉnh mức xử lý bên phải.",
             EditorTool.Cover=>"Kéo vùng để che kín bằng màu đang chọn • Xuất PNG/JPEG để chia sẻ ảnh đã che.",_=>"Kéo vùng trống để vẽ • Bấm đối tượng để sửa • Alt+kéo vẽ chồng."};
     }
-    private void Tool_Click(object sender,RoutedEventArgs e){if(sender is Button {Tag:string tool}){_session?.Commit();SelectTool(Enum.Parse<EditorTool>(tool));Surface.Focus();}}
+    private void Tool_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;if(sender is Button {Tag:string tool}){_session?.Commit();SelectTool(Enum.Parse<EditorTool>(tool));Surface.Focus();}}
     private void SyncProperties()
     {
         if(!_editorReady||_syncProperties||_autoApplying)return;_syncProperties=true;
@@ -136,7 +136,7 @@ public partial class MainWindow
     }
     private static double PickedValue(ComboBox picker,double fallback)=>picker.SelectedItem is ComboBoxItem i&&double.TryParse(i.Tag?.ToString(),NumberStyles.Float,CultureInfo.InvariantCulture,out var v)?v:fallback;
     private void Color_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(sender is not Button {Tag:string color})return;Surface.InkColor=color;
         ChangeSelected(a=>{a.Color=color;if(a.Kind==AnnotationKind.Text)a.TextColor=color;});
         if(Surface.Tool==EditorTool.Text&&Surface.SelectedIds.Count==0)Surface.TextDefaults.TextColor=color;
@@ -163,19 +163,19 @@ public partial class MainWindow
     private void StepNumber_Commit(object sender,KeyboardFocusChangedEventArgs e)=>CommitStep();
     private void StepNumber_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Enter){CommitStep();Surface.Focus();e.Handled=true;}}
     private void CommitStep(){if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Step} a)return;if(int.TryParse(StepNumber.Text,out var n)&&n>=1&&n<=9999){var id=a.Id;_session.Change(d=>d.Annotations.First(x=>x.Id==id).Number=n);}SyncProperties();}
-    private void DeleteAnnotation_Click(object sender,RoutedEventArgs e)=>Surface.DeleteSelected();
-    private void RestoreCrop_Click(object sender,RoutedEventArgs e){if(_session==null)return;SelectTool(EditorTool.Select);try{_=new ImageLayout(new PixelRect(0,0,_session.Document.OriginalWidth,_session.Document.OriginalHeight),_session.Document.Appearance);_session.Change(d=>{d.Crop=null;d.Appearance.OutputCrop=null;});Surface.Refresh();if(_fitMode)FitImage();}catch(Exception ex){SetStatus("Chưa khôi phục crop: "+ex.Message);}}
-    private void Undo_Click(object sender,RoutedEventArgs e){FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
-    private void Redo_Click(object sender,RoutedEventArgs e){FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Redo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
+    private void DeleteAnnotation_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;Surface.DeleteSelected();}
+    private void RestoreCrop_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;if(_session==null)return;SelectTool(EditorTool.Select);try{_=new ImageLayout(new PixelRect(0,0,_session.Document.OriginalWidth,_session.Document.OriginalHeight),_session.Document.Appearance);_session.Change(d=>{d.Crop=null;d.Appearance.OutputCrop=null;});Surface.Refresh();if(_fitMode)FitImage();}catch(Exception ex){SetStatus("Chưa khôi phục crop: "+ex.Message);}}
+    private void Undo_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
+    private void Redo_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Redo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
     private void FitImage()
     {
         _fitMode=true;_actualPixels=false;if(_session==null||Surface.Layout is not {} v)return;
         Surface.SetZoom(ImageFidelity.FitZoom(v.Width,v.Height,Math.Max(40,ImageScroll.ActualWidth-16-2*EditorSurface.WorkspacePad),Math.Max(40,ImageScroll.ActualHeight-16-2*EditorSurface.WorkspacePad),Surface.DisplayScale));
     }
-    private void Fit_Click(object sender,RoutedEventArgs e)=>FitImage();
-    private void Actual_Click(object sender,RoutedEventArgs e){ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;}
-    private void ZoomOut_Click(object sender,RoutedEventArgs e)=>ZoomAtCenter(Surface.Zoom/1.25);
-    private void ZoomIn_Click(object sender,RoutedEventArgs e)=>ZoomAtCenter(Surface.Zoom*1.25);
+    private void Fit_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FitImage();}
+    private void Actual_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;}
+    private void ZoomOut_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ZoomAtCenter(Surface.Zoom/1.25);}
+    private void ZoomIn_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ZoomAtCenter(Surface.Zoom*1.25);}
     protected override void OnDpiChanged(DpiScale oldDpi,DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi,newDpi);if(Surface==null)return;
@@ -186,7 +186,7 @@ public partial class MainWindow
     }
     private void Viewport_Changed(object sender,SizeChangedEventArgs e){if(_fitMode&&_session!=null)FitImage();}
     private void Editor_KeyDown(object sender,KeyEventArgs e)
-    {
+    {if(!LicenseRuntime.Full){e.Handled=true;return;}
         if(e.Key==Key.E&&(Keyboard.Modifiers&(ModifierKeys.Control|ModifierKeys.Alt))==(ModifierKeys.Control|ModifierKeys.Alt)&&Keyboard.FocusedElement is not TextBoxBase){ExtendCanvas_Click(this,e);e.Handled=true;return;}
         if(_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))return;
         if(e.Key==Key.A&&MediaList.IsKeyboardFocusWithin&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){MediaList.SelectAll();e.Handled=true;return;}

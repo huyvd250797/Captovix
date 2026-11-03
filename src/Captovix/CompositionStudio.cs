@@ -2,9 +2,12 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Captovix;
+public enum LayerMask { Rectangle,Ellipse,Rounded }
 public enum ImageFit { Fit,Fill }
 public sealed record LayerImageStyle
 {
+    public LayerMask Mask {get;set;}
+    public double Opacity {get;set;}=1;
     public ImageFit Fit {get;set;}
     public PixelRect? Crop {get;set;}
     public double PanX {get;set;}=.5;
@@ -13,7 +16,7 @@ public sealed record LayerImageStyle
     public double Border {get;set;}
     public string BorderColor {get;set;}="#CBD5E1";
     public LayerImageStyle Copy()=>this with{};
-    public void Validate(int width,int height){if(!Enum.IsDefined(Fit)||!double.IsFinite(PanX)||!double.IsFinite(PanY)||PanX<0||PanX>1||PanY<0||PanY>1||!double.IsFinite(Radius)||Radius<0||Radius>1000||!double.IsFinite(Border)||Border<0||Border>40||!StudioStyle.Hex(BorderColor)||Crop is {} c&&(c.IsEmpty||c.X<0||c.Y<0||c.Right>width||c.Bottom>height))throw new InvalidDataException("Vùng cắt / kiểu lớp ảnh không hợp lệ.");}
+    public void Validate(int width,int height){if(!Enum.IsDefined(Mask)||!double.IsFinite(Opacity)||Opacity<0||Opacity>1||!Enum.IsDefined(Fit)||!double.IsFinite(PanX)||!double.IsFinite(PanY)||PanX<0||PanX>1||PanY<0||PanY>1||!double.IsFinite(Radius)||Radius<0||Radius>1000||!double.IsFinite(Border)||Border<0||Border>40||!StudioStyle.Hex(BorderColor)||Crop is {} c&&(c.IsEmpty||c.X<0||c.Y<0||c.Right>width||c.Bottom>height))throw new InvalidDataException("Vùng cắt / kiểu lớp ảnh không hợp lệ.");}
 }
 public enum CompositionLayout { SideBySide,Stacked,ThreeAcross,ThreeDown,LargeAndTwo,Grid,Free }
 public sealed record CompositionOptions

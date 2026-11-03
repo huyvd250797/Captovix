@@ -1,0 +1,9 @@
+import {hash} from '../../supabase/functions/licensing/index.ts';
+export const pem=(type,bytes)=>`-----BEGIN ${type}-----\n${Buffer.from(bytes).toString('base64').match(/.{1,64}/g).join('\n')}\n-----END ${type}-----`;
+export async function identity(name='A',bits=2048){const key=await crypto.subtle.generateKey({name:'RSA-PSS',modulusLength:bits,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);const publicKey=pem('PUBLIC KEY',await crypto.subtle.exportKey('spki',key.publicKey));return {key,publicKey,publicHash:await hash(publicKey),deviceId:await hash('machine-'+name),name}}
+export async function proof(id,op,overrides={},time=Date.now()){
+ const nonce=Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString('hex');const payload=JSON.stringify({deviceId:id.deviceId,deviceName:id.name,key:'',recoveryCode:'',activationId:'',...overrides});const timestamp=new Date(time).toISOString();
+ const message=`captovix-license-v1\n${op}\n${Math.floor(time/1000)}\n${nonce}\n${await hash(payload)}`;const signature=Buffer.from(await crypto.subtle.sign({name:'RSA-PSS',saltLength:32},id.key.privateKey,new TextEncoder().encode(message))).toString('base64');return {publicKey:id.publicKey,timestamp,nonce,payload,signature};
+}
+export async function authority(){const keys=await crypto.subtle.generateKey({name:'RSA-PSS',modulusLength:3072,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);return {keys,b64:Buffer.from(await crypto.subtle.exportKey('pkcs8',keys.privateKey)).toString('base64'),publicPem:pem('PUBLIC KEY',await crypto.subtle.exportKey('spki',keys.publicKey))}}
+export function request(path,body,headers={}){return new Request('https://p.supabase.co/functions/v1/licensing'+path,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...headers},body:body?JSON.stringify(body):undefined})}

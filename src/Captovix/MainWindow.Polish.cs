@@ -5,7 +5,7 @@ using System.Windows.Media;
 namespace Captovix;
 public partial class MainWindow
 {
-    private void TextColorPaint_Click(object sender,RoutedEventArgs e)=>OpenPaint(TextColorPaint,color=>{if(color==null)return;EndInlineText(true);var kind=CurrentTextKind();Surface.TextDefaultsFor(kind).TextColor=color;ChangeSelected(a=>{if(TextStudio.IsText(a.Kind))a.TextColor=color;});Surface.Refresh();SyncProperties();},false);
+    private void TextColorPaint_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;OpenPaint(TextColorPaint,color=>{if(color==null)return;EndInlineText(true);var kind=CurrentTextKind();Surface.TextDefaultsFor(kind).TextColor=color;ChangeSelected(a=>{if(TextStudio.IsText(a.Kind))a.TextColor=color;});Surface.Refresh();SyncProperties();},false);}
     private bool TryTextShortcut(KeyEventArgs e)
     {
         if(_imeComposing&&_inlineId!=null)return false;
@@ -24,7 +24,7 @@ public partial class MainWindow
         foreach(var button in Descendants(this).OfType<Button>()){
             if(button.Content is not string text)continue;string? key=button.Tag?.ToString();string label=text.Trim();
             if(key!=null&&Enum.TryParse<EditorTool>(key,out _))label=key switch{"Select"=>"Chọn","Arrow"=>"Mũi tên","Shape"=>"Khung","Text"=>"Chữ","Magnifier"=>"Phóng đại","Spotlight"=>"Spotlight","Highlight"=>"Highlight","Step"=>"Bước","Blur"=>"Làm mờ","Callout"=>"Callout","Freehand"=>"Vẽ tự do","Crop"=>"Crop","PixelRectangle"=>"Chọn vùng","PixelEllipse"=>"Ellipse","PixelLasso"=>"Lasso",_=>label};
-            else{key=button.Name switch{"ExtendCanvasButton"=>"Expand","LibraryMoreButton"=>"More","ArchiveButton"=>"Folder","BatchButton"=>"Export","LibraryManagerButton"=>"Layers","AssistButton"=>"Ocr","LibrarySearchButton"=>"Search","MediaLocationButton"=>"SaveFolder","OcrButton"=>"Ocr","CaptureButton"=>"Camera","RecordButton"=>"Record","UndoButton"=>"Undo","RedoButton"=>"Redo","CopyButton"=>"Copy","ExportButton"=>"Export","RestoreMediaButton"=>"Undo","UpdateFooterButton"=>"Refresh",_=>null};
+            else{key=button.Name switch{"StudioMoreButton"=>"More","ExtendCanvasButton"=>"Expand","LibraryMoreButton"=>"More","ArchiveButton"=>"Folder","BatchButton"=>"Export","LibraryManagerButton"=>"Layers","AssistButton"=>"Ocr","LibrarySearchButton"=>"Search","MediaLocationButton"=>"SaveFolder","OcrButton"=>"Ocr","CaptureButton"=>"Camera","RecordButton"=>"Record","UndoButton"=>"Undo","RedoButton"=>"Redo","CopyButton"=>"Copy","ExportButton"=>"Export","RestoreMediaButton"=>"Undo","UpdateFooterButton"=>"Refresh",_=>null};
                 if(key==null){(key,label)=text switch{"⌫"=>("Delete",""),"▱"=>("Folder","Mở thư mục media"),"⇄"=>("Layout","Thư viện dọc / ngang"),"Mở file"=>("Folder","Mở file"),"↻"=>("Refresh",""),_=>((string?)null,label)};}
                 else label=button.Name switch{"LibrarySearchButton" or "ArchiveButton" or "LibraryMoreButton"=>"","MediaLocationButton"=>"Thư mục lưu media","LibraryManagerButton"=>"Quản lý thư viện","BatchButton"=>"Xuất nhiều / PDF","RestoreMediaButton"=>"Khôi phục lần xóa","AssistButton"=>"OCR · nhận chữ","CaptureButton"=>"Chụp ảnh","RecordButton"=>"Quay màn hình","UndoButton" or "RedoButton"=>"","UpdateFooterButton"=>"Cập nhật",_=>label};
             }
@@ -37,6 +37,7 @@ public partial class MainWindow
 public static class AppIcons
 {
     private static readonly Dictionary<string,string> Paths=new(){
+        ["Eyedropper"]="M14,3 L21,10 M17,2 L22,7 L10,19 L5,19 L5,14 Z M5,19 L2,22",
         ["Element"]="M3,8 V3 H8 M16,3 H21 V8 M3,16 V21 H8 M16,21 H21 V16 M8,8 H16 V16 H8 Z",
         ["ScrollDown"]="M12,3 V20 M6,14 L12,20 L18,14",["ScrollRight"]="M3,12 H20 M14,6 L20,12 L14,18",
         ["Library"]="M3,4 H8 V20 H3 Z M11,4 H16 V20 H11 Z M19,5 L22,19",

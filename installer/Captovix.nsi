@@ -5,7 +5,7 @@ Unicode true
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
 !ifndef APPVERSION
- !define APPVERSION "1.26.0"
+ !define APPVERSION "1.29.1"
 !endif
 !ifndef CORESETUP
  !define CORESETUP "..\artifacts\CoreSetup.exe"

@@ -20,7 +20,7 @@ public partial class MainWindow
         finally{_libraryRefreshHold--;_changingSelection=oldChanging;RebuildRecent();RefreshLibrary();if(active)MediaList.SelectedItem=_recentItems.FirstOrDefault();}
     }
     private void RestoreMedia_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_lastDeleted==null||_busy||_updateApplying)return;var receipt=_lastDeleted;MediaItem[] items=[];bool restored=false;_libraryRefreshHold++;
         try{using var json=JsonDocument.Parse(receipt.Metadata);items=json.RootElement.ValueKind==JsonValueKind.Array?JsonSerializer.Deserialize<MediaItem[]>(receipt.Metadata)??[]:[JsonSerializer.Deserialize<MediaItem>(receipt.Metadata)!];if(items.Any(i=>i==null||_store.Items.Any(old=>old.Id==i.Id)))throw new IOException("Nội dung đã có trong thư viện.");MediaTrash.Restore(receipt);restored=true;foreach(var i in items){_store.TryThumbnail(i);_store.Items.Add(i);}_store.Save();_lastDeleted=null;RestoreMediaButton.IsEnabled=false;SetStatus($"Đã khôi phục {items.Length} nội dung và bản chỉnh.");}
         catch(Exception ex){if(restored)try{foreach(var i in items)_store.Items.Remove(i);MediaTrash.UndoRestore(receipt);}catch(Exception rollback){App.Log(rollback);}App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa khôi phục được nội dung");}

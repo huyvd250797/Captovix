@@ -55,3 +55,7 @@ Leptonica native 1.82.0: BSD 2-Clause; https://github.com/DanBloomberg/leptonica
 English/Vietnamese LSTM models: tessdata_fast, Apache-2.0; https://github.com/tesseract-ocr/tessdata_fast
 Model revision and SHA256 are in tessdata/models.json. Models are distributed unchanged. Licenses are bundled in licenses/.
 Visual C++ runtime prerequisite is included in Setup; OCR is processed locally with no cloud API.
+
+V1.29.1 serverless development tooling (dev-only, node_modules not distributed):
+TypeScript 5.9.3 — Apache-2.0; postgres.js 3.4.7 — Unlicense; jsdom 26.1.0 — MIT.
+Edge production runtime source has no third-party package dependency.

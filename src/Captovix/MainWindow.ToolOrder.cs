@@ -22,7 +22,7 @@ public partial class MainWindow
     private void ReorderTools(IEnumerable<string> ids){var all=_defaultTools.ToDictionary(ToolId);var list=ids.Where(all.ContainsKey).Select(id=>all[id]).Distinct().ToList();list.AddRange(_defaultTools.Except(list));ToolBox.Children.Clear();foreach(var b in list)ToolBox.Children.Add(b);}
     private void SaveToolOrder(){try{MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"tool-order.json"),JsonSerializer.Serialize(ToolBox.Children.OfType<Button>().Select(ToolId)));}catch(Exception ex){SetStatus("Chưa lưu được vị trí công cụ: "+ex.Message);}}
     private void ToolOrder_Click(object sender,RoutedEventArgs e)
-    {
+    {if(!RequireLicense())return;
         if(_busy)return;var w=new Window{Owner=this,Title="Sắp xếp công cụ cá nhân",Width=420,Height=560,WindowStartupLocation=WindowStartupLocation.CenterOwner};var panel=new DockPanel{Margin=new(16)};w.Content=panel;var row=new WrapPanel();DockPanel.SetDock(row,Dock.Bottom);panel.Children.Add(row);var list=new ListBox();panel.Children.Add(list);
         void Refresh(string? selected=null){list.ItemsSource=ToolBox.Children.OfType<Button>().Where(b=>b.Visibility==Visibility.Visible).Select(b=>new ToolRow(ToolId(b),System.Windows.Automation.AutomationProperties.GetName(b))).ToArray();list.DisplayMemberPath="Label";list.SelectedItem=list.Items.Cast<ToolRow>().FirstOrDefault(t=>t.Id==selected);}
         void Action(string text,Action action){var b=new Button{Content=text};b.Click+=(_,_)=>action();row.Children.Add(b);}

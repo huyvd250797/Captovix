@@ -78,6 +78,7 @@ public sealed class Annotation
 
 public sealed class EditorDocument
 {
+    public const int MaximumSupportedVersion=15;
     public string? PixelBasePng {get;set;}
     public int Version {get;set;}=12;
     public int OriginalWidth {get;set;}
@@ -94,7 +95,7 @@ public sealed class EditorDocument
     public EditorDocument Clone()=>Deserialize(Serialize());
     public void Validate(int width,int height,string hash)
     {
-        if(Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14))throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
+        if(Version<1||Version>MaximumSupportedVersion)throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
         if(OriginalWidth!=width||OriginalHeight!=height||SourceHash!=hash)throw new InvalidDataException("Ảnh gốc đã thay đổi. Bản chú thích cũ được giữ riêng, không tự gán lên ảnh khác.");
         if(Crop is {} c&&(c.IsEmpty||c.X<0||c.Y<0||c.Right>width||c.Bottom>height))throw new InvalidDataException("Vùng crop không hợp lệ.");
         if(Annotations==null||Annotations.Count>10000)throw new InvalidDataException("Số đối tượng vượt giới hạn tài liệu.");
@@ -115,7 +116,7 @@ public sealed class EditorDocument
         ConnectorStudio.Resolve(this);
         if(Appearance==null)throw new InvalidDataException("Thiếu cấu hình ảnh.");
         _=new ImageLayout(Viewport,Appearance);
-        PixelStudio.Validate(this);Version=Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
+        PixelStudio.Validate(this);Version=Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
     }
     private static bool ValidColor(string color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public bool ApplyCrop(PixelRect crop)
@@ -129,6 +130,8 @@ public sealed class EditorDocument
 
 public sealed class EditorSession
 {
+    public static Func<bool> AuthorizeMutation {get;set;}=()=>true;
+    private static void CheckAuthorization(){if(!AuthorizeMutation())throw new InvalidOperationException("Công cụ chỉnh sửa đang khóa theo trạng thái bản quyền.");}
     private readonly List<string> _undo=[];
     private readonly List<string> _redo=[];
     private string? _before;
@@ -142,7 +145,7 @@ public sealed class EditorSession
     public event Action? Changed;
     public EditorSession(EditorDocument document,int historyCharBudget=8_000_000){Document=document;_historyCharBudget=Math.Max(1024,historyCharBudget);}
     private void TrimHistory(List<string> entries){long chars=entries.Sum(s=>(long)s.Length);while(entries.Count>1&&(entries.Count>100||chars>_historyCharBudget)){chars-=entries[0].Length;entries.RemoveAt(0);}}
-    public void Begin(){ConnectorStudio.Resolve(Document);_before??=Document.Serialize();}
+    public void Begin(){CheckAuthorization();ConnectorStudio.Resolve(Document);_before??=Document.Serialize();}
     public void Commit()
     {
         if(_before==null)return;ConnectorStudio.Resolve(Document);var before=_before;_before=null;
@@ -151,8 +154,8 @@ public sealed class EditorSession
     }
     public void Cancel(){if(_before==null)return;Document=EditorDocument.Deserialize(_before);_before=null;}
     public void Change(Action<EditorDocument> change){Begin();try{change(Document);Commit();}catch{Cancel();throw;}}
-    public void Undo(){Commit();if(!CanUndo)return;_redo.Add(Document.Serialize());TrimHistory(_redo);Document=EditorDocument.Deserialize(_undo[^1]);_undo.RemoveAt(_undo.Count-1);Dirty=true;Changed?.Invoke();}
-    public void Redo(){Commit();if(!CanRedo)return;_undo.Add(Document.Serialize());TrimHistory(_undo);Document=EditorDocument.Deserialize(_redo[^1]);_redo.RemoveAt(_redo.Count-1);Dirty=true;Changed?.Invoke();}
+    public void Undo(){CheckAuthorization();Commit();if(!CanUndo)return;_redo.Add(Document.Serialize());TrimHistory(_redo);Document=EditorDocument.Deserialize(_undo[^1]);_undo.RemoveAt(_undo.Count-1);Dirty=true;Changed?.Invoke();}
+    public void Redo(){CheckAuthorization();Commit();if(!CanRedo)return;_undo.Add(Document.Serialize());TrimHistory(_undo);Document=EditorDocument.Deserialize(_redo[^1]);_redo.RemoveAt(_redo.Count-1);Dirty=true;Changed?.Invoke();}
     public void RequireSave()=>Dirty=true;
     public void MarkSaved()=>Dirty=false;
 }

@@ -1,3 +1,166 @@
+# V1.29.1 — Serverless Licensing
+
+- Thay backend ASP.NET Core/admin token bằng Edge Function TypeScript và Supabase Auth + allowlist; bỏ yêu cầu Docker/VPS khỏi quy trình hiện hành.
+- Chuyển quyết định license sang RPC PostgreSQL giao dịch; giữ RSA-PSS/SHA-256, device proof/nonce, trial/lease/slot/recovery và schema cũ. Migration additive và giữ dữ liệu legacy.
+- Cloudflare Pages static admin: login/refresh trong RAM, audit theo UID, CORS exact origin, CSP/no-store; public config không chứa service-role/private key.
+- Công cụ trình duyệt ngoại tuyến tạo/nạp PKCS#8, export Secrets và public config; giữ authority khi nâng cấp. GitHub Actions build Windows bằng public Variables, không tự Release.
+- App Windows cập nhật version/lỗi quota/config và chặn private key ở public config. Các công cụ ảnh/capture/model/schema giữ từ V1.29.0; không thay chất lượng pixel/render.
+- Thêm TypeScript/DOM, role/RPC transaction và interop C#↔WebCrypto checks. Chưa deploy Supabase/Auth/Cloudflare/Actions hoặc thực thi Windows thật.
+- Bản giao review vẫn trống production URL/key; chỉ chụp vùng. Xem docs/SERVERLESS-LICENSING.md trước phát hành.
+
+---
+
+# V1.29.0 — Licensing Operations & Recovery
+
+- Gộp nền tảng V1.28 theo lựa chọn của Boss; không giả định V1.28 đã được phát hành.
+- Thêm giao thức RSA-PSS, device proof, nonce/timestamp chống replay, trial 30 ngày và lease có thời hạn.
+- API PostgreSQL với slot giao dịch, key hash, recovery rotation/cooldown và audit; migrations riêng + RLS cho role server.
+- Trang quản trị tạo key, tra cứu/phân trang, đổi slot, thu hồi/khôi phục, trả máy, đổi recovery, quản lý/gia hạn/sửa định danh trial, audit JSON theo trang.
+- UI Windows: trạng thái footer; dùng thử/kích hoạt/trả/khôi phục/xác minh và mã hỗ trợ. Gate clipboard, model, click/keyboard/hotkey/tray, Studio/OCR/export; nội bộ checkpoint dữ liệu trước hạn chế.
+- DPAPI CurrentUser + mốc giờ registry, monotonic runtime; cấu hình URL/public key nhúng assembly. Chưa có service production: fail restricted, không cấp đầy đủ quyền ngầm.
+- Giữ pipeline capture pixel, editor schema15 và fix sidecar V1.27.1/2; installer/brand/feed giữ nền cũ.
+- Sửa fixture schema future ở ba bộ kiểm tra cũ từ số15 cố định thành MaximumSupportedVersion+1 (15 hiện đã hỗ trợ từ V1.27).
+- Hướng dẫn triển khai/vận hành chi tiết trong docs/LICENSING-GUIDE.md. Chưa chạy Windows thực tế hoặc deploy API production.
+
+---
+
+# Captovix V1.27.2 — Color Picker & Studio Access
+
+Nền nâng cấp: Source ZIP V1.27.1 Boss gửi. Bản vá V1.27.1 về lưu schema15 được giữ nguyên. Không tích hợp cấp phép trong bản này.
+
+## Thay đổi sử dụng
+
+### Bút hút màu
+
+Trong bảng chọn màu dùng chung có nút icon bút hút màu **Lấy màu trên màn hình**: bấm nút, rê bút tới pixel để xem ô màu và mã #RRGGBB, click áp dụng màu cho đúng mục vừa mở, Esc/chuột phải hủy không đổi màu. Hỗ trợ bảng màu viền, nền, chữ, highlight/spotlight/viền kính, pixel fill, lớp ảnh, canvas, viền chụp và nút lấy màu trong cá nhân hóa màu giao diện. Chọn màu khác/native palette và nhập HEX vẫn giữ.
+
+Picker đóng băng màn hình tại thời điểm bật bút; lấy màu pixel của ảnh màn hình này, không thay đổi kích thước ảnh hoặc clipboard. Nếu muốn lấy pixel gốc trong ảnh đang xem thu nhỏ, dùng Thêm → Lấy màu từ ảnh rồi zoom100%. Màn hình HDR/màu rộng chưa kiểm chứng; không hứa khớp màu quản lý ICC. Các nút màu thuộc OCR assistance cũ hiện đang ẩn không thay đổi.
+
+Picker giữ ảnh màn hình trong RAM, không lưu file, giới hạn tổng40MP. Lớp phủ hiển thị ảnh này để nhìn và lấy cùng một pixel, không lấy màu HUD. HUD đặt lệch trỏ, cập nhật40ms; GDI DC/bitmap release trong finally. Đóng cửa sổ gọi picker thì kết thúc picker. Bấm chọn chỉ áp dụng1lần, không truyền click xuống ứng dụng nền. Cần nghiệm thu DPI và nhiều màn hình thật.
+
+### Thêm công cụ / stamp
+
+Thanh công cụ Editor có **Thêm** (icon ba chấm). Bấm mở flyout theo theme sáng/tối gồm chỉnh màu/làm nét, lấy màu từ ảnh, Clone, phối cảnh, chỉnh nghiêng, tách nền theo màu, mask, so sánh Trước/Sau, watermark và khôi phục nền gốc.
+
+Stamp có8mẫu hình xem trước được render bằng renderer của app, gồm đúng/sai/đã duyệt/cần sửa/phím tắt/bàn phím/con trỏ. Bấm một mẫu để chèn ngay nhóm chữ/khung chỉnh sửa được, có Undo. Có nút thêm logo/ảnh cá nhân. Bỏ mục Studio ảnh khỏi menu Vùng pixel để không trùng lặp. Thêm tham gia sắp xếp thanh công cụ như các nút khác.
+
+### Chọn vùng thủ công
+
+Chế độ **Vùng chọn** không chạy UI Automation, không gợi ý web/cửa sổ và không tự tạo vùng dù chờ lâu. Phải giữ chuột kéo; thả ra chỉnh cạnh hoặc di chuyển rồi Enter chụp. Nút nhận diện và phím S không hiện/không bật trong chế độ vùng thủ công. Vùng chụp cuộn thủ công giữ cùng nguyên tắc.
+
+Muốn nhận diện modal/bảng/khối, chọn **Phần tử/modal** trong cấu hình chụp hoặc Chụp & quay → Chụp phần tử/modal. Chế độ Cửa sổ/Toàn màn hình và Chụp lại vùng vẫn là các thao tác riêng có chủ đích; không bị thay đổi.
+
+## Cài và phát hành
+
+Giải nén Captovix-v1.27.2-Update-Packages.zip, đóng app và chạy HuyVo.Captovix-win-Setup.exe để cài trực tiếp. Muốn update trong app: đăng đủ5asset bên trong ZIP (full.nupkg, Setup.exe, RELEASES, assets.win.json, releases.win.json) lên Release stable/latest tag v1.27.2 của repo phát hành đã cấu hình. Không chỉ đăng ZIP. Chưa tự publish GitHub. Setup chưa ký số.
+
+Source ZIP có README, source và fixture. SDK10.0.100; WPF Windows x64; runtime10.0.13 self-contained; không nâng dependency.
+
+```powershell
+dotnet build src/Captovix/Captovix.csproj -c Release -p:Platform=x64
+dotnet run --project tests/ShellLayoutChecks -c Release
+dotnet run --project tests/CompositionChecks -c Release
+dotnet run --project tests/SmartCaptureChecks -c Release
+dotnet run --project tests/CaptureWorkflowChecks -c Release
+# Windows thật: kiểm thử lưu schema15 và UI Studio cơ bản
+dotnet run --project tests/ImageStudioWindowsChecks -c Release -p:Platform=x64
+```
+
+## Nghiệm thu
+
+Logic/cấu trúc chạy trên Linux và cross-build WPF. Chưa thực thi desktop Windows, do đó các kiểm tra sau vẫn chờ: bút lấy màu nền trắng/đen/màu, biên màn hình âm và DPI100/125/150/175/200%, click/Esc không đổi clipboard, lấy đúng màu cho nhiều bảng và modal cấu hình, không tự chọn cả web khi chế độ Vùng chờ10giây, chế độ Modal vẫn nhận diện, flyout sáng/tối không tràn và stamp đúng ảnh xem trước, lưu/đổi ảnh/Undo sau thêm stamp.
+
+## Kế tiếp
+
+V1.28 — Licensing Foundation là đề xuất riêng về dùng thử30ngày, key kích hoạt có chữ ký số và khóa quyền tập trung; cần chốt chính sách internet và nguồn máy chủ trước khi xây dựng. Các cải tiến Quick Capture/Studio tiếp tục trong roadmap ảnh, chưa tự triển khai ở bản vá này.
+
+
+---
+
+## Lịch sử
+
+# Captovix V1.27.1 — Document Save Recovery
+
+Sửa lỗi V1.27.0: bộ đọc hỗ trợ schema15 nhưng DocumentStore.Save chặn priorVersion>14, báo sai “Không ghi đè sidecar từ phiên bản app mới hơn”. Reader/writer nay dùng chung EditorDocument.MaximumSupportedVersion=15. Vẫn từ chối ghi đè schema tương lai >15. Không xóa, đổi tên hoặc hạ version file người dùng. Không thêm chức năng bản quyền trong bản vá này.
+
+Cập nhật: giữ bản hiện tại mở nếu còn chỉnh sửa chưa lưu; thử Xuất ảnh/Lưu dự án để giữ bản đang thấy trước khi đóng. Sau đó cài Setup trong Update-Packages hoặc phát hành đủ5asset như hướng dẫn nền, mở lại ảnh và Ctrl+S. Dữ liệu đã lưu trước lỗi được đọc lại; chỉnh sửa chỉ còn trong RAM mà chưa lưu/xuất không thể tự khôi phục sau khi đóng app.
+
+Kiểm tra: CompositionChecks bổ sung roundtrip schema15, từ chối schema tương lai và hợp đồng giới hạn reader/writer. Fixture ImageStudioWindowsChecks bổ sung save15 hai lần, reopen/save, kiểm tra file tương lai không bị đổi. Fixture được cross-build, chưa thực thi trên Windows thật; không mô tả đã nghiệm thu luồng lưu thực tế. Build/publish Windows x64 và kiểm tra gói/updater thực tế trong bước đóng gói.
+
+Bản kế tiếp dự kiến: Licensing Foundation theo phương án vừa mô tả, chỉ xây dựng sau khi Boss chọn chính sách internet và phạm vi triển khai máy chủ. Không tích hợp licensing vào hotfix lưu ảnh.
+
+
+---
+
+# Captovix V1.27.0 — Capture & Image Studio
+
+Nâng cấp từ `Captovix-v1.26.0-Source.zip` Boss gửi. Bản1.27 theo phạm vi mới Boss chọn: nhận diện modal mượt hơn, viền chọn tương phản và nhóm công cụ chỉnh ảnh; kính lúp/nhập W×H trong roadmap cũ chưa triển khai ở bản này.
+
+## Chụp phần tử
+
+- Cache danh sách cửa sổ300ms và tái sử dụng hierarchy phần tử giữa các truy vấn; cache có thể cập nhật highlight trong lúc helper UIA đang bận. Giảm thời gian ổn định con trỏ từ120 xuống65ms, timer40ms; lần gợi ý đầu không chờ vòng truy vấn thứ hai, thay đổi khối vẫn có hysteresis.
+- Không vẽ lại mọi lớp phủ ở mỗi MouseMove. Shade chỉ invalidate khi vùng hở đổi. Truy vấn UIA vẫn ở process cách ly, có timeout và hủy; Enter kiểm tra lại cửa sổ trước khi chụp.
+- Khung chọn có nền viền đen và nét đứt trắng chuyển động: có thành phần tương phản đồng thời trên nền sáng, tối hoặc nhiều màu; không cần đọc màu màn hình liên tục. Viền và toolbar đóng trước khi chụp, không ghi vào PNG.
+- Cải tiến mã nguồn chưa phải bằng chứng độ trễ trên Windows thật. Provider tự vẽ/remote có thể chỉ nhận diện được cửa sổ; kéo vùng thủ công vẫn dùng ngay trong cùng overlay.
+
+## Công cụ và thao tác
+
+Mở **Vùng pixel → Studio ảnh**; thanh công cụ chính/thư viện vẫn giữ gọn.
+
+| Công cụ | Cách dùng / chức năng thực tế | Giới hạn |
+| --- | --- | --- |
+| Smart Guides | Khi kéo đối tượng, đường căn có sẵn nay thêm khoảng cách pixel tới đối tượng gần nhất theo ngang/dọc. Ctrl tạm bỏ bắt cạnh theo cơ chế cũ. | Chỉ hiển thị khi di chuyển; chưa tự phân bố khoảng cách bằng nhau. |
+| Eyedropper | Chọn Viền/Nền/Chữ, zoom và click pixel ảnh đã render để áp dụng cho đối tượng đang chọn và mặc định công cụ. | Lấy một pixel; chưa trung bình vùng. |
+| Clone | Alt + click chọn nguồn, rồi kéo cọ; nguồn được chụp lại đầu mỗi nét để không kéo lặp pixel mới tô. Chỉnh bán kính. | Cọ tròn cạnh cứng, chưa có healing/content-aware. |
+| Phối cảnh | Kéo4góc theo thứ tự trái trên → phải trên → phải dưới → trái dưới; lưới hỗ trợ; bấm Xem trước phối cảnh rồi Áp dụng. | Tứ giác lồi; đầu ra giữ kích thước nền ảnh, có nội suy; chú thích không biến dạng theo. |
+| Chỉnh nghiêng | Góc -45 tới45 độ, lưới và xem trước. | Giữ kích thước nền ảnh, phần ngoài ảnh bị cắt; có thể crop sau. |
+| Điều chỉnh ảnh | Sáng, tương phản, nhiệt độ màu, bão hòa; xem ảnh khi mở, chốt bước và hoàn tác trong cửa sổ. | Xử lý SDR; không phải chỉnh màu HDR. |
+| Sharpen | Điều chỉnh0–2 trong Màu sắc & làm nét; không thay kích thước. | Unsharp nhẹ theo lân cận3×3; không phục hồi chi tiết đã mất. |
+| Stamp | Dấu đúng/sai/duyệt/cần sửa/phím tắt; đối tượng chữ và khung nhóm có thể sửa. Thêm logo/ảnh cá nhân qua chọn file; dùng Lưu mẫu bố cục để giữ tài nguyên. | Chưa có kho stamp riêng/import gói stamp. |
+| Image Mask | Chọn lớp ảnh để đổi chữ nhật/ellipse/bo góc; giữ PNG nguồn để thay mask. Không chọn lớp thì áp mask vào nền, có Undo/khôi phục nền gốc. | Nền áp alpha vào PixelBase, muốn phục hồi dùng Undo hoặc Khôi phục nền ảnh gốc. |
+| Comparison | Dùng ảnh hiện tại làm Trước, chọn file ảnh Sau; tạo bản ghép mới với2ô bằng nhau, nhãn và giữ tỷ lệ từng ảnh. | Chưa có thanh kéo before/after. |
+| Watermark | Chữ hoặc logo,9vị trí, độ hiện. Trong Editor watermark là lớp ảnh di chuyển/resize được. Xuất hàng loạt hỗ trợ chữ/logo,9vị trí, độ hiện và lưu cấu hình. | Watermark chữ trong Editor raster hóa thành lớp ảnh; thay chữ bằng cách tạo lại. Khi batch chọn logo, logo thay cho watermark chữ. |
+| Background Removal | Click xóa vùng nền liên thông theo màu/dung sai; cọ khôi phục lấy pixel ảnh khi mở. | Nền tương đối đồng nhất; chưa tách người/tóc bằng AI. Phần mô hình AI vẫn để giai đoạn Sau theo ưu tiên Boss. |
+| Export Profiles | Tệp → Xuất hàng loạt/PDF: đặt tên và lưu cấu hình PNG/JPEG/PDF, kích thước, tên file, watermark; chọn lại hoặc xóa. | Tối đa30cấu hình trên máy; logo base64 tối đa8MB; file trước bị hỏng được ghi log. |
+
+## Giữ ảnh và hoàn tác
+
+Các chỉnh nền dùng `PixelBasePng`; ảnh gốc trên đĩa không bị ghi đè. Áp dụng vào Editor là một bước Undo; hủy cửa sổ không sửa tài liệu. Công cụ nền xử lý nền hiện tại, chú thích giữ nguyên vị trí. Biến đổi phối cảnh/chỉnh nghiêng có nội suy theo lựa chọn chủ động của người dùng. Zoom không thay kích thước xuất. Giới hạn nền40MP, PNG và tài liệu vẫn chịu giới hạn an toàn của PixelStudio. Trong cửa sổ chỉnh ảnh, giữ tối đa8bước và256MB snapshot; vượt giới hạn sẽ xóa lịch sử cục bộ cũ. Có nút Khôi phục ảnh khi mở. Menu Khôi phục nền ảnh gốc xóa toàn bộ chỉnh nền nhưng giữ chú thích; Undo phục hồi được.
+
+Lớp ảnh có mask/opacity dùng document version15 để bản cũ từ chối thay vì âm thầm làm sai ảnh. Bản mới vẫn đọc tài liệu12–14; không cần reset thư viện. Sao lưu dữ liệu trước nâng cấp. Batch watermark cùng kích thước ghép overlay vào pixel gốc, vùng ngoài watermark giữ byte; resize chỉ thực hiện khi cấu hình xuất yêu cầu.
+
+## Cài và phát hành
+
+- Giải nén `Captovix-v1.27.0-Update-Packages.zip`, đóng app và chạy `HuyVo.Captovix-win-Setup.exe` để cài trực tiếp. Installer chọn đường dẫn hiện có; chữ ký số chưa có.
+- Để app cập nhật qua nguồn đã gắn: đăng đủ5asset (full.nupkg, Setup.exe, RELEASES, assets.win.json, releases.win.json) lên Release stable/latest tag `v1.27.0` của repository phát hành hiện có. Không chỉ đăng ZIP hoặc Source.zip. Chưa tự publish.
+- Gửi Source ZIP1.27.0 cho lần nâng cấp sau. Build SDK10.0.100, WPF Windows x64, runtime10.0.13 tự chứa; dependency không đổi.
+
+```powershell
+dotnet build src/Captovix/Captovix.csproj -c Release -p:Platform=x64
+dotnet run --project tests/ImageStudioChecks -c Release
+dotnet run --project tests/SmartCaptureChecks -c Release
+dotnet run --project tests/CompositionChecks -c Release
+dotnet run --project tests/BatchChecks -c Release
+# Windows thật:
+dotnet run --project tests/ImageStudioWindowsChecks -c Release -p:Platform=x64
+dotnet run --project tests/SmartCaptureWindowsFixture -c Release -p:Platform=x64
+```
+
+## Kiểm chứng và giới hạn bàn giao
+
+Đã build/publish và chạy các kiểm tra logic pixel, geometry/hysteresis, composition/schema, fidelity, connector/probe, shell, updater, object-control và batch trên Linux. Các dự án Windows được cross-build; chưa chạy WPF/overlay/UIA/GDI, cài đặt và update GUI trên Windows. Không khẳng định đã đạt độ mượt trên máy Boss hoặc đã nhận diện đúng mọi ứng dụng.
+
+Nghiệm thu Windows: thử modal/bảng ở Edge/Chrome, ứng dụng Win32 và UltraViewer; di chuyển nhanh qua con/cha trong lúc provider bận; đứng yên không nhảy khối; nền trắng/đen/màu; click khóa và resize; Enter1lần. Thử từng mode Studio, Cancel/Apply/Undo/Redo, đổi ảnh, ảnh alpha, xuất lại dự án15, batch nhiều ảnh với profile logo9vị trí. Kiểm tra DPI100–200%, nhiều màn hình âm và restore app sau update.
+
+## Bản tiếp theo đề xuất
+
+**V1.28 — Quick Capture & Studio Polish:** chụp lặp/vùng gần đây, lựa chọn thả để chụp hoặcEnter; cải thiện preview/cọ, quản lý stamp cá nhân riêng và nghiệm thu độ trễ/độ chính xác trên bộ ứng dụng Windows mục tiêu. Tách chủ thể AI tiếp tục đánh giá riêng.
+
+
+---
+
+## Lịch sử (phạm vi V1.27 ở trên thay thế đề xuất V1.27 cũ)
+
 # Captovix V1.26.0 — Smart Element Capture
 
 Nâng cấp từ source `Captovix-v1.25.0-Source(1).zip` Boss gửi. Bản này ưu tiên Smart Element Capture thay cho đề xuất Composition trước đó. Source và gói cài/cập nhật đã xây dựng; nghiệm thu tương tác trên Windows thật còn chờ. Không tự đăng GitHub Release.

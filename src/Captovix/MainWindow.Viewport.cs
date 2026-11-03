@@ -110,10 +110,10 @@ public partial class MainWindow
     }
     private bool ApplyCropFromFields(){if(!PreviewCropFields())return false;if(Surface.ApplyCropDraft())return true;SetStatus("Chưa áp dụng crop: kiểm tra giới hạn kích thước đầu ra/khung ảnh.");return false;}
     private bool PrepareCropForExport(){EndInlineText(true);return _session==null||Surface.Tool!=EditorTool.Crop||ApplyCropFromFields();}
-    private void PreviewCrop_Click(object sender,RoutedEventArgs e)=>PreviewCropFields();
-    private void ApplyCrop_Click(object sender,RoutedEventArgs e)=>ApplyCropFromFields();
-    private void CancelCrop_Click(object sender,RoutedEventArgs e){Surface.CancelInteraction();SelectTool(EditorTool.Select);Surface.Focus();}
-    private void RestartCrop_Click(object sender,RoutedEventArgs e){Surface.StartCrop();Surface.Focus();}
+    private void PreviewCrop_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;PreviewCropFields();}
+    private void ApplyCrop_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ApplyCropFromFields();}
+    private void CancelCrop_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;Surface.CancelInteraction();SelectTool(EditorTool.Select);Surface.Focus();}
+    private void RestartCrop_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;Surface.StartCrop();Surface.Focus();}
     private void CropField_KeyDown(object sender,KeyEventArgs e)
     {
         if(e.Key!=Key.Enter)return;ApplyCropFromFields();e.Handled=true;
