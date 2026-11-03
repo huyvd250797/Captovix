@@ -19,6 +19,9 @@ internal static class LicenseRuntime
     static DateTimeOffset _highWater,_anchor;static long _tick;static string _deviceId="";static bool _ready,_identityReady;
     public static string LastError {get;private set;}="";
     public static Claims? Certificate=>_claims;
+    public static DateTimeOffset? TrialUntil {get;private set;}
+    public static DateTimeOffset? TrialStarted=>TrialUntil?.AddDays(-30);
+    public static string TrialHistoryMessage=>TrialUntil is {} end?$"Máy này đã kích hoạt dùng thử 30 ngày từ {TrialStarted?.ToLocalTime():dd/MM/yyyy}. Hạn sử dụng: {end.ToLocalTime():dd/MM/yyyy HH:mm}. Không thể kích hoạt thêm 30 ngày.":"Máy đã có lịch sử kích hoạt. Hãy dùng KEY để tiếp tục.";
     public static bool Configured=>_config!=null;
     public static string DeviceId=>_deviceId;
     public static string DevicePublicHash=>_device==null?"":Protocol.Hash(_device.ExportSubjectPublicKeyInfoPem());
@@ -41,6 +44,11 @@ internal static class LicenseRuntime
                 var cache=JsonSerializer.Deserialize<LicenseCache>(Protect.Read(cachePath),Protocol.Json)!;_highWater=cache.HighWater;
                 if(cache.Certificate!=null){_claims=Verify(cache.Certificate);_certificate=cache.Certificate;}
             }
+            // Preserve the first signed trial certificate independently of the active license.
+            if(_claims?.Kind=="trial"&&_certificate!=null)RememberTrial(_certificate);
+            using(var ledger=Registry.CurrentUser.CreateSubKey(@"Software\HuyVo\Captovix\Licensing")){
+                if(ledger.GetValue("TrialCertificate") is byte[] savedTrial){var envelope=JsonSerializer.Deserialize<Envelope>(Protect.Unseal(savedTrial),Protocol.Json)!;var trial=Verify(envelope);if(trial.Kind=="trial")TrialUntil=trial.TrialUntil;}
+            }
             // Independent DPAPI mirror survives deleting only certificate.bin.
             using var reg=Registry.CurrentUser.CreateSubKey(@"Software\HuyVo\Captovix\Licensing");if(reg.GetValue("Clock") is byte[] clock){var saved=JsonSerializer.Deserialize<DateTimeOffset>(Protect.Unseal(clock),Protocol.Json);if(saved>_highWater)_highWater=saved;}
         }catch(Exception e){_claims=null;if(!_identityReady){_device?.Dispose();_device=null;}LastError=e.Message;}
@@ -51,6 +59,7 @@ internal static class LicenseRuntime
     public static async Task<string?> Request(string operation,string key="",string recovery="")
     {
         await Gate.WaitAsync();try{
+            if(operation=="trial"&&(TrialUntil!=null||_claims?.Kind=="perpetual"))throw new InvalidOperationException(TrialHistoryMessage);
             if(_config==null||_device==null)throw new InvalidOperationException("Chưa cấu hình máy chủ bản quyền hoặc định danh máy chưa sẵn sàng. Xem hướng dẫn quản trị.");
             using var http=new HttpClient{Timeout=TimeSpan.FromSeconds(20)};
             var proof=Protocol.SignRequest(_device,operation,new(_deviceId,Environment.MachineName[..Math.Min(80,Environment.MachineName.Length)],key,recovery,operation is "refresh" or "release"?_claims?.ActivationId??"":""),DateTimeOffset.UtcNow);
@@ -59,9 +68,11 @@ internal static class LicenseRuntime
             if(!result.IsSuccessStatusCode){var code=result.StatusCode==System.Net.HttpStatusCode.TooManyRequests?"RATE_LIMIT":"SERVICE_UNAVAILABLE";try{using var doc=JsonDocument.Parse(raw);code=doc.RootElement.GetProperty("code").GetString()??code;}catch{}throw new InvalidOperationException(Message(code));}
             var reply=JsonSerializer.Deserialize<Reply>(raw,Protocol.Json)??throw new IOException("Phản hồi không hợp lệ.");var claims=Verify(reply.Certificate);
             if(claims.IssuedAt<_claims?.IssuedAt)throw new IOException("Từ chối chứng nhận cũ hơn chứng nhận đã lưu.");
+            if(claims.Kind=="trial")RememberTrial(reply.Certificate);
             _claims=claims;_certificate=reply.Certificate;_anchor=claims.IssuedAt;_tick=Stopwatch.GetTimestamp();_highWater=claims.IssuedAt;Save();LastError="";return reply.RecoveryCode;
         }catch(Exception e){LastError=e.Message;throw;}finally{Gate.Release();}
     }
+    static void RememberTrial(Envelope envelope){if(TrialUntil!=null)return;var trial=Verify(envelope);if(trial.Kind!="trial")return;using var registry=Registry.CurrentUser.CreateSubKey(@"Software\HuyVo\Captovix\Licensing");if(registry.GetValue("TrialCertificate") is byte[] previous){var saved=Verify(JsonSerializer.Deserialize<Envelope>(Protect.Unseal(previous),Protocol.Json)!);if(saved.Kind=="trial"){TrialUntil=saved.TrialUntil;return;}}registry.SetValue("TrialCertificate",Protect.Seal(JsonSerializer.SerializeToUtf8Bytes(envelope,Protocol.Json)),RegistryValueKind.Binary);TrialUntil=trial.TrialUntil;}
     public static void CheckpointClock(){if(!_ready||_device==null)return;try{_highWater=Now;Save();}catch(Exception e){LastError="Chưa lưu được trạng thái bản quyền: "+e.Message;_claims=null;}}
     static void Save(){Protect.Write(Path.Combine(Folder,"certificate.bin"),JsonSerializer.SerializeToUtf8Bytes(new LicenseCache(_certificate,_highWater),Protocol.Json));using var reg=Registry.CurrentUser.CreateSubKey(@"Software\HuyVo\Captovix\Licensing");reg.SetValue("Clock",Protect.Seal(JsonSerializer.SerializeToUtf8Bytes(_highWater,Protocol.Json)),RegistryValueKind.Binary);}
     public static void Demand(){if(!Full)throw new InvalidOperationException("Chức năng cần bản quyền: "+Status);}

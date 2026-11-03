@@ -26,6 +26,7 @@ public sealed partial class EditorSurface
     private void DrawHover(DrawingContext dc)
     {
         if(Dragging||_hoveredId==null||Session?.Document.Annotations.FirstOrDefault(a=>a.Id==_hoveredId) is not {} a)return;
+        if(ShapeStudio.IsLine(a.Kind))return;
         dc.DrawRectangle(null,new Pen(Brushes.MediumSlateBlue,1/InteractionScale){DashStyle=DashStyles.Dot},EditorRenderer.Bounds(a));
     }
     private void SnapObjectMove(double dx,double dy,bool shift,bool enabled)

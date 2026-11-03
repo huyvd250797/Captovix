@@ -15,6 +15,7 @@ public sealed partial class ScrollSession
     public int Schema {get;set;}=2;
     public CaptureTiming Timing {get;set;}=new();
     public bool Horizontal {get;set;}
+    public bool AutoDetectFixed {get;set;}=true;
     public int Header {get;set;}
     public int Footer {get;set;}
     public bool KeepHeader {get;set;}=true;

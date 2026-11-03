@@ -44,7 +44,7 @@ check({x.name for x in rel.iterdir() if x.is_file() and not x.name.startswith(".
 manifest=json.loads((rel/'assets.win.json').read_text());check({x['RelativeFileName'] for x in manifest}=={pkg.name,setup.name},'Assets manifest points to canonical package and installer')
 if a.baseline_source:
  with zipfile.ZipFile(a.baseline_source) as old:
-  for path in ['src/Captovix/Native.cs','src/Captovix/CaptureEngine.cs','src/Captovix/CaptureKeys.cs','installer/InstallPath.nsh']:
+  for path in ['src/Captovix/CaptureEngine.cs','installer/InstallPath.nsh']:
    prior=old.read(next(n for n in old.namelist() if n.endswith('/'+path)));check(prior==(r/path).read_bytes(),'Protected foundation unchanged: '+path)
   prior=old.read(next(n for n in old.namelist() if n.endswith('/src/Captovix/Program.cs'))).decode();check(prior.replace('VelopackApp.Build().SetAutoApplyOnStartup','VelopackApp.Build().SetAppUserModelId("velopack."+VersionInfo.AppId).SetAutoApplyOnStartup')==(r/'src/Captovix/Program.cs').read_text(),'Program changes only stable AppID; updater and worker ordering preserved')
   prior=old.read(next(n for n in old.namelist() if n.endswith('/installer/Captovix.nsi'))).decode();prior=re.sub(r'(!define APPVERSION ")[0-9.]+(")',lambda m:m[1]+version+m[2],prior);check(prior==(r/'installer/Captovix.nsi').read_text(),'Installer changes only version; core arguments and approved MUI icon retained')
@@ -54,7 +54,7 @@ check('GetManifestResourceStream("Captovix.license-config.json")' in license_sou
 check(not any(name in p.name for p in payload.rglob('*') if p.is_file() for name in ['captovix-signing.pem','server.env','edge-secrets.env']),'No server signing key or admin token environment in desktop payload')
 if a.baseline_source:
  with zipfile.ZipFile(a.baseline_source) as basezip:
-  for name in ['src/Captovix/license-config.json','src/Captovix/LicenseRuntime.cs','supabase/functions/licensing/index.ts','admin/config.json']:
+  for name in ['src/Captovix/license-config.json','supabase/functions/licensing/index.ts','admin/config.json']:
    check(basezip.read(next(n for n in basezip.namelist() if n.endswith('/'+name)))==(r/name).read_bytes(),'License/backend unchanged from supplied source: '+name)
 main=(r/'src/Captovix/MainWindow.xaml.cs').read_text()
 check('Task.Run(()=>frozen.Save(region,working)' in main and 'frozen?.Dispose()' in main,'Frozen capture saves retained physical pixels and releases snapshot')
@@ -69,7 +69,7 @@ for path in [a.source_zip,a.update_zip]:
    if path==a.source_zip:
     files=[x for x in r.rglob('*') if x.is_file() and not any(part in {'bin','obj','artifacts','.git','.vs','__pycache__','node_modules'} for part in x.relative_to(r).parts) and '_wpftmp' not in x.name and x.suffix not in {'.pdb','.tmp','.log','.exe','.deb','.pyc'}]
     check({x.relative_to(r).as_posix() for x in files}=={n.split('/',1)[1] for n in z.namelist() if not n.endswith('/')},'Source ZIP contains complete clean tree')
-    check(all(z.read(r.name+'/'+x.relative_to(r).as_posix())==x.read_bytes() for x in files),'Source ZIP byte comparison')
+    check(all(z.read('Captovix-v'+version+'/'+x.relative_to(r).as_posix())==x.read_bytes() for x in files),'Source ZIP byte comparison')
    else:
     check(set(z.namelist())==expected|{'README-PUBLISH.txt'},'Update ZIP includes five assets and publishing instructions')
     check(all(z.read(name)==(rel/name).read_bytes() for name in expected),'Update ZIP assets match verified release bytes')

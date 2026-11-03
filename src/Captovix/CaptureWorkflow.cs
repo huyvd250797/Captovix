@@ -8,7 +8,7 @@ public enum PhotoAction { Current=1, Region=5, Window=6, Display=7, Repeat=8, El
 public sealed record CaptureHotkey(PhotoAction Action, bool Enabled, uint Modifiers, uint Key)
 {
     public static List<CaptureHotkey> Defaults()=>Enum.GetValues<PhotoAction>().Select(a=>new CaptureHotkey(a,true,6,(uint)(0x30+(int)a))).ToList();
-    public string Label => !Enabled ? "Tắt" : $"{((Modifiers&2)!=0?"Ctrl + ":"")}{((Modifiers&1)!=0?"Alt + ":"")}{((Modifiers&4)!=0?"Shift + ":"")}{CaptureKeys.KeyName(Key)}";
+    public string Label => !Enabled ? "Tắt" : $"{((Modifiers&8)!=0?"Win + ":"")}{((Modifiers&2)!=0?"Ctrl + ":"")}{((Modifiers&1)!=0?"Alt + ":"")}{((Modifiers&4)!=0?"Shift + ":"")}{CaptureKeys.KeyName(Key)}";
 }
 public sealed record CapturePreset(string Id,string Name,int Mode,string Display,int Delay,bool Cursor,bool Background,bool AutoCopy);
 public sealed record WorkflowDisplay(string Device,PixelRect Bounds,uint DpiX,uint DpiY,string Identity="");
@@ -46,7 +46,7 @@ public static class CaptureWorkflowStore
         var used=new HashSet<(uint,uint)>{(6,0x32),(6,0x33),(6,0x34)};
         foreach(var h in value.Hotkeys.Where(h=>h.Enabled)){
             if(!CaptureKeys.IsValid(h.Modifiers,h.Key))
-                throw new InvalidDataException("Phím tắt cần Ctrl/Alt + chữ/số/dấu (ví dụ Ctrl + `), F1–F24 trừ F12, hoặc PrintScreen.");
+                throw new InvalidDataException("Chọn một phím bàn phím hoặc tổ hợp Ctrl/Alt/Shift/Win. Phím dành riêng hoặc đang bị ứng dụng khác giữ có thể bị Windows từ chối.");
             if(!used.Add((h.Modifiers,h.Key)))throw new InvalidDataException("Phím tắt bị trùng hoặc trùng phím quay Ctrl+Shift+2/3/4.");
         }
         if(value.Presets==null||value.Presets.Count>20||value.Presets.Any(p=>p==null||string.IsNullOrWhiteSpace(p.Id)||string.IsNullOrWhiteSpace(p.Name)||p.Name.Length>40||p.Mode is <0 or >3||p.Delay is not (0 or 3 or 5)||p.Display==null)||value.Presets.Select(p=>p.Id).Distinct().Count()!=value.Presets.Count||value.Presets.Select(p=>p.Name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=value.Presets.Count)throw new InvalidDataException("Preset cần tên riêng (1–40 ký tự), tối đa 20 preset; trễ 0/3/5 giây.");

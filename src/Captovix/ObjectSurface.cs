@@ -14,7 +14,7 @@ public sealed partial class EditorSurface
     {
         if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return [];
         if(_selected.Count==1&&Selected is {} single){
-            if(ConnectorStudio.IsPath(single)){var start=new Point(single.X1,single.Y1);var end=new Point(single.X2,single.Y2);var c=ConnectorStudio.Control(single);return single.Route==ConnectorRoute.Straight?[start,end]:[start,end,new(c.X,c.Y)];}
+            if(ConnectorStudio.IsPath(single)){var start=new Point(single.X1,single.Y1);var end=new Point(single.X2,single.Y2);var c=ConnectorStudio.Control(single);return single.Kind==AnnotationKind.Arrow||single.Route==ConnectorRoute.Straight?[start,end]:[start,end,new(c.X,c.Y)];}
             if(ShapeStudio.IsLine(single.Kind))return [EditorRenderer.WorldPoint(single,new(single.X1,single.Y1)),EditorRenderer.WorldPoint(single,new(single.X2,single.Y2))];
             var b=EditorRenderer.LocalBox(single);var points=BoxHandles(b).Select(p=>EditorRenderer.WorldPoint(single,p)).ToArray();
             return single.Kind==AnnotationKind.Callout&&single.CalloutStyle is not (CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse)?[..points,EditorRenderer.WorldPoint(single,new(single.TailX,single.TailY))]:points;
@@ -33,8 +33,8 @@ public sealed partial class EditorSurface
         Point[] corners;if(_selected.Count==1&&Selected is {} a){var b=EditorRenderer.LocalBox(a);corners=new[]{new Point(b.X,b.Y),new(b.Right,b.Y),new(b.Right,b.Bottom),new(b.X,b.Bottom)}.Select(p=>EditorRenderer.WorldPoint(a,p)).ToArray();}
         else{var b=SelectionBox();corners=[new(b.X,b.Y),new(b.Right,b.Y),new(b.Right,b.Bottom),new(b.X,b.Bottom)];}
         var l=Layout!;Point Output(Point p){var q=l.ToOutput(p.X,p.Y);return new(q.X,q.Y);}corners=corners.Select(Output).ToArray();var inverse=EditorRenderer.LayoutMatrix(l);inverse.Invert();dc.PushTransform(new MatrixTransform(inverse));
-        var path=new StreamGeometry();using(var c=path.Open()){c.BeginFigure(corners[0],false,true);c.PolyLineTo(corners.Skip(1).ToArray(),true,false);}dc.DrawGeometry(null,pen,path);
-        if(canEdit&&!(_selected.Count==1&&Selected is {} line&&ConnectorStudio.IsPath(line))){var top=new Point((corners[0].X+corners[1].X)/2,(corners[0].Y+corners[1].Y)/2);var rotate=Output(RotationHandle());dc.DrawLine(new Pen(Brushes.DodgerBlue,1/Zoom),top,rotate);dc.DrawEllipse(Brushes.White,new Pen(Brushes.DodgerBlue,1/Zoom),rotate,5/Zoom,5/Zoom);}
+        var path=new StreamGeometry();using(var c=path.Open()){c.BeginFigure(corners[0],false,true);c.PolyLineTo(corners.Skip(1).ToArray(),true,false);}if(!(_selected.Count==1&&Selected is {} arrow&&ShapeStudio.IsLine(arrow.Kind)))dc.DrawGeometry(null,pen,path);
+        if(canEdit){var top=new Point((corners[0].X+corners[1].X)/2,(corners[0].Y+corners[1].Y)/2);var rotate=Output(RotationHandle());if(!(_selected.Count==1&&Selected is {} selectedLine&&ShapeStudio.IsLine(selectedLine.Kind)))dc.DrawLine(new Pen(Brushes.ForestGreen,1/Zoom),top,rotate);dc.DrawEllipse(Brushes.LimeGreen,new Pen(Brushes.DarkGreen,1/Zoom),rotate,5/Zoom,5/Zoom);}
         dc.Pop();
     }
     private void DrawSnapGuides(DrawingContext dc,PixelRect view)

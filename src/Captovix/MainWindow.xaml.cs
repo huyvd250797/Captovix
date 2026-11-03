@@ -39,7 +39,7 @@ public partial class MainWindow : Window
     private void Initialize()
     {
         if(_loaded)return;
-        RefreshSources();var s=_store.LoadSettings();SourceMode.SelectedIndex=Math.Clamp(s.SourceMode,0,3);
+        RefreshSources();var s=_store.LoadSettings();SourceMode.SelectedIndex=s.SourceMode==3?0:Math.Clamp(s.SourceMode,0,2);
         DelayPicker.SelectedIndex=s.Delay==5?2:s.Delay==3?1:0;FpsPicker.SelectedIndex=s.Fps==60?2:s.Fps==15?0:1;
         Surface.KeepAspectRatio=false;_alignmentReference=(AlignmentReference)Math.Clamp(s.ObjectAlignmentReference,0,2);Surface.SnapEnabled=s.ObjectSnap;ObjectSnapToggle.IsChecked=s.ObjectSnap;
         CursorToggle.IsChecked=s.Cursor;MicToggle.IsChecked=s.Mic;SystemToggle.IsChecked=s.SystemAudio;HardwareToggle.IsChecked=s.Hardware;
@@ -53,7 +53,7 @@ public partial class MainWindow : Window
     {
         var device=(DisplayPicker.SelectedItem as DisplayInfo)?.Device;var hwnd=(WindowPicker.SelectedItem as WindowInfo)?.Handle;
         _displays=Native.Displays();DisplayPicker.ItemsSource=_displays;DisplayPicker.SelectedItem=_displays.FirstOrDefault(d=>d.Device==device)??_displays.FirstOrDefault();
-        var windows=Native.Windows();WindowPicker.ItemsSource=windows;WindowPicker.SelectedItem=windows.FirstOrDefault(w=>w.Handle==hwnd)??windows.FirstOrDefault();
+        var windows=Native.Windows(true);WindowPicker.ItemsSource=windows;WindowPicker.SelectedItem=windows.FirstOrDefault(w=>w.Handle==hwnd)??windows.FirstOrDefault();
         DisplaySummary.Text=string.Join("\n\n",_displays.Select(d=>$"{d.Label}\nGốc pixel: {d.Bounds.X}, {d.Bounds.Y}"));
     }
     private nint WindowMessage(nint hwnd,int msg,nint w,nint l,ref bool handled)
@@ -70,20 +70,20 @@ public partial class MainWindow : Window
     {
         if(!LicenseRuntime.Full){if(video||action is not (PhotoAction.Current or PhotoAction.Region)){RequireLicense();return;}action=PhotoAction.Region;}
         if(_busy||ScreenColorPicker.IsPicking||_updateApplying||!_captureGate.TryEnter())return;
-        _licenseDialog?.Close();_settingsDialog?.Close();var previousWindowState=WindowState;var wasVisible=IsVisible;bool success=false,showAfter=video,failed=false;PixelRect? scrollNext=null;bool scrollHorizontal=false;string? finalStatus=null;
-        FrozenDesktop? frozen=null;SetBusy(true);
+        if(video){_licenseDialog?.Close();_settingsDialog?.Close();}var previousWindowState=WindowState;var wasVisible=IsVisible;bool success=false,showAfter=video,failed=false;PixelRect? scrollNext=null;bool scrollHorizontal=false;string? finalStatus=null;
+        FrozenDesktop? frozen=null;if(video)SetBusy(true);
         try {
             _captureCancellation=new();var cancellation=_captureCancellation.Token;RegisterCaptureEscape();
             var s=Settings();if(!video){if(action is PhotoAction.Region or PhotoAction.Repeat)s.SourceMode=0;else if(action==PhotoAction.Window)s.SourceMode=1;else if(action==PhotoAction.Display)s.SourceMode=2;else if(action==PhotoAction.Element)s.SourceMode=3;}
             if(!video&&s.SourceMode!=1){
-                _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);Hide();
+                _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);if(video)Hide();
                 if(s.Delay>0)await CapturePrompts.CountdownAsync(s.Delay,cancellation);
                 _displays=Native.Displays();frozen=FrozenDesktop.Capture(_displays,s.Cursor);
             }
-            Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();_playing=false;
+            SetBusy(true);Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();_playing=false;
 
 
-            if(video&&s.SourceMode==3)throw new InvalidOperationException("Chụp phần tử chỉ dành cho ảnh. Chọn vùng, cửa sổ hoặc toàn màn hình để quay.");
+            if(s.SourceMode==3)s.SourceMode=0;
             if(!video&&LicenseRuntime.Full&&action!=PhotoAction.Repeat)SourceMode.SelectedIndex=s.SourceMode;
             _store.SaveSettings(Settings());
             bool captureLicensed=LicenseRuntime.Full;var options=_workflow.Clone();if(!captureLicensed)options.PhotoStyle.BorderEnabled=false;options.Background=AfterPhotoPicker.SelectedIndex==1;options.AutoCopy=captureLicensed&&AutoCopyPhoto.IsChecked==true;
@@ -93,11 +93,11 @@ public partial class MainWindow : Window
             if(frozen!=null&&frozen.Topology!=topology)throw new InvalidOperationException("Màn hình hoặc DPI đã đổi sau lúc giữ ảnh. Hãy chụp lại.");
             var display=DisplayPicker.SelectedItem as DisplayInfo??throw new InvalidOperationException("Không tìm thấy màn hình.");
             WindowInfo? window=null;PixelRect region=display.Bounds;
-            _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);Hide();if(frozen==null)await Task.Delay(220,cancellation);
+            _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);if(video)Hide();if(frozen==null)await Task.Delay(220,cancellation);
             if(s.SourceMode==3){var chosen=await ElementPicker.PickAsync(_displays,cancellation,frozen);if(chosen==null)return;region=chosen.Value;if(RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
             else if(s.SourceMode==0){
                 if(action==PhotoAction.Repeat&&CaptureWorkflowStore.CanRepeat(_workflow.LastRegion,WorkflowDisplays()))region=_workflow.LastRegion!.Bounds;
-                else{if(action==PhotoAction.Repeat)_tray?.Notify("Bố trí màn hình/DPI đã thay đổi hoặc chưa có vùng cũ. Hãy chọn vùng mới.");var chosen=await RegionPicker.PickAsync(_displays,cancellation,!video&&captureLicensed,false,frozen);if(chosen==null)return;region=chosen.Value;if(!video&&RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
+                else{if(action==PhotoAction.Repeat)_tray?.Notify("Bố trí màn hình/DPI đã thay đổi hoặc chưa có vùng cũ. Hãy chọn vùng mới.");var chosen=await RegionPicker.PickAsync(_displays,cancellation,!video&&captureLicensed,!video&&captureLicensed,frozen);if(chosen==null)return;region=chosen.Value;if(!video&&RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
             }else if(s.SourceMode==1){
                 window=video?WindowPicker.SelectedItem as WindowInfo:await CapturePrompts.PickWindowAsync(cancellation);
                 if(window==null)return;
@@ -106,7 +106,7 @@ public partial class MainWindow : Window
             if(video)region=region.Even();if(region.IsEmpty)throw new InvalidOperationException("Vùng chọn quá nhỏ.");
             if(frozen==null){await CapturePrompts.CountdownAsync(s.Delay,cancellation);await Task.Delay(220,cancellation);}
             var now=Native.Displays().Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity));if(CaptureWorkflowStore.Topology(now)!=topology)throw new InvalidOperationException("Màn hình hoặc DPI đã thay đổi trong phiên chụp. Hãy thử chọn lại.");
-            if(window!=null){var current=Native.Windows().FirstOrDefault(w=>w.Handle==window.Handle&&w.ProcessId==window.ProcessId);if(current==null||!Native.GetWindowRect(window.Handle,out var wr))throw new InvalidOperationException("Cửa sổ mục tiêu không còn khả dụng. Hãy chọn lại.");region=video?wr.Pixels.Even():wr.Pixels;}
+            if(window!=null){var current=Native.Windows(true).FirstOrDefault(w=>w.Handle==window.Handle&&w.ProcessId==window.ProcessId);if(current==null||!Native.GetWindowRect(window.Handle,out var wr))throw new InvalidOperationException("Cửa sổ mục tiêu không còn khả dụng. Hãy chọn lại.");region=video?wr.Pixels.Even():wr.Pixels;}
             cancellation.ThrowIfCancellationRequested();var final=_store.NewPath(video);var working=Path.Combine(_store.Root,Path.GetFileNameWithoutExtension(final)+".pending"+(video?".mp4":".png"));
             if(!LicenseRuntime.Full&&(video||s.SourceMode!=0||action==PhotoAction.Repeat))throw new InvalidOperationException("Quyền sử dụng đã hết trong phiên chọn. Chỉ chụp vùng thủ công còn được mở.");
             var clock=Stopwatch.StartNew();string actual;

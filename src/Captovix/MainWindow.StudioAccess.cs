@@ -24,6 +24,8 @@ public partial class MainWindow
         if(!RequireLicense()||_session==null||_busy)return;var tool=StudioToolCatalog.Find(command);if(tool==null)return;
         _recentStudioCommand=command;RenderRecentStudio();try{MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"last-studio-tool.json"),JsonSerializer.Serialize(command));}catch(Exception ex){App.Log(ex);}
         if(_studioPopup!=null)_studioPopup.IsOpen=false;
+        if(command.StartsWith("Editor:")){SelectTool(Enum.Parse<EditorTool>(command[7..]));return;}
+        if(command=="Canvas"){ExtendCanvas_Click(this,new());return;}
         if(command=="Stamp"){OpenStampGallery(RecentStudioButton);return;}
         if(command=="CustomImage"){AddImages_Click(this,new());return;}
         ImageStudio_Click(new MenuItem{Tag=command},new());
@@ -44,20 +46,23 @@ public partial class MainWindow
     }
     internal static BitmapSource StampImage(StampSpec spec)
     {
+        var geometry=Geometry.Parse(spec.Path);var pen=new Pen(EditorRenderer.Ink(spec.Color),2.2){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};var bounds=geometry.GetRenderBounds(pen);double scale=208/Math.Max(1,Math.Max(bounds.Width,bounds.Height));
         var visual=new DrawingVisual();using(var dc=visual.RenderOpen()){
-            dc.PushTransform(new TranslateTransform(24,24));dc.PushTransform(new ScaleTransform(208d/24,208d/24));
-            var pen=new Pen(EditorRenderer.Ink(spec.Color),2.2){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};dc.DrawGeometry(null,pen,Geometry.Parse(spec.Path));dc.Pop();dc.Pop();
+            if(spec.Caption!=null){var ink=EditorRenderer.Ink(spec.Color);dc.DrawRoundedRectangle(null,new Pen(ink,5),new Rect(12,78,232,100),8,8);dc.DrawLine(new Pen(ink,2),new(22,90),new(234,90));dc.DrawLine(new Pen(ink,2),new(22,166),new(234,166));double labelSize=27;FormattedText Label(double size)=>new FormattedText(spec.Caption,System.Globalization.CultureInfo.GetCultureInfo("vi-VN"),FlowDirection.LeftToRight,new Typeface(new FontFamily("Segoe UI"),FontStyles.Normal,FontWeights.Bold,FontStretches.Normal),size,ink,1);var label=Label(labelSize);while(label.WidthIncludingTrailingWhitespace>208&&labelSize>12)label=Label(--labelSize);dc.DrawText(label,new((256-label.WidthIncludingTrailingWhitespace)/2,(256-label.Height)/2));}
+            else{dc.PushTransform(new TranslateTransform((256-bounds.Width*scale)/2-bounds.X*scale,(256-bounds.Height*scale)/2-bounds.Y*scale));dc.PushTransform(new ScaleTransform(scale,scale));dc.DrawGeometry(null,pen,geometry);dc.Pop();dc.Pop();}
         }
         var bitmap=new RenderTargetBitmap(256,256,96,96,PixelFormats.Pbgra32);bitmap.Render(visual);bitmap.Freeze();return bitmap;
     }
     private void OpenStampGallery(Button anchor)
     {
         if(!RequireLicense()||_session==null||_busy)return;
-        var body=new StackPanel{Width=310,Margin=new(12)};body.Children.Add(new TextBlock{Text="Stamp",FontWeight=FontWeights.SemiBold,Margin=new(3,0,3,10)});var grid=new WrapPanel();body.Children.Add(grid);
-        foreach(var stamp in StampCatalog.All){var image=StampImage(stamp);var button=new Button{Content=new Image{Source=image,Stretch=Stretch.Uniform,Width=42,Height=42,Margin=new(7)},Width=68,Height=64,Margin=new(3),ToolTip=stamp.Label};System.Windows.Automation.AutomationProperties.SetName(button,stamp.Label);button.Click+=(_,_)=>{
-                if(!RequireLicense()||_session==null||_busy||!FlushEdits())return;if(_studioPopup!=null)_studioPopup.IsOpen=false;
-                try{EndInlineText(true);Surface.CancelInteraction();var view=_session.Document.Viewport;double size=Math.Min(96,Math.Max(32,Math.Min(view.Width,view.Height)/4d));var a=new Annotation{Kind=AnnotationKind.ImageLayer,Name=stamp.Label,X1=view.X+12,Y1=view.Y+12,X2=view.X+12+size,Y2=view.Y+12+size,PixelPng=RasterPixels.Encode(image),ImageStyle=new()};AddStudioObjects(a);SetStatus("Đã thêm stamp · kéo để di chuyển, tay nắm để đổi kích thước · Ctrl+Z hoàn tác.");}catch(Exception ex){App.Log(ex);SetStatus("Chưa thêm stamp: "+ex.Message);}
-            };grid.Children.Add(button);
+        var body=new StackPanel{Width=380,Margin=new(12)};body.Children.Add(new TextBlock{Text="Thư viện Stamp",FontWeight=FontWeights.SemiBold,FontSize=16,Margin=new(3,0,3,5)});body.Children.Add(new TextBlock{Text="Chọn mẫu, sau đó click lên ảnh để đặt. Esc kết thúc.",TextWrapping=TextWrapping.Wrap,Margin=new(3,0,3,12)});
+        foreach(var group in StampCatalog.All.GroupBy(stamp=>stamp.Category)){
+            body.Children.Add(new TextBlock{Text=group.Key,FontWeight=FontWeights.SemiBold,Margin=new(4,8,4,6)});var grid=new WrapPanel();body.Children.Add(grid);
+            foreach(var stamp in group){var image=StampImage(stamp);var tile=new StackPanel{Margin=new(4)};tile.Children.Add(new Image{Source=image,Stretch=Stretch.Uniform,Width=48,Height=48,Margin=new(3)});tile.Children.Add(new TextBlock{Text=stamp.Label,FontSize=10,TextWrapping=TextWrapping.Wrap,TextAlignment=TextAlignment.Center,MaxWidth=76,Margin=new(0,3,0,0)});
+                var button=new Button{Content=tile,Width=86,MinHeight=88,Padding=new(2),Margin=new(3),ToolTip=stamp.Label,HorizontalContentAlignment=HorizontalAlignment.Center,VerticalContentAlignment=VerticalAlignment.Center};System.Windows.Automation.AutomationProperties.SetName(button,stamp.Label);
+                button.Click+=(_,_)=>{if(!RequireLicense()||_session==null||_busy||!FlushEdits())return;EndInlineText(true);Surface.CancelInteraction();if(_studioPopup!=null)_studioPopup.IsOpen=false;SelectTool(EditorTool.Select);Surface.StampPng=RasterPixels.Encode(image);Surface.StampName=stamp.Label;Surface.Tool=EditorTool.Stamp;Surface.Cursor=System.Windows.Input.Cursors.Cross;ToolHint.Text="Stamp · "+stamp.Label+" · Click để đặt · Esc kết thúc";Surface.Focus();SetStatus("Đã chọn "+stamp.Label+" · Click lên ảnh để đặt stamp, kéo tay nắm để resize.");};grid.Children.Add(button);
+            }
         }
         OpenStudioPopup(anchor,body);
     }

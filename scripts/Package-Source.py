@@ -9,7 +9,7 @@ files=[p for p in root.rglob('*') if p.is_file() and not any(x in excluded for x
 for p in files:
     if p.name in {'server.env','edge-secrets.env','captovix-signing.pem','.env','.env.local'} or p.name.endswith('.private.pem'):
         raise SystemExit('Refusing to package a secret file: '+p.relative_to(root).as_posix())
-target=root/'artifacts'/f'Captovix V{version} — Quick Capture Experience.zip';target.parent.mkdir(exist_ok=True)
+target=root/'artifacts'/f'Captovix V{version} — Scrolling Capture Quality.zip';target.parent.mkdir(exist_ok=True)
 with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED,6) as z:
     for p in files:z.write(p,f'Captovix-v{version}/'+p.relative_to(root).as_posix())
 print(target)

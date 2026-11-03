@@ -13,7 +13,7 @@ var tags=Named("ToolBox").Elements(w+"Button").Select(b=>(string?)b.Attribute("T
 Check(tags.Contains("PixelRectangle"),"Pixel selection enters from compact toolbar");
 Check(Named("CalloutKindPicker").Attribute("Visibility")?.Value=="Collapsed"&&Named("CalloutKindPicker").Elements().Count()==10&&Named("CalloutTileGrid").Name==w+"WrapPanel","Ten callout styles use preview host, not visible combo");
 Check(Named("ShapeArrowTip").Elements().Count()==5,"Arrow group includes headless line choice");
-foreach(var name in new[]{"CaptureButton","RecordButton"})Check(Named(name).Attribute("Padding")?.Value=="9,4","Compact capture/record action: "+name);
+foreach(var name in new[]{"CaptureButton","RecordButton"})Check(Named(name).Attribute("Padding")?.Value=="6,3","Compact capture/record action: "+name);
 Check(Named("MediaList").Attribute("SelectionChanged")?.Value=="Media_Changed"&&Named("MediaList").Attribute("VirtualizingPanel.IsVirtualizing")?.Value=="True","Library preserves selection routing and virtualization");
 Check(Named("RestoreMediaButton").Attribute("Content")?.Value=="↶","Restore action is an icon at library footer");
 Check(doc.Descendants().Where(e=>e.Attribute(x+"Name")!=null).Select(e=>e.Attribute(x+"Name")!.Value).Distinct().Count()==doc.Descendants().Count(e=>e.Attribute(x+"Name")!=null),"Named WPF controls are unique across editor and modal modules");
@@ -26,7 +26,7 @@ var themes=XDocument.Load(Path.Combine(root.FullName,"src/Captovix/Themes.xaml")
 Check(Named("LibraryFooterRow").Name==w+"WrapPanel"&&Named("LibraryFooterRow").Elements(w+"Button").Where(e=>e.Attribute("Visibility")?.Value!="Collapsed").Select(e=>e.Attribute(x+"Name")?.Value).SequenceEqual(new[]{"LibraryDeleteButton","ArchiveButton","LibraryLayoutButton"}),"Library exposes exactly delete, archive and orientation actions");
 Check(Named("RestoreMediaButton").Ancestors().Contains(Named("LibraryMorePopup"))&&Named("BatchButton").Ancestors().Contains(Named("LibraryMorePopup")),"Legacy secondary controls retained without adding toolbar clutter");
 Check(doc.Descendants(w+"MenuItem").Any(e=>e.Attribute("Click")?.Value=="ExtendCanvas_Click"),"Canvas extension has a discoverable menu command");
-Check(Named("ExtendCanvasButton").Ancestors().Contains(Named("ToolBox"))&&!Named("ExtendCanvasButton").Ancestors().Contains(Named("LibraryMorePopup")),"Canvas control belongs to drawing tools, not media commands");
+Check(Named("ExtendCanvasButton").Ancestors().Contains(Named("OverflowToolStaging"))&&!Named("ExtendCanvasButton").Ancestors().Contains(Named("LibraryMorePopup")),"Canvas command remains available through overflow, not media commands");
 Check(!doc.Descendants(w+"MenuItem").Any(e=>e.Attribute("Click")?.Value is "Undo_Click" or "Redo_Click"),"Redundant Undo and Redo menu commands removed; toolbar and shortcuts preserved");
 Check(Named("ObjectKeepRatio").Attribute("Checked")?.Value=="ObjectRatio_Changed"&&Named("ObjectKeepRatio").Attribute("Unchecked")?.Value=="ObjectRatio_Changed","Ratio setting drives both numeric and drag behavior");
 Check(Named("ObjectX").Parent!.Element(w+"TextBlock")?.Attribute("Text")?.Value.Contains("canvas")==true,"Numeric position is clearly labeled in output canvas pixels");
@@ -35,3 +35,5 @@ Check(Named("ImageScroll").Elements(w+"Border").Single().Attribute("Background")
 Check(doc.Descendants(w+"Menu").Single().Elements(w+"MenuItem").All(e=>e.Elements(w+"MenuItem").Any(child=>child.Elements(w+"MenuItem").Any())),"Every top menu exposes functional command groups");
 Check(Named("TileRoot").Descendants(w+"TextBlock").Any(e=>e.Attribute("Text")?.Value=="{Binding CompactDetail}"),"Media cards use a compact detail line");
 Console.WriteLine($"{n} shell layout structure checks passed; rendering still requires Windows.");
+
+Check(Named("ToolBox").Elements(w+"Button").Select(e=>(string?)e.Attribute("Tag")??(string?)e.Attribute(x+"Name")).SequenceEqual(new[]{"Shape","Callout","Arrow","Text","Crop","Blur","PixelRectangle","Step","AssistButton","RecentStudioButton","StudioMoreButton"}),"V1.33 main tool order matches requested compact row");Check(!Named("ImageTools").Ancestors().Contains(Named("EditorPane")),"Tools no longer consume editor canvas rows");Check(inspector.Attribute("Grid.Row")?.Value=="1"&&inspector.Attribute("Grid.RowSpan")?.Value=="2"&&!inspector.Ancestors().Contains(Named("WorkspaceGrid")),"Properties extend upwards beside top tools");Check(Named("CopyButton").Ancestors().Contains(stage)&&Named("ExportButton").Ancestors().Contains(stage),"Copy/export retain menu commands without toolbar buttons");

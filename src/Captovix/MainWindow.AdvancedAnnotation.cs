@@ -34,7 +34,8 @@ public partial class MainWindow
         System.Windows.Documents.TextElement.SetFontFamily(InlineText,InlineText.FontFamily);
         InlineText.TextWrapping=callout||a.TextWidth>0?TextWrapping.Wrap:TextWrapping.NoWrap;
         InlineText.Width=Math.Max(24,callout?content.Width:a.TextWidth>0?a.TextWidth:Math.Max(160,textLayout.WidthIncludingTrailingWhitespace+40));
-        InlineText.Height=Math.Max(a.FontSize+4,textLayout.Height+4);
+        InlineText.Height=a.TextFrame&&a.Kind==AnnotationKind.Text?Math.Max(1,content.Height):Math.Max(a.FontSize+4,textLayout.Height+4);
+        if(a.TextFrame&&a.Kind==AnnotationKind.Text){InlineText.Width=Math.Max(1,content.Width);InlineText.TextWrapping=TextWrapping.Wrap;InlineText.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;}else InlineText.VerticalScrollBarVisibility=ScrollBarVisibility.Hidden;
         InlineText.MaxHeight=100000;
     }
     private void EndInlineText(bool commit)

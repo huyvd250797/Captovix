@@ -1,3 +1,36 @@
+# Roadmap Captovix — cập nhật V1.33.0
+
+Giữ roadmap ảnh gần nhất đã chốt; video tính sau.
+
+| Phiên bản | Tên | Nội dung chính | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/phụ thuộc |
+| --- | --- | --- | --- | --- | --- |
+| V1.30.0 | Capture Fidelity & Reliability | Snapshot/pixel, DPI, Editor/copy/PNG, Vừa khung/100% | Snapshot vật lý | Pixel đúng, multi-DPI | Đã bàn giao |
+| V1.31.0 | Quick Capture Experience | Toolbar gọn, chỉnh biên, Enter, kính lúp, Crop/Step/Stamp | Preferences/công cụ | Luồng chụp nhanh | Đã bàn giao |
+| V1.32.0 | Smart Element Capture Refinement | Phần tử/modal, kéo vùng, chữ/stamp, KEY/hotkeys | Cache/probe, schema17 chữ | Nhận diện và chỉnh sửa ổn định | Đã bàn giao |
+| V1.33.0 | Scrolling Capture Quality | Mối nối, mất/lặp dòng/lệch cột, chờ ổn định, header/footer, sửa/bỏ khung; UI/drag/license theo Boss | Client; backend trial không reset đã có, không DB migration | Logic/build/package; nghiệm thu Windows theo checklist | Đã triển khai; logic/build đạt, native Windows còn chờ |
+| V1.34.0 | Capture Workflow & Recovery | Global hotkey, vùng gần đây, menu hẹn giờ, vị trí lưu, phục hồi và lỗi lưu | Capture/session/lưu file | Chụp liên tục, lỗi không mất ảnh | Chưa triển khai; sau V1.33 |
+| V1.35.0 | Object Editing Precision | Chọn/kéo/resize, đa chọn/nhóm/khóa/căn chỉnh/Smart Guides, canvas tự khớp | Object geometry/history | Undo/Redo đúng hình/vị trí | Chưa hoàn thiện toàn phạm vi |
+| V1.36.0 | Text & Callout Polish | IME/chữ trực tiếp, hộp/đuôi độc lập, mẫu thuộc tính | Typography/geometry | Nhập/sửa/lưu đúng bố cục | Một phần làm sớm, chưa hoàn thiện toàn phạm vi |
+| V1.37.0 | Image Tools & OCR Usability | Kéo vùng nhận chữ/copy, zoom/pan, màu/làm nét/Clone/phối cảnh, trước/sau/hủy | Pixel tools | Xem trước và hoàn tác đáng tin | Chưa triển khai toàn phạm vi |
+| V1.38.0 | Library & Export Experience | Thumbnail/tìm kiếm/OCR, chọn nhiều/xóa/khôi phục, xuất hàng loạt | Library/export | Cuộn mượt, xuất đúng cấu hình | Chưa triển khai toàn phạm vi |
+| V1.39.0 | Image Performance & Release Quality | Mở/chuyển/render/RAM; theme/icon/menu/lỗi; hồi quy Windows/nâng cấp/phục hồi | Performance/QA | Đo và nghiệm thu bộ tiêu chí | Chưa triển khai |
+
+Capture Presets & Repeat không thay thế phiên bản nào của roadmap này.
+
+## Lịch sử
+
+# Roadmap Captovix — V1.32.0
+
+| Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/phụ thuộc |
+| --- | --- | --- | --- | --- | --- |
+| V1.32.0 | Smart Element Capture Refinement | Chụp mặc định; X/Y vàng cam; popup KEY; settings/hotkeys; stamp/chữ/arrow; scroll thống nhất | Hierarchy cache/cancel stale probe; schema17 riêng cho fixed text; config license giữ nguyên | Logic/build/package đạt; nghiệm thu Windows native theo checklist | Đã triển khai; logic/build đạt, native Windows còn chờ |
+| V1.33.0 | Scrolling Capture Quality | Sửa sọc/mất/lặp dòng, header/footer cố định, cảnh báo mối nối, phục hồi phiên | Stitching và kiểm tra khung; không đổi license | Bộ trang mẫu dọc/ngang ghép đủ nội dung; hủy/lỗi phục hồi được | Chưa xây; sau V1.32 |
+| Backlog | Capture Presets & Repeat | Nhập X/Y/W/H trong selector, tỷ lệ, vùng gần đây | Pixel geometry/topology | Chọn nhanh, không vượt giới hạn | Để sau theo roadmap Boss chọn |
+
+Không thay mô hình đóng gói/dung lượng trong V1.32. Hai ZIP bàn giao; không migration/backend redeploy. Video giữ phạm vi hiện có.
+
+## Lịch sử
+
 # Roadmap Captovix — V1.31.0
 
 | Phiên bản | Mục tiêu | Chức năng | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/phụ thuộc |

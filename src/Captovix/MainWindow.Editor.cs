@@ -44,10 +44,10 @@ public partial class MainWindow
         // Only read dimensions from a complete, matching document/surface pair.
         if(_session is {} session&&ReferenceEquals(session,Surface.Session)&&Surface.Original!=null&&Surface.Layout is {} layout){
             OriginalSizeLabel.Text=$"Gốc: {Surface.Original.PixelWidth} × {Surface.Original.PixelHeight} px";
-            ImageSizeLabel.Text=$"{layout.Width} × {layout.Height} px · {session.Document.Annotations.Count} chú thích";
+            ImageSizeLabel.Text=$"Xuất: {layout.Width} × {layout.Height} px · {session.Document.Annotations.Count} chú thích";
             ImageFidelityHint.Text=ImageFidelity.CanCopyPixels(layout)?"PNG/Copy: giữ pixel vùng không chỉnh. Vừa khung chỉ đổi cách xem.":"Xuất/Copy có resize theo thiết lập; zoom chỉ đổi cách xem.";
             RestoreCropButton.IsEnabled=session.Document.Crop!=null||session.Document.Appearance.OutputCrop!=null;
-            ZoomLabel.Text=_actualPixels?"100% · pixel thật":$"{(_fitMode?"Vừa khung":"Tùy chỉnh")} · {Surface.PhysicalZoom*100:0.#}%";
+            ZoomLabel.Text=$"{Surface.PhysicalZoom*100:0.#}%";
             FitViewButton.SetResourceReference(Control.BackgroundProperty,_fitMode?"Accent":"Surface");FitViewButton.SetResourceReference(Control.ForegroundProperty,_fitMode?"OnAccent":"Text");
             ActualViewButton.SetResourceReference(Control.BackgroundProperty,_actualPixels?"Accent":"Surface");ActualViewButton.SetResourceReference(Control.ForegroundProperty,_actualPixels?"OnAccent":"Text");
             ZoomLabel.ToolTip=Surface.PhysicalZoom<.999?"Ảnh đang thu nhỏ để vừa khung. Chọn Rõ nét · 100% để kiểm tra chữ và pixel gốc; file lưu giữ kích thước gốc.":"1 pixel ảnh tương ứng "+$"{Surface.PhysicalZoom:0.##}"+" pixel màn hình. Zoom không thay đổi file lưu.";
@@ -103,7 +103,7 @@ public partial class MainWindow
             EditorTool.Select=>"Shift/Ctrl+click chọn nhiều • Alt+click chọn lớp dưới • Tay nắm tròn xoay • Shift khóa hướng/tỷ lệ/góc 15° • Ctrl+con lăn zoom; con lăn cuộn dọc; Shift+con lăn cuộn ngang • Space kéo khung nhìn",
             EditorTool.Shape=>"Chọn hình và viền/nền ở bảng thuộc tính → kéo để vẽ • Shift giữ tỷ lệ • V để chọn và sửa lại.",
             EditorTool.Line or EditorTool.Arrow=>"Chọn thẳng/gấp khúc/cong bên phải • Kéo từ shape sang shape để nối • Kéo để vẽ • Shift khóa hướng mỗi 45° • V để sửa đầu mút; chỉnh kiểu nét và đầu mũi tên bên phải.",
-            EditorTool.Text=>"Click trên ảnh để nhập chữ trực tiếp • Double-click chữ để sửa • Ctrl+Enter hoàn tất, Esc hủy.",
+            EditorTool.Text=>"Kéo tạo khung chữ có xem trước • Thả để nhập • Kéo tay nắm để resize/reflow • Double-click sửa • Ctrl+Enter hoàn tất.",
             EditorTool.Callout=>"Kéo hộp để tạo callout và nhập chữ • Chọn rồi kéo tay nắm ở đầu đuôi để đổi điểm chỉ • Double-click sửa chữ.",
             EditorTool.Freehand=>"Giữ chuột trái để vẽ tự do • Thả chuột kết thúc nét • Esc hủy nét đang vẽ.",
             EditorTool.Step=>"Click để đặt số bước tự tăng. Có thể sửa số ở bảng thuộc tính.",
@@ -172,7 +172,7 @@ public partial class MainWindow
     private void FitImage()
     {
         _fitMode=true;_actualPixels=false;if(_session==null||Surface.Layout is not {} v)return;
-        Surface.SetZoom(ImageFidelity.FitZoom(v.Width,v.Height,Math.Max(40,ImageScroll.ActualWidth-16-2*EditorSurface.WorkspacePad),Math.Max(40,ImageScroll.ActualHeight-16-2*EditorSurface.WorkspacePad),Surface.DisplayScale));
+        Surface.SetZoom(ImageFidelity.FitZoom(v.Width,v.Height,Math.Max(40,(ImageScroll.ViewportWidth>0?ImageScroll.ViewportWidth:ImageScroll.ActualWidth)-12-2*EditorSurface.WorkspacePad),Math.Max(40,(ImageScroll.ViewportHeight>0?ImageScroll.ViewportHeight:ImageScroll.ActualHeight)-12-2*EditorSurface.WorkspacePad),Surface.DisplayScale));
     }
     private void Fit_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FitImage();}
     private void Actual_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;ZoomAtCenter(ImageFidelity.ActualZoom(VisualTreeHelper.GetDpi(this).DpiScaleX));_actualPixels=true;UpdateEditorReadout();}
@@ -193,6 +193,7 @@ public partial class MainWindow
         if(_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))return;
         if(e.Key==Key.A&&MediaList.IsKeyboardFocusWithin&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){MediaList.SelectAll();e.Handled=true;return;}
         if(e.Key==Key.Delete&&MediaList.IsKeyboardFocusWithin){Delete_Click(sender,e);e.Handled=true;return;}
+        if(e.Key==Key.Escape&&Surface.Tool==EditorTool.Stamp){Surface.StampPng=null;SelectTool(EditorTool.Select);e.Handled=true;return;}
         var ctrl=Keyboard.Modifiers.HasFlag(ModifierKeys.Control);var typing=Keyboard.FocusedElement is TextBoxBase;
         if(TryTextShortcut(e))return;
         if(ViewportKey(e,typing))return;

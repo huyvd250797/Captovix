@@ -10,6 +10,7 @@ using Microsoft.Win32;
 namespace Captovix;
 public partial class MainWindow
 {
+    private long _libraryDragTick;
     private readonly StackPanel _imageLayerPanel=new(){Margin=new(0,4,0,10)};
     private readonly ComboBox _layerFit=new(){ItemsSource=new[]{"Vừa ảnh · giữ toàn bộ","Lấp đầy ô · cắt phần thừa"}};
     private readonly Slider _layerPanX=new(){Minimum=0,Maximum=1,TickFrequency=.01},_layerPanY=new(){Minimum=0,Maximum=1,TickFrequency=.01};
@@ -32,8 +33,14 @@ public partial class MainWindow
         foreach(var text in new[]{_layerRadius,_layerBorder}){text.LostKeyboardFocus+=(_,_)=>ApplyLayerControls();text.KeyDown+=(_,e)=>{if(e.Key==Key.Enter)ApplyLayerControls();};}
         _layerColor.Click+=(_,_)=>OpenPaint(_layerColor,c=>{if(c!=null)LayerChange(a=>(a.ImageStyle??=new()).BorderColor=c);},false);
         EditorPane.AllowDrop=true;EditorPane.DragOver+=(_,e)=>{e.Effects=e.Data.GetDataPresent(DataFormats.FileDrop)||e.Data.GetDataPresent("Captovix.LibraryImage")?DragDropEffects.Copy:DragDropEffects.None;e.Handled=true;};EditorPane.Drop+=CompositionDrop;
-        MediaList.PreviewMouseLeftButtonDown+=(_,e)=>{_libraryDragItem=null;var source=e.OriginalSource as DependencyObject;if(Ancestor<System.Windows.Controls.Primitives.ScrollBar>(source)!=null||Ancestor<System.Windows.Controls.Primitives.Thumb>(source)!=null||Ancestor<Button>(source)!=null||Keyboard.Modifiers!=ModifierKeys.None)return;_libraryDragStart=e.GetPosition(MediaList);_compositionDropTarget=_activeItem;_libraryDragItem=Ancestor<ListBoxItem>(source)?.DataContext as MediaItem;};
-        MediaList.PreviewMouseMove+=(_,e)=>{if(_libraryDragItem==null||MediaList.SelectedItems.Count>1||e.LeftButton!=MouseButtonState.Pressed||Math.Abs(e.GetPosition(MediaList).X-_libraryDragStart.X)+Math.Abs(e.GetPosition(MediaList).Y-_libraryDragStart.Y)<12)return;if(_libraryDragItem is MediaItem{IsVideo:false} item){_libraryDragItem=null;var data=new DataObject("Captovix.LibraryImage",item);DragDrop.DoDragDrop(MediaList,data,DragDropEffects.Copy);}};
+        MediaList.PreviewMouseLeftButtonDown+=(_,e)=>{_libraryDragItem=null;var source=e.OriginalSource as DependencyObject;if(Ancestor<System.Windows.Controls.Primitives.ScrollBar>(source)!=null||Ancestor<System.Windows.Controls.Primitives.Thumb>(source)!=null||Ancestor<Button>(source)!=null||Keyboard.Modifiers!=ModifierKeys.None)return;_libraryDragTick=Environment.TickCount64;_libraryDragStart=e.GetPosition(MediaList);_compositionDropTarget=_activeItem;_libraryDragItem=Ancestor<ListBoxItem>(source)?.DataContext as MediaItem;};
+        MediaList.PreviewMouseMove+=(_,e)=>{
+            if(_libraryDragItem==null||MediaList.SelectedItems.Count>1||e.LeftButton!=MouseButtonState.Pressed||Environment.TickCount64-_libraryDragTick<160||(e.GetPosition(MediaList)-_libraryDragStart).Length<12)return;
+            if(_libraryDragItem is not MediaItem{IsVideo:false} item)return;_libraryDragItem=null;
+            try{if(!RequireLicense()||!FlushEdits())return;var bitmap=MediaStore.LoadImage(item.FilePath);var editing=DocumentStore.Load(item,bitmap,out var warning);if(warning!=null)throw new IOException(warning);var result=EditorRenderer.Render(bitmap,editing.Document);var folder=Path.Combine(App.DataRoot,"DragExports");Directory.CreateDirectory(folder);var path=Path.Combine(folder,"Captovix-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N")[..6]+".png");ImageTransfer.Save(result,path);
+                var data=new DataObject();data.SetData("Captovix.LibraryImage",item);data.SetFileDropList(new System.Collections.Specialized.StringCollection{path});data.SetImage(result);DragDrop.DoDragDrop(MediaList,data,DragDropEffects.Copy);e.Handled=true;
+            }catch(Exception ex){App.Log(ex);SetStatus("Chưa kéo ảnh ra ngoài được: "+ex.Message);}
+        };
         SyncCompositionControls();
     }
     private Annotation? SelectedImage()=>_session?.Document.Annotations.Where(a=>Surface.SelectedIds.Contains(a.Id)&&a.Kind==AnnotationKind.ImageLayer).SingleOrDefaultSafe();

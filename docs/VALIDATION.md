@@ -1,3 +1,28 @@
+# V1.33.0 — Validation
+
+- 60 suites biên dịch thành công; 36 bộ logic thực thi trên Linux và 24 bộ Windows/WPF chỉ biên dịch.
+- ScrollQualityChecks: pixel rows không mất/lặp, fixed header/footer, phát hiện khung động theo tile, lệch ngang không được chấp nhận tự động, transpose cuộn ngang và hủy phép ghép.
+- ShellLayoutChecks: công cụ đúng thứ tự, chuyển khỏi canvas, inspector lên hàng trên, giữ Copy/Export qua menu, không trùng tên WPF.
+- CaptureQuality133WindowsChecks: fixture tự chụp cửa sổ cùng process và guard trial đang dùng/đã hết hạn không đổi expiry, không gọi dịch vụ. Chỉ compile tại Linux; chưa thực thi trên Windows.
+- Sau tối ưu lề canvas và zoom readout: build app/fixture và chạy lại ShellLayoutChecks thành công.
+- Backend trial trong source chỉ tạo trial khi chưa có device và giữ nguyên trial_until khi nhận yêu cầu lặp. Không đổi SQL/API/admin; public license config và endpoint update đối chiếu khớp source đính kèm.
+- Chưa nghiệm thu UI/native Windows: Word/Explorer/Drive FileDrop, GDI/UIA, DPI, popup/theme, thao tác chuột và Setup/cài đè/updater thực tế. Xem checklist docs/SCROLLING-CAPTURE-QUALITY-V133.md.
+- Chưa push/deploy/publish release. Không tạo key/trial trên production khi build/test.
+
+## Lịch sử kiểm tra
+
+# V1.32.0 — Validation
+
+- 59 bộ kiểm tra trong scripts/Run-Checks.py đã build; 36 bộ logic/chạy được trên Linux đã thực thi thành công.
+- 23 bộ Windows/WPF chỉ biên dịch thành công; chưa chạy native tại môi trường Linux.
+- Bộ SmartRefinementWindowsChecks mới: khung Text live preview/resize/Undo/Redo/export, vector stamp không bị cắt và click placement, node xoay mũi tên. Có thể chạy trên Windows x64 bằng dotnet run --project tests/SmartRefinementWindowsChecks -c Release -p:Platform=x64.
+- Sau hiệu chỉnh cuối: build app và bộ SmartRefinementWindowsChecks, chạy lại CompositionChecks và QuickCaptureChecks thành công.
+- Schema17 chỉ khi có fixed TextFrame; legacy manual text không tự thành khung. Reader/writer vẫn bảo vệ schema tương lai.
+- Public license config đối chiếu byte với source gốc và tài nguyên nhúng trong Captovix.dll; không gọi API tạo key/trial, không thay server/admin.
+- Kiểm thử build/package không thay thế Windows desktop acceptance. DPI100–200%, UIA trình duyệt/modal, PrtSc, IME, clipboard, install và cập nhật native vẫn chờ theo docs/SMART-ELEMENT-CAPTURE-REFINEMENT.md.
+
+## Kết quả các bản trước
+
 # V1.31.0 — Quick Capture Experience: xác minh và giới hạn
 
 - Source nền V1.30 được đối chiếu Captovix.dll và Licensing.Shared.dll với full.nupkg trong Update-Packages Boss gửi: khớp byte. Không thay cấu hình bản quyền/backend/admin/supabase/migrations/dependencies.

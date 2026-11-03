@@ -17,7 +17,7 @@ public sealed class FrozenDesktop : IDisposable
         if(displays.Count==0)throw new InvalidOperationException("Không tìm thấy màn hình.");
         long left=displays.Min(d=>(long)d.Bounds.X),top=displays.Min(d=>(long)d.Bounds.Y),right=displays.Max(d=>(long)d.Bounds.X+d.Bounds.Width),bottom=displays.Max(d=>(long)d.Bounds.Y+d.Bounds.Height);
         var bounds=new PixelRect(checked((int)left),checked((int)top),checked((int)(right-left)),checked((int)(bottom-top)));FrozenFrame.ValidateBounds(bounds);
-        // Hide Captovix first. DwmFlush waits for that composition without a fixed 220ms delay.
+        // Keep Captovix visible for self-capture; flush composition before retaining physical pixels.
         int result=DwmFlush();if(result<0)Marshal.ThrowExceptionForHR(result);
         var topology=CaptureWorkflowStore.Topology(displays.Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity)));
         var capturedAt=DateTimeOffset.UtcNow;var frame=new FrozenFrame(bounds,DesktopPhotoCapture.ReadPixels(bounds,displays,cursor));

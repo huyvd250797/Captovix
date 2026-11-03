@@ -13,7 +13,7 @@ public static partial class EditorRenderer
         if(ShapeStudio.IsLine(a.Kind))return new(a.Left,a.Top,a.Width,a.Height);
         if(a.Kind==AnnotationKind.Callout){var b=a.CalloutBodyPivot?new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height)):CalloutGeometry(a).Bounds;return Rect.Union(b,TextInkBounds(a));}
         if(a.Kind==AnnotationKind.Freehand)return new(a.Left-a.Stroke/2,a.Top-a.Stroke/2,Math.Max(1,a.Width)+a.Stroke,Math.Max(1,a.Height)+a.Stroke);
-        if(a.Kind==AnnotationKind.Text){var b=TextInkBounds(a);if(a.FillEnabled)b.Inflate(TextStudio.Padding(a),TextStudio.Padding(a));return b;}
+        if(a.Kind==AnnotationKind.Text){if(a.TextFrame&&a.Width>=2&&a.Height>=2)return new(a.Left,a.Top,a.Width,a.Height);var b=TextInkBounds(a);if(a.FillEnabled)b.Inflate(TextStudio.Padding(a),TextStudio.Padding(a));return b;}
         if(a.Kind==AnnotationKind.Step)return StepGeometry(a).Bounds;
         return new(a.Left,a.Top,Math.Max(1,a.Width),Math.Max(1,a.Height));
     }

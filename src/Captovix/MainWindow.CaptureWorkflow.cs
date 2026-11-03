@@ -17,7 +17,7 @@ public partial class MainWindow
     private readonly Dictionary<PhotoAction,(CheckBox Enabled,TextBox Key)> _keyEditors=[];
     private string? _notificationItem;
     private bool _escapeRegistered,_editingCaptureKeys;
-    private static string ActionName(PhotoAction a)=>a switch{PhotoAction.Current=>"Theo cấu hình",PhotoAction.Region=>"Chọn vùng",PhotoAction.Window=>"Chọn cửa sổ",PhotoAction.Display=>"Toàn màn hình",PhotoAction.Element=>"Phần tử / modal",_=>"Chụp lại vùng"};
+    private static string ActionName(PhotoAction a)=>a switch{PhotoAction.Current=>"Theo cấu hình",PhotoAction.Region=>"Chụp mặc định",PhotoAction.Window=>"Chọn cửa sổ",PhotoAction.Display=>"Toàn màn hình",PhotoAction.Element=>"Chụp mặc định (phím cũ)",_=>"Chụp lại vùng"};
     private void InitializeCaptureWorkflow()
     {
         _workflow=CaptureWorkflowStore.Load(App.DataRoot,out var warning);_workflowReadOnly=warning!=null;
@@ -46,11 +46,18 @@ public partial class MainWindow
         CapturePresetPicker.ItemsSource=_workflow.Presets;CapturePresetPicker.SelectedIndex=_workflow.Presets.Count>0?0:-1;
         HotkeyRows.Children.Clear();_keyEditors.Clear();
         foreach(var h in _workflow.Hotkeys){
-            var row=new StackPanel{Orientation=Orientation.Horizontal};var enabled=new CheckBox{Content=ActionName(h.Action),IsChecked=h.Enabled,Width=150};
-            var key=new TextBox{Text=h.Label,Tag=h,Width=230,IsReadOnly=true,ToolTip="Nhấn tổ hợp phím mới; bỏ chọn để tắt. F12 dành riêng cho Windows."};
+            var row=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(0,4,0,4)};if(h.Action==PhotoAction.Element)row.Visibility=Visibility.Collapsed;var enabled=new CheckBox{Content=ActionName(h.Action),IsChecked=h.Enabled,Width=150};
+            var key=new TextBox{Text=h.Label,Tag=h,Width=230,IsReadOnly=true,ToolTip="Nhấn tổ hợp phím mới; bỏ chọn để tắt. Có thể dùng phím đơn, PrtSc hoặc tổ hợp. Windows kiểm tra phím trùng/dành riêng khi lưu. Dùng chuột để chuyển ô."};
             key.GotKeyboardFocus+=(_,_)=>PauseKeysForEditing();key.LostKeyboardFocus+=(_,_)=>RestoreKeysAfterEditing();
-            key.PreviewKeyDown+=(_,e)=>{e.Handled=true;var k=e.Key==Key.System?e.SystemKey:e.Key==Key.ImeProcessed?e.ImeProcessedKey:e.Key==Key.DeadCharProcessed?e.DeadCharProcessedKey:e.Key;if(k==Key.Tab){e.Handled=false;return;}if(k==Key.Escape)return;var vk=(uint)KeyInterop.VirtualKeyFromKey(k);if(k is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin)return;
-                var mods=Keyboard.Modifiers;if((mods&ModifierKeys.Windows)!=0){WorkflowStatus.Text="Không dùng phím Windows cho hotkey Captovix.";return;}uint m=((mods&ModifierKeys.Control)!=0?2u:0)|((mods&ModifierKeys.Alt)!=0?1u:0)|((mods&ModifierKeys.Shift)!=0?4u:0);if(!CaptureKeys.IsValid(m,vk)){WorkflowStatus.Text="Tổ hợp chưa hợp lệ. Dùng Ctrl/Alt + chữ, số hoặc dấu; ví dụ Ctrl + `. F12 dành riêng cho Windows.";return;}var draft=new CaptureHotkey(h.Action,true,m,vk);key.Tag=draft;key.Text=draft.Label;enabled.IsChecked=true;};
+            void CaptureKey(object? sender,KeyEventArgs e){
+                e.Handled=true;var k=e.Key==Key.System?e.SystemKey:e.Key==Key.ImeProcessed?e.ImeProcessedKey:e.Key==Key.DeadCharProcessed?e.DeadCharProcessedKey:e.Key;
+                var vk=(uint)KeyInterop.VirtualKeyFromKey(k);if(!CaptureKeys.IsSupported(vk))return;
+                var mods=Keyboard.Modifiers;uint m=((mods&ModifierKeys.Control)!=0?2u:0)|((mods&ModifierKeys.Alt)!=0?1u:0)|((mods&ModifierKeys.Shift)!=0?4u:0)|((mods&ModifierKeys.Windows)!=0?8u:0);
+                var draft=new CaptureHotkey(h.Action,true,m,vk);key.Tag=draft;key.Text=draft.Label;enabled.IsChecked=true;
+            }
+            key.PreviewKeyDown+=CaptureKey;
+            // PrintScreen is commonly delivered only on key-up by Windows.
+            key.PreviewKeyUp+=(_,e)=>{var k=e.Key==Key.System?e.SystemKey:e.Key;if(k==Key.Snapshot)CaptureKey(key,e);};
             row.Children.Add(enabled);row.Children.Add(key);HotkeyRows.Children.Add(row);_keyEditors[h.Action]=(enabled,key);
         }
         SyncCaptureBorder();
@@ -92,7 +99,7 @@ public partial class MainWindow
     {
         if(_busy)return;RefreshSources();var display=_displays.FirstOrDefault(d=>d.Device==preset.Display);
         if(preset.Mode==2&&preset.Display!=""&&display==null)throw new InvalidOperationException("Màn hình trong preset không còn kết nối. Chọn màn hình mới rồi lưu preset khác.");
-        SourceMode.SelectedIndex=preset.Mode;DelayPicker.SelectedIndex=preset.Delay==5?2:preset.Delay==3?1:0;CursorToggle.IsChecked=preset.Cursor;if(display!=null)DisplayPicker.SelectedItem=display;AfterPhotoPicker.SelectedIndex=preset.Background?1:0;AutoCopyPhoto.IsChecked=preset.AutoCopy;
+        SourceMode.SelectedIndex=preset.Mode==3?0:preset.Mode;DelayPicker.SelectedIndex=preset.Delay==5?2:preset.Delay==3?1:0;CursorToggle.IsChecked=preset.Cursor;if(display!=null)DisplayPicker.SelectedItem=display;AfterPhotoPicker.SelectedIndex=preset.Background?1:0;AutoCopyPhoto.IsChecked=preset.AutoCopy;
         WorkflowStatus.Text="Đã áp dụng preset: "+preset.Name+". Cửa sổ sẽ được chọn lại khi chụp.";
     }
     private void ApplyCapturePreset_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;try{if(CapturePresetPicker.SelectedItem is CapturePreset p)ApplyPreset(p);}catch(Exception ex){WorkflowStatus.Text=ex.Message;}}
@@ -127,7 +134,7 @@ public partial class MainWindow
         if(_workflowSuspended)return;_trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);var menu=new ContextMenu();_trayMenu=menu;
         void Add(string title,Action action,bool enabled=true){var item=new MenuItem{Header=title,IsEnabled=enabled};item.Click+=(_,_)=>{menu.IsOpen=false;Dispatcher.BeginInvoke(action);};menu.Items.Add(item);}
         Add("Mở Editor",()=>ShowEditor(),!_busy);
-        foreach(var action in Enum.GetValues<PhotoAction>())Add(ActionName(action),()=>_=CaptureAsync(false,action),!_busy&&!_updateApplying);
+        foreach(var action in Enum.GetValues<PhotoAction>().Where(a=>a!=PhotoAction.Element))Add(ActionName(action),()=>_=CaptureAsync(false,action),!_busy&&!_updateApplying);
         var presets=new MenuItem{Header="Preset chụp",IsEnabled=!_busy&&!_updateApplying};foreach(var preset in _workflow.Presets){var item=new MenuItem{Header=preset.Name};item.Click+=(_,_)=>{menu.IsOpen=false;Dispatcher.BeginInvoke(()=>{try{ApplyPreset(preset);_=CaptureAsync(false);}catch(Exception e){_tray?.Notify(e.Message);}});};presets.Items.Add(item);}menu.Items.Add(presets);
         if(_busy)Add(_fidelityProcess!=null?"Hủy kiểm chứng SDR":_recordingActive?"Dừng và lưu video":"Hủy phiên chụp",CancelCapture);
         menu.Items.Add(new Separator());Add("Bản quyền & khôi phục",()=>{ShowEditor();License_Click(this,new());});Add("Thoát Captovix",RequestExit);AppMenus.Decorate(menu);_tray?.Foreground();menu.IsOpen=true;

@@ -15,7 +15,7 @@ public partial class MainWindow
         EditorSession.AuthorizeMutation=()=>_licenseCheckpoint||LicenseRuntime.Full;
         _licenseFull=true;ApplyLicenseState();_licenseTimer.Tick+=async(_,_)=>{
             if(_licenseFull!=LicenseRuntime.Full)ApplyLicenseState();
-            LicenseFooterButton.Content=LicenseRuntime.Status;
+            RenderLicenseIndicator();
             if(++_licenseTicks%60==0)LicenseRuntime.CheckpointClock();
             if(_licenseTicks%3600==0)await RefreshLicenseSilently();
         };_licenseTimer.Start();Closed+=(_,_)=>{_licenseTimer.Stop();LicenseRuntime.CheckpointClock();};
@@ -46,34 +46,47 @@ public partial class MainWindow
         _licenseFull=full;Surface.IsEnabled=ImageTools.IsEnabled=EditorProperties.IsEnabled=ZoomTools.IsEnabled=full;
         CaptureButton.ToolTip=full?"Chụp ảnh màn hình":"Chụp vùng thủ công · chỉ lưu PNG gốc";RecordButton.IsEnabled=full&&!_busy;CopyButton.IsEnabled=full&&_session!=null;ExportButton.IsEnabled=full&&Selected!=null;
         UndoButton.IsEnabled=full&&_session?.CanUndo==true;RedoButton.IsEnabled=full&&_session?.CanRedo==true;
-        LicenseFooterButton.Content=LicenseRuntime.Status;LicenseFooterButton.ToolTip="Bản quyền, chuyển máy và khôi phục";
+        RenderLicenseIndicator();LicenseFooterButton.ToolTip="Bản quyền, chuyển máy và khôi phục";
     }
+    private string? _licenseIndicatorState;
+    private void RenderLicenseIndicator(){string state=LicenseRuntime.Status;if(state==_licenseIndicatorState)return;_licenseIndicatorState=state;bool active=LicenseRuntime.Full,permanent=active&&LicenseRuntime.Certificate?.Kind=="perpetual";var color=permanent?System.Windows.Media.Colors.LimeGreen:active?System.Windows.Media.Colors.Goldenrod:System.Windows.Media.Colors.Gray;var row=new StackPanel{Orientation=Orientation.Horizontal};row.Children.Add(new System.Windows.Shapes.Ellipse{Width=8,Height=8,Fill=new System.Windows.Media.SolidColorBrush(color),Margin=new(4,0,8,0),VerticalAlignment=VerticalAlignment.Center,Effect=new System.Windows.Media.Effects.DropShadowEffect{Color=color,BlurRadius=10,ShadowDepth=0,Opacity=active?0.85:0.2}});row.Children.Add(new TextBlock{Text=permanent?"Đã kích hoạt":state,VerticalAlignment=VerticalAlignment.Center});LicenseFooterButton.Content=row;LicenseFooterButton.ToolTip=state;}
     private void License_Click(object sender,RoutedEventArgs e)
     {
         if(_licenseDialog!=null){_licenseDialog.Activate();return;}
-        var dialog=new Window{Owner=this,Title="Captovix · Bản quyền & khôi phục",Width=650,Height=650,MinWidth=430,MinHeight=400,WindowStartupLocation=WindowStartupLocation.CenterOwner,ShowInTaskbar=false};_licenseDialog=dialog;
+        var dialog=new Window{Owner=this,Title="Captovix · Kích hoạt bản quyền",Width=480,SizeToContent=SizeToContent.Height,MaxHeight=Math.Max(320,SystemParameters.WorkArea.Height-64),ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterOwner,ShowInTaskbar=false};_licenseDialog=dialog;
+        dialog.SetResourceReference(StyleProperty,typeof(Window));
+        dialog.SetResourceReference(Control.BackgroundProperty,"AppBackground");dialog.SetResourceReference(Control.ForegroundProperty,"Text");
         var panel=new StackPanel{Margin=new(24)};dialog.Content=new ScrollViewer{Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
-        var status=new TextBlock{FontSize=21,FontWeight=FontWeights.SemiBold,TextWrapping=TextWrapping.Wrap};panel.Children.Add(status);
-        var detail=new TextBlock{Margin=new(0,12,0,14),TextWrapping=TextWrapping.Wrap};panel.Children.Add(detail);
-        void Label(string value)=>panel.Children.Add(new TextBlock{Text=value,Margin=new(0,12,0,4),FontWeight=FontWeights.SemiBold});
-        Label("Key bản quyền vĩnh viễn");var key=new TextBox{MinHeight=34,MaxLength=128};panel.Children.Add(key);
-        Label("Mã khôi phục · dùng khi không còn truy cập máy cũ");var recovery=new PasswordBox{MinHeight=34,MaxLength=128,Padding=new(8)};recovery.SetResourceReference(Control.BackgroundProperty,"Surface");recovery.SetResourceReference(Control.ForegroundProperty,"Text");recovery.SetResourceReference(Control.BorderBrushProperty,"Line");panel.Children.Add(recovery);
-        var note=new TextBlock{Margin=new(0,10,0,10),TextWrapping=TextWrapping.Wrap,Text="Trả bản quyền trên máy cũ trước khi kích hoạt máy mới. Nếu mất máy, dùng key + mã khôi phục: mọi lượt kích hoạt cũ sẽ bị trả và mã khôi phục được đổi. Chỉ gửi tên máy, định danh máy dạng băm, khóa công khai và yêu cầu bản quyền; không gửi ảnh."};panel.Children.Add(note);
-        var actions=new WrapPanel();panel.Children.Add(actions);var buttons=new List<Button>();
-        var result=new TextBlock{Margin=new(0,12,0,6),TextWrapping=TextWrapping.Wrap};var secret=new TextBox{IsReadOnly=true,TextWrapping=TextWrapping.Wrap,Visibility=Visibility.Collapsed,MinHeight=50};
-        void Refresh(){status.SetResourceReference(TextBlock.ForegroundProperty,LicenseRuntime.Full?"AccentText":"Warning");status.Text=LicenseRuntime.Status;var c=LicenseRuntime.Certificate;detail.Text=(c==null?"Chọn dùng thử 30 ngày hoặc nhập key để mở đủ công cụ.":$"Loại: {(c.Kind=="trial"?"Dùng thử":"Vĩnh viễn")}\nKích hoạt: {c.ActivationId}\nXác minh: {c.IssuedAt.ToLocalTime():dd/MM/yyyy HH:mm}\nCần kết nối lại trước: {c.LeaseUntil.ToLocalTime():dd/MM/yyyy HH:mm}"+(c.TrialUntil is {} end?$"\nHết dùng thử: {end.ToLocalTime():dd/MM/yyyy HH:mm}":""))+"\nSau khi hết quyền: chỉ kéo vùng và Enter để lưu PNG gốc; chỉnh sửa và copy/paste bị khóa.\n"+LicenseRuntime.LastError;}
-        void Add(string text,string operation){var b=new Button{Content=text,Margin=new(0,3,6,3),Padding=new(10,7,10,7)};buttons.Add(b);actions.Children.Add(b);b.Click+=async(_,_)=>{
+        var heading=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(0,0,0,16)};heading.Children.Add(new Image{Source=TryFindResource("BrandMark") as System.Windows.Media.ImageSource,Width=38,Height=38,Margin=new(0,0,12,0)});var titles=new StackPanel();titles.Children.Add(new TextBlock{Text="Bản quyền Captovix",FontSize=21,FontWeight=FontWeights.SemiBold});var subtitle=new TextBlock{Text="Kích hoạt để sử dụng đầy đủ công cụ.",FontSize=12,Margin=new(0,4,0,0)};subtitle.SetResourceReference(TextBlock.ForegroundProperty,"Muted");titles.Children.Add(subtitle);heading.Children.Add(titles);panel.Children.Add(heading);panel.Children.Add(new TextBlock{Text="KEY BẢN QUYỀN",FontSize=10,FontWeight=FontWeights.SemiBold,Margin=new(0,0,0,6)});
+        var key=new TextBox{MinHeight=40,MaxLength=128,VerticalContentAlignment=VerticalAlignment.Center,ToolTip="Dán key bản quyền"};System.Windows.Automation.AutomationProperties.SetName(key,"Nhập KEY");panel.Children.Add(key);
+        var activate=new Button{Content="Kích hoạt",MinHeight=40,Margin=new(0,10,0,4),IsDefault=true};activate.SetResourceReference(Control.BackgroundProperty,"Accent");activate.SetResourceReference(Control.ForegroundProperty,"OnAccent");panel.Children.Add(activate);
+        var noKey=new Button{Content="Tôi không có KEY",BorderThickness=new(0),Background=System.Windows.Media.Brushes.Transparent,Margin=new(0,4,0,8)};noKey.SetResourceReference(Control.ForegroundProperty,"AccentText");panel.Children.Add(noKey);
+        var trialPanel=new StackPanel{Margin=new(12)};var trialCard=new Border{Child=trialPanel,CornerRadius=new(8),Margin=new(0,0,0,12),Visibility=Visibility.Collapsed};trialCard.SetResourceReference(Border.BackgroundProperty,"Soft");panel.Children.Add(trialCard);
+        trialPanel.Children.Add(new TextBlock{Text="Bạn chưa có KEY?",FontWeight=FontWeights.SemiBold});var trialDescription=new TextBlock{Text="Bạn có muốn dùng thử đầy đủ công cụ trong 30 ngày không?",TextWrapping=TextWrapping.Wrap,Margin=new(0,6,0,10)};trialPanel.Children.Add(trialDescription);
+        var trialActions=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right};trialPanel.Children.Add(trialActions);var later=new Button{Content="Để sau"};var trial=new Button{Content="Dùng thử 30 ngày"};trial.SetResourceReference(Control.BackgroundProperty,"Accent");trial.SetResourceReference(Control.ForegroundProperty,"OnAccent");trialActions.Children.Add(later);trialActions.Children.Add(trial);later.Click+=(_,_)=>trialCard.Visibility=Visibility.Collapsed;noKey.Click+=(_,_)=>trialCard.Visibility=trialCard.Visibility==Visibility.Visible?Visibility.Collapsed:Visibility.Visible;
+        var result=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new(0,4,0,8)};result.SetResourceReference(TextBlock.ForegroundProperty,"AccentText");panel.Children.Add(result);
+        var more=new Expander{Header="Xem thêm",IsExpanded=false,Margin=new(0,6,0,0)};panel.Children.Add(more);var advanced=new StackPanel{Margin=new(0,12,0,0)};more.Content=advanced;
+        var status=new TextBlock{TextWrapping=TextWrapping.Wrap,FontWeight=FontWeights.SemiBold};advanced.Children.Add(status);
+        var detail=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new(0,5,0,12)};detail.SetResourceReference(TextBlock.ForegroundProperty,"Muted");advanced.Children.Add(detail);
+        advanced.Children.Add(new TextBlock{Text="Mã khôi phục",Margin=new(0,4,0,5)});var recovery=new PasswordBox{MinHeight=36,MaxLength=128,Padding=new(8)};recovery.SetResourceReference(Control.BackgroundProperty,"Surface");recovery.SetResourceReference(Control.ForegroundProperty,"Text");recovery.SetResourceReference(Control.BorderBrushProperty,"Line");advanced.Children.Add(recovery);
+        var actions=new WrapPanel{Margin=new(0,8,0,0)};advanced.Children.Add(actions);var buttons=new List<Button>{activate,noKey,trial,later};
+        var secret=new TextBox{IsReadOnly=true,TextWrapping=TextWrapping.Wrap,Visibility=Visibility.Collapsed,MinHeight=50};advanced.Children.Add(secret);
+        void Refresh(){bool used=LicenseRuntime.TrialUntil!=null||LicenseRuntime.Certificate?.Kind=="perpetual";trial.Visibility=used?Visibility.Collapsed:Visibility.Visible;trialDescription.Text=used?LicenseRuntime.TrialHistoryMessage:"Bạn có muốn dùng thử đầy đủ công cụ trong 30 ngày không?";status.Text=LicenseRuntime.Status;var c=LicenseRuntime.Certificate;detail.Text=c==null?"Chưa kích hoạt":(c.Kind=="trial"&&c.TrialUntil is {} end?$"Dùng thử đến {end.ToLocalTime():dd/MM/yyyy}":"Bản quyền vĩnh viễn")+$" · Xác minh trước {c.LeaseUntil.ToLocalTime():dd/MM/yyyy}";}
+        async Task Run(string operation){
+            if(operation=="trial"&&(LicenseRuntime.TrialUntil!=null||LicenseRuntime.Certificate?.Kind=="perpetual")){result.Text=LicenseRuntime.TrialHistoryMessage;return;}
+            if(operation is "activate" or "recover"&&string.IsNullOrWhiteSpace(key.Text)){result.Text="Hãy nhập KEY trước khi tiếp tục.";key.Focus();return;}
             if(operation is "release" or "recover"){
-                var prompt=operation=="release"?"Trả bản quyền máy này để dùng trên máy khác? Công cụ chỉnh sửa sẽ khóa sau khi trả thành công.":"Khôi phục sẽ trả TẤT CẢ các máy cũ và đổi mã khôi phục. Tiếp tục?";
+                var prompt=operation=="release"?"Trả bản quyền máy này để dùng trên máy khác? Công cụ chỉnh sửa sẽ khóa sau khi trả thành công.":"Khôi phục sẽ trả tất cả máy cũ và đổi mã khôi phục. Tiếp tục?";
                 if(MessageBox.Show(dialog,prompt,"Xác nhận bản quyền",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
             }
-            foreach(var button in buttons)button.IsEnabled=false;result.Text="Đang xác minh với máy chủ…";
-            try{var code=await LicenseRuntime.Request(operation,key.Text,recovery.Password);result.Text="Đã xử lý yêu cầu. "+LicenseRuntime.Status;if(code!=null){secret.Text=code;secret.Visibility=Visibility.Visible;result.Text+="\nLưu mã khôi phục MỚI bên dưới ở nơi an toàn; mã cũ đã hết hiệu lực.";}recovery.Clear();ApplyLicenseState();}
-            catch(Exception ex){result.Text=ex.Message;}finally{foreach(var button in buttons)button.IsEnabled=true;Refresh();}
-        };}
-        Add("Dùng thử 30 ngày","trial");Add("Kích hoạt key","activate");Add("Xác minh lại","refresh");Add("Trả bản quyền máy này","release");Add("Khôi phục trên máy này","recover");panel.Children.Add(result);panel.Children.Add(secret);
-        var info=new TextBlock{Text="Dữ liệu ảnh và chú thích vẫn được giữ khi hết dùng thử hoặc chuyển máy. Bản quyền vĩnh viễn không hết hạn trả phí; chứng nhận ngoại tuyến cần được làm mới định kỳ.",TextWrapping=TextWrapping.Wrap,Margin=new(0,14,0,0)};panel.Children.Add(info);
-        var support=new TextBox{Text="Mã máy: "+LicenseRuntime.DeviceId+"\nDấu khóa thiết bị: "+LicenseRuntime.DevicePublicHash,IsReadOnly=true,TextWrapping=TextWrapping.Wrap,Margin=new(0,12,0,0)};panel.Children.Add(support);
-        Refresh();dialog.Closed+=(_,_)=>{_licenseDialog=null;ApplyLicenseState();};dialog.ShowDialog();
+            foreach(var b in buttons)b.IsEnabled=false;key.IsEnabled=recovery.IsEnabled=false;result.Text="Đang xác minh…";
+            try{var code=await LicenseRuntime.Request(operation,key.Text.Trim(),recovery.Password);result.Text=LicenseRuntime.Status;trialCard.Visibility=Visibility.Collapsed;if(code!=null){secret.Text=code;secret.Visibility=Visibility.Visible;more.IsExpanded=true;result.Text+=" · Lưu mã khôi phục mới trong Xem thêm.";}recovery.Clear();ApplyLicenseState();}
+            catch(Exception ex){result.Text=ex.Message;}finally{foreach(var b in buttons)b.IsEnabled=true;key.IsEnabled=recovery.IsEnabled=true;Refresh();}
+        }
+        void Add(string text,string operation){var b=new Button{Content=text,Margin=new(0,3,6,3),Padding=new(10,7,10,7)};buttons.Add(b);actions.Children.Add(b);b.Click+=async(_,_)=>await Run(operation);}
+        Add("Xác minh lại","refresh");Add("Trả bản quyền máy này","release");Add("Khôi phục trên máy này","recover");
+        activate.Click+=async(_,_)=>await Run("activate");trial.Click+=async(_,_)=>await Run("trial");
+        dialog.PreviewKeyDown+=(_,args)=>{if(args.Key==Key.Escape){dialog.Close();args.Handled=true;}};
+        Refresh();dialog.Closed+=(_,_)=>{_licenseDialog=null;ApplyLicenseState();};dialog.Loaded+=(_,_)=>key.Focus();dialog.ShowDialog();
     }
 }

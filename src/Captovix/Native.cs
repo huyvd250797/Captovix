@@ -50,12 +50,12 @@ public static class Native
         },0);
         return result.OrderByDescending(x=>x.Primary).ThenBy(x=>x.Bounds.X).ToList();
     }
-    public static List<WindowInfo> Windows()
+    public static List<WindowInfo> Windows(bool includeSelf=false)
     {
         var result=new List<WindowInfo>();
         EnumWindows((h,_)=>{
             GetWindowThreadProcessId(h,out var pid);
-            if(pid==Environment.ProcessId || !IsWindowVisible(h) || IsIconic(h)) return true;
+            if(!includeSelf&&pid==Environment.ProcessId || !IsWindowVisible(h) || IsIconic(h)) return true;
             var text=new StringBuilder(512); GetWindowText(h,text,text.Capacity);
             if(text.Length>0 && GetWindowRect(h,out var r) && r.Right-r.Left>50 && r.Bottom-r.Top>50) result.Add(new(h,text.ToString(),pid));
             return true;

@@ -58,7 +58,7 @@ public static class CapturePrompts
         var picker=new Window{Title="Captovix · Chọn cửa sổ để chụp",Width=640,Height=460,WindowStartupLocation=WindowStartupLocation.CenterScreen,Topmost=true,ShowInTaskbar=false};
         var panel=new DockPanel{Margin=new Thickness(16)};var hint=new TextBlock{Text="Chọn cửa sổ đang mở · Enter / nhấp đúp để xác nhận · Esc hủy",Margin=new Thickness(0,0,0,12)};DockPanel.SetDock(hint,Dock.Top);panel.Children.Add(hint);
         var footer=new StackPanel{Orientation=Orientation.Horizontal};DockPanel.SetDock(footer,Dock.Bottom);panel.Children.Add(footer);
-        var list=new ListBox{DisplayMemberPath="Title"};void Refresh(){list.ItemsSource=Native.Windows();list.SelectedIndex=0;}
+        var list=new ListBox{DisplayMemberPath="Title"};void Refresh(){list.ItemsSource=Native.Windows(true);list.SelectedIndex=0;}
         void Finish(){if(list.SelectedItem is WindowInfo item){done.TrySetResult(item);picker.Close();}}
         var refresh=new Button{Content="Làm mới"};refresh.Click+=(_,_)=>Refresh();footer.Children.Add(refresh);var accept=new Button{Content="Chụp cửa sổ này"};accept.Click+=(_,_)=>Finish();footer.Children.Add(accept);
         var cancel=new Button{Content="Hủy"};cancel.Click+=(_,_)=>picker.Close();footer.Children.Add(cancel);panel.Children.Add(list);picker.Content=panel;

@@ -15,7 +15,7 @@ public static partial class EditorRenderer
         if(a.Underline)layout.SetTextDecorations(TextDecorations.Underline);
         if(a.LineSpacing>0)layout.LineHeight=a.FontSize*a.LineSpacing;
         if(text==null){
-            double width=a.Kind==AnnotationKind.Callout?TextContent(a).Width:a.TextWidth;
+            double width=a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth;
             if(width>0){layout.MaxTextWidth=Math.Max(1,width);layout.TextAlignment=WpfAlignment(a.TextAlignment);}
         }return layout;
     }
@@ -23,11 +23,12 @@ public static partial class EditorRenderer
     {
         double pad=TextStudio.Padding(a);
         if(a.Kind==AnnotationKind.Callout){var b=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));double fraction=(1-TextStudio.ContentFraction(a.CalloutStyle))/2;double ix=b.Width*fraction,iy=b.Height*fraction;return new(b.X+pad+ix,b.Y+pad+iy,Math.Max(1,b.Width-2*(pad+ix)),Math.Max(1,b.Height-2*(pad+iy)));}
+        if(a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2&&a.Height>=2)return new(a.Left+pad,a.Top+pad,Math.Max(1,a.Width-2*pad),Math.Max(1,a.Height-2*pad));
         var text=TextLayout(a,a.Text);return new(a.X1+pad,a.Y1+pad,a.TextWidth>0?a.TextWidth:Math.Max(10,text.WidthIncludingTrailingWhitespace),Math.Max(a.FontSize,text.Height));
     }
     public static Point TextOrigin(Annotation a,FormattedText layout)
     {
-        var inner=TextContent(a);double offset=a.Kind==AnnotationKind.Callout?Math.Max(0,inner.Height-layout.Height)*(int)a.VerticalAlignment/2:0;return new(inner.X,inner.Y+offset);
+        var inner=TextContent(a);double offset=a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame?Math.Max(0,inner.Height-layout.Height)*(int)a.VerticalAlignment/2:0;return new(inner.X,inner.Y+offset);
     }
     public static Rect TextInkBounds(Annotation a)
     {
@@ -48,9 +49,10 @@ public static partial class EditorRenderer
     private static void DrawStyledText(DrawingContext dc,Annotation a,bool suppressText=false)
     {
         var text=TextLayout(a);var inkBounds=TextInkBounds(a);double pad=TextStudio.Padding(a);
-        if(a.Kind==AnnotationKind.Text&&a.FillEnabled){var bg=inkBounds;bg.Inflate(pad,pad);dc.DrawRectangle(ShapeInk(a.FillColor,a.FillOpacity),null,bg);}
-        if(a.Kind==AnnotationKind.Callout)dc.PushClip(new RectangleGeometry(TextContent(a)));
-        if(!suppressText)dc.DrawText(text,TextOrigin(a,text));if(a.Kind==AnnotationKind.Callout)dc.Pop();
+        if(a.Kind==AnnotationKind.Text&&a.FillEnabled){var bg=a.TextFrame?new Rect(a.Left,a.Top,a.Width,a.Height):inkBounds;if(!a.TextFrame)bg.Inflate(pad,pad);dc.DrawRectangle(ShapeInk(a.FillColor,a.FillOpacity),null,bg);}
+        bool framed=a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2&&a.Height>=2;
+        if(framed)dc.PushClip(new RectangleGeometry(TextContent(a)));
+        if(!suppressText)dc.DrawText(text,TextOrigin(a,text));if(framed)dc.Pop();
     }
     private static Geometry StyledCalloutGeometry(Annotation a)
     {

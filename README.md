@@ -1,3 +1,33 @@
+# Captovix V1.33.0 — Scrolling Capture Quality
+
+Chụp cuộn ổn định hơn, cảnh báo mối nối/lệch cột, nhận vùng cố định, bỏ khung và chỉnh overlap. Toolbar chuyển lên trên để tăng canvas, chụp được chính app, kéo ảnh đã chỉnh ra ngoài và hoàn thiện popup/trạng thái bản quyền.
+
+- Source: `Captovix V1.33.0 — Scrolling Capture Quality.zip`.
+- Update/Setup: `Captovix-v1.33.0-Update-Packages.zip`. Thoát app và chạy Setup trong ZIP vào đường dẫn đang cài; không uninstall.
+- Hướng dẫn/checklist: `docs/SCROLLING-CAPTURE-QUALITY-V133.md`.
+- Không cần chạy migration mới. Public license config, Supabase backend và admin giữ nguyên. Trial server hiện có không tự reset khi gửi yêu cầu lặp.
+- Windows x64, .NET10 SDK, NSIS3: `python scripts/Run-Checks.py` rồi `powershell -ExecutionPolicy Bypass -File scripts/Build-Windows.ps1`.
+- Chưa push GitHub/deploy/publish release. Upload đủ các release assets trong ZIP lên stable GitHub Release v1.33.0 nếu muốn cập nhật trong app.
+- Dữ liệu ảnh/schema17 giữ nguyên. Bố cục toolbar V1.33 lưu riêng, không ghi đè bố cục cũ. Trial history được ghi DPAPI theo user Windows; chống tạo trial mới sau xóa/cài lại vẫn dựa vào định danh máy và backend.
+- Phiên bản tiếp theo giữ roadmap: V1.34.0 — Capture Workflow & Recovery.
+
+## Hướng dẫn nền và lịch sử
+
+# Captovix V1.32.0 — Smart Element Capture Refinement
+
+Bản Windows chụp ảnh/chỉnh sửa: Chụp mặc định gộp phần tử/modal + kéo vùng; popup KEY tối giản; phím tắt PrtSc/phím đơn; Stamp click để đặt; khung chữ kéo/resize; node xoay xanh lá và quy tắc cuộn thống nhất.
+
+- Chi tiết và hướng dẫn nghiệm thu: `docs/SMART-ELEMENT-CAPTURE-REFINEMENT.md`.
+- Source: `Captovix V1.32.0 — Smart Element Capture Refinement.zip`.
+- Bộ cài/cập nhật: `Captovix-v1.32.0-Update-Packages.zip`, chứa Setup và các release assets. Không uninstall trước khi nâng cấp.
+- Không cần chạy migration mới. Không cần cấu hình/deploy lại Supabase hoặc admin Cloudflare. Public config đã có được giữ nguyên; không đóng gói khóa riêng/server secrets.
+- Build Windows x64: .NET10 SDK, NSIS3; `python scripts/Run-Checks.py` rồi `powershell -ExecutionPolicy Bypass -File scripts/Build-Windows.ps1`. Script kiểm tra logic/native tương ứng môi trường và tạo hai ZIP.
+- Nghiệm thu cài đặt/chuột/phím/DPI/clipboard/IME cần Windows thật. Linux chỉ xác minh logic, cross-build và toàn vẹn package; không tự kết luận native QA đạt.
+- Không push GitHub/deploy/publish release trong lần bàn giao này. Hướng dẫn build/publish chi tiết bên dưới vẫn áp dụng; tên phiên bản hiện tại là V1.32.0.
+- Phiên bản tiếp theo: V1.33.0 — Scrolling Capture Quality: xử lý mất/lặp dòng, sọc ghép, header/footer cố định và cảnh báo mối nối chưa chắc chắn. Chưa triển khai.
+
+## Hướng dẫn nền và lịch sử phiên bản
+
 # Captovix V1.31.0 — Quick Capture Experience
 
 Nâng từ source V1.30 có payload DLL khớp gói update Boss đính kèm. Giữ nguyên public license config, Supabase/Pages và dữ liệu media. **Không cần chạy migration mới hoặc redeploy backend/admin.**

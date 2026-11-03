@@ -46,6 +46,7 @@ internal sealed partial class OcrWindow:Window
         ZoomButton("−",()=>SetPreviewZoom(_zoom/1.25));zoomBar.Children.Add(_zoomLabel);ZoomButton("+",()=>SetPreviewZoom(_zoom*1.25));ZoomButton("100%",()=>SetPreviewZoom(1/VisualTreeHelper.GetDpi(this).DpiScaleX));ZoomButton("Vừa khung",FitPreview);navigation.Children.Add(zoomBar);preview.Children.Add(navigation);
         Grid.SetRow(_scroll,1);preview.Children.Add(_scroll);_scroll.Content=_view;_previewImage.Source=snapshot;_view.Children.Add(_previewImage);_view.Children.Add(_overlay);_overlay.Children.Add(_box);_overlay.Children.Add(_lens);grid.Children.Add(preview);
         _scroll.SetResourceReference(Control.BackgroundProperty,"Workspace");
+        _scroll.SetValue(AppScrolling.CustomZoomProperty,true);
         _scroll.PreviewMouseWheel+=(_,e)=>{if(!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))return;e.Handled=true;SetPreviewZoom(_zoom*(e.Delta>0?1.2:1/1.2),e.GetPosition(_scroll));};
         _scroll.PreviewMouseDown+=(_,e)=>{if(!_space&&e.ChangedButton!=MouseButton.Middle)return;_panning=true;_panStart=e.GetPosition(_scroll);_panH=_scroll.HorizontalOffset;_panV=_scroll.VerticalOffset;_scroll.CaptureMouse();e.Handled=true;};
         _scroll.PreviewMouseMove+=(_,e)=>{if(_panning){var p=e.GetPosition(_scroll);_scroll.ScrollToHorizontalOffset(_panH+_panStart.X-p.X);_scroll.ScrollToVerticalOffset(_panV+_panStart.Y-p.Y);e.Handled=true;}else ShowLens(e.GetPosition(_view));};
