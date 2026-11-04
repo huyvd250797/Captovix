@@ -40,7 +40,7 @@ Check(duplicated.Length==2&&duplicated.Select(x=>x.Id).Distinct().Count()==2,"Du
 Check(duplicated[0].GroupId==duplicated[1].GroupId&&duplicated[0].GroupId!=group,"Duplicate group has an independent identity");
 Check(duplicated[0].X1==a.X1+16&&duplicated[0].Y1==a.Y1+16,"Duplicate applies a predictable in-image offset");
 AnnotationEditing.Ungroup(d,[a.Id]);Check(a.GroupId==null&&b.GroupId==null&&duplicated[0].GroupId!=null,"Ungroup expands only the original group");
-var merged=AnnotationEditing.Group(d,[duplicated[0].Id,c.Id]);Check(duplicated.All(x=>x.GroupId==merged)&&c.GroupId==merged,"Grouping existing groups is flat and retains every member");
+var merged=AnnotationEditing.Group(d,[duplicated[0].Id,c.Id]);Check(duplicated.All(x=>x.GroupId!=merged&&x.GroupPath!.SequenceEqual(new[]{merged!}))&&c.GroupId==merged,"Grouping existing groups preserves their child hierarchy");
 d=Doc();var p1=Rect(10,10,20,20);var p2=Rect(35,40,40,20);var p3=Rect(200,180,30,40);d.Annotations.AddRange([p1,p2,p3]);
 Check(AnnotationEditing.Distribute(d,d.Annotations.Select(x=>x.Id),true,Box),"Horizontal distribution accepts three independent units");
 Check(Math.Abs((p2.Left-p1.X2)-(p3.Left-p2.X2))<.0001&&p1.X1==10&&p3.X1==200,"Horizontal distribution equalizes gaps and fixes endpoints");

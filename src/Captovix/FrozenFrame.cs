@@ -20,7 +20,7 @@ public sealed class FrozenFrame
     }
     public byte[] Crop(PixelRect region)
     {
-        if(region.Width<1||region.Height<1||region.X<Bounds.X||region.Y<Bounds.Y||(long)region.X+region.Width>(long)Bounds.X+Bounds.Width||(long)region.Y+region.Height>(long)Bounds.Y+Bounds.Height)throw new ArgumentOutOfRangeException(nameof(region),"Vùng chọn nằm ngoài ảnh màn hình đã giữ.");
+        if(region.Width<1||region.Height<1||region.X<Bounds.X||region.Y<Bounds.Y||(long)region.X+region.Width>(long)Bounds.X+Bounds.Width||(long)region.Y+region.Height>(long)Bounds.Y+Bounds.Height)throw new ArgumentOutOfRangeException(nameof(region),region,$"Vùng chọn nằm ngoài ảnh màn hình đã giữ. Vùng chọn: {region}; ảnh đã giữ: {Bounds}.");
         var result=new byte[checked(region.Width*region.Height*4)];int x=region.X-Bounds.X,y=region.Y-Bounds.Y;
         for(int row=0;row<region.Height;row++)Buffer.BlockCopy(_pixels,checked(((y+row)*Bounds.Width+x)*4),result,row*region.Width*4,region.Width*4);
         return result;

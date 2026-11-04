@@ -58,7 +58,7 @@ public static class FidelityWindowsProbe
     }
     public static int RunInteractive()
     {
-        if(MessageBox.Show("Kiểm chứng ảnh trên Windows này sẽ hiển thị mẫu, chụp thử trên từng màn hình và kiểm tra render/PNG/clipboard. Clipboard sẽ được thay bằng ảnh mẫu. Kết quả chỉ lưu trên máy.\n\nHãy tắt HDR trên các màn hình trước khi chạy. Chỉ tiếp tục khi đang dùng SDR. Esc để hủy trong lúc thử.\n\nBắt đầu?","Captovix · Kiểm chứng SDR",MessageBoxButton.YesNo,MessageBoxImage.Information)!=MessageBoxResult.Yes)return 0;
+        if(AppDialog.Show("Kiểm chứng ảnh trên Windows này sẽ hiển thị mẫu, chụp thử trên từng màn hình và kiểm tra render/PNG/clipboard. Clipboard sẽ được thay bằng ảnh mẫu. Kết quả chỉ lưu trên máy.\n\nHãy tắt HDR trên các màn hình trước khi chạy. Chỉ tiếp tục khi đang dùng SDR. Esc để hủy trong lúc thử.\n\nBắt đầu?","Captovix · Kiểm chứng SDR",MessageBoxButton.YesNo,MessageBoxImage.Information)!=MessageBoxResult.Yes)return 0;
         var folder=Path.Combine(App.DataRoot,"FidelityChecks",DateTime.Now.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N")[..6]);Directory.CreateDirectory(folder);
         var results=new List<FidelityResult>();var observed=new List<object>();var application=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};var image=new Image{Stretch=Stretch.Fill,SnapsToDevicePixels=true};RenderOptions.SetBitmapScalingMode(image,BitmapScalingMode.NearestNeighbor);
         var window=new Window{Title="Captovix · Kiểm chứng pixel · Esc hủy",Content=image,Width=400,Height=320,Topmost=true,UseLayoutRounding=true,WindowStyle=WindowStyle.ToolWindow};using var cancel=new CancellationTokenSource();bool running=true;window.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape)cancel.Cancel();};window.Closing+=(_,e)=>{if(running){e.Cancel=true;cancel.Cancel();}};
@@ -104,7 +104,7 @@ public static class FidelityWindowsProbe
                 running=false;window.Close();application.Shutdown();
             }
         };
-        application.Run(window);MessageBox.Show((code==0?"Các phép thử của lượt này đã qua.":"Có phép thử chưa qua hoặc đã hủy.")+"\nKết quả: "+folder+"\n\nLượt thử này không chứng minh đủ 5 mức scale. Đổi scale trong Windows rồi chạy lại theo checklist.","Captovix · Kết quả SDR");return code;
+        application.Run(window);AppDialog.Show((code==0?"Các phép thử của lượt này đã qua.":"Có phép thử chưa qua hoặc đã hủy.")+"\nKết quả: "+folder+"\n\nLượt thử này không chứng minh đủ 5 mức scale. Đổi scale trong Windows rồi chạy lại theo checklist.","Captovix · Kết quả SDR");return code;
     }
     private static void RequirePattern(BitmapSource actual,BitmapSource expected)
     {

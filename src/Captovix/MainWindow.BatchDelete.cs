@@ -16,14 +16,14 @@ public partial class MainWindow
         try{
             var paths=new List<string>();foreach(var i in items){if(!_store.Items.Except(items).Any(other=>other.FilePath.Equals(i.FilePath,StringComparison.OrdinalIgnoreCase)))paths.Add(i.FilePath);string edit=DocumentStore.EditPath(i.Id);paths.Add(edit);paths.Add(DocumentStore.ThumbnailPath(i.Id));if(Directory.Exists(Path.GetDirectoryName(edit)))paths.AddRange(Directory.EnumerateFiles(Path.GetDirectoryName(edit)!,Path.GetFileName(edit)+".*.bak"));}
             receipt=MediaTrash.Move(App.DataRoot,JsonSerializer.Serialize(items),paths);foreach(var i in items)_store.Items.Remove(i);_store.Save();if(active){VideoPreview.Stop();VideoPreview.Source=null;UnloadEditor();}_lastDeleted=receipt;RestoreMediaButton.IsEnabled=true;SetStatus($"Đã chuyển {items.Length} nội dung vào thùng rác.");return true;
-        }catch(Exception ex){if(receipt!=null)try{MediaTrash.Restore(receipt);foreach(var i in items.OrderBy(i=>positions[i]))if(!_store.Items.Contains(i))_store.Items.Insert(Math.Clamp(positions[i],0,_store.Items.Count),i);_store.Save();}catch(Exception rollback){App.Log(rollback);}App.Log(ex);MessageBox.Show(owner,ex.Message,"Chưa xóa được nội dung");return false;}
+        }catch(Exception ex){if(receipt!=null)try{MediaTrash.Restore(receipt);foreach(var i in items.OrderBy(i=>positions[i]))if(!_store.Items.Contains(i))_store.Items.Insert(Math.Clamp(positions[i],0,_store.Items.Count),i);_store.Save();}catch(Exception rollback){App.Log(rollback);}App.Log(ex);AppDialog.Show(owner,ex.Message,"Chưa xóa được nội dung");return false;}
         finally{_libraryRefreshHold--;_changingSelection=oldChanging;RebuildRecent();RefreshLibrary();if(active)MediaList.SelectedItem=_recentItems.FirstOrDefault();}
     }
     private void RestoreMedia_Click(object sender,RoutedEventArgs e)
     {if(!RequireLicense())return;
         if(_lastDeleted==null||_busy||_updateApplying)return;var receipt=_lastDeleted;MediaItem[] items=[];bool restored=false;_libraryRefreshHold++;
         try{using var json=JsonDocument.Parse(receipt.Metadata);items=json.RootElement.ValueKind==JsonValueKind.Array?JsonSerializer.Deserialize<MediaItem[]>(receipt.Metadata)??[]:[JsonSerializer.Deserialize<MediaItem>(receipt.Metadata)!];if(items.Any(i=>i==null||_store.Items.Any(old=>old.Id==i.Id)))throw new IOException("Nội dung đã có trong thư viện.");MediaTrash.Restore(receipt);restored=true;foreach(var i in items){_store.TryThumbnail(i);_store.Items.Add(i);}_store.Save();_lastDeleted=null;RestoreMediaButton.IsEnabled=false;SetStatus($"Đã khôi phục {items.Length} nội dung và bản chỉnh.");}
-        catch(Exception ex){if(restored)try{foreach(var i in items)_store.Items.Remove(i);MediaTrash.UndoRestore(receipt);}catch(Exception rollback){App.Log(rollback);}App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa khôi phục được nội dung");}
+        catch(Exception ex){if(restored)try{foreach(var i in items)_store.Items.Remove(i);MediaTrash.UndoRestore(receipt);}catch(Exception rollback){App.Log(rollback);}App.Log(ex);AppDialog.Show(this,ex.Message,"Chưa khôi phục được nội dung");}
         finally{_libraryRefreshHold--;RebuildRecent();RefreshLibrary();}
     }
 }

@@ -1,6 +1,114 @@
-# Captovix V1.37.0 — Performance & Responsiveness
+# Captovix V1.41.0 — Groups & Layout Editing
 
-Hiệu chỉnh lại Callout trong cùng V1.37.0 theo mô phỏng Boss đã duyệt. Nếu đang dùng V1.37.0 cũ, thoát app/khay và chạy Setup mới thủ công; updater so sánh version nên không tự báo bản sửa cùng số.
+M4: nhóm lồng nhau, cây đối tượng/chọn cha-con, di chuyển panel/sửa label riêng, thuộc tính chung và bố cục giữ qua lưu/mở lại. Kế thừa toàn bộ M3 từ source1.40 Boss gửi.
+
+- **Thêm → Nhóm & bố cục** mở cây trong bảng thuộc tính, dùng ô công cụ động/phím tùy chỉnh như cũ. Ctrl+G nhóm, Ctrl+Shift+G bỏ cấp nhóm; Vào nhóm/Chọn cha/Toàn cây hoặc Alt+click chọn riêng/chồng lấp.
+- Căn hàng/chia khoảng/sắp lớp theo nhóm hay con đang chọn. **Thuộc tính chung…** thay riêng màu chữ/nền/cỡ chữ, ô trống giữ nguyên; có Undo/Redo.
+- Popup Captovix đồng bộ viền/theme, thông báo/xác nhận dùng form chung; click ngoài modal làm sáng viền. Menu Thêm vừa hai cột, có viền/bóng. Hộp chọn tệp Windows vẫn native.
+- Chuột phải ảnh/video ở thư viện trái/dưới → **Mở vị trí tệp**, Explorer chọn file gốc.
+- Bộ cài đầy đủ: `Captovix-v1.41.0-Full-Setup.exe`; source: `Captovix V1.41.0 — Groups & Layout Editing.zip`; update: `Captovix-v1.41.0-Update-Packages.zip`.
+- Thoát app cả khay, chạy Full Setup vào đường dẫn đang dùng. Không uninstall/xóa dữ liệu. Runtime/OCR/license/backend giữ nguyên. **Không cần chạy migration mới. Không deploy lại backend.**
+- Nhóm lồng nhau dùng schema21 và backup sidecar `.pre-v1.41.bak`; trước rollback cần sao lưu. Đọc hướng dẫn [M4](docs/GROUPS-LAYOUT-EDITING-V141.md) và [kiểm tra](docs/VALIDATION.md).
+- Build Windows bằng `scripts/Build-Windows.ps1` như hướng dẫn nền bên dưới. Pure checks: `python scripts/Run-Checks.py`; UI contract: `python scripts/Check-M4-UI.py`. Các fixture WPF cần Windows.
+- Chưa nghiệm thu native Windows/cài đặt/hiệu ứng popup/DPI. Chưa push/publish GitHub. Muốn app nhận1.41: publish đủ năm release asset, đặt stable/Latest.
+- Theo roadmap hiện có: **V1.42.0 — Storage & Package Optimization**; Library & Export Experience chuyển backlog chưa gán số do Boss chọn M4 cho1.41. Chưa xây tiếp.
+
+## Tài liệu phiên bản trước
+
+# Captovix V1.40.0 — Move & Background Recovery
+
+M3 trên source/gói1.39.0: tách mặt nạ nền gốc khỏi phần tử Mockup, di chuyển/resize/xóa/nhân bản giữ đúng vị trí nền cũ; có vùng giữ lân cận, xem trước/chỉnh mặt nạ, nhật ký và Undo/Redo.
+
+- **Thêm → Mockup** tạo/quét phần tử như M1/M2; di chuyển/resize/Delete/Ctrl+D. **Thêm → Nền & mặt nạ** để kiểm màu, mặt nạ và kéo vùng giữ. Nền phẳng trước; chưa inpaint ảnh/gradient, vùng chưa chắc chắn được cảnh báo.
+- **Thiết lập → Chụp & quay → Nhấn Enter để xác nhận chụp**: tắt mặc định = kéo thả chụp ngay; bật = chỉnh vùng rồi Enter. Tự lưu, không đổi luồng quay/cuộn.
+- **Phím tắt:** bỏ Theo cấu hình/Chọn cửa sổ và mô tả dài; thêm toàn bộ công cụ/phím đơn/tổ hợp, kiểm tra trùng và phím lõi. Công cụ Thêm mở bằng phím cũng cập nhật ô động. Bỏ menu Vùng pixel; vẫn dùng công cụ/phím pixel.
+- Thu gọn/căn lại sidebar: nhãn ngắn, ô nhập cân đối, nút màu một dòng; giá trị HEX/quy tắc0 ở tooltip. Giữ theme và chức năng.
+- Bộ cài đầy đủ: `Captovix-v1.40.0-Full-Setup.exe`. Hoặc `Captovix-v1.40.0-Update-Packages.zip`, giải nén chạy `HuyVo.Captovix-win-Setup.exe`. Thoát app cả khay, cài vào đường dẫn hiện tại, không uninstall.
+- Source: `Captovix V1.40.0 — Move & Background Recovery.zip`. Chạy `python scripts/Run-Checks.py`; trên Windows build bằng `scripts/Build-Windows.ps1` như hướng dẫn nền. Runtime/dependency/licenseconfig/OCR giữ nguyên.
+- Tài liệu M3 dùng schema20; tự backup sidecar cũ.pre-v1.40.bak. Các bản trước1.40 không đọc tài liệu20. Nhật ký100thao tác được lưu; Undo stack trong phiên hiện hành.
+- **Không cần chạy migration mới. Không cần deploy lại backend.** KEY/trial và lịch sử dịch vụ giữ nguyên.
+- Chưa nghiệm thu native Windows. Chi tiết docs/MOVE-BACKGROUND-RECOVERY-V140.md và docs/VALIDATION.md. Chưa push/publishGitHub; muốn updater nhận1.40, publish đủ5releaseassets và đặtLatest theo scripts/README-PUBLISH.txt.
+- Tiếp theo roadmap: V1.41.0 — Library & Export Experience; chưa xây trong bản này.
+
+## Lịch sử và hướng dẫn nền
+
+# Captovix V1.39.0 — Element Scan & Review
+
+M2 trên source V1.38.0: quét vùng/toàn ảnh bằng OCR + phân tích màu/viền, gợi ý chữ/title/nút/ô nhập/khối, sửa khung/loại/chữ và chọn phần tử trước khi áp dụng. Không chọn sẵn, không tự tạo hàng loạt. Giữ ảnh gốc, Apply một bước Undo/Redo, lưu/mở lại có metadata.
+
+- Luồng dùng: **Thêm → Mockup → Quét vùng / Quét toàn ảnh → rà soát/sửa/chọn → Xem sau áp dụng → Áp dụng phần tử đã chọn**. Có Sửa một vùng chữ/nút để dùng lại M1. Mockup có icon riêng và dùng ô công cụ động; công cụ mới tiếp tục đưa vào Thêm.
+- Trial: trạng thái30ngày, ngày giờ bắt đầu/hết hạn, số ngày còn lại và nút nhập KEY vĩnh viễn. Perpetual: check Đã kích hoạt/ngày giờ kích hoạt, ẩn ô KEY mặc định.
+- **Có migration mới dành cho chủ dịch vụ:** chạy `supabase/migrations/202611040001_activation_timestamp.sql` trong Supabase SQL Editor sau nền1.29.1, rồi Xác minh lại. File TXT rời được bàn giao để copy. Không reset/trial mới/cấp lại KEY và không cần deploy lại Edge Function. Xem docs/ACTIVATION-METADATA-V139.md.
+- Full setup: `Captovix-v1.39.0-Full-Setup.exe`; hoặc updateZIP `Captovix-v1.39.0-Update-Packages.zip`, giải nén chạy `HuyVo.Captovix-win-Setup.exe`. Thoát app cả khay, cài vào đường dẫn hiện tại; không uninstall. Bộ cài chứa .NET10.0.13 self-contained + VC++ prerequisite.
+- Source: `Captovix V1.39.0 — Element Scan & Review.zip`. Build Windows như hướng dẫn nền. Bắt đầu với `python scripts/Run-Checks.py`; build bằng `scripts/Build-Windows.ps1`. Protocol.Shared cũng có cập nhật nên phải build/copy cả Licensing.Shared.dll.
+- Nâng tài liệu M2 sang schema19 khi cần, giữ backup `.pre-v1.39.bak`; M1 thuần vẫn18. Bản cũ không mở tài liệu19.
+- Giới hạn: tối đa20MP/vùng,200khung/500dòng OCR,120phần tử/lần Apply. Đây là gợi ý cần rà soát, không phải DOM thật; chỉ che nền phẳng, chưa phục hồi gradient/ảnh và font chính xác.
+- Đã chạy logic/crypto/handler checks và cross-build app/fixtureWindows. Chưa nghiệm thu native Windows và chưa thực thi migration trên Supabase thật. Xem docs/VALIDATION.md, docs/ELEMENT-SCAN-REVIEW-V139.md.
+- Chưa push/publish GitHub. Muốn app cũ/onlineSetup nhận1.39.0, publish đủ5assets theo scripts/README-PUBLISH.txt và đặt Latest. Các mốc tiếp theo chưa được chọn xây dựng.
+
+## Lịch sử và hướng dẫn nền
+
+# Captovix V1.38.0 — Text & Button Editing
+
+M1 trên source V1.37.3: kéo chọn vùng label/title/nút, OCR Việt/Anh, tạo đối tượng sửa được; đổi nội dung, màu chữ, nền nút, viền và bo góc. Nền màu phẳng được che cùng đối tượng, ảnh gốc giữ riêng; Cancel không đổi tài liệu, áp dụng/sửa có Undo/Redo và lưu/mở lại.
+
+- Cách dùng: **Mockup → kéo vùng → xem lại OCR/chọn Label, Title hoặc Nút → chỉnh → Áp dụng**. Nhấp đúp hoặc Sửa Mockup để sửa tiếp. Chi tiết, giới hạn và checklist: [docs/MOCKUP-M1-V138.md](docs/MOCKUP-M1-V138.md).
+- Bộ cài/update: `Captovix-v1.38.0-Update-Packages.zip`; thoát app cả khay, giải nén và chạy `HuyVo.Captovix-win-Setup.exe` vào đường dẫn hiện tại. Không uninstall.
+- Source: `Captovix V1.38.0 — Text & Button Editing.zip`. Windows x64/.NET10 SDK/NSIS3. Chạy `python scripts/Run-Checks.py`, build bằng `scripts/Build-Windows.ps1`.
+- Nâng sidecar lên schema18 chỉ khi dùng Mockup; giữ `.pre-v1.38.bak` khi nâng sidecar cũ. Không DB migration/deploy backend. Bản cũ không mở được tài liệu schema18.
+- Muốn app cũ nhận1.38.0: publish đủ5releaseassets và đặt Latest theo `scripts/README-PUBLISH.txt`. Chưa tự publish. Bộ cài trực tuyến hiện có tiếp tục dùng được sau khi publish.
+- Logic/cross-build/package được kiểm, xem docs/VALIDATION.md; chưa nghiệm thu WPF/IME/OCR/Setup trên máy Windows.
+- M1 chỉ hỗ trợ thay nội dung trên nền phẳng, chưa quét tự động toàn giao diện hoặc phục hồi nền phức tạp. Tiếp theo Mockup: **M2 — Element Scan & Review**, chưa gán phiên bản. Các roadmap cũ phía dưới là lịch sử.
+
+## Lịch sử và hướng dẫn nền
+
+# Captovix V1.37.3 — Image Layer Thread Safety
+
+Bản vá khẩn trên sourceV1.37.2 Boss gửi: chụp ảnh1/ảnh2, dán ảnh2 vào ảnh1, chuyển thư viện rồi mở lại ảnh1 có thể báo `The calling thread cannot access this object because a different thread owns it` và mở chồng hộp thoại lỗi.
+
+- Cacheảnh dán/ảnh nền chỉnh sửa chuyển sang bitmapBGRA độc lập, đãfreeze, không giữ BitmapFrame còn liên kết BitmapDecoder của luồng tải.
+- Đọc ở worker, vẽ UI và lưu thumbnail nền dùng cùng dữ liệu pixel đã tách; không sửa dữ liệu PNG đã lưu trong sidecar, không bỏ lớp ảnh.
+- PNGencoder tách BitmapFrame trước khi encode để tránh kéo metadata/decoder vào luồng khác.
+- Đánh dấu lỗi Dispatcher đã xử lý trước khi mởMessageBox; thêm gate chống reentrant để không mở nhiều hộp thoại chồng nhau. Lỗi đầu vẫn được ghi log và hiển thị; lỗi độc lập về sau vẫn báo bình thường.
+- Kế thừa sửa vượtbiên CaptureBounds1.37.2, Callout và tối ưu1.37. Không đổi schema/license/backend/runtime/dependency.
+
+## Cài bản vá
+
+1. Gói cập nhật: `Captovix-v1.37.3-Update-Packages.zip`. Thoát app cả khay, giải nén rồi chạy `HuyVo.Captovix-win-Setup.exe` vào thư mục hiện tại. Không uninstall, không xóa thư viện hoặc sidecar.
+2. Source: `Captovix V1.37.3 — Image Layer Thread Safety.zip`.
+3. Không cần chạy migration mới, không deploybackend, giữ key/ảnh/lớp ảnh đã lưu. Không tự flatten hoặc ghi đè ảnh gốc.
+4. Để updater/Setuptrực tuyến thấy1.37.3: đưa đủ5releaseassets trongZIP lên stableRelease1.37.3 và đặtLatest. Bàn giao chưa tự publishGitHub. Launcher native hiện có tiếp tục dùng được.
+5. Build Windows theo hướng dẫn nền bên dưới. Kiểm Windows hồi quy: `dotnet run --project tests/ImageLayerThreadWindowsChecks -c Release -p:Platform=x64`; luồng này cần WindowsDesktop runtime. Đọc docs/IMAGE-LAYER-THREAD-V1373.md.
+6. Tiếp theo roadmap vẫn **V1.38.0 — Capture & Image Reliability**. Bản vá này không thay phạm vi roadmap.
+
+## Lịch sử và hướng dẫn nền
+
+# Captovix V1.37.2 — Capture Bounds Fix
+
+Sửa lỗi `FrozenFrame.Crop`: vùng chọn vượt ra ngoài ảnh màn hình đã giữ. Log Boss gửi xác nhận đường lỗi ở Crop/Save; không có tọa độ trong log cũ để xác định chính xác thao tác đã gây ra.
+
+- Gợi ý cửa sổ được giới hạn ngay theo ảnh màn hình đã giữ, kể cả cửa sổ phóng to có viền ngoài màn hình và cửa sổ nằm một phần ngoài desktop.
+- Tọa độ hiển thị/xác nhận đồng bộ. Kéo di chuyển dừng ở mép, giữ kích thước; resize và phím mũi tên không vượt biên. Shift kéo vuông/giữ tỉ lệ tiếp tục được giữ trong sai số làm tròn pixel.
+- Vùng chụp lại hoặc tọa độ cũ được giới hạn lần cuối trước khi ghi ảnh và metadata. Nếu phần còn lại quá nhỏ/ngoài toàn bộ, yêu cầu chọn lại; không tạo ảnh rỗng.
+- Giữ ảnh màn hình chụp trước overlay để lưu, không chụp lại màn hình có thanh công cụ. Không scale/resample và không làm mờ ảnh.
+- Guard Crop vẫn chặt; nếu phát sinh trường hợp khác, log bổ sung tọa độ vùng chọn và biên ảnh để xác định nguyên nhân.
+- Kế thừa đầy đủ sửa Callout và tối ưu1.37.1; không đổi runtime/dependency/license/backend/schema.
+
+## Cài đặt và phát hành
+
+1. Gói update: `Captovix-v1.37.2-Update-Packages.zip`. Giải nén; thoát app cả khay rồi chạy `HuyVo.Captovix-win-Setup.exe` vào thư mục hiện tại. Không uninstall.
+2. Source: `Captovix V1.37.2 — Capture Bounds Fix.zip`. Build Windows như các hướng dẫn nền phía dưới.
+3. Để máy1.37.1 nhận cập nhật: upload đủ5releaseassets trong gói update lên stableRelease1.37.2, đặtLatest. Không chỉ upload ZIP/source. Bàn giao này chưa tự publish.
+4. File `Captovix-Setup.exe` native trực tuyến đã bàn giao tiếp tục dùng được sau khi release1.37.2 thànhLatest; không cần dựng lại launcher.
+5. Không cần chạy migration mới, không deploy lại backend/admin, giữ ảnh và key hiện có.
+6. Chạy `dotnet run --project tests/CaptureBoundsChecks -c Release` và các kiểm thử cũ liên quan; trên Windows chạy thêm `tests/CaptureBoundsWindowsChecks`. Phạm vi kiểm tra thực tế ở `docs/CAPTURE-BOUNDS-V1372.md` và `docs/VALIDATION.md`.
+7. Tiếp theo roadmap: **V1.38.0 — Capture & Image Reliability**; bản vá này chỉ sửa vượt biên, chưa triển khai toàn phạm vi1.38.
+
+## Lịch sử và hướng dẫn nền
+
+# Captovix V1.37.1 — Performance & Responsiveness
+
+Bản vá V1.37.1 kế thừa toàn bộ hiệu chỉnh Callout của V1.37.0: click ngoài lưu và không tạo bản sao; chỉ kéo mới tạo; kéo tâm dời thân giữ đuôi, kéo ngoài tâm dời cả Callout. Tăng phiên bản assembly/UI/installer/feed để máy đang dùng V1.37.0 nhận bản mới sau khi phát hành đủ release assets.
 
 Nâng từ source V1.36.0 Boss gửi; tập trung hiệu năng, giữ công cụ và sửa lại Callout. Không thay dependency/runtime hay cấu hình license/backend.
 
@@ -13,7 +121,7 @@ Nâng từ source V1.36.0 Boss gửi; tập trung hiệu năng, giữ công cụ
 - Đóng/thay ảnh giải phóng drawing, cache chữ/đuôi và bitmap sampling từng giữ ảnh cũ, cùng cache PNG giải mã. Worker autosave cũng giải phóng cache theo thread sau khi xong; không ép GC trên UI. Undo vẫn giữ ngân sách sẵn có.
 - Giữ công cụ đang chọn khi hoàn tất nhập chữ/Callout, chụp/chuyển ảnh, crop và hủy thao tác bằng Esc. Chọn công cụ khác mới thay đổi công cụ; khi bấm lệnh chuyên biệt yêu cầu chế độ Chọn (ví dụ sửa lớp ảnh), giữ hành vi riêng của lệnh đó.
 - Danh sách gần đây tối đa30 nội dung, kể cả ảnh lịch sử được ghim tạm; không xóa ảnh cũ, xem đầy đủ trong Quản lý thư viện.
-- Sửa Callout theo mô phỏng Boss duyệt: điểm nhấn đầu ghim đuôi; kéo ngang thay đổi rộng, kéo dọc thay đổi cao, kéo chéo thay đổi cả hai độc lập, không khóa tỷ lệ. Gốc đuôi tự bám cạnh theo hướng kéo. Thả khi hộp trống giữ kích thước vừa vẽ; chỉ tự nở khi nhập chữ. Node thân và node đuôi vẫn độc lập. Kích thước tối thiểu36px; nhấn đơn tạo hộp220×120px.
+- Callout chỉ xuất hiện sau khi nhấn giữ và kéo đủ4px hiển thị; bấm đơn hoặc rung chuột nhẹ không tạo đối tượng/Undo/popup mới. Click ngoài lúc nhập kết thúc và lưu phiên đang sửa, chặn lần click đó đi xuống vùng vẽ. Khi chọn Callout, tâm xanh có dấu cộng cho phép kéo thân, giữ tip đuôi cố định trên ảnh; kéo phần thân ngoài tâm di chuyển cả Callout. Node đuôi và resize/xoay giữ chức năng riêng. Vẫn kéo giãn2trục lúc tạo, giữ công cụ và các mẫu hiện có.
 - Bổ sung đo có giới hạn trong RAM cho dựng cửa sổ/first paint, mở ảnh, autosave và frame editor; không đưa lại menu chẩn đoán đã bỏ.
 
 Đo trước/sau logic trên cùng host Linux/.NET10, 5.000 chú thích có một Callout20.000ký tự,3lượt làm nóng +11lượt đo lấy trung vị:
@@ -28,11 +136,11 @@ Nâng từ source V1.36.0 Boss gửi; tập trung hiệu năng, giữ công cụ
 
 ## Cài đặt và build
 
-1. Bộ cài: `Captovix-v1.37.0-Update-Packages.zip`. Thoát cả app/khay, giải nén và chạy `HuyVo.Captovix-win-Setup.exe` vào thư mục hiện tại. Không uninstall.
-2. Source: `Captovix V1.37.0 — Performance & Responsiveness.zip`. Windows x64, .NET10 SDK và NSIS3. Mở thư mục gốc, chạy `python scripts/Run-Checks.py`, sau đó `powershell -ExecutionPolicy Bypass -File scripts/Build-Windows.ps1`. Các hướng dẫn nền phía dưới tiếp tục áp dụng.
+1. Bộ cài: `Captovix-v1.37.1-Update-Packages.zip`. Thoát cả app/khay, giải nén và chạy `HuyVo.Captovix-win-Setup.exe` vào thư mục hiện tại. Không uninstall.
+2. Source: `Captovix V1.37.1 — Performance & Responsiveness.zip`. Windows x64, .NET10 SDK và NSIS3. Mở thư mục gốc, chạy `python scripts/Run-Checks.py`, sau đó `powershell -ExecutionPolicy Bypass -File scripts/Build-Windows.ps1`. Các hướng dẫn nền phía dưới tiếp tục áp dụng.
 3. Kiểm đo: `python scripts/Benchmark-Performance.py`; Windows chạy thêm `dotnet run --project tests/PerformanceWindowsChecks -c Release -p:Platform=x64`. Xem `docs/PERFORMANCE-RESPONSIVENESS-V137.md`.
 4. Không cần chạy migration mới, không deploy lại backend/admin; license public config và dữ liệu hiện hữu giữ nguyên. Schema17 giữ nguyên; backup trước rollback.
-5. Chưa push GitHub/deploy/publish. Để bản cũ thấy1.37, upload đủ5releaseassets trong ZIP lên stable release1.37 (latest), không chỉ upload ZIP/source. Updater dùng Full nên không cần cài trung gian.
+5. Chưa push GitHub/deploy/publish. Để bản cũ thấy1.37.1, upload đủ5releaseassets trong ZIP lên stable release1.37.1 (latest), không chỉ upload ZIP/source. Updater dùng Full nên không cần cài trung gian.
 6. Tiếp theo roadmap đã điều chỉnh: **V1.38.0 — Capture & Image Reliability**: nhiều màn hình/DPI, chọn vùng/phần tử/chụp app/chụp cuộn, đối chiếu ảnh và phục hồi khi hủy/lỗi lưu. Chưa triển khai bản1.38.
 
 ## Lịch sử và hướng dẫn nền

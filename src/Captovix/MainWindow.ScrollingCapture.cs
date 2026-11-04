@@ -25,7 +25,7 @@ public partial class MainWindow
             if(finish&&session.Count>0){var preview=new ScrollPreviewWindow(session){Owner=this};if(preview.ShowDialog()==true&&preview.Result is {} image)SaveScrollResult(session,image);}
             SetStatus($"Phiên chụp cuộn giữ tại {session.Folder}. Có thể khôi phục hoặc mở các PNG nguồn.");
         }catch(OperationCanceledException){SetStatus("Đã hủy chụp cuộn. Các khung đã lấy vẫn được giữ để khôi phục.");}
-        catch(Exception ex){App.Log(ex);Show();MessageBox.Show(this,ex.Message+(session!=null?"\n\nKhung nguồn được giữ tại:\n"+session.Folder:""),"Chụp cuộn chưa hoàn tất",MessageBoxButton.OK,MessageBoxImage.Warning);}
+        catch(Exception ex){App.Log(ex);Show();AppDialog.Show(this,ex.Message+(session!=null?"\n\nKhung nguồn được giữ tại:\n"+session.Folder:""),"Chụp cuộn chưa hoàn tất",MessageBoxButton.OK,MessageBoxImage.Warning);}
         finally{ReleaseCaptureEscape();_captureCancellation?.Dispose();_captureCancellation=null;Show();WindowState=previous==WindowState.Minimized?WindowState.Maximized:previous;Activate();SetBusy(false);_captureGate.Exit();if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);}
     }
     private void SaveScrollResult(ScrollSession session,BitmapSource image)
@@ -36,7 +36,7 @@ public partial class MainWindow
     private void RecoverScroll_Click(object sender,RoutedEventArgs e)
     {if(!RequireLicense())return;
         if(_busy||_updateApplying)return;Surface.CancelInteraction();if(!FlushEdits()||!_captureGate.TryEnter())return;SetBusy(true);_settingsDialog?.Close();
-        try{var picker=new OpenFileDialog{Title="Mở session.json của phiên chụp cuộn",Filter="Phiên chụp cuộn|session.json",InitialDirectory=Directory.Exists(ScrollSession.Root)?ScrollSession.Root:App.DataRoot};if(picker.ShowDialog(this)!=true)return;var session=ScrollSession.Open(picker.FileName);var preview=new ScrollPreviewWindow(session){Owner=this};if(preview.ShowDialog()==true&&preview.Result is {} image)SaveScrollResult(session,image);}catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không khôi phục được phiên");}finally{SetBusy(false);_captureGate.Exit();if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);}
+        try{var picker=new OpenFileDialog{Title="Mở session.json của phiên chụp cuộn",Filter="Phiên chụp cuộn|session.json",InitialDirectory=Directory.Exists(ScrollSession.Root)?ScrollSession.Root:App.DataRoot};if(picker.ShowDialog(this)!=true)return;var session=ScrollSession.Open(picker.FileName);var preview=new ScrollPreviewWindow(session){Owner=this};if(preview.ShowDialog()==true&&preview.Result is {} image)SaveScrollResult(session,image);}catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Không khôi phục được phiên");}finally{SetBusy(false);_captureGate.Exit();if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);}
     }
 }
 internal sealed class ScrollCaptureController : Window

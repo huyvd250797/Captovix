@@ -26,3 +26,10 @@ test('payload actual size is bounded',async()=>{const r=await createHandler(env,
 test('desktop endpoint never accepts unsigned key alone',async()=>{const r=await createHandler(env,fetch,rpc)(request('/v1/activate',{key:'CVX-ANYTHING'}));assert.equal(r.status,400)});
 
 test('Deno worker registers handler even when entry is imported',async()=>{let registered;globalThis.Deno={env:{toObject:()=>({})},serve:h=>{registered=h}};try{await import('../../supabase/functions/licensing/index.ts?deno-bootstrap-test');assert.equal(typeof registered,'function');assert.equal((await registered(request('/health'))).status,200)}finally{delete globalThis.Deno}});
+
+test('signed activation timestamp survives reply and cannot be changed outside signature',async()=>{
+ const activatedAt='2026-10-01T08:30:00.000Z';const value=await signReply(await importSigner(auth.b64),{deviceId:id.deviceId,activatedAt},'test');
+ const claims=JSON.parse(Buffer.from(value.certificate.payload,'base64'));assert.equal(claims.activatedAt,activatedAt);
+ assert(await crypto.subtle.verify({name:'RSA-PSS',saltLength:32},auth.keys.publicKey,Buffer.from(value.certificate.signature,'base64'),new TextEncoder().encode(value.certificate.payload)));
+ claims.activatedAt='2026-11-04T08:30:00.000Z';const altered=Buffer.from(JSON.stringify(claims)).toString('base64');assert.equal(await crypto.subtle.verify({name:'RSA-PSS',saltLength:32},auth.keys.publicKey,Buffer.from(value.certificate.signature,'base64'),new TextEncoder().encode(altered)),false);
+});

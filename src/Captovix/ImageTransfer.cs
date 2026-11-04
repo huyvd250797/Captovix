@@ -16,9 +16,12 @@ public static class ImageTransfer
     {
         var bitmap=BitmapSource.Create(width,height,96,96,PixelFormats.Bgra32,null,pixels,checked(width*4));bitmap.Freeze();return bitmap;
     }
+    // Call on the owning thread before sharing decoder-backed frames. The result
+    // contains only pixel data, with no BitmapDecoder/metadata dispatcher graph.
+    public static BitmapSource Detach(BitmapSource source)=>Bitmap(source.PixelWidth,source.PixelHeight,Bgra(source));
     public static byte[] Png(BitmapSource source)
     {
-        var normalized=source.Format==PixelFormats.Bgra32&&Math.Abs(source.DpiX-96)<.001&&Math.Abs(source.DpiY-96)<.001?source:Bitmap(source.PixelWidth,source.PixelHeight,Bgra(source));
+        var normalized=source is not BitmapFrame&&source.Format==PixelFormats.Bgra32&&Math.Abs(source.DpiX-96)<.001&&Math.Abs(source.DpiY-96)<.001?source:Detach(source);
         var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(normalized));using var stream=new MemoryStream();encoder.Save(stream);return stream.ToArray();
     }
     public static void Copy(BitmapSource source)

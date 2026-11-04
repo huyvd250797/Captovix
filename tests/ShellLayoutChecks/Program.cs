@@ -5,7 +5,7 @@ var doc=XDocument.Load(Path.Combine(root.FullName,"src/Captovix/MainWindow.xaml"
 void Check(bool b,string s){if(!b)throw new Exception(s);n++;Console.WriteLine("PASS: "+s);}XElement Named(string name)=>doc.Descendants().Single(e=>(string?)e.Attribute(x+"Name")==name);
 var stage=Named("SettingsStaging");var inspector=Named("InspectorPane");
 Check(doc.Root!.Attribute("WindowState")?.Value=="Maximized","Editor default remains maximized");
-Check(doc.Descendants(w+"Menu").Single().Elements(w+"MenuItem").Count()==7,"Seven conventional top-level menu modules");
+Check(doc.Descendants(w+"Menu").Single().Elements(w+"MenuItem").Count()==6,"Six menu modules after removing Pixel menu");
 Check(doc.Descendants(w+"MenuItem").Any(e=>e.Elements(w+"MenuItem").Any(child=>child.Elements(w+"MenuItem").Any())),"Menu exposes hierarchical submodules");
 foreach(var name in new[]{"CaptureSettingsView","UpdatesExpander","MetadataSettingsView","DiagnosticsSettingsView"})Check(Named(name).Ancestors().Contains(stage)&&!Named(name).Ancestors().Contains(inspector),"System module belongs to modal staging, not inspector: "+name);
 Check(stage.Attribute("Visibility")?.Value=="Collapsed","Unopened system controls consume no workspace area");
@@ -34,9 +34,10 @@ Check(Named("InlineText").Attribute("Background")?.Value=="Transparent"&&Named("
 Check(Named("ImageScroll").Elements(w+"Border").Single().Attribute("Background")?.Value=="{DynamicResource Workspace}","Viewport gutter is plain workspace rather than checkerboard");
 Check(doc.Descendants(w+"Menu").Single().Elements(w+"MenuItem").All(e=>e.Elements(w+"MenuItem").Any(child=>child.Elements(w+"MenuItem").Any())),"Every top menu exposes functional command groups");
 Check(Named("TileRoot").Descendants(w+"TextBlock").Any(e=>e.Attribute("Text")?.Value=="{Binding CompactDetail}"),"Media cards use a compact detail line");
-Console.WriteLine($"{n} shell layout structure checks passed; rendering still requires Windows.");
+
 
 Check(Named("ToolBox").Elements(w+"Button").Select(e=>(string?)e.Attribute("Tag")??(string?)e.Attribute(x+"Name")).SequenceEqual(new[]{"Shape","Callout","Arrow","Text","Crop","Blur","PixelRectangle","Step","AssistButton","RecentStudioButton","StudioMoreButton"}),"V1.33 main tool order matches requested compact row");Check(!Named("ImageTools").Ancestors().Contains(Named("EditorPane")),"Tools no longer consume editor canvas rows");Check(inspector.Attribute("Grid.Row")?.Value=="1"&&inspector.Attribute("Grid.RowSpan")?.Value=="2"&&!inspector.Ancestors().Contains(Named("WorkspaceGrid")),"Properties extend upwards beside top tools");Check(Named("CopyButton").Ancestors().Contains(stage)&&Named("ExportButton").Ancestors().Contains(stage),"Copy/export retain menu commands without toolbar buttons");
 
-Check(doc.Descendants(w+"TextBlock").Any(e=>(string?)e.Attribute("Text")=="Captovix")&&doc.Descendants(w+"Image").Any(e=>((string?)e.Attribute("Source"))?.Contains("Captovix-brand")==true),"Branded logo/name restored in menu row");
+Check(doc.Descendants(w+"TextBlock").Any(e=>(string?)e.Attribute("Text")=="Captovix")&&doc.Descendants(w+"Image").Any(e=>((string?)e.Attribute("Source"))?.Contains("BrandMark")==true),"Branded logo/name restored in menu row");
 Check(!doc.Descendants().Any(e=>e.Attribute("Click")?.Value is "Diagnostics_Click" or "PerformanceReport_Click" or "FidelityCheck_Click" or "TestGuide_Click"),"Developer diagnostics/test-guide entrypoints removed");
+Console.WriteLine($"{n} shell layout structure checks passed; rendering still requires Windows.");

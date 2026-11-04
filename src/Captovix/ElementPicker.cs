@@ -2,5 +2,5 @@ namespace Captovix;
 // Compatibility entry point. Both modes now use the exact same overlay/session.
 public static class ElementPicker
 {
-    public static Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation,FrozenDesktop? frozen=null)=>RegionPicker.PickAsync(displays,cancellation,true,true,frozen);
+    public static Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation,FrozenDesktop? frozen=null,bool requireEnter=true)=>RegionPicker.PickAsync(displays,cancellation,true,true,frozen,requireEnter);
 }

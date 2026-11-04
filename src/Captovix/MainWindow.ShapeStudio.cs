@@ -32,7 +32,7 @@ public partial class MainWindow
     private void ShapeKind_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(!_shapeReady||_syncProperties||ShapeKindPicker.SelectedValue is not AnnotationKind kind||!ShapeStudio.IsClosed(kind))return;
-        Surface.ShapeKind=kind;ChangeSelected(a=>{if(ShapeStudio.IsClosed(a.Kind))a.Kind=kind;});
+        Surface.ShapeKind=kind;ChangeSelected(a=>{if(a.Mockup==null&&ShapeStudio.IsClosed(a.Kind))a.Kind=kind;});
         if(Surface.SelectedIds.Count==0)SelectTool(EditorTool.Shape);Surface.Refresh();SyncProperties();
     }
     private static double ShapeValue(TextBox box,string label,double min,double max)

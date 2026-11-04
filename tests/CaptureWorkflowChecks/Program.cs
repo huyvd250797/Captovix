@@ -6,19 +6,19 @@ void Reject(Action action,string name){bool rejected=false;try{action();}catch{r
 var root=Path.Combine(Path.GetTempPath(),"Captovix-Workflow-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
 try{
  var config=CaptureWorkflowStore.Load(root,out var warning);Check(warning==null&&!config.Background&&!config.AutoCopy&&!config.CloseToTray&&!config.StartWithWindows&&!config.StartInTray,"First install opens Editor, no autorun/close-to-tray");
- CaptureWorkflowStore.Validate(config);Check(config.Hotkeys.Count==6&&config.Presets.Count==3,"Six configurable photo actions and three presets");
- config.CloseToTray=true;config.Background=true;config.AutoCopy=true;config.StartWithWindows=true;config.StartInTray=true;config.Hotkeys[0]=new(PhotoAction.Current,true,3,0x41);
+ CaptureWorkflowStore.Validate(config);Check(config.Hotkeys.Count==6&&config.Presets.Count==3,"Six legacy action IDs remain compatible; three presets");
+ config.CloseToTray=true;config.Background=true;config.AutoCopy=true;config.StartWithWindows=true;config.StartInTray=true;config.Hotkeys[1]=new(PhotoAction.Region,true,3,0x41);
  var displays=new[]{new WorkflowDisplay("A",new(-1920,0,1920,1080),96,96,"monitorA"),new WorkflowDisplay("B",new(0,0,2560,1440),144,144,"monitorB")};
  config.LastRegion=new(new(-300,100,900,500),CaptureWorkflowStore.Topology(displays));CaptureWorkflowStore.Save(root,config);var loaded=CaptureWorkflowStore.Load(root,out warning);
  Check(warning==null&&loaded.CloseToTray&&loaded.Background&&loaded.AutoCopy&&loaded.StartWithWindows&&loaded.StartInTray,"Preferences survive restart");
- Check(loaded.Hotkeys[0]==config.Hotkeys[0]&&loaded.Presets.SequenceEqual(config.Presets),"Hotkeys and presets roundtrip");Check(loaded.LastRegion==config.LastRegion,"Physical region and topology roundtrip");
+ Check(loaded.Hotkeys[1]==config.Hotkeys[1]&&loaded.Presets.SequenceEqual(config.Presets),"Hotkeys and presets roundtrip");Check(loaded.LastRegion==config.LastRegion,"Physical region and topology roundtrip");
  Check(!JsonSerializer.Serialize(loaded.Presets).Contains("Handle"),"Presets never serialize an HWND");
  var clone=config.Clone();clone.Presets.Clear();Check(config.Presets.Count==3,"Candidate edits isolated until commit");
  Reject(()=>{var x=config.Clone();x.SchemaVersion=2;CaptureWorkflowStore.Save(root,x);},"Reject future schema");
  Reject(()=>{var x=config.Clone();x.Hotkeys.RemoveAt(0);CaptureWorkflowStore.Validate(x);},"Reject missing actions");
  Reject(()=>{var x=config.Clone();x.Hotkeys[1]=x.Hotkeys[0];CaptureWorkflowStore.Validate(x);},"Reject duplicate action identifiers");
  Reject(()=>{var x=config.Clone();x.Hotkeys[0]=new((PhotoAction)99,true,6,0x41);CaptureWorkflowStore.Validate(x);},"Reject unknown action");
- Reject(()=>{var x=config.Clone();x.Hotkeys[1]=x.Hotkeys[1] with{Modifiers=3,Key=0x41};CaptureWorkflowStore.Validate(x);},"Reject duplicate chords");
+ Reject(()=>{var x=config.Clone();x.Hotkeys[3]=x.Hotkeys[3] with{Modifiers=3,Key=0x41};CaptureWorkflowStore.Validate(x);},"Reject duplicate chords");
  foreach(var key in new uint[]{0x32,0x33,0x34})Reject(()=>{var x=config.Clone();x.Hotkeys[0]=new(PhotoAction.Current,true,6,key);CaptureWorkflowStore.Validate(x);},"Reserve recording chord "+key);
  foreach(var chord in new[]{(0u,0x41u),(8u,0x41u),(2u,0x7Bu),(2u,0x1Bu),(0u,0x09u),(0u,0x20u),(0u,0x25u),(0u,0x60u),(15u,0x2Cu)}){var x=config.Clone();x.Hotkeys[0]=new(PhotoAction.Current,true,chord.Item1,chord.Item2);CaptureWorkflowStore.Validate(x);Check(true,"Accept keyboard chord; OS registration remains authoritative "+chord);}
  foreach(var key in new uint[]{0,1,0x10,0x11,0x12,0x5B,0x5C,0xA0,0xFF})Reject(()=>{var x=config.Clone();x.Hotkeys[0]=new(PhotoAction.Current,true,0,key);CaptureWorkflowStore.Validate(x);},"Reject modifier-only/non-key "+key);
@@ -34,9 +34,9 @@ try{
  Check(CaptureWorkflowStore.StartupCommand(@"D:\Captovix Test\current\Captovix.exe")=="\"D:\\Captovix Test\\current\\Captovix.exe\" --captovix-autostart","Autorun quotes path with spaces and no capture argument");
  Reject(()=>CaptureWorkflowStore.StartupCommand("bad\"path"),"Reject injected startup argument");Reject(()=>CaptureWorkflowStore.StartupCommand(new string('a',250)),"Reject overlong Run command");
  var active=new Dictionary<int,(uint,uint)>();var blocked=new HashSet<uint>();bool Register(int id,uint m,uint k){if(blocked.Contains(k)||active.ContainsKey(id))return false;active[id]=(m,k);return true;}
- var broker=new CaptureHotkeyRegistry(Register,id=>active.Remove(id));Check(broker.Start(config.Hotkeys).Count==0&&active.Count==6,"Register six actions");
- var next=config.Hotkeys.Select(h=>h.Action==PhotoAction.Current?h with{Key=0x42}:h).ToList();blocked.Add(0x42);Reject(()=>broker.Replace(next),"External conflict rejects transaction");Check(active.Count==6&&active[1].Item2==0x41,"Conflict restores previous live bindings");blocked.Clear();broker.Replace(next);Check(active.Count==6&&active[1].Item2==0x42,"Successful rebind replaces old chord");
- broker.Stop();Check(active.Count==0,"Exit/update releases every photo hotkey");blocked.Add(0x42);Check(broker.Start(next).Count==1&&active.Count==5,"Startup conflict retains other available actions");broker.Stop();
+ var broker=new CaptureHotkeyRegistry(Register,id=>active.Remove(id));Check(broker.Start(config.Hotkeys).Count==0&&active.Count==3,"Register three active photo actions");
+ var next=config.Hotkeys.Select(h=>h.Action==PhotoAction.Region?h with{Key=0x42}:h).ToList();blocked.Add(0x42);Reject(()=>broker.Replace(next),"External conflict rejects transaction");Check(active.Count==3&&active[5].Item2==0x41,"Conflict restores previous live bindings");blocked.Clear();broker.Replace(next);Check(active.Count==3&&active[5].Item2==0x42,"Successful rebind replaces old chord");
+ broker.Stop();Check(active.Count==0,"Exit/update releases every photo hotkey");blocked.Add(0x42);Check(broker.Start(next).Count==1&&active.Count==2,"Startup conflict retains other available actions");broker.Stop();
  var gate=new CaptureGate();var winners=0;Parallel.For(0,1000,_=>{if(gate.TryEnter())Interlocked.Increment(ref winners);});Check(winners==1,"Repeated capture requests acquire one owner");gate.Exit();Check(gate.TryEnter(),"Gate reusable after cancelled/finished capture");gate.Exit();
  CaptureWorkflowStore.Save(root,config);var backup=UpdateBackup.Create(root,"1.4.0","1.5.0");using(var zip=ZipFile.OpenRead(backup))Check(zip.GetEntry(CaptureWorkflowStore.FileName)!=null,"Update backup includes capture settings, keys and presets");
  Check(Directory.GetFiles(root,"*.tmp").Length==0,"Atomic saves leave no temporary files");

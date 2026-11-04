@@ -1,6 +1,6 @@
 using System.Text;
 namespace Captovix;
-public sealed record OcrTextLine(PixelRect Bounds,string Text);
+public sealed record OcrTextLine(PixelRect Bounds,string Text,float Confidence=1);
 public sealed record OcrResult(string Text="",float Confidence=0,string? Error=null,OcrTextLine[]? Lines=null);
 public static class OcrContract
 {

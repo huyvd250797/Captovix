@@ -48,7 +48,7 @@ public partial class MainWindow : Window
         _loaded=true;var hwnd=new WindowInteropHelper(this).Handle;HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);
         InitializeCaptureWorkflow();
         InitializeUpdates();InitializeLicensing();
-        if(_store.StartupWarning!=null)MessageBox.Show(this,_store.StartupWarning,"Kiểm tra dữ liệu cũ",MessageBoxButton.OK,MessageBoxImage.Warning);
+        if(_store.StartupWarning!=null)AppDialog.Show(this,_store.StartupWarning,"Kiểm tra dữ liệu cũ",MessageBoxButton.OK,MessageBoxImage.Warning);
     }
     private void RefreshSources()
     {
@@ -95,10 +95,10 @@ public partial class MainWindow : Window
             var display=DisplayPicker.SelectedItem as DisplayInfo??throw new InvalidOperationException("Không tìm thấy màn hình.");
             WindowInfo? window=null;PixelRect region=display.Bounds;
             _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);if(video)Hide();if(frozen==null)await Task.Delay(220,cancellation);
-            if(s.SourceMode==3){var chosen=await ElementPicker.PickAsync(_displays,cancellation,frozen);if(chosen==null)return;region=chosen.Value;if(RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
+            if(s.SourceMode==3){var chosen=await ElementPicker.PickAsync(_displays,cancellation,frozen,video||_workflow.RequireEnter);if(chosen==null)return;region=chosen.Value;if(RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
             else if(s.SourceMode==0){
                 if(action==PhotoAction.Repeat&&CaptureWorkflowStore.CanRepeat(_workflow.LastRegion,WorkflowDisplays()))region=_workflow.LastRegion!.Bounds;
-                else{if(action==PhotoAction.Repeat)_tray?.Notify("Bố trí màn hình/DPI đã thay đổi hoặc chưa có vùng cũ. Hãy chọn vùng mới.");var chosen=await RegionPicker.PickAsync(_displays,cancellation,!video&&captureLicensed,!video&&captureLicensed,frozen);if(chosen==null)return;region=chosen.Value;if(!video&&RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
+                else{if(action==PhotoAction.Repeat)_tray?.Notify("Bố trí màn hình/DPI đã thay đổi hoặc chưa có vùng cũ. Hãy chọn vùng mới.");var chosen=await RegionPicker.PickAsync(_displays,cancellation,!video&&captureLicensed,!video&&captureLicensed,frozen,video||_workflow.RequireEnter);if(chosen==null)return;region=chosen.Value;if(!video&&RegionPicker.Choice!=CaptureChoice.Photo){scrollNext=region;scrollHorizontal=RegionPicker.Choice==CaptureChoice.Horizontal;return;}}
             }else if(s.SourceMode==1){
                 window=video?WindowPicker.SelectedItem as WindowInfo:await CapturePrompts.PickWindowAsync(cancellation);
                 if(window==null)return;
@@ -108,6 +108,12 @@ public partial class MainWindow : Window
             if(frozen==null){await CapturePrompts.CountdownAsync(s.Delay,cancellation);await Task.Delay(220,cancellation);}
             var now=Native.Displays().Select(d=>new WorkflowDisplay(d.Device,d.Bounds,d.DpiX,d.DpiY,d.Identity));if(CaptureWorkflowStore.Topology(now)!=topology)throw new InvalidOperationException("Màn hình hoặc DPI đã thay đổi trong phiên chụp. Hãy thử chọn lại.");
             if(window!=null){var current=Native.Windows(true).FirstOrDefault(w=>w.Handle==window.Handle&&w.ProcessId==window.ProcessId);if(current==null||!Native.GetWindowRect(window.Handle,out var wr))throw new InvalidOperationException("Cửa sổ mục tiêu không còn khả dụng. Hãy chọn lại.");region=video?wr.Pixels.Even():wr.Pixels;}
+            if(frozen!=null){
+                // Repeat/legacy selection is constrained to the same retained frame before
+                // saving or recording dimensions. Never re-capture the selector toolbar.
+                region=CaptureSelection.Clip(region,frozen.Frame.Bounds);
+                if(!CaptureSelection.Valid(region))throw new InvalidOperationException("Vùng chọn không còn nằm trong ảnh màn hình đã giữ. Hãy chọn lại vùng trên màn hình.");
+            }
             cancellation.ThrowIfCancellationRequested();var final=_store.NewPath(video);var working=Path.Combine(_store.Root,Path.GetFileNameWithoutExtension(final)+".pending"+(video?".mp4":".png"));
             if(!LicenseRuntime.Full&&(video||s.SourceMode!=0||action==PhotoAction.Repeat))throw new InvalidOperationException("Quyền sử dụng đã hết trong phiên chọn. Chỉ chụp vùng thủ công còn được mở.");
             var clock=Stopwatch.StartNew();string actual;
@@ -133,7 +139,7 @@ public partial class MainWindow : Window
             if(showAfter){SearchBox.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);}
             else{_notificationItem=item.Id;_tray?.Notify(item.Title+" · "+finalStatus+" Nhấp thông báo để mở ảnh.");}
         }catch(OperationCanceledException){finalStatus="Đã hủy phiên capture.";}
-        catch(Exception e){failed=true;App.Log(e);Show();Activate();var hint=e is DllNotFoundException or BadImageFormatException?"\n\nKhông nạp được thư viện native. Chạy Install.cmd để kiểm tra Visual C++ Runtime.":"\n\nChi tiết được lưu tại %LOCALAPPDATA%\\HuyVo\\Captovix\\errors.log.";MessageBox.Show(this,$"Không thể {(video?"quay màn hình":"chụp ảnh")}.\n\n{e.Message}{hint}","Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);}
+        catch(Exception e){failed=true;App.Log(e);Show();Activate();var hint=e is DllNotFoundException or BadImageFormatException?"\n\nKhông nạp được thư viện native. Chạy Install.cmd để kiểm tra Visual C++ Runtime.":"\n\nChi tiết được lưu tại %LOCALAPPDATA%\\HuyVo\\Captovix\\errors.log.";AppDialog.Show(this,$"Không thể {(video?"quay màn hình":"chụp ảnh")}.\n\n{e.Message}{hint}","Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);}
         finally {
             frozen?.Dispose();
             try{_engine?.Stop();_engine?.Dispose();}catch(Exception e){App.Log(e);}_engine=null;_bar?.Finish();_bar=null;_stopping=false;_recordingActive=false;
@@ -169,14 +175,14 @@ public partial class MainWindow : Window
         try {
             if(item.IsVideo){VideoPreview.Visibility=VideoTools.Visibility=Visibility.Visible;VideoPreview.Source=new Uri(item.FilePath);VideoPreview.Play();VideoPreview.Pause();}
             else await OpenImageAsync(item);
-        }catch(Exception ex){App.Log(ex);SetStatus("Không mở được file: "+ex.Message);CopyButton.IsEnabled=ExportButton.IsEnabled=false;MessageBox.Show(this,ex.Message,"Không mở được nội dung");}
+        }catch(Exception ex){App.Log(ex);SetStatus("Không mở được file: "+ex.Message);CopyButton.IsEnabled=ExportButton.IsEnabled=false;AppDialog.Show(this,ex.Message,"Không mở được nội dung");}
     }
     private void UpdateMetadata(MediaItem item)=>Metadata.Text=$"{(item.IsVideo?"VIDEO MP4 / H.264":"ẢNH GỐC PNG")}\n{item.Width} × {item.Height} pixel\n{item.Created:dd/MM/yyyy HH:mm:ss}\n\nNguồn\n{item.Source}\n\n{(item.IsVideo?$"Mic: {(item.Microphone?"Bật":"Tắt")}\nTiếng máy: {(item.SystemAudio?"Bật":"Tắt")}\nFPS cấu hình: {item.Fps}\n":"")}\n{item.FilePath}";
     private void Copy_Click(object sender,RoutedEventArgs e)
     {if(!RequireLicense())return;
         if(_session==null||!PrepareCropForExport())return;_session.Commit();
         try{ImageTransfer.Copy(Surface.Flatten());FlushEdits(false);SetStatus($"Đã copy {Surface.Layout!.Width} × {Surface.Layout.Height} px · PNG + Bitmap gồm chú thích/crop. App nhận quyết định cách dán."+PrivacyExportStatus());}
-        catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không copy được ảnh");}
+        catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Không copy được ảnh");}
     }
     private void Export_Click(object sender,RoutedEventArgs e)
     {if(!RequireLicense())return;
@@ -186,13 +192,13 @@ public partial class MainWindow : Window
         if(save.ShowDialog(this)!=true||!PrepareCropForExport())return;
         try{
             var destination=Path.GetFullPath(save.FileName);
-            if(_store.Items.Any(item=>string.Equals(Path.GetFullPath(item.FilePath),destination,StringComparison.OrdinalIgnoreCase))){MessageBox.Show(this,"Hãy chọn tên hoặc thư mục xuất khác để giữ nguyên file gốc trong thư viện.","Giữ ảnh/video gốc");return;}
+            if(_store.Items.Any(item=>string.Equals(Path.GetFullPath(item.FilePath),destination,StringComparison.OrdinalIgnoreCase))){AppDialog.Show(this,"Hãy chọn tên hoặc thư mục xuất khác để giữ nguyên file gốc trong thư viện.","Giữ ảnh/video gốc");return;}
             if(!i.IsVideo){
                 var bitmap=Surface.Flatten();ImageTransfer.Save(bitmap,save.FileName,save.FilterIndex==2);
                 FlushEdits(false);
             }else File.Copy(i.FilePath,save.FileName,true);
             SetStatus("Đã xuất file: "+save.FileName+(i.IsVideo?"":PrivacyExportStatus()));
-        }catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không xuất được file");}
+        }catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Không xuất được file");}
     }
     private void Import_Click(object sender,RoutedEventArgs e)
     {if(!RequireLicense())return;
@@ -200,7 +206,7 @@ public partial class MainWindow : Window
         foreach(var path in open.FileNames)try{bool video=Path.GetExtension(path).Equals(".mp4",StringComparison.OrdinalIgnoreCase);var dest=_store.NewPath(video);var i=new MediaItem{Title=Path.GetFileNameWithoutExtension(path),FilePath=dest,IsVideo=video,Source="File được nhập"};
             if(video)File.Copy(path,dest);else{var b=MediaStore.LoadImage(path);i.Width=b.PixelWidth;i.Height=b.PixelHeight;var enc=new PngBitmapEncoder();enc.Frames.Add(BitmapFrame.Create(b));using var stream=File.Create(dest);enc.Save(stream);}
             _store.Add(i);SearchBox.Clear();MediaList.SelectedItem=i;
-        }catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Không nhập được file");}
+        }catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Không nhập được file");}
     }
     private void Rename_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;if(Selected==null)return;RenameBox.Text=Selected.Title;RenameBox.Visibility=Visibility.Visible;RenameBox.Focus();RenameBox.SelectAll();}
     private void Rename_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Escape)RenameBox.Visibility=Visibility.Collapsed;if(e.Key==Key.Enter&&Selected is { } i&&!string.IsNullOrWhiteSpace(RenameBox.Text)){i.Title=RenameBox.Text.Trim();_store.Save();MediaList.Items.Refresh();DocumentTitle.Text=i.Title;RenameBox.Visibility=Visibility.Collapsed;}}
@@ -229,16 +235,16 @@ public partial class MainWindow : Window
         try{
             _fidelityProcess=Process.Start(new ProcessStartInfo(Environment.ProcessPath!){UseShellExecute=false,ArgumentList={"--fidelity-check"}})??throw new InvalidOperationException("Không mở được tiến trình kiểm chứng.");
             await _fidelityProcess.WaitForExitAsync();SetStatus("Đã kết thúc tiến trình kiểm chứng. Xem report trong FidelityChecks nếu đã chạy phép thử.");
-        }catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa chạy được kiểm chứng SDR");}
+        }catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Chưa chạy được kiểm chứng SDR");}
         finally{_fidelityProcess?.Dispose();_fidelityProcess=null;SetBusy(false);if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);}
     }
-    private void TestGuide_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;var p=Path.Combine(AppContext.BaseDirectory,"docs","WINDOWS-TEST-CHECKLIST.md");if(File.Exists(p))Process.Start(new ProcessStartInfo("notepad.exe",$"\"{p}\""){UseShellExecute=true});else MessageBox.Show(this,"Xem docs/WINDOWS-TEST-CHECKLIST.md trong gói source. Kiểm tra chụp vùng/cửa sổ/toàn màn hình, scale 100–200%, màn hình phụ tọa độ âm và quay mic + tiếng máy.","Kiểm thử Captovix V"+VersionInfo.Current);}
+    private void TestGuide_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;var p=Path.Combine(AppContext.BaseDirectory,"docs","WINDOWS-TEST-CHECKLIST.md");if(File.Exists(p))Process.Start(new ProcessStartInfo("notepad.exe",$"\"{p}\""){UseShellExecute=true});else AppDialog.Show(this,"Xem docs/WINDOWS-TEST-CHECKLIST.md trong gói source. Kiểm tra chụp vùng/cửa sổ/toàn màn hình, scale 100–200%, màn hình phụ tọa độ âm và quay mic + tiếng máy.","Kiểm thử Captovix V"+VersionInfo.Current);}
     private void Window_Closing(object? sender,CancelEventArgs e)
     {
         if(_busy){e.Cancel=true;_exitRequested=true;CancelCapture();SetStatus("Đang hoàn tất phiên và thoát Captovix…");return;}
         Surface.CancelInteraction();if(!FlushEdits()){e.Cancel=true;_exitRequested=false;return;}
         try{if(_loaded){_store.SaveSettings(Settings());_store.Save();}}
-        catch(Exception ex){App.Log(ex);e.Cancel=true;MessageBox.Show(this,"Chưa lưu được cấu hình/thư viện. Hãy kiểm tra thư mục dữ liệu trước khi đóng.\n"+ex.Message,"Captovix");return;}
+        catch(Exception ex){App.Log(ex);e.Cancel=true;AppDialog.Show(this,"Chưa lưu được cấu hình/thư viện. Hãy kiểm tra thư mục dữ liệu trước khi đóng.\n"+ex.Message,"Captovix");return;}
         if(!_exitRequested&&!_updateApplying&&_workflow.CloseToTray&&_tray?.Ready==true){e.Cancel=true;Hide();_tray.Notify("Captovix đang chạy nền. Nhấp biểu tượng để mở Editor; chọn Thoát để đóng hoàn toàn.");return;}
         _imageLoadGeneration++;_imageLoadCancellation?.Cancel();UnloadEditor();SuspendWorkflow();
         _updateUiClosed=true;_updateCheckTimer.Stop();_updateCancellation?.Cancel();_saveTimer.Stop();_videoTimer.Stop();VideoPreview.Close();var hwnd=new WindowInteropHelper(this).Handle;foreach(var i in _hotkeys)Native.UnregisterHotKey(hwnd,i);

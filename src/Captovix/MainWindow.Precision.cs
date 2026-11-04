@@ -21,12 +21,12 @@ public partial class MainWindow
     {
         if(_session==null||Surface.Tool==EditorTool.Crop)return;
         var pick=new MenuItem{Header="Chọn đối tượng tại đây"};menu.Items.Add(pick);
-        var stack=Surface.ContextSourcePoint is {} p?Surface.HitStack(p,true):[];var units=stack.GroupBy(a=>a.GroupId??a.Id).Select(g=>g.First()).ToArray();pick.IsEnabled=units.Length>0;
+        var stack=Surface.ContextSourcePoint is {} p?Surface.HitStack(p,true):[];var units=stack.GroupBy(a=>GroupLayout.Unit(_session.Document,a)).Select(g=>g.First()).ToArray();pick.IsEnabled=units.Length>0;
         foreach(var a in units.Take(50)){
             string id=a.Id;int members=ObjectControl.Members(_session.Document,[id]).Length;string label=(string.IsNullOrWhiteSpace(a.Name)?ShapeStudio.Label(a.Kind):a.Name)+(members>1?$" · Nhóm {members}":"")+(a.Locked?" · Khóa":"");
             var item=new MenuItem{Icon=AppIcons.Content(a.Kind==AnnotationKind.Callout?"Callout":a.Kind==AnnotationKind.Text?"Text":ShapeStudio.IsLine(a.Kind)?"Arrow":"Shape",""),Header=label,IsCheckable=true,IsChecked=Surface.SelectedIds.Contains(id)};item.Click+=(_,_)=>{SelectTool(EditorTool.Select);Surface.SelectIds([id],id);Surface.Focus();};pick.Items.Add(item);
         }
-        if(units.Length>50){var all=new MenuItem{Header="Xem toàn bộ trong Layers…"};all.Click+=(_,_)=>{if(Ancestor<Expander>(LayerList) is {} panel)panel.IsExpanded=true;LayerList.BringIntoView();};pick.Items.Add(all);}
+        if(units.Length>50){var all=new MenuItem{Header="Xem toàn bộ trong Layers…"};all.Click+=(_,_)=>{if(Ancestor<Expander>(ObjectTree) is {} panel)panel.IsExpanded=true;ObjectTree.BringIntoView();};pick.Items.Add(all);}
         menu.Items.Add(new Separator());
     }
 }

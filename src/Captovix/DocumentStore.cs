@@ -33,7 +33,11 @@ public static class DocumentStore
             int priorVersion=0;
             try{using var prior=System.Text.Json.JsonDocument.Parse(File.ReadAllText(editPath));if(prior.RootElement.ValueKind==System.Text.Json.JsonValueKind.Object&&prior.RootElement.TryGetProperty("Version",out var version)&&version.ValueKind==System.Text.Json.JsonValueKind.Number&&version.TryGetInt32(out var number))priorVersion=number;}
             catch(System.Text.Json.JsonException){ /* Keep corrupt sidecar bytes before replacing the recovered document. */ }
+            if(priorVersion<21&&session.Document.Version>=21&&!File.Exists(editPath+".pre-v1.41.bak"))File.Copy(editPath,editPath+".pre-v1.41.bak");
             if(priorVersion>EditorDocument.MaximumSupportedVersion)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");
+            if(priorVersion<20&&doc.Version>=20&&!File.Exists(editPath+".pre-v1.40.bak"))File.Copy(editPath,editPath+".pre-v1.40.bak",false);
+            if(priorVersion<19&&doc.Version>=19&&!File.Exists(editPath+".pre-v1.39.bak"))File.Copy(editPath,editPath+".pre-v1.39.bak",false);
+            if(priorVersion<18&&doc.Version>=18&&!File.Exists(editPath+".pre-v1.38.bak"))File.Copy(editPath,editPath+".pre-v1.38.bak",false);
             if(priorVersion<12&&!File.Exists(editPath+".pre-v1.13.bak"))File.Copy(editPath,editPath+".pre-v1.13.bak",false);
         }
         try{RecoveryFiles.Backup(editPath,text=>{var d=EditorDocument.Deserialize(text);d.Validate(original.PixelWidth,original.PixelHeight,doc.SourceHash);return d;});}catch(Exception ex){App.Log(ex);}

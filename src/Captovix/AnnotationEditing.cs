@@ -37,20 +37,21 @@ public static class AnnotationEditing
     }
     public static HashSet<string> ExpandGroups(EditorDocument doc,IEnumerable<string> ids)
     {
-        var result=ids.ToHashSet();var groups=doc.Annotations.Where(a=>result.Contains(a.Id)&&a.GroupId!=null).Select(a=>a.GroupId!).ToHashSet();
-        result.UnionWith(doc.Annotations.Where(a=>a.GroupId!=null&&groups.Contains(a.GroupId)).Select(a=>a.Id));return result;
+        var result=ids.ToHashSet();var groups=doc.Annotations.Where(a=>result.Contains(a.Id)).Select(a=>GroupLayout.Unit(doc,a)).ToHashSet();
+        result.UnionWith(doc.Annotations.Where(a=>groups.Contains(GroupLayout.Unit(doc,a))).Select(a=>a.Id));return result;
     }
     public static Annotation[][] Units(EditorDocument doc,IEnumerable<string> ids)
     {
-        var all=ExpandGroups(doc,ids);return doc.Annotations.Where(a=>all.Contains(a.Id)).GroupBy(a=>a.GroupId is {} g?"group:"+g:"item:"+a.Id).Select(g=>g.ToArray()).ToArray();
+        var all=ExpandGroups(doc,ids);return doc.Annotations.Where(a=>all.Contains(a.Id)).GroupBy(a=>GroupLayout.Unit(doc,a)).Select(g=>g.ToArray()).ToArray();
     }
     public static string? Group(EditorDocument doc,IEnumerable<string> ids)
     {
         if(!ObjectControl.CanEdit(doc,ids))return null;
         var all=ExpandGroups(doc,ids);if(all.Count<2)return null;
-        var group=Guid.NewGuid().ToString("N");foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id)))a.GroupId=group;return group;
+        if(doc.Annotations.Where(a=>all.Contains(a.Id)).Any(a=>GroupLayout.Chain(a).Length>=16))throw new InvalidOperationException("Nhóm tối đa16cấp.");
+        var group=Guid.NewGuid().ToString("N");foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id))){var chain=GroupLayout.Chain(a).ToList();int at=doc.EditingGroup is {} scope&&chain.Contains(scope)?chain.IndexOf(scope)+1:0;chain.Insert(at,group);GroupLayout.Set(a,chain);}GroupLayout.Validate(doc);return group;
     }
-    public static void Ungroup(EditorDocument doc,IEnumerable<string> ids){if(!ObjectControl.CanEdit(doc,ids))return;var all=ExpandGroups(doc,ids);foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id)))a.GroupId=null;}
+    public static void Ungroup(EditorDocument doc,IEnumerable<string> ids){if(!ObjectControl.CanEdit(doc,ids))return;var all=ExpandGroups(doc,ids);var remove=doc.Annotations.Where(a=>all.Contains(a.Id)).Select(a=>GroupLayout.Effective(doc,a)).Where(g=>g!=null).ToHashSet();foreach(var a in doc.Annotations.Where(a=>all.Contains(a.Id)))GroupLayout.Set(a,GroupLayout.Chain(a).Where(g=>!remove.Contains(g)));}
     public static HashSet<string> Duplicate(EditorDocument doc,IEnumerable<string> ids,Func<Annotation,AnnotationBox> bounds,PixelRect? movementBounds=null)
     {
         if(!ObjectControl.CanEdit(doc,ids))return [];
@@ -58,10 +59,10 @@ public static class AnnotationEditing
         if(doc.Annotations.Count+originals.Length>10000||doc.Annotations.Sum(a=>a.Points.Count)+originals.Sum(a=>a.Points.Count)>100000)throw new InvalidOperationException("Nhân bản vượt giới hạn tài liệu.");
         var idMap=originals.ToDictionary(a=>a.Id,_=>Guid.NewGuid().ToString("N"));var groupMap=new Dictionary<string,string>();var result=new HashSet<string>();
         var delta=ClampMove(Union(originals.Select(bounds)),movementBounds??doc.Viewport,16,16);
-        foreach(var a in originals){var copy=a.Copy();copy.Id=idMap[a.Id];
+        foreach(var a in originals){var copy=a.Copy();copy.Id=idMap[a.Id];if(copy.Mockup is {} mockup){mockup.EraseOriginal=false;mockup.RecoveryId=null;mockup.LabelForId=mockup.LabelForId is {} target&&idMap.TryGetValue(target,out var linked)?linked:null;}
             copy.StartAnchor=copy.StartAnchor is {} start&&idMap.TryGetValue(start.TargetId,out var startId)?start with{TargetId=startId}:null;
             copy.EndAnchor=copy.EndAnchor is {} end&&idMap.TryGetValue(end.TargetId,out var endId)?end with{TargetId=endId}:null;
-            if(copy.GroupId is {} group){if(!groupMap.ContainsKey(group))groupMap[group]=Guid.NewGuid().ToString("N");copy.GroupId=groupMap[group];}
+            GroupLayout.Set(copy,GroupLayout.Chain(copy).Select((group,index)=>{if(doc.EditingGroup is {} scope&&Array.IndexOf(GroupLayout.Chain(a),scope)>=index)return group;if(!groupMap.ContainsKey(group))groupMap[group]=Guid.NewGuid().ToString("N");return groupMap[group];}));
             copy.Translate(delta.X,delta.Y);doc.Annotations.Add(copy);result.Add(copy.Id);
         }return result;
     }
@@ -141,4 +142,15 @@ public static class AnnotationEditing
         target.Points=original.Points.Select(p=>new AnnotationPoint(to.X+(p.X-from.X)*sx,to.Y+(p.Y-from.Y)*sy)).ToList();
         if(original.Kind==AnnotationKind.Step||original.Kind==AnnotationKind.Text&&!original.TextFrame)target.FontSize=Math.Clamp(original.FontSize*Math.Min(sx,sy),8,240);
     }
+}
+
+// Each leaf retains its immediate GroupId; GroupPath records outer ancestors.
+public static class GroupLayout
+{
+ public static string[] Chain(Annotation a)=>a.GroupId==null?[]:[..a.GroupPath??[],a.GroupId];
+ public static void Set(Annotation a,IEnumerable<string> groups){var c=groups.ToArray();a.GroupId=c.LastOrDefault();a.GroupPath=c.Length>1?c[..^1].ToList():null;}
+ public static string? Effective(EditorDocument d,Annotation a){var c=Chain(a);int i=d.EditingGroup is {} scope?Array.IndexOf(c,scope)+1:0;return i<c.Length?c[i]:null;}
+ public static string Unit(EditorDocument d,Annotation a)=>Effective(d,a) is {} g?"group:"+g:"item:"+a.Id;
+ public static void ApplyShared(EditorDocument d,IEnumerable<string> ids,string textColor,string fillColor,double? fontSize){bool Hex(string s)=>s.Length==7&&s[0]=='#'&&s.Skip(1).All(Uri.IsHexDigit);if(textColor.Length>0&&!Hex(textColor)||fillColor.Length>0&&!Hex(fillColor)||fontSize is {} n&&(!double.IsFinite(n)||n<8||n>240))throw new ArgumentException("Màu dùng #RRGGBB; cỡ chữ từ8đến240.");if(!ObjectControl.CanEdit(d,ids))throw new InvalidOperationException("Hiện và mở khóa lựa chọn trước.");foreach(var a in ObjectControl.Members(d,ids)){bool text=a.Mockup!=null||a.Kind is AnnotationKind.Text or AnnotationKind.Callout or AnnotationKind.Step;if(text&&textColor.Length>0){a.TextColor=textColor;}if(text&&fontSize is {} size)a.FontSize=size;if(fillColor.Length>0){if(a.Mockup is {} m){a.FillColor=fillColor;if(m.Type is MockupKind.Label or MockupKind.Title)m.Background=fillColor;}else if(ShapeStudio.IsClosed(a.Kind)||a.Kind is AnnotationKind.Text or AnnotationKind.Callout){a.FillColor=fillColor;a.FillEnabled=true;}}}}
+ public static void Validate(EditorDocument d){var parents=new Dictionary<string,string>();var objects=d.Annotations.Select(a=>a.Id).ToHashSet();foreach(var a in d.Annotations){if(a.GroupPath!=null&&(a.GroupId==null||a.GroupPath.Count>15))throw new System.IO.InvalidDataException("Cây nhóm tối đa16cấp.");var c=Chain(a);if(c.Distinct().Count()!=c.Length)throw new System.IO.InvalidDataException("Quan hệ nhóm bị vòng lặp.");for(int i=0;i<c.Length;i++){if(!Guid.TryParseExact(c[i],"N",out _)||objects.Contains(c[i]))throw new System.IO.InvalidDataException("Mã nhóm không hợp lệ.");string prefix=string.Join("/",c.Take(i));if(parents.TryGetValue(c[i],out var parent)&&parent!=prefix)throw new System.IO.InvalidDataException("Nhóm có nhiều cha.");parents[c[i]]=prefix;}}}
 }

@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Captovix.Licensing;
 
 public record Envelope(string Payload,string Signature);
-public record Claims(int Schema,string Product,string Issuer,string LicenseId,string ActivationId,string DeviceId,string PublicKeyHash,string Kind,string Status,DateTimeOffset IssuedAt,DateTimeOffset LeaseUntil,DateTimeOffset? TrialUntil);
+public record Claims(int Schema,string Product,string Issuer,string LicenseId,string ActivationId,string DeviceId,string PublicKeyHash,string Kind,string Status,DateTimeOffset IssuedAt,DateTimeOffset LeaseUntil,DateTimeOffset? TrialUntil,DateTimeOffset? ActivatedAt=null);
 public record Proof(string PublicKey,DateTimeOffset Timestamp,string Nonce,string Payload,string Signature);
 public record DeviceInput(string DeviceId,string DeviceName,string Key="",string RecoveryCode="",string ActivationId="");
 public record Reply(Envelope Certificate,string? RecoveryCode=null);
@@ -41,7 +41,7 @@ public static class Protocol
         using var rsa=RSA.Create();rsa.ImportFromPem(publicKey);
         if(rsa.KeySize<3072||!rsa.VerifyData(Encoding.UTF8.GetBytes(value.Payload),Convert.FromBase64String(value.Signature),HashAlgorithmName.SHA256,RSASignaturePadding.Pss))throw new InvalidDataException("CERT_SIGNATURE");
         var c=JsonSerializer.Deserialize<Claims>(Convert.FromBase64String(value.Payload),Json)??throw new InvalidDataException("CERT_INVALID");
-        if(c.IssuedAt<DateTimeOffset.UnixEpoch||c.IssuedAt>DateTimeOffset.MaxValue.AddDays(-31)||c.Schema!=1||c.Product!=Product||c.Issuer!=issuer||c.DeviceId!=deviceId||c.PublicKeyHash!=publicKeyHash||c.Kind is not ("trial" or "perpetual")||c.Status is not ("active" or "revoked" or "released")||c.LeaseUntil<=c.IssuedAt||c.LeaseUntil>c.IssuedAt.AddDays(31)||c.Kind=="trial"&&(c.TrialUntil==null||c.LeaseUntil>c.TrialUntil&&c.Status=="active"))throw new InvalidDataException("CERT_BINDING");
+        if(c.ActivatedAt is {} activated&&(activated<DateTimeOffset.UnixEpoch||activated>c.IssuedAt)||c.IssuedAt<DateTimeOffset.UnixEpoch||c.IssuedAt>DateTimeOffset.MaxValue.AddDays(-31)||c.Schema!=1||c.Product!=Product||c.Issuer!=issuer||c.DeviceId!=deviceId||c.PublicKeyHash!=publicKeyHash||c.Kind is not ("trial" or "perpetual")||c.Status is not ("active" or "revoked" or "released")||c.LeaseUntil<=c.IssuedAt||c.LeaseUntil>c.IssuedAt.AddDays(31)||c.Kind=="trial"&&(c.TrialUntil==null||c.LeaseUntil>c.TrialUntil&&c.Status=="active"))throw new InvalidDataException("CERT_BINDING");
         return c;
     }
     public static bool FullAccess(Claims? c,DateTimeOffset now)=>c is {Status:"active"}&&now-c.IssuedAt>=TimeSpan.FromMinutes(-5)&&now<c.LeaseUntil&&(c.Kind!="trial"||now<c.TrialUntil);

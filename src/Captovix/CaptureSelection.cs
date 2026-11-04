@@ -4,6 +4,31 @@ public enum CaptureHandle { New, Move, Left, Right, Top, Bottom, TopLeft, TopRig
 public static class CaptureSelection
 {
     public static bool Valid(PixelRect r)=>r.Width>=8&&r.Height>=8;
+    // Intersect in physical pixels without overflowing intermediate right/bottom values.
+    public static PixelRect Clip(PixelRect value,PixelRect bounds)
+    {
+        if(value.IsEmpty||bounds.IsEmpty)return default;
+        long left=Math.Max((long)value.X,bounds.X),top=Math.Max((long)value.Y,bounds.Y);
+        long right=Math.Min((long)value.X+value.Width,(long)bounds.X+bounds.Width),bottom=Math.Min((long)value.Y+value.Height,(long)bounds.Y+bounds.Height);
+        return right<=left||bottom<=top?default:new(checked((int)left),checked((int)top),checked((int)(right-left)),checked((int)(bottom-top)));
+    }
+    // Moving stops at the frame edge; it does not progressively shrink the region.
+    public static PixelRect MoveInside(PixelRect value,PixelRect bounds)
+    {
+        if(value.IsEmpty||bounds.IsEmpty)return default;
+        int width=Math.Min(value.Width,bounds.Width),height=Math.Min(value.Height,bounds.Height);
+        return new((int)Math.Clamp((long)value.X,bounds.X,(long)bounds.X+bounds.Width-width),(int)Math.Clamp((long)value.Y,bounds.Y,(long)bounds.Y+bounds.Height-height),width,height);
+    }
+    public static PixelRect FitRatio(PixelRect value,PixelRect bounds,int anchorX,int anchorY)
+    {
+        if(value.IsEmpty||bounds.IsEmpty)return default;
+        long ax=Math.Clamp((long)anchorX,bounds.X,(long)bounds.X+bounds.Width),ay=Math.Clamp((long)anchorY,bounds.Y,(long)bounds.Y+bounds.Height);
+        bool left=value.X<anchorX,top=value.Y<anchorY;
+        long roomX=left?ax-bounds.X:(long)bounds.X+bounds.Width-ax,roomY=top?ay-bounds.Y:(long)bounds.Y+bounds.Height-ay;
+        double scale=Math.Min(1,Math.Min(roomX/(double)value.Width,roomY/(double)value.Height));
+        int width=(int)Math.Floor(value.Width*scale+1e-9),height=(int)Math.Floor(value.Height*scale+1e-9);
+        return Clip(new((int)(left?ax-width:ax),(int)(top?ay-height:ay),width,height),bounds);
+    }
     public static CaptureHandle Hit(PixelRect r,int x,int y,int tolerance)
     {
         if(!Valid(r)||x<r.X-tolerance||x>r.Right+tolerance||y<r.Y-tolerance||y>r.Bottom+tolerance)return CaptureHandle.New;
@@ -44,6 +69,17 @@ public sealed class CaptureGesture(PixelRect before,CaptureHandle handle,int sta
 {
     public CaptureHandle Handle {get;private set;}=handle;
     private bool _click=liveSuggestion;
+    public PixelRect Apply(int x,int y,bool ratio,PixelRect bounds)
+    {
+        var requested=Apply(x,y,ratio);
+        if(Handle==CaptureHandle.Move)return CaptureSelection.MoveInside(requested,bounds);
+        if(ratio&&(Handle==CaptureHandle.New||Handle is CaptureHandle.TopLeft or CaptureHandle.TopRight or CaptureHandle.BottomLeft or CaptureHandle.BottomRight)){
+            int ax=Handle==CaptureHandle.New?startX:Handle is CaptureHandle.Left or CaptureHandle.TopLeft or CaptureHandle.BottomLeft?before.Right:before.X;
+            int ay=Handle==CaptureHandle.New?startY:Handle is CaptureHandle.Top or CaptureHandle.TopLeft or CaptureHandle.TopRight?before.Bottom:before.Y;
+            return CaptureSelection.FitRatio(requested,bounds,ax,ay);
+        }
+        return CaptureSelection.Clip(requested,bounds);
+    }
     public PixelRect Apply(int x,int y,bool ratio)
     {
         if(_click){if(Math.Abs(x-startX)<4&&Math.Abs(y-startY)<4)return before;_click=false;Handle=CaptureHandle.New;}

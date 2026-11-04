@@ -17,14 +17,17 @@ public partial class MainWindow
     }
     private void RenderRecentStudio()
     {
-        var tool=StudioToolCatalog.Find(_recentStudioCommand)??StudioToolCatalog.All[0];RecentStudioButton.Content=AppIcons.Content(tool.Icon,tool.Label);RecentStudioButton.ToolTip="Dùng lại · "+tool.Label;System.Windows.Automation.AutomationProperties.SetName(RecentStudioButton,tool.Label);
+        var tool=StudioToolCatalog.Find(_recentStudioCommand)??StudioToolCatalog.All[0];RecentStudioButton.Content=AppIcons.Content(tool.Icon,tool.Label);RecentStudioButton.ToolTip="Dùng lại · "+tool.Label+" · "+ToolShortcutLabel("Studio:"+tool.Command);System.Windows.Automation.AutomationProperties.SetName(RecentStudioButton,tool.Label);
     }
     private void RunStudioCommand(string command)
     {
-        if(!RequireLicense()||_session==null||_busy)return;var tool=StudioToolCatalog.Find(command);if(tool==null)return;
+        if(!RequireLicense()||_session==null||_busy)return;var tool=StudioToolCatalog.Find(command);if(tool==null)return;command=tool.Command;
         _recentStudioCommand=command;RenderRecentStudio();try{MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"last-studio-tool.json"),JsonSerializer.Serialize(command));}catch(Exception ex){App.Log(ex);}
         if(_studioPopup!=null)_studioPopup.IsOpen=false;
+        if(command=="Mockup"){OpenMockupMenu(RecentStudioButton);return;}
         if(command.StartsWith("Editor:")){SelectTool(Enum.Parse<EditorTool>(command[7..]));return;}
+        if(command=="Groups"){if(Ancestor<Expander>(ObjectTree) is {} expander)expander.IsExpanded=true;ObjectTree.BringIntoView();SelectTool(EditorTool.Select);Surface.Focus();return;}
+        if(command=="Recovery"){RecoveryEditor_Click(this,new());return;}
         if(command=="Canvas"){ExtendCanvas_Click(this,new());return;}
         if(command=="Stamp"){OpenStampGallery(RecentStudioButton);return;}
         if(command=="CustomImage"){AddImages_Click(this,new());return;}
@@ -34,15 +37,15 @@ public partial class MainWindow
     private void StudioMore_Click(object sender,RoutedEventArgs e)
     {
         if(!RequireLicense()||_session==null||_busy)return;if(_studioPopup?.IsOpen==true){_studioPopup.IsOpen=false;return;}
-        var body=new StackPanel{Width=360,Margin=new(10)};body.Children.Add(new TextBlock{Text="Thêm công cụ",FontWeight=FontWeights.SemiBold,Margin=new(5,3,5,9)});var grid=new WrapPanel();body.Children.Add(grid);
-        foreach(var tool in StudioToolCatalog.All){var button=new Button{Content=AppIcons.Content(tool.Icon,tool.Label,16),Width=174,Height=38,Margin=new(3),ToolTip=tool.Label};button.Click+=(_,_)=>{if(_studioPopup!=null)_studioPopup.IsOpen=false;Dispatcher.BeginInvoke(()=>RunStudioCommand(tool.Command));};grid.Children.Add(button);}
+        var body=new StackPanel{Width=372,Margin=new(8)};body.Children.Add(new TextBlock{Text="Thêm công cụ",FontWeight=FontWeights.SemiBold,Margin=new(5,3,5,9)});var grid=new System.Windows.Controls.Primitives.UniformGrid{Columns=2};body.Children.Add(grid);
+        foreach(var tool in StudioToolCatalog.All){var button=new Button{Content=AppIcons.Content(tool.Icon,tool.Label,16),Height=38,Margin=new(3),ToolTip=tool.Label+" · "+ToolShortcutLabel("Studio:"+tool.Command)};button.Click+=(_,_)=>{if(_studioPopup!=null)_studioPopup.IsOpen=false;Dispatcher.BeginInvoke(()=>RunStudioCommand(tool.Command));};grid.Children.Add(button);}
         OpenStudioPopup(StudioMoreButton,body);
     }
     private void OpenStudioPopup(Button anchor,FrameworkElement content)
     {
         if(_studioPopup!=null)_studioPopup.IsOpen=false;
         var popup=_studioPopup=new Popup{PlacementTarget=anchor,Placement=PlacementMode.Bottom,StaysOpen=false,AllowsTransparency=true};
-        var frame=new Border{Child=new ScrollViewer{Content=content,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,MaxHeight=Math.Max(150,Math.Min(450,SystemParameters.WorkArea.Height-100))},CornerRadius=new(9),BorderThickness=new(1)};frame.SetResourceReference(Border.BackgroundProperty,"Surface");frame.SetResourceReference(Border.BorderBrushProperty,"Line");frame.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Escape){popup.IsOpen=false;e.Handled=true;}};popup.Child=frame;popup.IsOpen=true;
+        var frame=new Border{Child=new ScrollViewer{Content=content,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,MaxHeight=Math.Max(150,Math.Min(450,SystemParameters.WorkArea.Height-100))},CornerRadius=new(9),BorderThickness=new(1.5),Margin=new(12),Effect=new System.Windows.Media.Effects.DropShadowEffect{Color=Colors.Black,BlurRadius=16,ShadowDepth=3,Opacity=.38}};frame.SetResourceReference(Border.BackgroundProperty,"Surface");frame.SetResourceReference(Border.BorderBrushProperty,"AccentText");frame.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Escape){popup.IsOpen=false;e.Handled=true;}};popup.Child=frame;PopupPresentation.Attach(popup);popup.IsOpen=true;
     }
     internal static BitmapSource StampImage(StampSpec spec)
     {

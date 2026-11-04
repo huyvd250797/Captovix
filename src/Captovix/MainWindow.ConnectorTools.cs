@@ -13,9 +13,13 @@ public partial class MainWindow
     {
         if(!_editorReady||_session==null||Surface.ContextMenu is not {} menu)return;
         EndInlineText(true);menu.Items.Clear();AddPrecisionMenu(menu);
+        var parent=new MenuItem{Header="Chọn nhóm cha",IsEnabled=Surface.Selected?.GroupId!=null};parent.Click+=(_,_)=>SelectGroupParent_Click(this,new());menu.Items.Add(parent);
+        var enter=new MenuItem{Header="Vào nhóm / chọn phần tử con",IsEnabled=Surface.Selected?.GroupId!=null};enter.Click+=(_,_)=>EnterGroup_Click(this,new());menu.Items.Add(enter);
+        var common=new MenuItem{Header="Thuộc tính chung…",IsEnabled=Surface.SelectedIds.Count>0};common.Click+=(_,_)=>GroupShared_Click(this,new());menu.Items.Add(common);
             bool active=ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)&&Surface.Tool!=EditorTool.Crop;
             var units=AnnotationEditing.Units(_session.Document,Surface.SelectedIds);
             MenuItem Add(ItemsControl owner,string title,Action action,bool enabled=true){var item=new MenuItem{Header=title,IsEnabled=enabled};item.Click+=(_,_)=>action();owner.Items.Add(item);return item;}
+            Add(menu,"Sửa Mockup chữ / nút…",()=>EditMockup_Click(this,new()),Surface.Selected?.Mockup!=null&&active);
             Add(menu,"Hoàn tác",()=>Undo_Click(this,new()),_session.CanUndo);Add(menu,"Làm lại",()=>Redo_Click(this,new()),_session.CanRedo);menu.Items.Add(new Separator());
             Add(menu,"Copy đối tượng · Ctrl+C",CopyObjects,Surface.SelectedIds.Count>0);Add(menu,"Dán đối tượng · Ctrl+V",PasteObjects,HasObjectClipboard());
             Add(menu,"Nhân bản · Ctrl+D",()=>ObjectCommand("Duplicate"),active);

@@ -4,10 +4,40 @@ using System.Text.Json.Serialization;
 
 namespace Captovix;
 
+public sealed record RecoveryOperation(string Action,DateTimeOffset At,string ElementId,string? RecoveryId,PixelRect? Before,PixelRect? After);
+public sealed record RecoveryPatch
+{
+    public string Id {get;set;}=Guid.NewGuid().ToString("N");
+    public PixelRect Bounds {get;set;}
+    public MockupKind Kind {get;set;}
+    public string Background {get;set;}="#FFFFFF";
+    public string Mask {get;set;}="";
+    public bool NeedsReview {get;set;}
+    public List<PixelRect> Protected {get;set;}=[];
+    public RecoveryPatch Copy()=>this with{Protected=Protected.ToList()};
+    public void Validate(int width,int height){long pixels=(long)Bounds.Width*Bounds.Height;if(!Enum.IsDefined(Kind)||!Guid.TryParseExact(Id,"N",out _)||Bounds.X<0||Bounds.Y<0||Bounds.Width<1||Bounds.Height<1||(long)Bounds.X+Bounds.Width>width||(long)Bounds.Y+Bounds.Height>height||pixels>20_000_000||!StudioStyle.Hex(Background)||Mask==null||Mask.Length>3_333_336||Protected==null||Protected.Count>10000||Protected.Any(p=>p.IsEmpty||p.Intersect(Bounds)!=p))throw new InvalidDataException("Mặt nạ nền không hợp lệ.");try{if(Convert.FromBase64String(Mask).Length!=(pixels+7)/8)throw new InvalidDataException("Sai kích thước mặt nạ nền.");}catch(FormatException ex){throw new InvalidDataException("Mặt nạ nền lỗi.",ex);}}
+}
 public enum AnnotationKind { Arrow, Rectangle, Ellipse, Text, Highlight, Step, Blur, Pixelate, Cover, Callout, Freehand, RoundedRectangle, Triangle, Diamond, Trapezoid, Pentagon, Hexagon, Star, Line, Magnifier, Spotlight, ImageLayer }
 public readonly record struct AnnotationPoint(double X,double Y);
+public enum MockupKind { Label,Title,Button,Input,Block }
+public sealed record MockupElement
+{
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? RecoveryId {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool FromScan {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? LabelForId {get;set;}
+    public MockupKind Type {get;set;}
+    public PixelRect SourceBounds {get;set;}
+    public string Background {get;set;}="#FFFFFF";
+    public bool EraseOriginal {get;set;}=true;
+    public MockupElement Copy()=>this with{};
+    public void Validate(Annotation a,int width,int height)
+    {
+        if(RecoveryId!=null&&!Guid.TryParseExact(RecoveryId,"N",out _)||LabelForId!=null&&!Guid.TryParseExact(LabelForId,"N",out _)||a.Kind!=AnnotationKind.Rectangle||!Enum.IsDefined(Type)||!StudioStyle.Hex(Background)||SourceBounds.Width<1||SourceBounds.Height<1||Math.Abs((long)SourceBounds.X)>1000000||Math.Abs((long)SourceBounds.Y)>1000000||SourceBounds.Width>32768||SourceBounds.Height>32768||a.Width<8||a.Height<8||a.Text.Length>2000||EraseOriginal&&(SourceBounds.X<0||SourceBounds.Y<0||(long)SourceBounds.X+SourceBounds.Width>width||(long)SourceBounds.Y+SourceBounds.Height>height))throw new InvalidDataException("Đối tượng Mockup hoặc vùng che nền không hợp lệ.");
+    }
+}
 public sealed class Annotation
 {
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public MockupElement? Mockup {get;set;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool ImagePlaceholder {get;set;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public LayerImageStyle? ImageStyle {get;set;}
     public string? PixelPng {get;set;}
@@ -65,6 +95,7 @@ public sealed class Annotation
     public int Number {get;set;}=1;
     public int EffectSize {get;set;}=24;
     public string? GroupId {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public List<string>? GroupPath {get;set;}
     public double TailX {get;set;}
     public double TailY {get;set;}
     public List<AnnotationPoint> Points {get;set;}=[];
@@ -74,14 +105,14 @@ public sealed class Annotation
     [JsonIgnore] public double Top=>Math.Min(Y1,Y2);
     [JsonIgnore] public double Width=>Math.Abs(X2-X1);
     [JsonIgnore] public double Height=>Math.Abs(Y2-Y1);
-    public Annotation Copy()=>new(){TextFrame=TextFrame,ImagePlaceholder=ImagePlaceholder,ImageStyle=ImageStyle?.Copy(),CalloutBodyPivot=CalloutBodyPivot,PixelPng=PixelPng,Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,StepStrokeColor=StepStrokeColor,StepFillVisible=StepFillVisible,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
+    public Annotation Copy()=>new(){Mockup=Mockup?.Copy(),TextFrame=TextFrame,ImagePlaceholder=ImagePlaceholder,ImageStyle=ImageStyle?.Copy(),CalloutBodyPivot=CalloutBodyPivot,PixelPng=PixelPng,Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,StepStrokeColor=StepStrokeColor,StepFillVisible=StepFillVisible,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupPath=GroupPath?.ToList(),GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
     public void Translate(double dx,double dy){X1+=dx;X2+=dx;Y1+=dy;Y2+=dy;if(Control is {} c)Control=new(c.X+dx,c.Y+dy);if(Kind==AnnotationKind.Callout){TailX+=dx;TailY+=dy;}for(int i=0;i<Points.Count;i++)Points[i]=new(Points[i].X+dx,Points[i].Y+dy);}
     public void AddPoint(double x,double y){if(Points.Count>=MaxPoints)return;Points.Add(new(x,y));if(Points.Count==1){X1=X2=x;Y1=Y2=y;}else{X1=Math.Min(X1,x);Y1=Math.Min(Y1,y);X2=Math.Max(X2,x);Y2=Math.Max(Y2,y);}}
 }
 
 public sealed class EditorDocument
 {
-    public const int MaximumSupportedVersion=17;
+    public const int MaximumSupportedVersion=21;
     public string? PixelBasePng {get;set;}
     public int Version {get;set;}=12;
     public int OriginalWidth {get;set;}
@@ -89,25 +120,31 @@ public sealed class EditorDocument
     public string SourceHash {get;set;}="";
     public PixelRect? Crop {get;set;}
     public ImageAppearance Appearance {get;set;}=new();
+    public List<RecoveryOperation> RecoveryHistory {get;set;}=[];
+    public List<RecoveryPatch> Recoveries {get;set;}=[];
     public List<Annotation> Annotations {get;set;}=[];
+    [JsonIgnore] public string? EditingGroup {get;set;}
     [JsonIgnore] public PixelRect Viewport=>Crop??new PixelRect(0,0,OriginalWidth,OriginalHeight);
-    [JsonIgnore] public bool HasEdits=>Crop!=null||Annotations.Count>0||PixelBasePng!=null||Appearance.HasEdits;
+    [JsonIgnore] public bool HasEdits=>Crop!=null||Recoveries.Count>0||Annotations.Count>0||PixelBasePng!=null||Appearance.HasEdits;
     public static readonly JsonSerializerOptions JsonOptions=new(){WriteIndented=true,Converters={new JsonStringEnumConverter()}};
     public string Serialize()=>JsonSerializer.Serialize(this,JsonOptions);
     public static EditorDocument Deserialize(string json)=>JsonSerializer.Deserialize<EditorDocument>(json,JsonOptions)??throw new InvalidDataException("Tài liệu chỉnh sửa trống.");
     public EditorDocument Clone()=>Deserialize(Serialize());
-    public EditorDocument Snapshot()=>new(){Version=Version,OriginalWidth=OriginalWidth,OriginalHeight=OriginalHeight,SourceHash=SourceHash,Crop=Crop,PixelBasePng=PixelBasePng,Appearance=Appearance.Copy(),Annotations=Annotations.Select(a=>a.Copy()).ToList()};
+    public EditorDocument Snapshot()=>new(){EditingGroup=EditingGroup,Version=Version,OriginalWidth=OriginalWidth,OriginalHeight=OriginalHeight,SourceHash=SourceHash,Crop=Crop,PixelBasePng=PixelBasePng,Appearance=Appearance.Copy(),RecoveryHistory=RecoveryHistory.ToList(),Recoveries=Recoveries.Select(p=>p.Copy()).ToList(),Annotations=Annotations.Select(a=>a.Copy()).ToList()};
     public void Validate(int width,int height,string hash)
     {
         if(Version<1||Version>MaximumSupportedVersion)throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
         if(OriginalWidth!=width||OriginalHeight!=height||SourceHash!=hash)throw new InvalidDataException("Ảnh gốc đã thay đổi. Bản chú thích cũ được giữ riêng, không tự gán lên ảnh khác.");
         if(Crop is {} c&&(c.IsEmpty||c.X<0||c.Y<0||c.Right>width||c.Bottom>height))throw new InvalidDataException("Vùng crop không hợp lệ.");
         if(Annotations==null||Annotations.Count>10000)throw new InvalidDataException("Số đối tượng vượt giới hạn tài liệu.");
+        if(RecoveryHistory==null||RecoveryHistory.Count>100||RecoveryHistory.Any(x=>x==null||string.IsNullOrWhiteSpace(x.Action)||x.Action.Length>32||x.At<DateTimeOffset.UnixEpoch))throw new InvalidDataException("Lịch sử phục hồi không hợp lệ.");
+        if(Recoveries==null||Recoveries.Any(p=>p==null||p.Mask==null)||Recoveries.Count>500||Recoveries.Sum(p=>(long)p.Bounds.Width*p.Bounds.Height)>20_000_000||Recoveries.Select(p=>p.Id).Distinct().Count()!=Recoveries.Count||Recoveries.Sum(p=>(long)p.Mask.Length)>40_000_000)throw new InvalidDataException("Mặt nạ nền vượt giới hạn.");foreach(var patch in Recoveries)patch.Validate(width,height);
         var ids=new HashSet<string>();var totalPoints=0;
         foreach(var a in Annotations){
             if(a==null||string.IsNullOrEmpty(a.Id)||!ids.Add(a.Id)||!Enum.IsDefined(a.Kind)||!double.IsFinite(a.X1)||!double.IsFinite(a.X2)||!double.IsFinite(a.Y1)||!double.IsFinite(a.Y2)||Math.Abs(a.X1)>1000000||Math.Abs(a.X2)>1000000||Math.Abs(a.Y1)>1000000||Math.Abs(a.Y2)>1000000||!double.IsFinite(a.Stroke)||!double.IsFinite(a.FontSize)||a.Stroke<1||a.Stroke>40||a.FontSize<8||a.FontSize>240||a.EffectSize<4||a.EffectSize>64||a.Text==null||a.Text.Length>20000||a.Number<1||a.Number>9999||!ValidColor(a.Color))
                 throw new InvalidDataException("Dữ liệu đối tượng chú thích không hợp lệ.");
             if(a.Name==null||a.Name.Length>80||a.Name.Any(char.IsControl)||!double.IsFinite(a.Rotation)||Math.Abs(a.Rotation)>360)throw new InvalidDataException("Tên layer hoặc góc xoay không hợp lệ.");
+            a.Mockup?.Validate(a,width,height);if(a.Mockup?.RecoveryId is {} recovery&&!Recoveries.Any(p=>p.Id==recovery))throw new InvalidDataException("Thiếu mặt nạ phục hồi nền.");
             ShapeStudio.ValidateStyle(a);if(Version<8)TextStudio.MigrateLegacy(a);
             if(a.TextFrame&&(a.Kind!=AnnotationKind.Text||a.Width<2||a.Height<2))throw new InvalidDataException("Khung chữ phải rộng/cao ít nhất 2 px.");
             TextStudio.Validate(a);FocusStudio.Validate(a);StudioStyle.Validate(a);
@@ -117,11 +154,11 @@ public sealed class EditorDocument
             if(a.Kind==AnnotationKind.Freehand&&a.Points.Count==0||a.Kind!=AnnotationKind.Freehand&&a.Points.Count!=0)throw new InvalidDataException("Dữ liệu điểm không phù hợp công cụ.");
             if(a.Kind==AnnotationKind.Callout&&(a.Width<36||a.Height<36))throw new InvalidDataException("Hộp callout quá nhỏ.");
         }
-        var targets=Annotations.ToDictionary(a=>a.Id);foreach(var a in Annotations)ConnectorStudio.Validate(a,targets);
+        var targets=Annotations.ToDictionary(a=>a.Id);foreach(var a in Annotations){if(a.Mockup?.LabelForId is {} linked&&(!targets.TryGetValue(linked,out var control)||control.Mockup?.Type!=MockupKind.Input))a.Mockup.LabelForId=null;ConnectorStudio.Validate(a,targets);}
         ConnectorStudio.Resolve(this);
         if(Appearance==null)throw new InvalidDataException("Thiếu cấu hình ảnh.");
         _=new ImageLayout(Viewport,Appearance);
-        PixelStudio.Validate(this);Version=Annotations.Any(a=>a.TextFrame)?17:Annotations.Any(a=>a.Kind==AnnotationKind.Step&&(a.StepStrokeColor!=null||a.StepFillVisible!=null))?16:Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
+        GroupLayout.Validate(this);PixelStudio.Validate(this);Version=Annotations.Any(a=>a.GroupPath?.Count>0)?21:Recoveries.Count>0||RecoveryHistory.Count>0?20:Annotations.Any(a=>a.Mockup is {} m&&(m.FromScan||m.Type is MockupKind.Input or MockupKind.Block||m.LabelForId!=null))?19:Annotations.Any(a=>a.Mockup!=null)?18:Annotations.Any(a=>a.TextFrame)?17:Annotations.Any(a=>a.Kind==AnnotationKind.Step&&(a.StepStrokeColor!=null||a.StepFillVisible!=null))?16:Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
     }
     private static bool ValidColor(string color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public bool ApplyCrop(PixelRect crop)
@@ -148,14 +185,16 @@ public sealed class EditorSession
     public bool CanUndo=>_undo.Count>0;
     public bool CanRedo=>_redo.Count>0;
     public bool InTransaction=>_before!=null;
+    public Action<string,EditorDocument>? BeforeCommit {get;set;}
     public event Action? Changed;
     public EditorSession(EditorDocument document,int historyCharBudget=8_000_000){Document=document;_historyCharBudget=Math.Max(1024,historyCharBudget);}
     private void TrimHistory(List<string> entries){long chars=entries.Sum(s=>(long)s.Length);while(entries.Count>1&&(entries.Count>100||chars>_historyCharBudget)){chars-=entries[0].Length;entries.RemoveAt(0);}}
     public void Begin(){CheckAuthorization();if(_before!=null)return;ConnectorStudio.Resolve(Document);_before=Document.Serialize();}
     public void Commit()
     {
-        if(_before==null)return;ConnectorStudio.Resolve(Document);var before=_before;_before=null;
-        if(before==Document.Serialize())return;
+        if(_before==null)return;ConnectorStudio.Resolve(Document);var before=_before;
+        if(before==Document.Serialize()){_before=null;return;}
+        try{BeforeCommit?.Invoke(before,Document);}catch{Document=EditorDocument.Deserialize(before);_before=null;throw;}_before=null;
         _undo.Add(before);TrimHistory(_undo);_redo.Clear();Dirty=true;Revision++;Changed?.Invoke();
     }
     public void Cancel(){if(_before==null)return;Document=EditorDocument.Deserialize(_before);_before=null;}

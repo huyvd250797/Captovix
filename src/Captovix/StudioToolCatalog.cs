@@ -2,12 +2,15 @@ namespace Captovix;
 public sealed record StudioTool(string Command,string Label,string Icon);
 public static class StudioToolCatalog
 {
+    // New tools belong here. More + one recent-tool slot handle discovery;
+    // do not add dedicated toolbar buttons for future feature tools.
     public static readonly StudioTool[] All=[
+        new("Mockup","Mockup","Mockup"),new("Recovery","Nền & mặt nạ","Recovery"),new("Groups","Nhóm & bố cục","GroupLayout"),
         new("Editor:Select","Chọn đối tượng","Select"),new("Editor:Magnifier","Phóng đại","Magnifier"),new("Editor:Spotlight","Spotlight","Spotlight"),new("Editor:Highlight","Highlight","Highlight"),new("Editor:Freehand","Vẽ tự do","Freehand"),new("Canvas","Canvas","Expand"),new("Stamp","Stamp","Stamp"),new("Color","Màu & làm nét","StudioColor"),new("Pick","Lấy màu từ ảnh","Eyedropper"),
         new("Clone","Clone","StudioClone"),new("Perspective","Phối cảnh","StudioPerspective"),new("Rotate","Chỉnh nghiêng","StudioRotate"),
         new("Background","Tách nền theo màu","StudioBackground"),new("Mask","Cắt theo hình","StudioMask"),new("Comparison","Trước / Sau","StudioComparison"),
         new("Watermark","Watermark","StudioWatermark"),new("ResetBase","Khôi phục nền gốc","StudioReset"),new("CustomImage","Thêm logo / ảnh…","ImageLayer")];
-    public static StudioTool? Find(string? command)=>All.FirstOrDefault(t=>t.Command==command);
+    public static StudioTool? Find(string? command)=>All.FirstOrDefault(t=>t.Command==(command=="Editor:Mockup"?"Mockup":command));
 }
 public sealed record StampSpec(string Id,string Label,string Color,string Path,string Category="Đánh dấu & phản hồi",string? Caption=null);
 public static class StampCatalog

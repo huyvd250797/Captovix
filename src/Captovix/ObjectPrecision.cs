@@ -38,7 +38,7 @@ public static class ObjectPrecision
     public static AnnotationBox LimitResize(IEnumerable<Annotation> originals,AnnotationBox from,AnnotationBox target,int handle,bool uniform)
     {
         double minX=0,minY=0,max=double.PositiveInfinity;
-        foreach(var a in originals){if(a.Kind==AnnotationKind.Callout){minX=Math.Max(minX,36/Math.Max(1,a.Width));minY=Math.Max(minY,36/Math.Max(1,a.Height));}if(a.Kind is AnnotationKind.Text or AnnotationKind.Step){double min=8/a.FontSize;minX=Math.Max(minX,min);minY=Math.Max(minY,min);max=Math.Min(max,240/a.FontSize);}}
+        foreach(var a in originals){if(a.Mockup!=null){minX=Math.Max(minX,8/Math.Max(1,a.Width));minY=Math.Max(minY,8/Math.Max(1,a.Height));}if(a.Kind==AnnotationKind.Callout){minX=Math.Max(minX,36/Math.Max(1,a.Width));minY=Math.Max(minY,36/Math.Max(1,a.Height));}if(a.Kind is AnnotationKind.Text or AnnotationKind.Step){double min=8/a.FontSize;minX=Math.Max(minX,min);minY=Math.Max(minY,min);max=Math.Min(max,240/a.FontSize);}}
         double sx=target.Width/Math.Max(1,from.Width),sy=target.Height/Math.Max(1,from.Height);if(uniform){double low=Math.Max(minX,minY);if(low>max)return from;sx=sy=Math.Clamp(sx,low,max);}else{sx=Math.Max(sx,minX);sy=Math.Max(sy,minY);}
         double width=from.Width*sx,height=from.Height*sy;double x=handle is 0 or 6 or 7?from.Right-width:handle is 2 or 3 or 4?from.X:from.CenterX-width/2;double y=handle is 0 or 1 or 2?from.Bottom-height:handle is 4 or 5 or 6?from.Y:from.CenterY-height/2;return new(x,y,width,height);
     }

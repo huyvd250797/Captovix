@@ -11,6 +11,6 @@ public partial class MainWindow
         var picker=new OpenFolderDialog{Title="Chọn thư mục lưu ảnh và video mới",Multiselect=false};
         if(picker.ShowDialog(this)!=true)return;
         try{_store.SetMediaRoot(picker.FolderName);MediaLocationButton.ToolTip="Lưu media mới: "+_store.Root+"\nBấm để chọn thư mục khác.";SetStatus("Media mới sẽ lưu tại "+_store.Root+". Ảnh/video cũ giữ nguyên vị trí.");}
-        catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa đổi được thư mục media");}
+        catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Chưa đổi được thư mục media");}
     }
 }

@@ -125,7 +125,7 @@ public partial class MainWindow
             UpdateSourceBox.Text = candidate.SourceUrl; ConfigureUpdateSession();
             SetStatus(candidate.IsConfigured ? "Đã lưu nguồn cập nhật. Bấm Kiểm tra cập nhật để kết nối." : "Đã xóa nguồn cập nhật.");
         }
-        catch (Exception ex) { App.Log(ex); MessageBox.Show(this, ex.Message, "Chưa lưu được nguồn cập nhật", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        catch (Exception ex) { App.Log(ex); AppDialog.Show(this, ex.Message, "Chưa lưu được nguồn cập nhật", MessageBoxButton.OK, MessageBoxImage.Warning); }
     }
 
     private async void CheckUpdates_Click(object sender, RoutedEventArgs e) => await CheckUpdatesAsync();
@@ -175,6 +175,6 @@ public partial class MainWindow
             var url = _updateSettings.ReleasePage();
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
         }
-        catch (Exception ex) { App.Log(ex); MessageBox.Show(this, ex.Message, "Không mở được nguồn phát hành"); }
+        catch (Exception ex) { App.Log(ex); AppDialog.Show(this, ex.Message, "Không mở được nguồn phát hành"); }
     }
 }

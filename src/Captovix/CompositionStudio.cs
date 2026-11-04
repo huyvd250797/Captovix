@@ -51,7 +51,7 @@ public static class CompositionStudio
         var captions=d.Annotations.Where(a=>a.Name=="@composition:caption").Select(a=>a.Text).ToArray();
         d.Annotations.RemoveAll(a=>a.Name.StartsWith("@composition:",StringComparison.Ordinal));
         for(int i=0;i<images.Count;i++){var a=images[i];var b=slots[i];if(options.Layout!=CompositionLayout.Free){a.X1=b.X;a.Y1=b.Y;a.X2=b.Right;a.Y2=b.Bottom;a.Rotation=0;}a.ImageStyle??=new();
-            if(options.Captions){var group=a.GroupId??=Guid.NewGuid().ToString("N");d.Annotations.Add(Text("caption",a.Left,a.Top+a.Height+10,Math.Max(32,a.Width),i<captions.Length?captions[i]:$"Ảnh {i+1}",22,group));}}
+            if(options.Captions){var group=a.GroupId??=Guid.NewGuid().ToString("N");var caption=Text("caption",a.Left,a.Top+a.Height+10,Math.Max(32,a.Width),i<captions.Length?captions[i]:$"Ảnh {i+1}",22,group);caption.GroupPath=a.GroupPath?.ToList();d.Annotations.Add(caption);}}
         if(options.Title.Length>0)d.Annotations.Add(Text("title",options.Margin,options.Margin,options.Width-2*options.Margin,options.Title,36));
         if(options.Footer.Length>0)d.Annotations.Add(Text("footer",options.Margin,options.Height-options.Margin-34,options.Width-2*options.Margin,options.Footer,18));
         d.Appearance.BackgroundColor=options.Background;d.Appearance.Transparent=false;
@@ -72,7 +72,7 @@ public sealed class CompositionTemplate
     public ImageAppearance Appearance {get;set;}=new();
     public List<Annotation> Objects {get;set;}=[];
     public void Validate(){if(Version!=1||Width<128||Height<128||Width>16000||Height>16000||(long)Width*Height>PixelStudio.MaxPixels||Objects==null||Objects.Count>1000||Objects.Any(a=>a==null||!Enum.IsDefined(a.Kind)||a.PixelPng!=null))throw new InvalidDataException("Mẫu bố cục không hợp lệ hoặc chứa ảnh công việc.");}
-    public static CompositionTemplate From(EditorDocument d){var t=new CompositionTemplate{Width=d.OriginalWidth,Height=d.OriginalHeight,Crop=d.Crop,Appearance=d.Appearance.Copy(),Objects=d.Annotations.Select(a=>a.Copy()).ToList()};foreach(var a in t.Objects){a.PixelPng=null;if(a.Kind==AnnotationKind.ImageLayer){a.ImagePlaceholder=true;a.ImageStyle??=new();a.ImageStyle.Crop=null;a.Name="Ô ảnh";}else if(a.Kind is AnnotationKind.Text or AnnotationKind.Callout)a.Text=a.Name.Contains("title")?"Tiêu đề":a.Name.Contains("footer")?"Ghi chú":"Chú thích";}t.Validate();return t;}
+    public static CompositionTemplate From(EditorDocument d){var t=new CompositionTemplate{Width=d.OriginalWidth,Height=d.OriginalHeight,Crop=d.Crop,Appearance=d.Appearance.Copy(),Objects=d.Annotations.Select(a=>a.Copy()).ToList()};foreach(var a in t.Objects){if(a.Mockup is {} mockup){mockup.EraseOriginal=false;mockup.RecoveryId=null;}a.PixelPng=null;if(a.Kind==AnnotationKind.ImageLayer){a.ImagePlaceholder=true;a.ImageStyle??=new();a.ImageStyle.Crop=null;a.Name="Ô ảnh";}else if(a.Kind is AnnotationKind.Text or AnnotationKind.Callout)a.Text=a.Name.Contains("title")?"Tiêu đề":a.Name.Contains("footer")?"Ghi chú":"Chú thích";}t.Validate();return t;}
 }
 public static class CompositionProject
 {

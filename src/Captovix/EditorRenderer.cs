@@ -27,12 +27,13 @@ public static partial class EditorRenderer
     }
     private static void DrawOverlays(DrawingContext dc,BitmapSource source,EditorDocument doc,IReadOnlySet<string>? draftIds=null,string? editingTextId=null)
     {
-        ConnectorStudio.Resolve(doc);var sourceClip=new RectangleGeometry(SourceCanvas(doc));sourceClip.Freeze();
+        dc.PushClip(new RectangleGeometry(new Rect(doc.Viewport.X,doc.Viewport.Y,doc.Viewport.Width,doc.Viewport.Height)));DrawRecoveries(dc,doc);dc.Pop();ConnectorStudio.Resolve(doc);var sourceClip=new RectangleGeometry(SourceCanvas(doc));sourceClip.Freeze();
+        if(doc.Recoveries.Count>0&&doc.Annotations.Any(a=>a.Visible&&(a.IsRedaction||a.Kind==AnnotationKind.Magnifier)))source=RecoveredSampling(source,doc);
         source=RasterSampling(source,doc);var sampling=FocusStudio.Sampling(doc);
         dc.PushClip(sourceClip);DrawSpotlights(dc,doc);dc.Pop();
         DrawingGroup? protectedSource=doc.Annotations.Any(a=>a.Visible&&a.Kind==AnnotationKind.Magnifier)?ProtectedSource(source,doc,draftIds,sampling):null;
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction&&a.Kind!=AnnotationKind.Spotlight)){
-            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);DrawMagnifier(dc,protectedSource!,a);dc.Pop();}else DrawAnnotation(dc,a,a.Id==editingTextId);
+            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);DrawMagnifier(dc,protectedSource!,a);dc.Pop();}else{DrawMockupPatch(dc,a);DrawAnnotation(dc,a,a.Id==editingTextId);}
         }
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
@@ -40,6 +41,7 @@ public static partial class EditorRenderer
     }
     private static void DrawLocalAnnotation(DrawingContext dc,Annotation a,bool suppressText=false)
     {
+        if(a.Mockup!=null){DrawMockup(dc,a);return;}
         if(ConnectorStudio.IsPath(a)){DrawConnector(dc,a);return;}
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind)){DrawStrokeShape(dc,a);return;}
         var brush=ShapeStudio.HasStroke(a.Kind)?ShapeInk(a.Color,a.StrokeOpacity):Ink(a.Color);var pen=new Pen(brush,a.Stroke){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};
@@ -128,7 +130,7 @@ public static partial class EditorRenderer
         byte[]? frame=null;var style=doc.Appearance;
         if(!style.Transparent||style.BorderWidth>0||style.Shadow){var visual=new DrawingVisual();using(var dc=visual.RenderOpen())DrawFrame(dc,layout,style);var rendered=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);rendered.Render(visual);frame=ImageTransfer.Bgra(rendered);}
         source=RasterPixels.Source(source,doc);var pixels=ImageFidelity.CopyPixels(ImageTransfer.Bgra(source),source.PixelWidth,source.PixelHeight,doc.Viewport,layout,frame);
-        if(doc.Annotations.Count>0){
+        if(doc.Annotations.Count>0||doc.Recoveries.Count>0){
             var overlay=new DrawingVisual();using(var dc=overlay.RenderOpen()){
                 dc.PushClip(new RectangleGeometry(OutputClip(layout,doc.Appearance)));dc.PushTransform(new MatrixTransform(LayoutMatrix(layout)));
                 if(!doc.Appearance.DrawOutsideImage)dc.PushClip(new RectangleGeometry(new Rect(doc.Viewport.X,doc.Viewport.Y,doc.Viewport.Width,doc.Viewport.Height)));DrawOverlays(dc,source,doc);if(!doc.Appearance.DrawOutsideImage)dc.Pop();dc.Pop();dc.Pop();

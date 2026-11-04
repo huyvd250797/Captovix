@@ -32,7 +32,7 @@ internal static class OcrWorker
             using var image=Pix.LoadFromFile(input);OcrContract.Validate(image.Width,image.Height,language,mode);
             using var engine=new TesseractEngine(data,language,EngineMode.LstmOnly);
             using var page=engine.Process(image,(PageSegMode)mode);
-            var lines=new List<OcrTextLine>();using(var iterator=page.GetIterator()){iterator.Begin();do{if(lines.Count>=500)break;if(iterator.TryGetBoundingBox(PageIteratorLevel.TextLine,out var box)){string text=OcrContract.Normalize(iterator.GetText(PageIteratorLevel.TextLine)??"");if(text.Length>0)lines.Add(new(new(box.X1,box.Y1,box.Width,box.Height),text));}}while(iterator.Next(PageIteratorLevel.TextLine));}
+            var lines=new List<OcrTextLine>();using(var iterator=page.GetIterator()){iterator.Begin();do{if(lines.Count>=500)break;if(iterator.TryGetBoundingBox(PageIteratorLevel.TextLine,out var box)){string text=OcrContract.Normalize(iterator.GetText(PageIteratorLevel.TextLine)??"");if(text.Length>0)lines.Add(new(new(box.X1,box.Y1,box.Width,box.Height),text,Math.Clamp(iterator.GetConfidence(PageIteratorLevel.TextLine)/100f,0,1)));}}while(iterator.Next(PageIteratorLevel.TextLine));}
             var result=new OcrResult(OcrContract.Normalize(page.GetText()),Math.Clamp(page.GetMeanConfidence(),0,1),Lines:lines.ToArray());
             File.WriteAllText(output,JsonSerializer.Serialize(result));return 0;
         }catch(Exception ex){

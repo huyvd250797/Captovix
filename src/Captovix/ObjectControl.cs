@@ -22,11 +22,11 @@ public static class ObjectControl
         var requested=ids.ToArray();if(requested.Length==0)return [];var all=AnnotationEditing.ExpandGroups(doc,requested);return doc.Annotations.Where(a=>all.Contains(a.Id)).ToArray();
     }
     public static bool CanEdit(EditorDocument doc,IEnumerable<string> ids){var a=Members(doc,ids);return a.Length>0&&a.All(x=>!x.Locked&&x.Visible);}
-    public static bool CanvasEditable(EditorDocument doc,Annotation a)=>a.Visible&&!a.Locked&&(a.GroupId==null||!doc.Annotations.Any(b=>b.GroupId==a.GroupId&&(b.Locked||!b.Visible)));
+    public static bool CanvasEditable(EditorDocument doc,Annotation a)=>a.Visible&&!a.Locked&&!Members(doc,[a.Id]).Any(b=>b.Locked||!b.Visible);
     public static Annotation[] CanvasCandidates(EditorDocument doc)
     {
-        var blocked=doc.Annotations.Where(a=>a.GroupId!=null&&(a.Locked||!a.Visible)).Select(a=>a.GroupId!).ToHashSet();
-        return doc.Annotations.Where(a=>a.Visible&&!a.Locked&&(a.GroupId==null||!blocked.Contains(a.GroupId))).ToArray();
+        var blocked=doc.Annotations.Where(a=>a.Locked||!a.Visible).Select(a=>GroupLayout.Unit(doc,a)).ToHashSet();
+        return doc.Annotations.Where(a=>a.Visible&&!a.Locked&&!blocked.Contains(GroupLayout.Unit(doc,a))).ToArray();
     }
     public static void Lock(EditorDocument doc,IEnumerable<string> ids,bool value){foreach(var a in Members(doc,ids))a.Locked=value;}
     public static void Show(EditorDocument doc,IEnumerable<string> ids,bool value){foreach(var a in Members(doc,ids))a.Visible=value;}
@@ -45,6 +45,18 @@ public static class ObjectControl
         if(original.Kind!=AnnotationKind.Callout||!original.CalloutBodyPivot)return;
         var old=bounds(original);var next=bounds(target);var world=RotatePoint(new(original.TailX,original.TailY),new(old.CenterX,old.CenterY),original.Rotation);
         var local=RotatePoint(new(world.X+dx,world.Y+dy),new(next.CenterX,next.CenterY),-target.Rotation);target.TailX=local.X;target.TailY=local.Y;
+    }
+    public static void MoveCalloutBody(Annotation target,Annotation original,double dx,double dy,Func<Annotation,AnnotationBox> bounds)
+    {
+        if(original.Kind!=AnnotationKind.Callout)throw new ArgumentException("Chỉ di chuyển thân Callout.");
+        var pivot=bounds(original);var pivotPoint=new AnnotationPoint(pivot.CenterX,pivot.CenterY);
+        var center=new AnnotationPoint(original.Left+original.Width/2,original.Top+original.Height/2);
+        var worldCenter=RotatePoint(center,pivotPoint,original.Rotation);
+        var worldTail=RotatePoint(new(original.TailX,original.TailY),pivotPoint,original.Rotation);
+        RestoreGeometry(target,original);target.CalloutBodyPivot=true;
+        var next=new AnnotationPoint(worldCenter.X+dx,worldCenter.Y+dy);
+        target.Translate(next.X-center.X,next.Y-center.Y);
+        var tail=RotatePoint(worldTail,next,-original.Rotation);target.TailX=tail.X;target.TailY=tail.Y;
     }
     public static void ResizeSingle(Annotation target,Annotation original,AnnotationBox localBox,AnnotationBox newBox,Func<Annotation,AnnotationBox>? actualBounds=null)
     {

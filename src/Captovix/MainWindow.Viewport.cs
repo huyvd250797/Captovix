@@ -13,11 +13,7 @@ public partial class MainWindow
     private double _panX,_panY;
     private void InitializeViewport()
     {
-        PreviewMouseLeftButtonDown+=(_,e)=>{
-            if(_inlineId==null)return;var point=e.GetPosition(InlineText);
-            if(new Rect(0,0,InlineText.ActualWidth,InlineText.ActualHeight).Contains(point))return;
-            EndInlineText(true);
-        };
+        PreviewMouseLeftButtonDown+=(_,e)=>{if(FinishInlineFromOutsideClick(e.GetPosition(InlineText),e.OriginalSource as DependencyObject))e.Handled=true;};
         Surface.CropDraftChanged+=SyncCropProperties;Surface.CanvasCommitted+=()=>Dispatcher.BeginInvoke(()=>{if(_fitMode&&_inlineId==null)FitImage();});Surface.CanvasLimitReached+=message=>SetStatus("Không thể mở rộng thêm: "+message);
         Surface.CanvasGrown+=(left,top)=>{ImageScroll.UpdateLayout();ImageScroll.ScrollToHorizontalOffset(ImageScroll.HorizontalOffset+left*Surface.Zoom);ImageScroll.ScrollToVerticalOffset(ImageScroll.VerticalOffset+top*Surface.Zoom);};
         ImageScroll.PreviewMouseWheel+=Viewport_Wheel;
@@ -26,6 +22,14 @@ public partial class MainWindow
         ImageScroll.PreviewMouseLeftButtonUp+=(_,e)=>{if(_panActive){EndPan();e.Handled=true;}};
         ImageScroll.LostMouseCapture+=(_,_)=>{if(_panActive)EndPan();};
         Deactivated+=(_,_)=>{_spaceHeld=false;EndPan();Surface.CancelInteraction();};
+    }
+    private bool FinishInlineFromOutsideClick(Point point,DependencyObject? source)
+    {
+        if(_inlineId==null||new Rect(0,0,InlineText.ActualWidth,InlineText.ActualHeight).Contains(point))return false;
+        bool canvas=source is Visual&&(ReferenceEquals(source,Surface)||Surface.IsAncestorOf(source)||ReferenceEquals(source,InlineCanvas)||InlineCanvas.IsAncestorOf(source));
+        EndInlineText(true);
+        if(canvas){Surface.SelectIds([]);Surface.Focus();return true;}
+        return false;
     }
     private void ZoomAt(double zoom,Point anchor)
     {
@@ -67,6 +71,7 @@ public partial class MainWindow
     }
     private void Editor_KeyUp(object sender,KeyEventArgs e)
     {
+        if((e.Key==Key.Snapshot||e.SystemKey==Key.Snapshot)&&TryToolShortcut(e,true))return;
         if(e.Key!=Key.Space||!_spaceHeld)return;_spaceHeld=false;EndPan();e.Handled=true;
     }
     private void Viewport_PanDown(object sender,MouseButtonEventArgs e)

@@ -11,7 +11,7 @@ public static partial class EditorRenderer
     [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,LayoutEntry>? _layouts;
     private sealed class LayoutEntry { public LayoutEntry(){}  public object? Key;public FormattedText? Layout;public Rect? InkBounds; }
     private static double CacheCoordinate(double value)=>Math.Round(value,6);
-    private static object LayoutKey(Annotation a)=> (a.Text,a.FontFamily,a.FontSize,a.Bold,a.Italic,a.Underline,a.LineSpacing,a.TextAlignment,TextStudio.Foreground(a),CacheCoordinate(a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth),CultureInfo.CurrentUICulture.Name);
+    private static object LayoutKey(Annotation a)=> (a.Text,a.FontFamily,a.FontSize,a.Bold,a.Italic,a.Underline,a.LineSpacing,a.TextAlignment,TextStudio.Foreground(a),CacheCoordinate(a.Mockup!=null||a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth),CultureInfo.CurrentUICulture.Name);
     public static FormattedText TextLayout(Annotation a,string? text=null,Brush? ink=null)
     {
         LayoutEntry? cached=null;object? key=null;
@@ -21,20 +21,21 @@ public static partial class EditorRenderer
         if(a.Underline)layout.SetTextDecorations(TextDecorations.Underline);
         if(a.LineSpacing>0)layout.LineHeight=a.FontSize*a.LineSpacing;
         if(text==null){
-            double width=a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth;
+            double width=a.Mockup!=null||a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth;
             if(width>0){layout.MaxTextWidth=Math.Max(1,width);layout.TextAlignment=WpfAlignment(a.TextAlignment);}
         }if(cached!=null){cached.Key=key;cached.Layout=layout;cached.InkBounds=null;}return layout;
     }
     public static Rect TextContent(Annotation a)
     {
         double pad=TextStudio.Padding(a);
+        if(a.Mockup!=null)return new(a.Left+pad,a.Top+pad,Math.Max(1,a.Width-2*pad),Math.Max(1,a.Height-2*pad));
         if(a.Kind==AnnotationKind.Callout){var b=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));double fraction=(1-TextStudio.ContentFraction(a.CalloutStyle))/2;double ix=b.Width*fraction,iy=b.Height*fraction;return new(b.X+pad+ix,b.Y+pad+iy,Math.Max(1,b.Width-2*(pad+ix)),Math.Max(1,b.Height-2*(pad+iy)));}
         if(a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2&&a.Height>=2)return new(a.Left+pad,a.Top+pad,Math.Max(1,a.Width-2*pad),Math.Max(1,a.Height-2*pad));
         var text=TextLayout(a,a.Text);return new(a.X1+pad,a.Y1+pad,a.TextWidth>0?a.TextWidth:Math.Max(10,text.WidthIncludingTrailingWhitespace),Math.Max(a.FontSize,text.Height));
     }
     public static Point TextOrigin(Annotation a,FormattedText layout)
     {
-        var inner=TextContent(a);double offset=a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame?Math.Max(0,inner.Height-layout.Height)*(int)a.VerticalAlignment/2:0;return new(inner.X,inner.Y+offset);
+        var inner=TextContent(a);double offset=a.Mockup!=null||a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame?Math.Max(0,inner.Height-layout.Height)*(int)a.VerticalAlignment/2:0;return new(inner.X,inner.Y+offset);
     }
     public static Rect TextInkBounds(Annotation a)
     {
@@ -56,7 +57,7 @@ public static partial class EditorRenderer
     {
         var text=TextLayout(a);double pad=TextStudio.Padding(a);
         if(a.Kind==AnnotationKind.Text&&a.FillEnabled){var bg=a.TextFrame?new Rect(a.Left,a.Top,a.Width,a.Height):TextInkBounds(a);if(!a.TextFrame)bg.Inflate(pad,pad);dc.DrawRectangle(ShapeInk(a.FillColor,a.FillOpacity),null,bg);}
-        bool framed=a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2&&a.Height>=2;
+        bool framed=a.Mockup!=null||a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2&&a.Height>=2;
         if(framed)dc.PushClip(new RectangleGeometry(TextContent(a)));
         if(!suppressText)dc.DrawText(text,TextOrigin(a,text));if(framed)dc.Pop();
     }

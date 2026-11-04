@@ -115,6 +115,43 @@ try
         await sdk.DownloadAsync(release!, _ => { }, default);
         Check(File.Exists(Path.Combine(packagesDir, Path.GetFileName(package))), "SDK download and SHA-256 verification pass");
         File.Delete(Path.Combine(packagesDir, Path.GetFileName(package)));
+        var patchPackages=Path.Combine(root,"patch-from1370");Directory.CreateDirectory(patchPackages);
+        var patchLocator=new TestVelopackLocator(VersionInfo.AppId,"1.37.0",patchPackages);
+        var patchSdk=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},patchLocator,"1.37.0",source);
+        var patchRelease=await patchSdk.CheckAsync();
+        Check(patchRelease?.Version==actualVersion.ToString() && actualVersion>SemanticVersion.Parse("1.37.0"),"Installed1.37.0 discovers actual patch package newer than1.37.0");
+        await patchSdk.DownloadAsync(patchRelease!,_=>{},default);
+        Check(File.Exists(Path.Combine(patchPackages,Path.GetFileName(package))),"Installed1.37.0 downloads and verifies patch Full package");
+        var from1371=Path.Combine(root,"patch-from1371");Directory.CreateDirectory(from1371);
+        var installed1371=new TestVelopackLocator(VersionInfo.AppId,"1.37.1",from1371);
+        var backend1371=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1371,"1.37.1",source);
+        var update1371=await backend1371.CheckAsync();Check(update1371?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.37.1"),"Installed1.37.1 discovers actual newer patch");
+        await backend1371.DownloadAsync(update1371!,_=>{},default);Check(File.Exists(Path.Combine(from1371,Path.GetFileName(package))),"Installed1.37.1 downloads and verifies actual full patch");
+        var from1372=Path.Combine(root,"patch-from1372");Directory.CreateDirectory(from1372);
+        var installed1372=new TestVelopackLocator(VersionInfo.AppId,"1.37.2",from1372);
+        var backend1372=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1372,"1.37.2",source);
+        var update1372=await backend1372.CheckAsync();Check(update1372?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.37.2"),"Installed1.37.2 discovers actual newer patch");
+        await backend1372.DownloadAsync(update1372!,_=>{},default);Check(File.Exists(Path.Combine(from1372,Path.GetFileName(package))),"Installed1.37.2 downloads and verifies actual full patch");
+        var from1373=Path.Combine(root,"patch-from1373");Directory.CreateDirectory(from1373);
+        var installed1373=new TestVelopackLocator(VersionInfo.AppId,"1.37.3",from1373);
+        var backend1373=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1373,"1.37.3",source);
+        var update1373=await backend1373.CheckAsync();Check(update1373?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.37.3"),"Installed1.37.3 discovers actual newer M1 release");
+        await backend1373.DownloadAsync(update1373!,_=>{},default);Check(File.Exists(Path.Combine(from1373,Path.GetFileName(package))),"Installed1.37.3 downloads and verifies actual full M1 package");
+        var from1380=Path.Combine(root,"patch-from1380");Directory.CreateDirectory(from1380);
+        var installed1380=new TestVelopackLocator(VersionInfo.AppId,"1.38.0",from1380);
+        var backend1380=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1380,"1.38.0",source);
+        var update1380=await backend1380.CheckAsync();Check(update1380?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.38.0"),"Installed1.38.0 discovers actual newer M2 release");
+        await backend1380.DownloadAsync(update1380!,_=>{},default);Check(File.Exists(Path.Combine(from1380,Path.GetFileName(package))),"Installed1.38.0 downloads and verifies actual full M2 package");
+        var from1390=Path.Combine(root,"patch-from1390");Directory.CreateDirectory(from1390);
+        var installed1390=new TestVelopackLocator(VersionInfo.AppId,"1.39.0",from1390);
+        var backend1390=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1390,"1.39.0",source);
+        var update1390=await backend1390.CheckAsync();Check(update1390?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.39.0"),"Installed1.39.0 discovers actual newer M3 release");
+        await backend1390.DownloadAsync(update1390!,_=>{},default);Check(File.Exists(Path.Combine(from1390,Path.GetFileName(package))),"Installed1.39.0 downloads and verifies actual full M3 package");
+        var from1400=Path.Combine(root,"patch-from1400");Directory.CreateDirectory(from1400);
+        var installed1400=new TestVelopackLocator(VersionInfo.AppId,"1.40.0",from1400);
+        var backend1400=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1400,"1.40.0",source);
+        var update1400=await backend1400.CheckAsync();Check(update1400?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.40.0"),"Installed1.40.0 discovers actual M4 release");
+        await backend1400.DownloadAsync(update1400!,_=>{},default);Check(File.Exists(Path.Combine(from1400,Path.GetFileName(package))),"Installed1.40.0 downloads and verifies full M4 package");
         // Change expected SHA-256 while keeping SHA-1: ensure explicit SHA-256 check rejects it.
         asset.SHA256 = new string('0', 64); WriteFeed(asset);
         release = await sdk.CheckAsync(); var rejected = false;
@@ -135,7 +172,7 @@ try
         Check(rejected, "Feed without SHA-256 is rejected");
     }
     var jump=Path.Combine(root,"direct-jump");Directory.CreateDirectory(jump);
-    foreach(var target in new[]{"1.33.0","1.36.0","1.37.0"}){
+    foreach(var target in new[]{"1.33.0","1.36.0","1.37.0","1.37.1","1.37.2","1.37.3","1.38.0","1.39.0","1.40.0"}){
         File.WriteAllText(Path.Combine(jump,"releases.win.json"),JsonSerializer.Serialize(new{Assets=new[]{new{PackageId=VersionInfo.AppId,Version=target,Type="Full",FileName=$"HuyVo.Captovix-{target}-full.nupkg",SHA256=new string('A',64),SHA1=new string('B',40),Size=100}}}));
         var installed=new TestVelopackLocator(VersionInfo.AppId,"1.31.0",Path.Combine(root,"jump-"+target));
         var direct=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl=UpdateSettings.StableFeed},installed,"1.31.0",new SimpleFileSource(new DirectoryInfo(jump)));

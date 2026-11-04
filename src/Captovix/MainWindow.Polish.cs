@@ -37,6 +37,10 @@ public partial class MainWindow
 public static class AppIcons
 {
     private static readonly Dictionary<string,string> Paths=new(){
+        ["GroupLayout"]="M3,3 H21 V21 H3 Z M6,7 H11 V12 H6 Z M14,7 H18 V10 H14 Z M14,14 H18 V18 H14 Z M10,12 V16 H14",
+        ["FolderLocation"]="M2,6 H10 L12,9 H22 V21 H2 Z M6,13 H16 M12,10 L16,13 L12,16",
+        ["Recovery"]="M3,3 H21 V21 H3 Z M7,7 H17 V17 H7 Z M3,12 H10 M7,9 L10,12 L7,15 M14,7 H17 V10 M14,17 H17 V14",
+        ["Mockup"]="M3,3 H21 V21 H3 Z M6,7 H13 M6,11 H10 M6,15 H9 M13,12 H18 V17 H13 Z M16,18 L20,22 M18,18 L22,20",
         ["Stamp"]="M8,3 H16 V8 L14,11 V14 H10 V11 L8,8 Z M6,14 H18 L21,20 H3 Z M5,23 H19",
         ["StudioColor"]="M4,3 V21 M12,3 V21 M20,3 V21 M1,7 H7 M9,16 H15 M17,10 H23",
         ["StudioClone"]="M3,3 H13 V13 H3 Z M16,11 H21 V21 H11 V16 M7,17 V21 M17,7 H21",

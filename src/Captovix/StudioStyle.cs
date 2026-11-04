@@ -28,7 +28,7 @@ public static class StudioStyle
     }
     public static Annotation Sample(Annotation style)
     {
-        var a=style.Copy();a.CalloutBodyPivot=true;a.Id="style";a.Name="";a.GroupId=null;a.Locked=false;a.Visible=true;a.Rotation=0;a.X1=10;a.Y1=15;a.X2=90;a.Y2=60;a.Text="Aa";a.Number=1;a.StartAnchor=a.EndAnchor=null;a.Control=null;a.TailX=30;a.TailY=75;a.Points=a.Kind==AnnotationKind.Freehand?[new(10,50),new(35,25),new(65,55),new(90,20)]:[];
+        var a=style.Copy();a.Mockup=null;a.CalloutBodyPivot=true;a.Id="style";a.Name="";a.GroupId=null;a.GroupPath=null;a.Locked=false;a.Visible=true;a.Rotation=0;a.X1=10;a.Y1=15;a.X2=90;a.Y2=60;a.Text="Aa";a.Number=1;a.StartAnchor=a.EndAnchor=null;a.Control=null;a.TailX=30;a.TailY=75;a.Points=a.Kind==AnnotationKind.Freehand?[new(10,50),new(35,25),new(65,55),new(90,20)]:[];
         return a;
     }
     public static string LegacySignature(Annotation style){var node=System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Sample(style),EditorDocument.JsonOptions))!.AsObject();node.Remove("PixelPng");node.Remove("CalloutBodyPivot");return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(node.ToJsonString(EditorDocument.JsonOptions))));}

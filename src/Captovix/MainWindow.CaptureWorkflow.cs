@@ -9,6 +9,7 @@ namespace Captovix;
 public partial class MainWindow
 {
     private CaptureWorkflowSettings _workflow=new();
+    private bool _captureConfirmReady;
     private bool _workflowReadOnly,_exitRequested,_workflowSuspended;
     private CaptureTray? _tray;
     private ContextMenu? _trayMenu;
@@ -45,7 +46,7 @@ public partial class MainWindow
         AfterPhotoPicker.SelectedIndex=_workflow.Background?1:0;AutoCopyPhoto.IsChecked=_workflow.AutoCopy;CloseToTrayToggle.IsChecked=_workflow.CloseToTray;StartWindowsToggle.IsChecked=_workflow.StartWithWindows;StartTrayToggle.IsChecked=_workflow.StartInTray;
         CapturePresetPicker.ItemsSource=_workflow.Presets;CapturePresetPicker.SelectedIndex=_workflow.Presets.Count>0?0:-1;
         HotkeyRows.Children.Clear();_keyEditors.Clear();
-        foreach(var h in _workflow.Hotkeys){
+        foreach(var h in _workflow.Hotkeys.Where(h=>h.Action is PhotoAction.Region or PhotoAction.Display or PhotoAction.Repeat)){
             var row=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(0,4,0,4)};if(h.Action==PhotoAction.Element)row.Visibility=Visibility.Collapsed;var enabled=new CheckBox{Content=ActionName(h.Action),IsChecked=h.Enabled,Width=150};
             var key=new TextBox{Text=h.Label,Tag=h,Width=230,IsReadOnly=true,ToolTip="Nhấn tổ hợp phím mới; bỏ chọn để tắt. Có thể dùng phím đơn, PrtSc hoặc tổ hợp. Windows kiểm tra phím trùng/dành riêng khi lưu. Dùng chuột để chuyển ô."};
             key.GotKeyboardFocus+=(_,_)=>PauseKeysForEditing();key.LostKeyboardFocus+=(_,_)=>RestoreKeysAfterEditing();
@@ -60,9 +61,10 @@ public partial class MainWindow
             key.PreviewKeyUp+=(_,e)=>{var k=e.Key==Key.System?e.SystemKey:e.Key;if(k==Key.Snapshot)CaptureKey(key,e);};
             row.Children.Add(enabled);row.Children.Add(key);HotkeyRows.Children.Add(row);_keyEditors[h.Action]=(enabled,key);
         }
-        SyncCaptureBorder();
-        CaptureButton.ToolTip=_workflow.Hotkeys.First(h=>h.Action==PhotoAction.Current).Label;
+        _captureConfirmReady=false;RequireEnterCapture.IsChecked=_workflow.RequireEnter;_captureConfirmReady=true;RenderToolShortcuts();SyncCaptureBorder();
+        CaptureButton.ToolTip=_workflow.Hotkeys.First(h=>h.Action==PhotoAction.Region).Label;
     }
+    private void CaptureConfirm_Changed(object sender,RoutedEventArgs e){if(!_captureConfirmReady||_busy)return;try{var next=_workflow.Clone();next.RequireEnter=RequireEnterCapture.IsChecked==true;SaveWorkflow(next);SetStatus(next.RequireEnter?"Chụp: xác nhận bằng Enter.":"Chụp: thả chuột để chụp ngay.");}catch(Exception ex){WorkflowStatus.Text=ex.Message;_captureConfirmReady=false;RequireEnterCapture.IsChecked=_workflow.RequireEnter;_captureConfirmReady=true;}}
     private void PauseKeysForEditing()
     {
         _editingCaptureKeys=true;_photoKeys?.Stop();var hwnd=new WindowInteropHelper(this).Handle;foreach(var id in _hotkeys)Native.UnregisterHotKey(hwnd,id);_hotkeys.Clear();
@@ -88,7 +90,7 @@ public partial class MainWindow
     {if(!RequireLicense())return;
         if(_busy)return;try{
             var candidate=_workflow.Clone();candidate.Background=AfterPhotoPicker.SelectedIndex==1;candidate.AutoCopy=AutoCopyPhoto.IsChecked==true;candidate.CloseToTray=CloseToTrayToggle.IsChecked==true;candidate.StartWithWindows=StartWindowsToggle.IsChecked==true;candidate.StartInTray=StartTrayToggle.IsChecked==true;
-            candidate.Hotkeys=_keyEditors.Select(k=>((CaptureHotkey)k.Value.Key.Tag) with{Enabled=k.Value.Enabled.IsChecked==true}).ToList();SaveWorkflow(candidate,true);RenderWorkflow();WorkflowStatus.Text="Đã lưu và đăng ký phím tắt với Windows. Phím chụp: "+_workflow.Hotkeys.First(h=>h.Action==PhotoAction.Current).Label+". Captovix cần đang chạy hoặc nằm ở khay hệ thống.";
+            candidate.RequireEnter=RequireEnterCapture.IsChecked==true;candidate.EditorHotkeys=ReadToolShortcuts();candidate.Hotkeys=candidate.Hotkeys.Select(h=>_keyEditors.TryGetValue(h.Action,out var edit)?((CaptureHotkey)edit.Key.Tag) with{Enabled=edit.Enabled.IsChecked==true}:h with{Enabled=false}).ToList();SaveWorkflow(candidate,true);RenderWorkflow();WorkflowStatus.Text="Đã lưu và đăng ký phím tắt với Windows. Phím chụp: "+_workflow.Hotkeys.First(h=>h.Action==PhotoAction.Region).Label+". Captovix cần đang chạy hoặc nằm ở khay hệ thống.";
         }catch(Exception ex){App.Log(ex);WorkflowStatus.Text=ex.Message;}
     }
     private void ResetWorkflow_Click(object sender,RoutedEventArgs e)

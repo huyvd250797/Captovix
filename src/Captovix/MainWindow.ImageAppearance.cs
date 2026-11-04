@@ -38,7 +38,7 @@ public partial class MainWindow
     {if(!RequireLicense())return;
         if(sender is not Button {Tag:string tag})return;
         if(tag=="ResetAll"){
-            if(MessageBox.Show(this,"Đặt lại xoay/lật, kích thước và kiểu khung? Chú thích và crop vẫn giữ nguyên.","Đặt lại trình bày ảnh",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
+            if(AppDialog.Show(this,"Đặt lại xoay/lật, kích thước và kiểu khung? Chú thích và crop vẫn giữ nguyên.","Đặt lại trình bày ảnh",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
             ApplyAppearance(s=>{},true);return;
         }
         ApplyAppearance(s=>{switch(tag){case "Left":s.Rotate(-1);break;case "Right":s.Rotate(1);break;case "FlipH":s.FlipHorizontal=!s.FlipHorizontal;break;case "FlipV":s.FlipVertical=!s.FlipVertical;break;case "Natural":s.ResizeWidth=s.ResizeHeight=0;break;}});

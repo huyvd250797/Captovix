@@ -11,7 +11,7 @@ Nâng từ source V1.36.0 Boss gửi; tập trung hiệu năng, giữ công cụ
 - Đóng/thay ảnh giải phóng drawing, cache chữ/đuôi và bitmap sampling từng giữ ảnh cũ, cùng cache PNG giải mã. Worker autosave cũng giải phóng cache theo thread sau khi xong; không ép GC trên UI. Undo vẫn giữ ngân sách sẵn có.
 - Giữ công cụ đang chọn khi hoàn tất nhập chữ/Callout, chụp/chuyển ảnh, crop và hủy thao tác bằng Esc. Chọn công cụ khác mới thay đổi công cụ; khi bấm lệnh chuyên biệt yêu cầu chế độ Chọn (ví dụ sửa lớp ảnh), giữ hành vi riêng của lệnh đó.
 - Danh sách gần đây tối đa30 nội dung, kể cả ảnh lịch sử được ghim tạm; không xóa ảnh cũ, xem đầy đủ trong Quản lý thư viện.
-- Sửa Callout theo mô phỏng Boss duyệt: điểm nhấn đầu ghim đuôi; kéo ngang thay đổi rộng, kéo dọc thay đổi cao, kéo chéo thay đổi cả hai độc lập, không khóa tỷ lệ. Gốc đuôi tự bám cạnh theo hướng kéo. Thả khi hộp trống giữ kích thước vừa vẽ; chỉ tự nở khi nhập chữ. Node thân và node đuôi vẫn độc lập. Kích thước tối thiểu36px; nhấn đơn tạo hộp220×120px.
+- Callout chỉ xuất hiện sau khi nhấn giữ và kéo đủ4px hiển thị; bấm đơn hoặc rung chuột nhẹ không tạo đối tượng/Undo/popup mới. Click ngoài lúc nhập kết thúc và lưu phiên đang sửa, chặn lần click đó đi xuống vùng vẽ. Khi chọn Callout, tâm xanh có dấu cộng cho phép kéo thân, giữ tip đuôi cố định trên ảnh; kéo phần thân ngoài tâm di chuyển cả Callout. Node đuôi và resize/xoay giữ chức năng riêng. Vẫn kéo giãn2trục lúc tạo, giữ công cụ và các mẫu hiện có.
 - Bổ sung đo có giới hạn trong RAM cho dựng cửa sổ/first paint, mở ảnh, autosave và frame editor; không đưa lại menu chẩn đoán đã bỏ.
 
 Đo trước/sau logic trên cùng host Linux/.NET10, 5.000 chú thích có một Callout20.000ký tự,3lượt làm nóng +11lượt đo lấy trung vị:
@@ -39,7 +39,7 @@ Nâng từ source V1.36.0 Boss gửi; tập trung hiệu năng, giữ công cụ
 - Startup: mở từ tiến trình mới10lần, đo tới first usable paint; baseline1.36 và1.37. Ghi riêng đã có app ở khay hay không, không trộn restore với cold start.
 - Mở/chuyển: ảnh1080p/4K và cuộn1920×12000; chuyển30ảnh nhanh, đang mở ảnh lớn chọn ảnh khác/đóngapp. Không hiện nhầm source/document, lỗi không tự làm mất ảnh. Không giải mã nhiều ảnh song song.
 - Kéo/resize: Callout20ktext,100/1000chú thích; ngang/dọc/chéo, node thân/tail/rotation và Undo. Đo frame và input-to-present; không chỉ đo hàm tính hình.
-- Callout: thử kéo ngang/dọc/chéo cả4hướng, đuôi ghim; chiều rộng/cao thay đổi độc lập. Thả khi hộp trống không tự nở về kích thước chuẩn. Nhấn đơn tạo hộp220×120px; nhập chữ mới chạy auto-fit; Undo/Redo và node thân/đuôi vẫn độc lập.
+- Callout: click/rung nhẹ không tạo mới; kéo đủ ngưỡng mới hiển thị; nhập xong click ngoài lưu mà không thêm bản sao. Chọn lại để hiện tâm; kéo tâm giữ tip, kéo ngoài tâm dời cả Callout. Thử0/35/90° và mẫu cũ, Undo/Redo, node tail/resize/xoay, thao tác ở100/150/200%DPI.
 - Giữ tool: Callout→gõ→click ngoài→vẽ tiếp; chụp ảnh khác→vẽ tiếp; lặp Chữ/Bước/Stamp/Arrow/Crop. Chọn công cụ khác mới đổi; các lệnh chuyên biệt chủ động vào Chọn vẫn có ngữ nghĩa riêng.
 - Zoom/pan:100/125/150/200%DPI, các mức25–200%, giữ vị trí con trỏ, không đổi pixel PNG/copy. Kiểm cảnh cached luôn bị hủy khi thêm/xóa/sửa/privacy mask, pixel, undo/redo, inline.
 - Autosave: đang lưu gõ tiếp, chuyển ảnh/đóng/cập nhật ngay, lỗi quyền/diskfull, retryCtrl+S. Worker cũ phải xong trước save cuối; revision mới không bị đánh dấu đã lưu bởi worker cũ. Thumbnail lỗi không làm mất sidecar.

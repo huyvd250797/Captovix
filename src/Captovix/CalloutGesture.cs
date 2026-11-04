@@ -12,8 +12,4 @@ public static class CalloutGesture
         a.Y1=dy>=0?tailY+gapY:tailY-gapY-height;
         a.X2=a.X1+width;a.Y2=a.Y1+height;a.TailX=tailX;a.TailY=tailY;
     }
-    public static void PlaceClick(Annotation a,double tailX,double tailY)
-    {
-        a.X1=tailX+24;a.Y1=tailY-144;a.X2=a.X1+220;a.Y2=a.Y1+120;a.TailX=tailX;a.TailY=tailY;
-    }
 }

@@ -8,6 +8,7 @@ p.add_argument('--root',type=Path,default=Path(__file__).resolve().parent.parent
 p.add_argument('--baseline-source',type=Path)
 p.add_argument('--source-zip',type=Path)
 p.add_argument('--update-zip',type=Path)
+p.add_argument('--migration-txt',type=Path)
 a=p.parse_args();r=a.root.resolve();rel=r/'artifacts/releases';payload=r/'artifacts/win-x64'
 version=ET.parse(r/'src/Captovix/Captovix.csproj').findtext('.//Version');app='HuyVo.Captovix';checks=0
 
@@ -25,8 +26,11 @@ with zipfile.ZipFile(pkg) as z:
  nuspec=ET.fromstring(z.read(next(n for n in z.namelist() if n.endswith('.nuspec'))));fields={e.tag.rsplit('}',1)[-1]:e.text for e in nuspec.iter()}
  check(fields['id']==app and fields['version']==version,'Nuspec AppId/version verified')
  def entry(name):return next(n for n in z.namelist() if n.startswith('lib/') and n.endswith('/'+name))
- for name in ['Assets/Captovix-brand-v117.ico','Captovix.dll','Captovix.exe','ScreenRecorderLib.dll','Velopack.dll','Captovix.runtimeconfig.json','update-source.json','README.md','CHANGELOG.md','ROADMAP.md','docs/IMAGE-COMPOSITION-TEMPLATES.md','docs/SCROLLING-CAPTURE-APPEARANCE.md','docs/WINDOWS-TEST-V1.14.md','docs/VALIDATION.md','docs/CAPTURE-RELIABILITY.md','docs/OCR-TEXT-EXTRACTION.md','docs/ASSISTED-IMAGE-EDITING.md','docs/IMAGE-LIBRARY-PROJECTS.md','docs/BATCH-EXPORT-DOCUMENTATION.md','docs/IMAGE-RELEASE-PERFORMANCE.md','docs/LAYOUT-PRECISION.md','docs/OBJECT-EDITING-PRECISION.md','docs/TEXT-CALLOUT-REFINEMENT.md','docs/CAPTURE-PRECISION.md','docs/SCROLLING-CAPTURE-QUALITY.md','docs/SMART-ELEMENT-CAPTURE.md','docs/CAPTURE-IMAGE-STUDIO.md','docs/COLOR-PICKER-STUDIO-ACCESS.md','docs/LICENSING-GUIDE.md','docs/SERVERLESS-LICENSING.md','docs/CAPTURE-FIDELITY-RELIABILITY.md','docs/QUICK-CAPTURE-EXPERIENCE.md','docs/capture-pixel-test.html','Licensing.Shared.dll','docs/PERFORMANCE-BENCHMARK.json','Tesseract.dll','x64/tesseract50.dll','x64/leptonica-1.82.0.dll','tessdata/eng.traineddata','tessdata/vie.traineddata','tessdata/models.json','docs/RELEASE-NOTES.md','docs/PERFORMANCE-RESPONSIVENESS-V137.md','docs/PERFORMANCE-V137-before.json','docs/PERFORMANCE-V137-after.json']:
+ for name in ['Assets/Captovix-brand-v117.ico','Captovix.dll','Captovix.exe','ScreenRecorderLib.dll','Velopack.dll','Captovix.runtimeconfig.json','update-source.json','README.md','CHANGELOG.md','ROADMAP.md','docs/GROUPS-LAYOUT-EDITING-V141.md','docs/MOVE-BACKGROUND-RECOVERY-V140.md','docs/ELEMENT-SCAN-REVIEW-V139.md','docs/ACTIVATION-METADATA-V139.md','docs/MOCKUP-M1-V138.md','docs/IMAGE-COMPOSITION-TEMPLATES.md','docs/SCROLLING-CAPTURE-APPEARANCE.md','docs/WINDOWS-TEST-V1.14.md','docs/VALIDATION.md','docs/CAPTURE-RELIABILITY.md','docs/OCR-TEXT-EXTRACTION.md','docs/ASSISTED-IMAGE-EDITING.md','docs/IMAGE-LIBRARY-PROJECTS.md','docs/BATCH-EXPORT-DOCUMENTATION.md','docs/IMAGE-RELEASE-PERFORMANCE.md','docs/LAYOUT-PRECISION.md','docs/OBJECT-EDITING-PRECISION.md','docs/TEXT-CALLOUT-REFINEMENT.md','docs/CAPTURE-PRECISION.md','docs/SCROLLING-CAPTURE-QUALITY.md','docs/SMART-ELEMENT-CAPTURE.md','docs/CAPTURE-IMAGE-STUDIO.md','docs/COLOR-PICKER-STUDIO-ACCESS.md','docs/LICENSING-GUIDE.md','docs/SERVERLESS-LICENSING.md','docs/CAPTURE-FIDELITY-RELIABILITY.md','docs/QUICK-CAPTURE-EXPERIENCE.md','docs/capture-pixel-test.html','Licensing.Shared.dll','docs/PERFORMANCE-BENCHMARK.json','Tesseract.dll','x64/tesseract50.dll','x64/leptonica-1.82.0.dll','tessdata/eng.traineddata','tessdata/vie.traineddata','tessdata/models.json','docs/RELEASE-NOTES.md','docs/PERFORMANCE-RESPONSIVENESS-V137.md','docs/PERFORMANCE-V137-before.json','docs/PERFORMANCE-V137-after.json']:
   check(z.read(entry(name))==(payload/name).read_bytes(),'Packaged payload matches published '+name)
+ check(z.read(entry('Licensing.Shared.dll'))==(r/'src/Licensing.Shared/bin/x64/Release/net10.0/Licensing.Shared.dll').read_bytes(),'Packaged licensing protocol is the current build with activatedAt support')
+ check(version.encode('utf-16le') in z.read(entry('Captovix.exe')),'Native application host version matches release')
+ deps=json.loads(z.read(entry('Captovix.deps.json')));check('Captovix/'+version in deps['libraries'],'Application dependency version matches release')
  runtime=json.loads(z.read(entry('Captovix.runtimeconfig.json')));check(all(f['version']=='10.0.13' for f in runtime['runtimeOptions']['includedFrameworks']),'.NET10.0.13 self-contained runtime declared')
  source=json.loads(z.read(entry('update-source.json')));check(source['SourceKind']=='Https' and source['SourceUrl']=='https://github.com/huyvd250797/captovix-releases/releases/latest/download','Stable source baked into package')
  check(z.read(entry('Assets/Captovix-brand-v117.ico'))==(r/'src/Captovix/Assets/Captovix.ico').read_bytes(),'Runtime icon equals approved source artwork')
@@ -61,6 +65,11 @@ check('Task.Run(()=>frozen.Save(region,working)' in main and 'frozen?.Dispose()'
 capture=(r/'src/Captovix/DesktopPhotoCapture.cs').read_text()
 check('SetThreadDpiAwarenessContext(previousDpi)' in capture and 'pixels.AsSpan().SequenceEqual(ImageTransfer.Bgra(decoded))' in capture,'GDI worker restores DPI context and validates PNG pixel roundtrip')
 check('StretchBlt(' not in capture and 'BitBlt(dc,part.X,part.Y,part.Crop.Width,part.Crop.Height' in capture,'Desktop photos retain unscaled physical pixel blits')
+
+old_sql=(r/'supabase/migrations/202610280003_serverless.sql').read_text();start=old_sql.index('create or replace function public.cvx_license_operation(');end=old_sql.index('create or replace function public.cvx_license_admin(',start);old_function=old_sql[start:end].strip()
+new_sql=(r/'supabase/migrations/202611040001_activation_timestamp.sql').read_text();new_function=new_sql[new_sql.index('create or replace function'):new_sql.rindex('commit;')].strip()
+check(new_function.replace("'activatedAt',d.created_at,",'')==old_function,'Migration changes only signed activation metadata, preserving policy and protections')
+if a.migration_txt:check(a.migration_txt.read_bytes()==(r/'supabase/migrations/202611040001_activation_timestamp.sql').read_bytes(),'Migration TXT exactly matches complete source SQL')
 
 for path in [a.source_zip,a.update_zip]:
  if path:

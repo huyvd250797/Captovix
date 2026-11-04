@@ -6,13 +6,7 @@ namespace Captovix;
 public partial class MainWindow
 {
     private bool _layersReady,_syncLayers,_editingObjectRatio;
-    private LayerRow[] _layerRows=[];
     private double _objectAspect=1;
-    private sealed record LayerRow(string Id,string Label,string Detail,bool Locked,bool Visible)
-    {
-        public FrameworkElement LockLabel=>AppIcons.Content(Locked?"Lock":"Unlock","");
-        public FrameworkElement VisibleLabel=>AppIcons.Content(Visible?"Eye":"EyeOff","");
-    }
     private void InitializeObjectControl(){_layersReady=true;}
     private static string ObjectNumber(double n)=>n.ToString("0.######",CultureInfo.InvariantCulture);
     private void SyncObjectControl()
@@ -21,9 +15,7 @@ public partial class MainWindow
         try{
             var session=_session!=null&&ReferenceEquals(_session,Surface.Session)?_session:null;
             var doc=session?.Document;var objects=doc==null?[]:ObjectControl.Members(doc,Surface.SelectedIds);
-            var rows=doc?.Annotations.Select((a,i)=>new{Object=a,Index=i}).OrderBy(x=>AnnotationEditing.Tier(x.Object)).ThenBy(x=>x.Index).Reverse().Select(x=>new LayerRow(x.Object.Id,string.IsNullOrWhiteSpace(x.Object.Name)?$"{ShapeStudio.Label(x.Object.Kind)} {x.Index+1}":x.Object.Name switch{"@composition:title"=>"Tiêu đề","@composition:footer"=>"Ghi chú cuối","@composition:caption"=>"Chú thích ảnh",_=>x.Object.Name},$"{ShapeStudio.Label(x.Object.Kind)}{(x.Object.GroupId!=null?" · Nhóm "+x.Object.GroupId[..4]:"")}{(x.Object.IsRedaction?" · Bảo vệ":x.Object.Kind==AnnotationKind.Spotlight?" · Nền focus":"")}",x.Object.Locked,x.Object.Visible)).ToArray()??[];
-            if(!_layerRows.SequenceEqual(rows)){_layerRows=rows;LayerList.ItemsSource=_layerRows;}
-            LayerList.SelectedItems.Clear();foreach(var row in _layerRows)if(Surface.SelectedIds.Contains(row.Id))LayerList.SelectedItems.Add(row);
+            SyncGroupTree(doc);
             LayerCount.Text=doc==null?"Chưa mở ảnh.":$"{doc.Annotations.Count} đối tượng · {doc.Annotations.Count(a=>a.Visible)} đang hiện";
             bool editable=doc!=null&&ObjectControl.CanEdit(doc,Surface.SelectedIds)&&!Surface.IsInteracting;
             EditableObjectProperties.IsEnabled=objects.Length==0||editable;ObjectFrameFields.IsEnabled=editable;
@@ -40,12 +32,6 @@ public partial class MainWindow
             ObjectFrameHint.Text=objects.Length==1&&ConnectorStudio.IsPath(objects[0])?"Đường cong/gấp khúc: khung bao theo pixel canvas đầu ra; góc là xoay thêm và được áp vào tọa độ điểm. Đổi khung sẽ tháo các liên kết ngoài lựa chọn.":objects.Length==1?"Khung bao đang thấy · pixel canvas đầu ra. X/Y là góc trên trái. Góc đối tượng trong hệ ảnh gốc; xoay làm đổi kích thước khung bao.":"Khung bao nhóm · pixel canvas đầu ra. Góc là xoay thêm trong hệ ảnh gốc, sau áp dụng về 0. Nhóm có chữ/đối tượng xoay giữ tỷ lệ.";
             ObjectFrameError.Text="";
         }finally{_syncLayers=false;}
-    }
-    private void LayerSelection_Changed(object sender,SelectionChangedEventArgs e)
-    {
-        if(!_layersReady||_syncLayers||_session==null)return;
-        var ids=LayerList.SelectedItems.Cast<LayerRow>().Select(r=>r.Id).ToArray();var primary=(LayerList.SelectedItem as LayerRow)?.Id;
-        SelectTool(EditorTool.Select);Surface.SelectIds(ids,primary);SyncProperties();
     }
     private void LayerToggle_Click(object sender,RoutedEventArgs e)
     {if(!RequireLicense())return;

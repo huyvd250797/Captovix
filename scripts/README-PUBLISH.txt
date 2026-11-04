@@ -1,15 +1,16 @@
-Captovix V1.37.0 — Performance & Responsiveness
-Hiệu chỉnh Callout theo mô phỏng duyệt: ghim đuôi, kéo giãn rộng/cao độc lập.
-Đang dùng V1.37 cũ: chạy Setup mới thủ công do version không đổi.
+Captovix V1.41.0 — Groups & Layout Editing
 
-Thoát app cả khay hệ thống, chạy HuyVo.Captovix-win-Setup.exe vào thư mục đang cài; không uninstall. Giữ media/license/config. Không cần migration mới hoặc deploy backend.
+Không cần migration mới/deploy backend. Giữ KEY/trial/API/database. Nhóm schema21 có backup .pre-v1.41.bak; backup thư viện trước rollback. App1.40 không đọc nhóm lồng schema21.
 
-Upload đủ5assets vào stable Release v1.37.0, đánh dấu latest:
-HuyVo.Captovix-1.37.0-full.nupkg
+Tạo GitHub Release v1.41.0 trong huyvd250797/captovix-releases, publish stable và đặt Latest. Upload đủ 5 asset rời:
+HuyVo.Captovix-1.41.0-full.nupkg
 HuyVo.Captovix-win-Setup.exe
 RELEASES
 assets.win.json
 releases.win.json
-Không chỉ upload ZIP/source. Full hỗ trợ nhảy từ bản cũ, không cần các bản trung gian. Chưa tự publish trong lần bàn giao này.
 
-Số đo logic Linux ở README/docs. Chưa nghiệm thu native Windows: first paint, chuột/IME/Callout/zoom, ảnh4K/cuộn dài, RAM dùng lâu, Setup/restart update. Checklist docs/PERFORMANCE-RESPONSIVENESS-V137.md.
+Không chỉ upload ZIP/source. Máy1.40 và bản cũ nhận sau publish. Bộ Captovix-Setup.exe online hiện có tiếp tục dùng nguồn Latest. Lần bàn giao này chưa tự publish.
+
+Cài tay: thoát Captovix cả khay, chạy Full Setup hoặc HuyVo.Captovix-win-Setup.exe vào đường dẫn hiện tại; không uninstall/xóa thư viện. Runtime.NET/VC++/OCR giữ nguyên.
+
+Nghiệm thu Windows theo docs/GROUPS-LAYOUT-EDITING-V141.md và VALIDATION.md, gồm nestedpanel/label/Undo/save/restore, popup sáng-tối/DPI/ngoài-modal, More và Explorer. HostLinux chỉ build Windows, chưa chạy WPF.

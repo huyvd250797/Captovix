@@ -124,7 +124,7 @@ public partial class MainWindow
         Surface.CancelInteraction();_session.Commit();
         SetBusy(true);
         try{var image=Surface.Flatten();var layout=Surface.Layout!;bool allow=Math.Abs(layout.A-1)<.00001&&Math.Abs(layout.D-1)<.00001&&Math.Abs(layout.B)<.00001&&Math.Abs(layout.C)<.00001;var dialog=new OcrWindow(image,assist,allow){Owner=this};if(dialog.ShowDialog()==true&&dialog.Request is {} request)ApplyAssisted(request,image,dialog.CreateCopy);}
-        catch(Exception ex){App.Log(ex);MessageBox.Show(this,ex.Message,"Chưa mở được OCR");}
+        catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Chưa mở được OCR");}
         finally{SetBusy(false);_captureGate.Exit();if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);}
     }
 }

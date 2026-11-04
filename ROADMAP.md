@@ -1,16 +1,30 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.37.0
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.41.0
 
-Boss chọn V1.37 Performance & Responsiveness theo roadmap điều chỉnh trong hội thoại. Phạm vi Image Tools & OCR trước đây chuyển sangV1.40; roadmap cũ bên dưới chỉ là lịch sử.
+Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/thứ tự |
 | --- | --- | --- | --- | --- | --- |
-| V1.37.0 — Performance & Responsiveness | Phản hồi nhanh hơn | Startup, mở/chuyển, kéo/resize/chữ dài/zoom, cache, lưu nền; giữ tool,30ảnh,Callout tự do | Worker/generation, snapshot/revision, drawing/lifecycle | Logic/build/package đạt; số đo Windows/native/RAM còn chờ | Đã triển khai; chưa nghiệm thu Windows toàn app |
-| V1.38.0 — Capture & Image Reliability | Chụp và lưu đúng | Nhiều màn hình/DPI, vùng/phần tử/chụp app/cuộn, hủy/lỗi lưu | Capture/fidelity/recovery | Đúng vùng/pixel, lỗi không mất ảnh | Dự kiến sau1.37 |
-| V1.39.0 — Editor Workflow & Usability | Ít bước, nhất quán | Chọn/kéo/resize, chữ/Callout/Stamp, công cụ động, phím/cuộn/Undo, popup | Workflow/properties | Không mất thay đổi, giữ vị trí | Dự kiến |
-| V1.40.0 — Image Tools & OCR Usability | Nhận chữ và sửa ảnh dễ hơn | Vùng OCR/copy, zoom/pan, màu/nét/Clone/phối cảnh/Trước-Sau-Hủy | Pixel/OCR | Preview/xuất/Undo khớp | Chuyển từ1.37cũ |
-| V1.41.0 — Library & Export Experience | Thư viện/xuất thuận tiện | Thumbnail theo vùng, tìm/lọc/chọn nhiều/khôi phục, dragout/batch | Library/export | Cuộn mượt, tiến trình/hủy/thử lại | Dự kiến |
+| V1.37.0 — Performance & Responsiveness | Phản hồi nhanh hơn | Startup, mở/chuyển, kéo/resize/chữ dài/zoom, cache, lưu nền; giữ tool,30ảnh,Callout kéo để tạo/tâm giữ đuôi | Worker/generation, snapshot/revision, drawing/lifecycle | Logic/build/package đạt; số đo Windows/native/RAM còn chờ | Đã triển khai; chưa nghiệm thu Windows toàn app |
+| V1.37.1 — Performance & Responsiveness | Phát hành bản vá Callout có số phiên bản mới | Kế thừa sửa click ngoài/tâm kéo, cập nhật app/installer/feed | Tăng PATCH đồng bộ, gói Full | Máy1.37.0 nhận1.37.1 trong kiểm thử feed; Windows native còn chờ | Đã đóng gói; chưa publish |
+| V1.37.2 — Capture Bounds Fix | Sửa lỗi Crop vượt frame | Giới hạn gợi ý/kéo/resize/phím/xác nhận và guard cuối | Tọa độ pixel vật lý; snapshot không đổi | Logic/cross-build/package đạt; Windows native còn chờ | Bản vá trước1.38; chưa publish |
+| V1.37.3 — Image Layer Thread Safety | Sửa mở lại ảnh có lớp ảnh dán | Tách decoder khỏi cachechia sẻ, chống hộp thoại lỗi chồng | Frozen detached BGRA, modal gate | Build/pure checks/package đạt; Windows WPF hồi quy cần chạy | Bản vá khẩn trước1.38; chưa publish |
+| V1.38.0 — Text & Button Editing (M1) | Mockup một form nền phẳng | Kéo vùng/OCR/chỉnh label-title-nút, màu/viền/bo góc; ảnh gốc, lưu và Undo | Schema18 tùy chọn, backup sidecar; client-only | Logic/build/package đạt; native Windows cần nghiệm thu | Đã triển khai theo lựa chọn Boss |
+| V1.39.0 — Element Scan & Review (M2) | Rà soát trước khi tạo Mockup | Quét vùng/toàn ảnh, chữ/nút/ô nhập/khối, sửa khung, ghép/loại trùng/cảnh báo; Mockup trong Thêm; popup bản quyền | Schema19 + migration metadata activation; OCR nội bộ | Logic/build/package; native Windows/SQL sản xuất còn chờ | Đã triển khai theo lựa chọn Boss |
+| V1.40.0 — Move & Background Recovery (M3) | Di chuyển không để lại phần tử cũ | Mask nền độc lập, vùng giữ, nhật ký/Undo; cấu hình Enter, phím công cụ/Thêm và sidebar gọn | Schema20; cấu hình client, không DB migration | Logic/build/package; nghiệm thu native Windows còn chờ | Đã triển khai theo lựa chọn Boss |
+| Backlog — Capture & Image Reliability | Chụp và lưu đúng | Nhiều màn hình/DPI, vùng/phần tử/chụp app/cuộn, hủy/lỗi lưu | Capture/fidelity/recovery | Đúng vùng/pixel, lỗi không mất ảnh | Chưa gán phiên bản; giữ phạm vi roadmap trước |
+| Backlog — Editor Workflow & Usability | Ít bước, nhất quán | Chọn/kéo/resize, chữ/Callout/Stamp, công cụ động, phím/cuộn/Undo, popup | Workflow/properties | Không mất thay đổi, giữ vị trí | Dự kiến |
+| Backlog — Image Tools & OCR Usability | Nhận chữ và sửa ảnh dễ hơn | Vùng OCR/copy, zoom/pan, màu/nét/Clone/phối cảnh/Trước-Sau-Hủy | Pixel/OCR | Preview/xuất/Undo khớp | Chuyển từ1.37cũ |
+| V1.41.0 — Groups & Layout Editing (M4) | Chỉnh bố cục theo quan hệ | Nhóm lồng/cây/cha-con/thuộc tính chung; popup chuẩn/More gọn; mở vị trí tệp | Schema21 + backup; client-only | Logic/build/package; nghiệm thu native Windows còn chờ | Đã triển khai theo Boss |
+| Backlog — Library & Export Experience | Thư viện/xuất thuận tiện | Thumbnail theo vùng, tìm/lọc/chọn nhiều/khôi phục, dragout/batch | Library/export | Cuộn mượt, tiến trình/hủy/thử lại | Dự kiến |
 | V1.42.0 — Storage & Package Optimization | Giảm phần dung lượng dư | Audit bộ cài/app/cache/temp, dọn an toàn | Packaging/storage | Có trước/sau, giữ runtime/OCR | Dự kiến |
 | V1.43.0 — Update, Recovery & Release Quality | Phát hành ổn định | Update thẳng, retry/backup/khôi phục, cài đè/theme/DPI/Windows QA | Update/release | Giữ ảnh/license/config, gói lỗi không áp dụng | Dự kiến |
+
+## Phần Mockup theo mốc Boss chọn
+
+- M1 — Text & Button Editing: V1.38.0, đã triển khai; chỉ nền phẳng, không tự tách toàn giao diện.
+- M2 — Element Scan & Review: V1.39.0, đã triển khai; kiểm logic/build/package, nghiệm thu native Windows và SQL sản xuất còn chờ.
+- M3 — Move & Background Recovery: V1.40.0, đã triển khai; ưu tiên nền phẳng, cần nghiệm thu Windows native.
+- M4 — Groups & Layout Editing: V1.41.0, đã triển khai, cần nghiệm thu Windows native. Các mốc Mockup tiếp theo giữ trong kế hoạch đã trao đổi; chưa gán số và không tự thêm phạm vi vào M1. V1.39 cũ Editor Workflow & Usability chuyển backlog chưa gán số; V1.40 cũ Image Tools & OCR chuyển backlog chưa gán số. Boss chọn M4 cho1.41; Library & Export chuyển backlog chưa gán số. Các dự kiến1.42–1.43 giữ nguyên. Mốc sau M4 chưa được chọn xây dựng.
 
 ## Lịch sử roadmap
 

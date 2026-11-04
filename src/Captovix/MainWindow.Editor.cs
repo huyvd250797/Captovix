@@ -25,7 +25,7 @@ public partial class MainWindow
         Surface.TextRequested+=BeginInlineText;
         Surface.VisualChanged+=PositionInlineText;
         Surface.CropFinished+=()=>{Surface.Tool=EditorTool.Crop;if(_actualPixels)Actual_Click(this,new RoutedEventArgs());else FitImage();};
-        InitializeViewport();
+        InitializeViewport();InitializeMockup();
         InitializeObjectControl();
         InitializeShapeStudio();
         InitializeAnnotationFeatures();
@@ -71,7 +71,7 @@ public partial class MainWindow
         if(_session==null||_activeItem==null||Surface.Original==null||!_session.Dirty)return true;
         try{
             DocumentStore.Save(_activeItem,_session,Surface.Original);SavedLabel.Text="✓ Đã lưu";SavedLabel.Foreground=new SolidColorBrush(Color.FromRgb(35,148,110));return true;
-        }catch(Exception ex){App.Log(ex);SavedLabel.Text="Chưa lưu · Ctrl+S thử lại";SavedLabel.Foreground=Brushes.Firebrick;SetStatus("Không lưu được chú thích: "+ex.Message);if(report)MessageBox.Show(this,"Chưa lưu được phần chỉnh sửa. Nội dung vẫn đang ở Editor; hãy kiểm tra dung lượng/quyền thư mục và nhấn Ctrl+S.\n\n"+ex.Message,"Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);return false;}
+        }catch(Exception ex){App.Log(ex);SavedLabel.Text="Chưa lưu · Ctrl+S thử lại";SavedLabel.Foreground=Brushes.Firebrick;SetStatus("Không lưu được chú thích: "+ex.Message);if(report)AppDialog.Show(this,"Chưa lưu được phần chỉnh sửa. Nội dung vẫn đang ở Editor; hãy kiểm tra dung lượng/quyền thư mục và nhấn Ctrl+S.\n\n"+ex.Message,"Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);return false;}
     }
     private void UnloadEditor()
     {
@@ -99,7 +99,7 @@ public partial class MainWindow
         ImageScroll.Visibility=ImageTools.Visibility=ZoomTools.Visibility=EditorProperties.Visibility=Visibility.Visible;
         Surface.SetDisplayScale(VisualTreeHelper.GetDpi(this).DpiScaleX);Surface.Load(bitmap,session);if(Surface.Tool==EditorTool.Crop)Surface.StartCrop();CopyButton.IsEnabled=ExportButton.IsEnabled=true;SavedLabel.Text="✓ Đã lưu";_fitMode=true;_actualPixels=false;
         _=Dispatcher.BeginInvoke(()=>{if(ReferenceEquals(_session,session))FitImage();},DispatcherPriority.Loaded);
-        if(warning!=null){if(session.Dirty){SavedLabel.Text="Đã khôi phục · Ctrl+S để lưu";SavedLabel.SetResourceReference(TextBlock.ForegroundProperty,"Warning");}SetStatus("Kiểm tra trạng thái khôi phục tài liệu.");MessageBox.Show(this,warning,"Kiểm tra dữ liệu chỉnh sửa",MessageBoxButton.OK,MessageBoxImage.Warning);}
+        if(warning!=null){if(session.Dirty){SavedLabel.Text="Đã khôi phục · Ctrl+S để lưu";SavedLabel.SetResourceReference(TextBlock.ForegroundProperty,"Warning");}SetStatus("Kiểm tra trạng thái khôi phục tài liệu.");AppDialog.Show(this,warning,"Kiểm tra dữ liệu chỉnh sửa",MessageBoxButton.OK,MessageBoxImage.Warning);}
         }catch(OperationCanceledException){}catch(Exception ex){if(generation==_imageLoadGeneration){App.Log(ex);SetStatus("Không mở được ảnh: "+ex.Message);SavedLabel.Text="Không mở được ảnh";}}
         finally{if(ReferenceEquals(_imageLoadCancellation,cancellation))_imageLoadCancellation=null;cancellation.Dispose();}
     }
@@ -115,11 +115,12 @@ public partial class MainWindow
         SyncProperties();
         ToolHint.Text=tool switch{
             EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso=>"Kéo vùng pixel trên ảnh nền; Ctrl+C copy, Ctrl+X cắt, Delete xóa; tô màu bên phải.",
+            EditorTool.Mockup=>"Mockup · Kéo trọn vùng label/title/nút cũ · nhận chữ và sửa trên nền màu phẳng · Nhấp đúp Mockup để sửa · Alt+kéo tạo chồng · Ctrl+Z hoàn tác.",
             EditorTool.Select=>"Shift/Ctrl+click chọn nhiều • Alt+click chọn lớp dưới • Tay nắm tròn xoay • Shift khóa hướng/tỷ lệ/góc 15° • Ctrl+con lăn zoom; con lăn cuộn dọc; Shift+con lăn cuộn ngang • Space kéo khung nhìn",
             EditorTool.Shape=>"Chọn hình và viền/nền ở bảng thuộc tính → kéo để vẽ • Shift giữ tỷ lệ • V để chọn và sửa lại.",
             EditorTool.Line or EditorTool.Arrow=>"Chọn thẳng/gấp khúc/cong bên phải • Kéo từ shape sang shape để nối • Kéo để vẽ • Shift khóa hướng mỗi 45° • V để sửa đầu mút; chỉnh kiểu nét và đầu mũi tên bên phải.",
             EditorTool.Text=>"Kéo tạo khung chữ có xem trước • Thả để nhập • Kéo tay nắm để resize/reflow • Double-click sửa • Ctrl+Enter hoàn tất.",
-            EditorTool.Callout=>"Nhấn điểm đuôi rồi kéo giãn rộng/cao tự do, kể cả đường chéo • Thả để nhập chữ • Node riêng chỉnh thân/đuôi • Công cụ giữ nguyên để vẽ tiếp.",
+            EditorTool.Callout=>"Nhấn điểm đuôi rồi kéo giãn rộng/cao tự do, kể cả đường chéo • Thả để nhập chữ • Chỉ kéo mới tạo • Kéo tâm để dời thân, giữ đuôi • Kéo ngoài tâm dời cả Callout • Công cụ giữ nguyên để vẽ tiếp.",
             EditorTool.Freehand=>"Giữ chuột trái để vẽ tự do • Thả chuột kết thúc nét • Esc hủy nét đang vẽ.",
             EditorTool.Step=>"Click để đặt số bước tự tăng. Có thể sửa số ở bảng thuộc tính.",
             EditorTool.Crop=>"Kéo vùng hoặc tay nắm rồi thả chuột để crop ngay • Nhập kích thước dùng Áp dụng • Esc hủy • Space kéo khung nhìn.",
@@ -138,7 +139,7 @@ public partial class MainWindow
             if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
             if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
             SelectValue(StrokePicker,Surface.StrokeSize);SelectValue(FontPicker,Surface.TextSize);
-            SyncTextStudio();SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncFocusStudio();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();SyncVisualStudio();SyncPixelStudio();SyncCompositionControls();
+            SyncTextStudio();SyncObjectControl();SyncShapeStudio();SyncAnnotationFeatures();SyncFocusStudio();SyncCropProperties();SyncAdvancedAnnotation();SyncImageAppearance();SyncVisualStudio();SyncPixelStudio();SyncCompositionControls();SyncMockup();
             foreach(var b in ColorPalette.Children.OfType<Button>())b.BorderThickness=new Thickness(b.Tag?.ToString()==Surface.InkColor?3:1);
             TextProperties.Visibility=a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
@@ -204,8 +205,7 @@ public partial class MainWindow
     private void Viewport_Changed(object sender,SizeChangedEventArgs e){if(_fitMode&&_session!=null)FitImage();}
     private void Editor_KeyDown(object sender,KeyEventArgs e)
     {if(!LicenseRuntime.Full){e.Handled=true;return;}
-        if(e.Key==Key.E&&(Keyboard.Modifiers&(ModifierKeys.Control|ModifierKeys.Alt))==(ModifierKeys.Control|ModifierKeys.Alt)&&Keyboard.FocusedElement is not TextBoxBase){ExtendCanvas_Click(this,e);e.Handled=true;return;}
-        if(_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))return;
+        if(_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin)||_toolKeyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))return;
         if(e.Key==Key.A&&MediaList.IsKeyboardFocusWithin&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){MediaList.SelectAll();e.Handled=true;return;}
         if(e.Key==Key.Delete&&MediaList.IsKeyboardFocusWithin){Delete_Click(sender,e);e.Handled=true;return;}
         if(e.Key==Key.Escape&&Surface.Tool==EditorTool.Stamp){Surface.CancelInteraction();e.Handled=true;return;}
@@ -218,6 +218,7 @@ public partial class MainWindow
         }
         if(ctrl&&e.Key==Key.S){if(Surface.Tool==EditorTool.Crop&&!ApplyCropFromFields()){e.Handled=true;return;}if(StepNumber.IsKeyboardFocusWithin)CommitStep();_session?.Commit();FlushEdits();e.Handled=true;return;}
         if(typing||Keyboard.FocusedElement is ComboBox or ComboBoxItem||_session==null||_busy)return;
+        if(TryToolShortcut(e))return;
         if(!ctrl&&e.Key==Key.F2){BeginInlineText();e.Handled=true;return;}
         if(ctrl){
             if(Surface.IsPixelTool&&Surface.PixelRegion!=null&&!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)&&e.Key is Key.C or Key.X){PixelAction(e.Key==Key.C?"Copy":"Cut");e.Handled=true;return;}
@@ -237,8 +238,6 @@ public partial class MainWindow
         if(e.Key==Key.Delete){Surface.DeleteSelected();e.Handled=true;return;}
         double step=Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?10:1;
         if(e.Key is Key.Left or Key.Right or Key.Up or Key.Down){Surface.Nudge(e.Key==Key.Left?-step:e.Key==Key.Right?step:0,e.Key==Key.Up?-step:e.Key==Key.Down?step:0);e.Handled=true;return;}
-        EditorTool? tool=e.Key switch{Key.S=>EditorTool.Shape,Key.L=>EditorTool.Arrow,Key.V=>EditorTool.Select,Key.A=>EditorTool.Arrow,Key.R=>EditorTool.Shape,Key.E=>EditorTool.Shape,Key.T=>EditorTool.Text,Key.H=>EditorTool.Highlight,Key.M=>EditorTool.Magnifier,Key.O=>EditorTool.Spotlight,Key.N=>EditorTool.Step,Key.C=>EditorTool.Crop,Key.B=>EditorTool.Blur,Key.Q=>EditorTool.Callout,Key.F=>EditorTool.Freehand,_=>null};
-        if(e.Key==Key.E)Surface.ShapeKind=AnnotationKind.Ellipse;if(e.Key==Key.R)Surface.ShapeKind=AnnotationKind.Rectangle;if(e.Key==Key.L)Surface.ShapeDefaults.Tip=ArrowTip.None;
-        if(tool!=null){SelectTool(tool.Value);Surface.Focus();e.Handled=true;}
+
     }
 }

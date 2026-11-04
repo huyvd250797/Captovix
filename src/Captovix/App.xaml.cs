@@ -6,13 +6,16 @@ namespace Captovix;
 public partial class App : Application
 {
     private Mutex? _singleInstance;
+    private readonly ExceptionDialogGate _errorDialogs=new();
     public static bool StartedAutomatically {get;set;}
     protected override void OnStartup(StartupEventArgs e)
     {
         _singleInstance = new Mutex(true, "Local\\HuyVo.Captovix", out bool first);
         if (!first) { CaptureTray.RestoreExisting(); Shutdown(); return; }
         DispatcherUnhandledException += (_, a) => {
-            Log(a.Exception); MessageBox.Show("Có lỗi: " + a.Exception.Message + "\nBáo cáo lỗi được lưu trong thư mục dữ liệu của app.", "Captovix"); a.Handled = true;
+            // Mark handled before entering MessageBox's nested dispatcher.
+            a.Handled=true;
+            _errorDialogs.Report(()=>{Log(a.Exception);AppDialog.Show("Có lỗi: " + a.Exception.Message + "\nBáo cáo lỗi được lưu trong thư mục dữ liệu của app.", "Captovix");});
         };
         AppScrolling.Initialize();Dispatcher.BeginInvoke(BrandShortcuts.Repair,System.Windows.Threading.DispatcherPriority.ApplicationIdle);WindowTheme.Initialize();AppearanceManager.Initialize();
         base.OnStartup(e);

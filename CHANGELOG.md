@@ -1,3 +1,73 @@
+# V1.41.0 — Groups & Layout Editing
+
+- Nhóm cha/con nhiều cấp, cây chọn đối tượng, scope chỉnh con, giữ nhóm khi căn/resize/move/sắp lớp, thuộc tính dùng chung, clipboard/nhân bản độc lập và schema21/backup.
+- Popup/common message form có outline/theme và phản hồi sáng viền khi click ngoài modal; không nháy ẩn cửa sổ. MenuThêm hai cột/có chiều sâu.
+- Thư viện: menu chuột phải Mở vị trí tệp.
+- Không đổi runtime/dependency/license/backend; không DB migration. Native Windows/DPI/installer acceptance còn chờ.
+
+# V1.40.0 — Move & Background Recovery
+
+- Mask pixel nền độc lập với Mockup: ghim nguồn khi kéo/resize, giữ khi xóa, không mang mask qua copy/duplicate/template. Bảo vệ vùng lân cận, UI xem/chỉnh màu/mặt nạ/vùng giữ; hỗ trợ lịch sử100thao tác lưu cùng tài liệu, Undo/Redo trong phiên.
+- Schema20, backup sidecar trước nâng. Sampling hiệu ứng và xuất ảnh kể cả0annotation đều áp dụng phục hồi nền. Nguồn nguyên vẹn, freeze/detach/cache theo thread giữ nền cũ không tái xuất qua magnifier/blur.
+- Chụp ảnh chọn vùng/modal: tùy chọn Enter, mặc định thả chuột chụp ngay; tự lưu. Quay/cuộn giữ xác nhận cũ.
+- Bỏ phím Theo cấu hình/Chọn cửa sổ, mô tả dài, menu Vùng pixel. Phím công cụ tùy chỉnh đơn/tổ hợp, chống trùng/collision và không kích hoạt khi gõ/chọn/kéo; Thêm dùng chung tuyến công cụ động, hỗ trợPrtSc key-up.
+- Sidebar nhãn/nút màu/input/spacing gọn và cân đối, giữ chức năng/theme. V1.40.0 đồng bộ assembly/UI/host/installer/feed.
+- Không migration mới/backend redeploy; giữ protocol/config/runtime1.39. Nền phẳng trước, chưa phục hồi ảnh/gradient tự động. Chưa publish/chưa nghiệm thu Windows native.
+
+## Lịch sử
+
+# V1.39.0 — Element Scan & Review
+
+- M2: quét vùng/toàn ảnh, OCR line confidence + phân tích hình ảnh; text/title/button/input/block; ghép chữ-control/label-input, loại trùng, đánh dấu không chắc chắn.
+- Màn rà soát riêng: chọn tường minh, sửa khung kéo4góc hoặcX/Y/W/H, đổi loại/nội dung/màu/liên kết; thêm/bỏ khung, preview, hủy/quét lại/dừng. Apply một bước Undo/Redo, giữ nguồn và lưu/mở lại.
+- Schema19 cho loại mới/scan/liên kết; backup sidecar trước nâng; paste/duplicate remap liên kết và bỏ vùng che nguồn ở bản sao.
+- Bỏ nút Mockup cố định, đặt trong Thêm + ô động cũ, thêm icon Mockup; giữ tương thích lệnh gần đây từ1.38.
+- Popup trial/perpetual theo trạng thái, ẩn KEY mặc định khi đã kích hoạt; trial có upgrade KEY, ngày giờ/số ngày còn lại; check chỉ khi perpetual còn quyền.
+- Claims bổ sung activatedAt tùy chọn đã ký; migration202611040001 trả ngày activation gốc từ devices.created_at, không đổi policy hay dữ liệu. Không deployEdgeFunction mới; cần chạy SQL rồi refresh cho chứng nhận cũ.
+- Bump app/UI/installer/nupkg/feed1.39.0; giữ runtime/OCR/licenseconfig/capture foundations. Chưa publish, chưa nghiệm thu native Windows hay chạy SQL sản xuất.
+
+## Lịch sử
+
+# V1.38.0 — Text & Button Editing
+
+- M1: kéo vùng chữ/title/nút, OCR vie/eng có hủy, xem trước và sửa thủ công; không ghi đè nội dung gõ khi OCR về muộn.
+- Đối tượng chữ/nút riêng: font/cỡ/đậm/căn/đệm, màu chữ/nền che/nền nút/viền/bo góc; nhấp đúp hoặc bảng thuộc tính để sửa tiếp.
+- Che nội dung nguồn bằng màu phẳng, vùng che ghim tại vị trí nguồn khi di chuyển thân. Gốc giữ riêng; Undo/Redo, JSON sidecar và dự án giữ metadata. Copy/duplicate/template không che nhầm ảnh đích.
+- Schema18 có backup sidecar cũ trước khi nâng; không DB/backend/runtime/dependency changes. Giữ Capture Bounds1.37.2 và Image Layer Thread Safety1.37.3.
+- Nâng assembly/UI/installer/nupkg/feed lên1.38.0; chưa tự publish. Chưa nghiệm thu native Windows.
+
+## Lịch sử
+
+## V1.37.3 — Image Layer Thread Safety
+
+- Sửa cache PNG dùng BitmapFrame decoder-backed khi chuyển giữa MTA load/UI/STA save: chuyển thành bitmap pixel độc lập đãfreeze.
+- PNG encode chuẩn hóa BitmapFrame trước khi tạo encoderframe; giữ dữ liệu PNG sidecar hiện có.
+- Chặn MessageBox lỗi mở chồng bằng gate chốngreentrant, Handled trước khi mởmodal.
+- Thêm Windows regression tái hiện paste/save/switch/reopen/render và kiểm pixel/sidecar qua25lượt; cross-build, chưa chạy Windows.
+- Giữ mọi sửa1.37.2 và thông tin hiện có. Không migration mới, không thay backend/license/runtime.
+
+## V1.37.2 — Capture Bounds Fix
+
+- Sửa gợi ý cửa sổ thô vượt biên ảnh giữ, đồng bộ selection hiển thị và xác nhận.
+- Giới hạn kéo/resize/keyboard theo frame, giữ kích thước lúc move và tỉ lệ Shift trong làm tròn pixel.
+- Guard cuối trước lưu cho tọa độ cũ/repeat, cập nhật kích thước ảnh/metadata theo vùng thực.
+- Không recapture overlay; Crop vẫn kiểm giới hạn và log vùng/biên ảnh chi tiết.
+- Tăng version app/UI/installer/feed lên1.37.2 để nâng từ1.37.1. Không migration mới, không đổi license/backend/runtime.
+
+## V1.37.1 — Performance & Responsiveness
+
+- Tăng số phiên bản app/assembly, tiêu đề cửa sổ, installer và gói Full lên1.37.1 để updater nhận bản vá từ1.37.0.
+- Bao gồm toàn bộ sửa Callout: click ngoài lưu, chỉ kéo mới tạo, tâm dời thân giữ đuôi và kéo ngoài tâm dời cả cụm.
+- Không đổi dependency/runtime, license, backend hay schema. Không cần migration mới.
+- Release assets phải được đăng lên stable latest trước khi app cũ kiểm tra thấy bản mới.
+
+## Sửa click ngoài và thêm tâm kéo thân — giữ V1.37.0
+
+- Click ngoài kết thúc nhập và lưu phiên sửa; không chuyển click đó thành một lần tạo mới.
+- Chỉ nhấn giữ/kéo mới tạo Callout; bấm đơn không thêm Callout, popup nhập hay lịch sử Undo.
+- Tâm xanh khi chọn: kéo thân, giữ tip đuôi ở tọa độ ảnh; kéo ngoài tâm: dời cả Callout. Hoạt động khi xoay, giữ kích thước/nội dung và Undo/Redo. Với Callout cũ, chuyển pivot sang thân trong cùng thao tác có Undo để bảo toàn vị trí hiển thị.
+- Tay nắm chỉ thuộc giao diện, không xuất vào PNG/copy. Giữ schema tối đa17, không cần migrationDB/backend.
+
 ## Hiệu chỉnh Callout — giữ V1.37.0
 
 Thay cơ chế thân cố định bằng kéo giãn2trục theo mô phỏng đã duyệt. Đuôi ghim điểm đầu, nhấn đơn vẫn có hộp mặc định; bỏ ép tăng kích thước hộp trống khi thả/click ngoài. Tự chọn cạnh nối đuôi theo hướng kéo. Giữ toàn bộ tối ưu hiệu năng,30ảnh và công cụ đang chọn. Không migration/backend.
@@ -15,7 +85,7 @@ Nâng từ source V1.36.0 Boss gửi; tập trung hiệu năng, giữ công cụ
 - Đóng/thay ảnh giải phóng drawing, cache chữ/đuôi và bitmap sampling từng giữ ảnh cũ, cùng cache PNG giải mã. Worker autosave cũng giải phóng cache theo thread sau khi xong; không ép GC trên UI. Undo vẫn giữ ngân sách sẵn có.
 - Giữ công cụ đang chọn khi hoàn tất nhập chữ/Callout, chụp/chuyển ảnh, crop và hủy thao tác bằng Esc. Chọn công cụ khác mới thay đổi công cụ; khi bấm lệnh chuyên biệt yêu cầu chế độ Chọn (ví dụ sửa lớp ảnh), giữ hành vi riêng của lệnh đó.
 - Danh sách gần đây tối đa30 nội dung, kể cả ảnh lịch sử được ghim tạm; không xóa ảnh cũ, xem đầy đủ trong Quản lý thư viện.
-- Sửa Callout theo mô phỏng Boss duyệt: điểm nhấn đầu ghim đuôi; kéo ngang thay đổi rộng, kéo dọc thay đổi cao, kéo chéo thay đổi cả hai độc lập, không khóa tỷ lệ. Gốc đuôi tự bám cạnh theo hướng kéo. Thả khi hộp trống giữ kích thước vừa vẽ; chỉ tự nở khi nhập chữ. Node thân và node đuôi vẫn độc lập. Kích thước tối thiểu36px; nhấn đơn tạo hộp220×120px.
+- Callout chỉ xuất hiện sau khi nhấn giữ và kéo đủ4px hiển thị; bấm đơn hoặc rung chuột nhẹ không tạo đối tượng/Undo/popup mới. Click ngoài lúc nhập kết thúc và lưu phiên đang sửa, chặn lần click đó đi xuống vùng vẽ. Khi chọn Callout, tâm xanh có dấu cộng cho phép kéo thân, giữ tip đuôi cố định trên ảnh; kéo phần thân ngoài tâm di chuyển cả Callout. Node đuôi và resize/xoay giữ chức năng riêng. Vẫn kéo giãn2trục lúc tạo, giữ công cụ và các mẫu hiện có.
 - Bổ sung đo có giới hạn trong RAM cho dựng cửa sổ/first paint, mở ảnh, autosave và frame editor; không đưa lại menu chẩn đoán đã bỏ.
 
 Đo trước/sau logic trên cùng host Linux/.NET10, 5.000 chú thích có một Callout20.000ký tự,3lượt làm nóng +11lượt đo lấy trung vị:

@@ -29,10 +29,13 @@ public sealed class RegionPicker : Window
         private ElementCandidate[] _hierarchy=[];private long _cacheUntil;private int _queryX=int.MinValue,_queryY=int.MinValue;private long _revision;private CancellationTokenSource? _pendingProbe;private int _requestX,_requestY;
         private readonly CancellationTokenSource _cancel=new();
         private readonly DispatcherTimer _timer=new(){Interval=TimeSpan.FromMilliseconds(40)};
-        public PixelRect Current,Before;
+        public PixelRect Bounds {get;}
+        private PixelRect _current;
+        public PixelRect Current {get=>_current;set=>_current=CaptureSelection.Clip(value,Bounds);}
+        public PixelRect Before;
         public CaptureHandle Handle;
         public Native.POINT Start;
-        public bool Locked,Dragging,Smart;
+        public bool Locked,Dragging,Smart;public readonly bool RequireEnter;
         private CaptureGesture? _gesture;
         private bool _querying,_disposed;
         private int _x=int.MinValue,_y=int.MinValue;
@@ -41,8 +44,9 @@ public sealed class RegionPicker : Window
         private nint _target,_lockedTarget;
         private PixelRect _targetBounds,_lockedBounds;
         private string _status="Kéo chọn vùng · Esc hủy";
-        public string Status=>Locked?$"Đã chọn · {Current.Width} × {Current.Height} px · Enter chụp":Suggestion.Current is {} c?$"{c.Label.Split('·')[0].Trim()} · {c.Bounds.Width} × {c.Bounds.Height} · {Suggestion.Index+1}/{Suggestion.Candidates.Length}":_status;
-        public Session(IReadOnlyList<DisplayInfo> displays,bool smart,FrozenDesktop? frozen){Displays=displays;Frozen=frozen;Smart=smart;_status=smart?"Rê chọn khối · Kéo chọn vùng":"Kéo chọn vùng · Esc hủy";if(frozen!=null){_windows=Native.Windows(true);foreach(var w in _windows)if(Native.GetWindowRect(w.Handle,out var bounds))_frozenWindows[w.Handle]=bounds.Pixels;}_timer.Tick+=async(_,_)=>await Poll();}
+        public string Status=>Locked?$"Đã chọn · {Current.Width} × {Current.Height} px · {(RequireEnter?"Enter chụp":"Thả chuột chụp")}":Suggestion.Current is {} c?$"{c.Label.Split('·')[0].Trim()} · {c.Bounds.Width} × {c.Bounds.Height} · {Suggestion.Index+1}/{Suggestion.Candidates.Length}":_status;
+        public Session(IReadOnlyList<DisplayInfo> displays,bool smart,FrozenDesktop? frozen):this(displays,smart,frozen,true){}
+        public Session(IReadOnlyList<DisplayInfo> displays,bool smart,FrozenDesktop? frozen,bool requireEnter){RequireEnter=requireEnter;Displays=displays;Frozen=frozen;Bounds=frozen?.Frame.Bounds??new PixelRect(displays.Min(d=>d.Bounds.X),displays.Min(d=>d.Bounds.Y),displays.Max(d=>d.Bounds.Right)-displays.Min(d=>d.Bounds.X),displays.Max(d=>d.Bounds.Bottom)-displays.Min(d=>d.Bounds.Y));Smart=smart;_status=smart?"Rê chọn khối · Kéo chọn vùng":"Kéo chọn vùng · Esc hủy";if(frozen!=null){_windows=Native.Windows(true);foreach(var w in _windows)if(Native.GetWindowRect(w.Handle,out var bounds))_frozenWindows[w.Handle]=bounds.Pixels;}_timer.Tick+=async(_,_)=>await Poll();}
         public void StartPolling()=>_timer.Start();
         public void Draw(){foreach(var w in Windows)w.Draw();}
         public void Reset(){_pendingProbe?.Cancel();_revision++;_hierarchy=[];Locked=false;_lockedTarget=0;Current=default;Suggestion.Clear();_x=int.MinValue;Draw();}
@@ -72,12 +76,11 @@ public sealed class RegionPicker : Window
                 if(target==null){Suggestion.Clear();Current=default;_status="Không có khối · Kéo chọn vùng";Draw();return;}
                 if(!Native.GetWindowRect(target.Handle,out var bounds))return;
                 if(Frozen!=null&&(!_frozenWindows.TryGetValue(target.Handle,out var storedBounds)||bounds.Pixels!=storedBounds)){_status="Khối đã thay đổi · Kéo chọn trên ảnh đã giữ";Suggestion.Clear();Current=default;Draw();return;}
-                if(_target!=target.Handle||_targetBounds!=bounds.Pixels){Suggestion.Clear();_hierarchy=[];_revision++;_target=target.Handle;_targetBounds=bounds.Pixels;Current=bounds.Pixels;Suggestion.Offer([new(bounds.Pixels,"Cửa sổ",true)],p.X,p.Y,16);Draw();}
+                if(_target!=target.Handle||_targetBounds!=bounds.Pixels){Suggestion.Clear();_hierarchy=[];_revision++;_target=target.Handle;_targetBounds=bounds.Pixels;Current=bounds.Pixels;Suggestion.Offer([new(Current,"Cửa sổ",true)],p.X,p.Y,16);Draw();}
                 var revision=_revision;_requestX=p.X;_requestY=p.Y;using var pending=CancellationTokenSource.CreateLinkedTokenSource(_cancel.Token);_pendingProbe=pending;var list=await _probe.QueryAsync(new((long)target.Handle,p.X,p.Y,target.ProcessId==Environment.ProcessId?-1:Environment.ProcessId),pending.Token);
                 if(_disposed||revision!=_revision||Locked||Dragging||!Smart||!Native.GetCursorPos(out var fresh)||Math.Abs(fresh.X-p.X)>8||Math.Abs(fresh.Y-p.Y)>8)return;
                 if(!Native.GetWindowRect(target.Handle,out var check)||check.Pixels!=bounds.Pixels){Suggestion.Clear();Current=default;_x=int.MinValue;Draw();return;}
-                var desktop=new PixelRect(Displays.Min(d=>d.Bounds.X),Displays.Min(d=>d.Bounds.Y),Displays.Max(d=>d.Bounds.Right)-Displays.Min(d=>d.Bounds.X),Displays.Max(d=>d.Bounds.Bottom)-Displays.Min(d=>d.Bounds.Y));
-                var normalized=ElementSelection.Normalize(list,p.X,p.Y,bounds.Pixels.Intersect(desktop));
+                var normalized=ElementSelection.Normalize(list,p.X,p.Y,CaptureSelection.Clip(bounds.Pixels,Bounds));
                 _hierarchy=normalized;_queryX=p.X;_queryY=p.Y;_cacheUntil=Environment.TickCount64+700;
                 int tolerance=(int)Math.Round(16*(Displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,p.X,p.Y))?.DpiX??96)/96d);
                 if(Suggestion.Offer(normalized,p.X,p.Y,tolerance)){Current=Suggestion.Current?.Bounds??default;Draw();}
@@ -97,7 +100,7 @@ public sealed class RegionPicker : Window
         }
         public void Move(Native.POINT p,bool shift){
             if(!Dragging||_gesture==null)return;
-            Current=_gesture.Apply(p.X,p.Y,shift);if(_gesture.Handle==CaptureHandle.New)_lockedTarget=0;Draw();
+            Current=_gesture.Apply(p.X,p.Y,shift,Bounds);if(_gesture.Handle==CaptureHandle.New)_lockedTarget=0;Draw();
         }
         public void End(){Dragging=false;Draw();}
         public void Finish(CaptureChoice choice=CaptureChoice.Photo)
@@ -126,10 +129,10 @@ public sealed class RegionPicker : Window
     private readonly CaptureMagnifier? _magnifier;
     private PixelRect _toolbarBounds;
     private bool _placing;
-    public static async Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation=default,bool allowScroll=false,bool smart=false,FrozenDesktop? frozen=null)
+    public static async Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation=default,bool allowScroll=false,bool smart=false,FrozenDesktop? frozen=null,bool requireEnter=true)
     {
         cancellation.ThrowIfCancellationRequested();if(displays.Count==0)throw new InvalidOperationException("Không tìm thấy màn hình.");
-        Choice=CaptureChoice.Photo;using var session=new Session(displays,smart,frozen);
+        Choice=CaptureChoice.Photo;using var session=new Session(displays,smart,frozen,requireEnter);
         foreach(var d in displays)session.Windows.Add(new(d,session,allowScroll,smart));
         foreach(var w in session.Windows)w.Show();
         session.Draw();session.StartPolling();
@@ -153,7 +156,7 @@ public sealed class RegionPicker : Window
         _smart=Add("Element","","Nhận diện phần tử · S bật/tắt\nRê để gợi ý · ↑/↓: cha/con\nClick khóa · Kéo cạnh chỉnh · Tab: chọn lại",()=>{session.ToggleSmart();session.Draw();});_smart.Visibility=smartAvailable?Visibility.Visible:Visibility.Collapsed;
         if(allowScroll){Add("ScrollDown","","Chụp cuộn dọc",()=>session.Finish(CaptureChoice.Vertical));Add("ScrollRight","","Chụp cuộn ngang",()=>session.Finish(CaptureChoice.Horizontal));}
         Add("Close","","Hủy · Esc",()=>session.Close(null));
-        _shoot=Add("Camera","Enter","Chụp ảnh · Enter",()=>session.Finish());_shoot.Background=new SolidColorBrush(Color.FromRgb(111,55,220));
+        _shoot=Add("Camera",session.RequireEnter?"Enter":"Chụp",session.RequireEnter?"Chụp ảnh · Enter":"Thả chuột chụp ngay",()=>session.Finish());_shoot.Background=new SolidColorBrush(Color.FromRgb(111,55,220));
         _toolbar.SizeChanged+=(_,_)=>Draw();
         SizeChanged+=(_,_)=>{_shade.Width=_crosshair.Width=ActualWidth;_shade.Height=_crosshair.Height=ActualHeight;Draw();};
         void Position(){var h=new WindowInteropHelper(this).Handle;Native.SetWindowPos(h,-1,display.Bounds.X,display.Bounds.Y,display.Bounds.Width,display.Bounds.Height,0x40);Native.SetWindowDisplayAffinity(h,0x11);}
@@ -161,7 +164,7 @@ public sealed class RegionPicker : Window
         PreviewKeyDown+=KeyDownOverlay;
         MouseLeftButtonDown+=(_,e)=>{if(IsToolbarSource(e.OriginalSource as DependencyObject))return;if(session.KeyboardSelecting){session.KeyboardSelecting=false;session.End();session.Reset();}Native.GetCursorPos(out var p);session.Begin(p,Tolerance);CaptureMouse();e.Handled=true;};
         MouseMove+=(_,_)=>{Native.GetCursorPos(out var p);session.Pointer(p);if(session.Dragging){session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);return;}Cursor=CursorAt(p);};
-        MouseLeftButtonUp+=(_,e)=>{if(!session.Dragging)return;Native.GetCursorPos(out var p);session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);ReleaseMouseCapture();session.End();e.Handled=true;};
+        MouseLeftButtonUp+=(_,e)=>{if(!session.Dragging)return;Native.GetCursorPos(out var p);session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);ReleaseMouseCapture();session.End();if(!session.RequireEnter)session.Finish();e.Handled=true;};
         MouseWheel+=(_,e)=>{e.Handled=true;};MouseRightButtonDown+=(_,_)=>session.Close(null);
     }
     private void UpdateMagnifier(Native.POINT p)
@@ -195,7 +198,7 @@ public sealed class RegionPicker : Window
         else if(e.Key is Key.Up or Key.Down or Key.Left or Key.Right){
             if(s.KeyboardSelecting){int n=Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?10:1;var point=s.KeyboardPoint;point.X+=e.Key==Key.Left?-n:e.Key==Key.Right?n:0;point.Y+=e.Key==Key.Up?-n:e.Key==Key.Down?n:0;var desktop=new PixelRect(s.Displays.Min(d=>d.Bounds.X),s.Displays.Min(d=>d.Bounds.Y),s.Displays.Max(d=>d.Bounds.Right)-s.Displays.Min(d=>d.Bounds.X),s.Displays.Max(d=>d.Bounds.Bottom)-s.Displays.Min(d=>d.Bounds.Y));point.X=Math.Clamp(point.X,desktop.X,desktop.Right);point.Y=Math.Clamp(point.Y,desktop.Y,desktop.Bottom);s.KeyboardPoint=point;s.Move(point,false);s.Pointer(point);}
             else if(!s.Locked&&!s.Smart){Native.GetCursorPos(out var point);var desktop=new PixelRect(s.Displays.Min(d=>d.Bounds.X),s.Displays.Min(d=>d.Bounds.Y),s.Displays.Max(d=>d.Bounds.Right)-s.Displays.Min(d=>d.Bounds.X),s.Displays.Max(d=>d.Bounds.Bottom)-s.Displays.Min(d=>d.Bounds.Y));s.Current=QuickCaptureLayout.KeyboardRegion(desktop,point.X,point.Y);s.Locked=true;s.Draw();}
-            else if(!s.Locked)s.Cycle(e.Key is Key.Up or Key.Left?120:-120);else{int step=(Keyboard.Modifiers&ModifierKeys.Shift)!=0?10:1;s.Current=CaptureSelection.Nudge(s.Current,e.Key==Key.Left?-step:e.Key==Key.Right?step:0,e.Key==Key.Up?-step:e.Key==Key.Down?step:0,(Keyboard.Modifiers&ModifierKeys.Control)!=0);s.Draw();}}else return;e.Handled=true;
+            else if(!s.Locked)s.Cycle(e.Key is Key.Up or Key.Left?120:-120);else{int step=(Keyboard.Modifiers&ModifierKeys.Shift)!=0?10:1;bool resize=(Keyboard.Modifiers&ModifierKeys.Control)!=0;var requested=CaptureSelection.Nudge(s.Current,e.Key==Key.Left?-step:e.Key==Key.Right?step:0,e.Key==Key.Up?-step:e.Key==Key.Down?step:0,resize);s.Current=resize?CaptureSelection.Clip(requested,s.Bounds):CaptureSelection.MoveInside(requested,s.Bounds);s.Draw();}}else return;e.Handled=true;
     }
     private bool OverToolbar(Native.POINT p)=>_toolbar.Visibility==Visibility.Visible&&ElementSelection.Contains(_toolbarBounds,p.X,p.Y);
     private void Draw()
