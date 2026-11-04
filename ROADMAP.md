@@ -1,3 +1,19 @@
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.37.0
+
+Boss chọn V1.37 Performance & Responsiveness theo roadmap điều chỉnh trong hội thoại. Phạm vi Image Tools & OCR trước đây chuyển sangV1.40; roadmap cũ bên dưới chỉ là lịch sử.
+
+| Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/thứ tự |
+| --- | --- | --- | --- | --- | --- |
+| V1.37.0 — Performance & Responsiveness | Phản hồi nhanh hơn | Startup, mở/chuyển, kéo/resize/chữ dài/zoom, cache, lưu nền; giữ tool,30ảnh,Callout tự do | Worker/generation, snapshot/revision, drawing/lifecycle | Logic/build/package đạt; số đo Windows/native/RAM còn chờ | Đã triển khai; chưa nghiệm thu Windows toàn app |
+| V1.38.0 — Capture & Image Reliability | Chụp và lưu đúng | Nhiều màn hình/DPI, vùng/phần tử/chụp app/cuộn, hủy/lỗi lưu | Capture/fidelity/recovery | Đúng vùng/pixel, lỗi không mất ảnh | Dự kiến sau1.37 |
+| V1.39.0 — Editor Workflow & Usability | Ít bước, nhất quán | Chọn/kéo/resize, chữ/Callout/Stamp, công cụ động, phím/cuộn/Undo, popup | Workflow/properties | Không mất thay đổi, giữ vị trí | Dự kiến |
+| V1.40.0 — Image Tools & OCR Usability | Nhận chữ và sửa ảnh dễ hơn | Vùng OCR/copy, zoom/pan, màu/nét/Clone/phối cảnh/Trước-Sau-Hủy | Pixel/OCR | Preview/xuất/Undo khớp | Chuyển từ1.37cũ |
+| V1.41.0 — Library & Export Experience | Thư viện/xuất thuận tiện | Thumbnail theo vùng, tìm/lọc/chọn nhiều/khôi phục, dragout/batch | Library/export | Cuộn mượt, tiến trình/hủy/thử lại | Dự kiến |
+| V1.42.0 — Storage & Package Optimization | Giảm phần dung lượng dư | Audit bộ cài/app/cache/temp, dọn an toàn | Packaging/storage | Có trước/sau, giữ runtime/OCR | Dự kiến |
+| V1.43.0 — Update, Recovery & Release Quality | Phát hành ổn định | Update thẳng, retry/backup/khôi phục, cài đè/theme/DPI/Windows QA | Update/release | Giữ ảnh/license/config, gói lỗi không áp dụng | Dự kiến |
+
+## Lịch sử roadmap
+
 # Roadmap Captovix — cập nhật V1.36.0
 
 Giữ roadmap ảnh gần nhất đã chốt; video tính sau.

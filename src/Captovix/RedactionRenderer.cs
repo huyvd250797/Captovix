@@ -13,6 +13,7 @@ public static class RedactionRenderer
         public long Bytes;
     }
     private static readonly ConditionalWeakTable<BitmapSource,Cache> Caches=new();
+    public static void Release(BitmapSource source)=>Caches.Remove(source);
     private const long CacheBudget=32*1024*1024;
     private static void DrawCore(DrawingContext dc,BitmapSource original,Annotation a,bool draft=false,PrivacySampling? sampling=null)
     {

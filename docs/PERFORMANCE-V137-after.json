@@ -1,0 +1,18 @@
+{
+  "runtime": ".NET 10.0.0",
+  "os": "Ubuntu 24.04.3 LTS",
+  "annotations": 5000,
+  "textChars": 20000,
+  "samples": [
+    {
+      "name": "1000 Begin calls during one text transaction",
+      "medianMs": 0.0194,
+      "allocatedBytes": 66
+    },
+    {
+      "name": "snapshot of 5000 annotations",
+      "medianMs": 6.518,
+      "allocatedBytes": 3321275
+    }
+  ]
+}

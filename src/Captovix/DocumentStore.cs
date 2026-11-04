@@ -19,7 +19,10 @@ public static class DocumentStore
         }
         return new(new(){OriginalWidth=bitmap.PixelWidth,OriginalHeight=bitmap.PixelHeight,SourceHash=hash});
     }
+    private static readonly object SaveGate=new();
     public static void Save(MediaItem item,EditorSession session,BitmapSource original)
+    {lock(SaveGate)SaveCore(item,session,original);}
+    private static void SaveCore(MediaItem item,EditorSession session,BitmapSource original)
     {
         var doc=session.Document;doc.Validate(original.PixelWidth,original.PixelHeight,doc.SourceHash);
         // The document is authoritative; failure to cache a thumbnail must not lose edits.

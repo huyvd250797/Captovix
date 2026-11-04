@@ -6,6 +6,7 @@ public static class RasterPixels
 {
     private static readonly BudgetCache<string,BitmapSource> Cache=new(256L*1024*1024,128,ReferenceEqualityComparer.Instance);
     public static CacheSnapshot CacheStats=>Cache.Stats;
+    public static void ClearCache()=>Cache.Clear();
     public static BitmapSource Decode(string data){if(Cache.TryGet(data,out var cached))return cached;var expected=PixelStudio.PngSize(data);using var stream=new MemoryStream(Convert.FromBase64String(data));var image=BitmapDecoder.Create(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];if(image.PixelWidth!=expected.Width||image.PixelHeight!=expected.Height)throw new InvalidDataException("Kích thước PNG không khớp.");image.Freeze();Cache.Add(data,image,(long)data.Length*2+(long)image.PixelWidth*image.PixelHeight*Math.Max(4,(image.Format.BitsPerPixel+7)/8));return image;}
     public static string Encode(BitmapSource image){if((long)image.PixelWidth*image.PixelHeight>PixelStudio.MaxPixels)throw new InvalidDataException("Chỉnh pixel hỗ trợ tối đa 40 triệu pixel.");var result=Convert.ToBase64String(ImageTransfer.Png(image));PixelStudio.PngSize(result);return result;}
     public static BitmapSource Source(BitmapSource original,EditorDocument doc)=>doc.PixelBasePng==null?original:Decode(doc.PixelBasePng);

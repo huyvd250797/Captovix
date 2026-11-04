@@ -173,12 +173,14 @@ internal static class Program
             lifecycleRoot=Path.Combine(Path.GetTempPath(),"Captovix-Lifecycle-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(lifecycleRoot);
             MediaItem Fixture(BitmapSource bitmap,string name){var path=Path.Combine(lifecycleRoot,name+".png");var enc=new PngBitmapEncoder();enc.Frames.Add(BitmapFrame.Create(bitmap));using(var f=File.Create(path))enc.Save(f);var media=new MediaItem{Id=Guid.NewGuid().ToString("N"),Title=name,FilePath=path,Width=bitmap.PixelWidth,Height=bitmap.PixelHeight};lifecycleItems.Add(media);return media;}
             var first=Fixture(source,"first");var second=Fixture(patterned,"second");
-            var rows=new System.Collections.ObjectModel.ObservableCollection<MediaItem>{first,second};var list=(System.Windows.Controls.ListBox)window.FindName("MediaList");list.ItemsSource=rows;list.SelectedItem=first;
+            void WaitFor(Func<bool> ready){var timeout=System.Diagnostics.Stopwatch.StartNew();while(!ready()){if(timeout.Elapsed.TotalSeconds>15)throw new Exception("Async image load timeout");var frame=new System.Windows.Threading.DispatcherFrame();System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(()=>frame.Continue=false,System.Windows.Threading.DispatcherPriority.Background);System.Windows.Threading.Dispatcher.PushFrame(frame);System.Threading.Thread.Sleep(1);}}
+            var rows=new System.Collections.ObjectModel.ObservableCollection<MediaItem>{first,second};var list=(System.Windows.Controls.ListBox)window.FindName("MediaList");list.ItemsSource=rows;list.SelectedItem=first;WaitFor(()=>uiSurface.Session!=null);
             var firstSession=(EditorSession)typeof(MainWindow).GetField("_session",flags)!.GetValue(window)!;
             firstSession.Change(d=>{d.Crop=new(2,2,40,30);d.Annotations.Add(new(){Kind=AnnotationKind.Rectangle,X1=4,Y1=4,X2=24,Y2=20});d.Appearance.Padding=4;});
-            list.SelectedItem=second;
+            list.SelectedItem=second;WaitFor(()=>uiSurface.Session!=null&&uiSurface.Session!=firstSession);
             Check(uiSurface.Session?.Document.OriginalWidth==80&&uiSurface.Layout?.Width==80,"Actual ListBox image-to-image transition opens the new image without a null layout failure");
             Check(File.Exists(DocumentStore.EditPath(first.Id)),"Switching commits the edited prior image sidecar");
+            list.SelectedItem=first;list.SelectedItem=second;WaitFor(()=>uiSurface.Session!=null&&ReferenceEquals(typeof(MainWindow).GetField("_activeItem",flags)!.GetValue(window),second));Check(uiSurface.Session!.Document.OriginalWidth==80,"Rapid image switches discard stale asynchronous results");
             var readout=((System.Windows.Controls.TextBlock)window.FindName("ImageSizeLabel")).Text;
             firstSession.Change(d=>d.Annotations.Add(new(){Kind=AnnotationKind.Step,X1=5,Y1=5}));
             Check(((System.Windows.Controls.TextBlock)window.FindName("ImageSizeLabel")).Text==readout,"An unloaded session cannot update the new document UI");
@@ -199,7 +201,7 @@ internal static class Program
             Check(freeZoom,"Simulated Editor DPI events preserve a chosen physical zoom without changing output");
             Check(uiSurface.Flatten().PixelWidth==4&&uiSurface.Flatten().PixelHeight==3,"Editor monitor transitions do not change exported pixel dimensions");
             // V1.7 inspector integration on a real MainWindow/session.
-            list.SelectedItem=second;Invoke("SelectTool",EditorTool.Shape);
+            list.SelectedItem=second;WaitFor(()=>uiSurface.Session!=null&&uiSurface.Session!=firstSession);Invoke("SelectTool",EditorTool.Shape);
             var shapeSession=(EditorSession)typeof(MainWindow).GetField("_session",flags)!.GetValue(window)!;
             var styledShape=new Annotation{Kind=AnnotationKind.Rectangle,X1=10,Y1=10,X2=60,Y2=45};shapeSession.Change(d=>d.Annotations.Add(styledShape));uiSurface.SelectIds([styledShape.Id]);
             var shapePicker=(System.Windows.Controls.ComboBox)window.FindName("ShapeKindPicker");shapePicker.SelectedValue=AnnotationKind.Star;

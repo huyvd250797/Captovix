@@ -1,13 +1,15 @@
-Captovix V1.36.0 — Text & Callout Polish
+Captovix V1.37.0 — Performance & Responsiveness
+Hiệu chỉnh Callout theo mô phỏng duyệt: ghim đuôi, kéo giãn rộng/cao độc lập.
+Đang dùng V1.37 cũ: chạy Setup mới thủ công do version không đổi.
 
-Thoát Captovix rồi chạy HuyVo.Captovix-win-Setup.exe vào đường dẫn hiện tại. Không uninstall. Giữ dữ liệu ảnh, cấu hình và license; không cần migration/redeploy backend.
+Thoát app cả khay hệ thống, chạy HuyVo.Captovix-win-Setup.exe vào thư mục đang cài; không uninstall. Giữ media/license/config. Không cần migration mới hoặc deploy backend.
 
-Cập nhật thẳng từ V1.31/V1.33: upload ĐỦ5assets lên stable Release v1.36.0:
-HuyVo.Captovix-1.36.0-full.nupkg
+Upload đủ5assets vào stable Release v1.37.0, đánh dấu latest:
+HuyVo.Captovix-1.37.0-full.nupkg
 HuyVo.Captovix-win-Setup.exe
 RELEASES
 assets.win.json
 releases.win.json
-Đánh dấu release latest, giữ kênh win/AppId. Không chỉ upload ZIP, không cần tạo các bản trung gian. Gói Full chứa toàn bộ runtime/app; không phải bản vá nối tiếp. Bản cũ có updater tương thích sẽ chọn latest. Bản portable dùng Setup thủ công. Không tự publish trong lần bàn giao này.
+Không chỉ upload ZIP/source. Full hỗ trợ nhảy từ bản cũ, không cần các bản trung gian. Chưa tự publish trong lần bàn giao này.
 
-Kiểm thử Windows thật: IME/chuột/zoom/DPI/cài đè và restart update. Schema17 giữ nguyên từ source1.33; backup trước rollback về app cũ hơn.
+Số đo logic Linux ở README/docs. Chưa nghiệm thu native Windows: first paint, chuột/IME/Callout/zoom, ảnh4K/cuộn dài, RAM dùng lâu, Setup/restart update. Checklist docs/PERFORMANCE-RESPONSIVENESS-V137.md.

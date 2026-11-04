@@ -71,10 +71,11 @@ public sealed partial class MediaStore
         if(File.Exists(Metadata))try {foreach(var i in JsonSerializer.Deserialize<List<MediaItem>>(File.ReadAllText(Metadata))??[])Items.Add(i);}catch(Exception e){App.Log(e);File.Copy(Metadata,Metadata+".corrupt-"+DateTime.Now.ToString("yyyyMMddHHmmss"),true);}
         // Recover media committed before a crash between file completion and metadata commit.
         try{
+        var knownPaths=Items.Select(i=>i.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach(var path in (_locationError==null?Directory.EnumerateFiles(Root):Enumerable.Empty<string>()).Where(p=>System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(p),@"^\d{8}-\d{6}-\d{3}-[0-9a-f]{6}\.(png|mp4)$",System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
-            if(!Items.Any(i=>i.FilePath==path))Items.Insert(0,new(){FilePath=path,Title=Path.GetFileNameWithoutExtension(path),IsVideo=Path.GetExtension(path)==".mp4",Created=File.GetCreationTime(path),Source="Khôi phục từ ổ đĩa"});
+            if(knownPaths.Add(path))Items.Insert(0,new(){FilePath=path,Title=Path.GetFileNameWithoutExtension(path),IsVideo=Path.GetExtension(path)==".mp4",Created=File.GetCreationTime(path),Source="Khôi phục từ ổ đĩa"});
         }catch(Exception ex){_locationError="Không đọc được thư mục media. Hãy chọn lại thư mục lưu. "+ex.Message;StartupWarning=_locationError;App.Log(ex);}
-        foreach(var i in Items.OrderByDescending(i=>i.Created).Take(50))RequestThumbnail(i);
+        foreach(var i in Items.OrderByDescending(i=>i.Created).Take(30))RequestThumbnail(i);
     }
     public static BitmapSource LoadImage(string path,int decodeWidth=0)
     {

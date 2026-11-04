@@ -94,6 +94,7 @@ public static partial class EditorRenderer
     {
         if(!TextStudio.IsText(a.Kind)||a.Kind==AnnotationKind.Step||!a.AutoFitText)return;
         if(a.Kind==AnnotationKind.Callout){
+            if(a.Text.Length==0)return; // Keep an empty drawn frame exactly as placed; grow only when typing.
             bool pin=preserveTail&&a.CalloutBodyPivot&&a.CalloutStyle is not(CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse);var old=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));var tail=WorldPoint(a,new(a.TailX,a.TailY));bool below=pin&&a.TailY>old.Bottom,right=pin&&a.TailX>old.Right;
             double width=Math.Min(100000,Math.Max(Math.Max(36,a.Width),TextStudio.MinimumBodyWidth(a)));double left=right?old.Right-width:old.Left,top=old.Top;a.X1=left;a.Y1=top;a.X2=left+width;
             var text=TextLayout(a);double height=Math.Max(old.Height,TextStudio.FittedBodyHeight(a,text.Height,text.OverhangAfter));if(below)top=old.Bottom-height;a.Y1=top;a.Y2=top+height;

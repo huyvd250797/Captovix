@@ -18,13 +18,13 @@ public partial class MainWindow
     private bool _editorReady,_syncProperties,_changingSelection,_fitMode=true,_actualPixels;
     private void InitializeEditor()
     {
-        _saveTimer.Tick+=(_,_)=>{_saveTimer.Stop();if(_session?.InTransaction==true||_inlineId!=null)return;FlushEdits(false);};
+        _saveTimer.Tick+=async(_,_)=>{_saveTimer.Stop();if(_session?.InTransaction==true||_inlineId!=null){if(_session?.Dirty==true)_saveTimer.Start();return;}await AutoSaveAsync();};
         _textTimer.Tick+=(_,_)=>{_textTimer.Stop();if(_session?.InTransaction==true)Surface.FitSelectionCanvas();_session?.Commit();};
         Surface.SelectionChanged+=SyncProperties;
         Surface.VisualChanged+=UpdateEditorReadout;
         Surface.TextRequested+=BeginInlineText;
         Surface.VisualChanged+=PositionInlineText;
-        Surface.CropFinished+=()=>{SelectTool(EditorTool.Select);if(_actualPixels)Actual_Click(this,new RoutedEventArgs());else FitImage();};
+        Surface.CropFinished+=()=>{Surface.Tool=EditorTool.Crop;if(_actualPixels)Actual_Click(this,new RoutedEventArgs());else FitImage();};
         InitializeViewport();
         InitializeObjectControl();
         InitializeShapeStudio();
@@ -66,6 +66,8 @@ public partial class MainWindow
     {
         FlushAutoProperties();
         EndInlineText(true);_textTimer.Stop();_session?.Commit();_saveTimer.Stop();
+        // Finish the older worker before a final save/load can overtake it. Worker never waits for UI.
+        try{_autoSaveWork?.GetAwaiter().GetResult();if(_autoSaveWork?.IsCompletedSuccessfully==true&&ReferenceEquals(_autoSaveSession,_session))_session?.MarkSaved(_autoSaveRevision);}catch(Exception ex){App.Log(ex);}
         if(_session==null||_activeItem==null||Surface.Original==null||!_session.Dirty)return true;
         try{
             DocumentStore.Save(_activeItem,_session,Surface.Original);SavedLabel.Text="✓ Đã lưu";SavedLabel.Foreground=new SolidColorBrush(Color.FromRgb(35,148,110));return true;
@@ -73,20 +75,33 @@ public partial class MainWindow
     }
     private void UnloadEditor()
     {
-        EndInlineText(false);_textTimer.Stop();_saveTimer.Stop();if(_session!=null)_session.Changed-=Session_Changed;
+        _imageLoadGeneration++;_imageLoadCancellation?.Cancel();EndInlineText(false);_textTimer.Stop();_saveTimer.Stop();if(_session!=null)_session.Changed-=Session_Changed;
         _spaceHeld=false;EndPan();Surface.CancelInteraction();
         // Load raises callbacks synchronously. Release the old session first so
         // every subscriber sees the same empty state while the canvas unloads.
         _session=null;_activeItem=null;Surface.Load(null,null);UndoButton.IsEnabled=RedoButton.IsEnabled=false;
     }
-    private void OpenImage(MediaItem item)
+    private readonly System.Threading.SemaphoreSlim _imageLoadWorker=new(1);
+    private System.Threading.CancellationTokenSource? _imageLoadCancellation;
+    private long _imageLoadGeneration;
+    private async Task OpenImageAsync(MediaItem item)
     {
-        var bitmap=MediaStore.LoadImage(item.FilePath);var session=DocumentStore.Load(item,bitmap,out var warning);
+        using var measurement=PerformanceTimings.Measure("image.open");
+        var generation=++_imageLoadGeneration;var cancellation=new System.Threading.CancellationTokenSource();_imageLoadCancellation?.Cancel();_imageLoadCancellation=cancellation;
+        var token=cancellation.Token;CopyButton.IsEnabled=ExportButton.IsEnabled=false;SavedLabel.Text="Đang mở ảnh…";
+        try{
+        await _imageLoadWorker.WaitAsync(token);
+        (BitmapSource bitmap,EditorSession session,string? warning) loaded;
+        try{loaded=await Task.Run(()=>{try{token.ThrowIfCancellationRequested();var image=MediaStore.LoadImage(item.FilePath);token.ThrowIfCancellationRequested();var editing=DocumentStore.Load(item,image,out var message);token.ThrowIfCancellationRequested();return(image,editing,message);}catch(OperationCanceledException){EditorRenderer.ReleaseImageCaches();throw;}},token);}finally{_imageLoadWorker.Release();}
+        if(token.IsCancellationRequested||generation!=_imageLoadGeneration||!ReferenceEquals(Selected,item))return;
+        var (bitmap,session,warning)=loaded;
         _activeItem=item;_session=session;session.Changed+=Session_Changed;
         ImageScroll.Visibility=ImageTools.Visibility=ZoomTools.Visibility=EditorProperties.Visibility=Visibility.Visible;
-        Surface.SetDisplayScale(VisualTreeHelper.GetDpi(this).DpiScaleX);Surface.Load(bitmap,session);SelectTool(EditorTool.Select);_fitMode=true;_actualPixels=false;
-        Dispatcher.BeginInvoke(()=>{if(ReferenceEquals(_session,session))FitImage();},DispatcherPriority.Loaded);
+        Surface.SetDisplayScale(VisualTreeHelper.GetDpi(this).DpiScaleX);Surface.Load(bitmap,session);if(Surface.Tool==EditorTool.Crop)Surface.StartCrop();CopyButton.IsEnabled=ExportButton.IsEnabled=true;SavedLabel.Text="✓ Đã lưu";_fitMode=true;_actualPixels=false;
+        _=Dispatcher.BeginInvoke(()=>{if(ReferenceEquals(_session,session))FitImage();},DispatcherPriority.Loaded);
         if(warning!=null){if(session.Dirty){SavedLabel.Text="Đã khôi phục · Ctrl+S để lưu";SavedLabel.SetResourceReference(TextBlock.ForegroundProperty,"Warning");}SetStatus("Kiểm tra trạng thái khôi phục tài liệu.");MessageBox.Show(this,warning,"Kiểm tra dữ liệu chỉnh sửa",MessageBoxButton.OK,MessageBoxImage.Warning);}
+        }catch(OperationCanceledException){}catch(Exception ex){if(generation==_imageLoadGeneration){App.Log(ex);SetStatus("Không mở được ảnh: "+ex.Message);SavedLabel.Text="Không mở được ảnh";}}
+        finally{if(ReferenceEquals(_imageLoadCancellation,cancellation))_imageLoadCancellation=null;cancellation.Dispose();}
     }
     private void SelectTool(EditorTool tool)
     {
@@ -104,7 +119,7 @@ public partial class MainWindow
             EditorTool.Shape=>"Chọn hình và viền/nền ở bảng thuộc tính → kéo để vẽ • Shift giữ tỷ lệ • V để chọn và sửa lại.",
             EditorTool.Line or EditorTool.Arrow=>"Chọn thẳng/gấp khúc/cong bên phải • Kéo từ shape sang shape để nối • Kéo để vẽ • Shift khóa hướng mỗi 45° • V để sửa đầu mút; chỉnh kiểu nét và đầu mũi tên bên phải.",
             EditorTool.Text=>"Kéo tạo khung chữ có xem trước • Thả để nhập • Kéo tay nắm để resize/reflow • Double-click sửa • Ctrl+Enter hoàn tất.",
-            EditorTool.Callout=>"Kéo hộp để tạo callout và nhập chữ • Chọn rồi kéo tay nắm ở đầu đuôi để đổi điểm chỉ • Double-click sửa chữ.",
+            EditorTool.Callout=>"Nhấn điểm đuôi rồi kéo giãn rộng/cao tự do, kể cả đường chéo • Thả để nhập chữ • Node riêng chỉnh thân/đuôi • Công cụ giữ nguyên để vẽ tiếp.",
             EditorTool.Freehand=>"Giữ chuột trái để vẽ tự do • Thả chuột kết thúc nét • Esc hủy nét đang vẽ.",
             EditorTool.Step=>"Click để đặt số bước tự tăng. Có thể sửa số ở bảng thuộc tính.",
             EditorTool.Crop=>"Kéo vùng hoặc tay nắm rồi thả chuột để crop ngay • Nhập kích thước dùng Áp dụng • Esc hủy • Space kéo khung nhìn.",
@@ -167,8 +182,8 @@ public partial class MainWindow
     private void CommitStep(){if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Step} a)return;if(int.TryParse(StepNumber.Text,out var n)&&n>=1&&n<=9999){var id=a.Id;_session.Change(d=>d.Annotations.First(x=>x.Id==id).Number=n);}SyncProperties();}
     private void DeleteAnnotation_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;Surface.DeleteSelected();}
     private void RestoreCrop_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;if(_session==null)return;SelectTool(EditorTool.Select);try{_=new ImageLayout(new PixelRect(0,0,_session.Document.OriginalWidth,_session.Document.OriginalHeight),_session.Document.Appearance);_session.Change(d=>{d.Crop=null;d.Appearance.OutputCrop=null;});Surface.Refresh();if(_fitMode)FitImage();}catch(Exception ex){SetStatus("Chưa khôi phục crop: "+ex.Message);}}
-    private void Undo_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
-    private void Redo_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){SelectTool(EditorTool.Select);return;}_session?.Redo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
+    private void Undo_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){Surface.ClearCropDraft();return;}_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
+    private void Redo_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){Surface.ClearCropDraft();return;}_session?.Redo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
     private void FitImage()
     {
         _fitMode=true;_actualPixels=false;if(_session==null||Surface.Layout is not {} v)return;
@@ -193,7 +208,7 @@ public partial class MainWindow
         if(_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))return;
         if(e.Key==Key.A&&MediaList.IsKeyboardFocusWithin&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){MediaList.SelectAll();e.Handled=true;return;}
         if(e.Key==Key.Delete&&MediaList.IsKeyboardFocusWithin){Delete_Click(sender,e);e.Handled=true;return;}
-        if(e.Key==Key.Escape&&Surface.Tool==EditorTool.Stamp){Surface.StampPng=null;SelectTool(EditorTool.Select);e.Handled=true;return;}
+        if(e.Key==Key.Escape&&Surface.Tool==EditorTool.Stamp){Surface.CancelInteraction();e.Handled=true;return;}
         var ctrl=Keyboard.Modifiers.HasFlag(ModifierKeys.Control);var typing=Keyboard.FocusedElement is TextBoxBase;
         if(TryTextShortcut(e))return;
         if(ViewportKey(e,typing))return;
@@ -217,7 +232,7 @@ public partial class MainWindow
             return;
         }
         if(Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))return;
-        if(e.Key==Key.Escape){Surface.CancelInteraction();SelectTool(EditorTool.Select);e.Handled=true;return;}
+        if(e.Key==Key.Escape){Surface.CancelInteraction();Surface.ClearCropDraft();Surface.ClearPixelRegion();e.Handled=true;return;}
         if(Surface.IsPixelTool&&Surface.PixelRegion!=null&&e.Key==Key.Delete){PixelAction("Erase");e.Handled=true;return;}
         if(e.Key==Key.Delete){Surface.DeleteSelected();e.Handled=true;return;}
         double step=Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?10:1;

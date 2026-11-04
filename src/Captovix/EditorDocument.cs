@@ -96,6 +96,7 @@ public sealed class EditorDocument
     public string Serialize()=>JsonSerializer.Serialize(this,JsonOptions);
     public static EditorDocument Deserialize(string json)=>JsonSerializer.Deserialize<EditorDocument>(json,JsonOptions)??throw new InvalidDataException("Tài liệu chỉnh sửa trống.");
     public EditorDocument Clone()=>Deserialize(Serialize());
+    public EditorDocument Snapshot()=>new(){Version=Version,OriginalWidth=OriginalWidth,OriginalHeight=OriginalHeight,SourceHash=SourceHash,Crop=Crop,PixelBasePng=PixelBasePng,Appearance=Appearance.Copy(),Annotations=Annotations.Select(a=>a.Copy()).ToList()};
     public void Validate(int width,int height,string hash)
     {
         if(Version<1||Version>MaximumSupportedVersion)throw new InvalidDataException("Phiên bản dữ liệu chỉnh sửa chưa được hỗ trợ.");
@@ -142,6 +143,7 @@ public sealed class EditorSession
     private readonly int _historyCharBudget;
     public EditorDocument Document {get;private set;}
     public bool Dirty {get;private set;}
+    public long Revision {get;private set;}
     public object HistoryStats=>new{Undo=_undo.Count,Redo=_redo.Count,Bytes=2L*(_undo.Sum(s=>(long)s.Length)+_redo.Sum(s=>(long)s.Length)),BudgetChars=_historyCharBudget};
     public bool CanUndo=>_undo.Count>0;
     public bool CanRedo=>_redo.Count>0;
@@ -149,17 +151,18 @@ public sealed class EditorSession
     public event Action? Changed;
     public EditorSession(EditorDocument document,int historyCharBudget=8_000_000){Document=document;_historyCharBudget=Math.Max(1024,historyCharBudget);}
     private void TrimHistory(List<string> entries){long chars=entries.Sum(s=>(long)s.Length);while(entries.Count>1&&(entries.Count>100||chars>_historyCharBudget)){chars-=entries[0].Length;entries.RemoveAt(0);}}
-    public void Begin(){CheckAuthorization();ConnectorStudio.Resolve(Document);_before??=Document.Serialize();}
+    public void Begin(){CheckAuthorization();if(_before!=null)return;ConnectorStudio.Resolve(Document);_before=Document.Serialize();}
     public void Commit()
     {
         if(_before==null)return;ConnectorStudio.Resolve(Document);var before=_before;_before=null;
         if(before==Document.Serialize())return;
-        _undo.Add(before);TrimHistory(_undo);_redo.Clear();Dirty=true;Changed?.Invoke();
+        _undo.Add(before);TrimHistory(_undo);_redo.Clear();Dirty=true;Revision++;Changed?.Invoke();
     }
     public void Cancel(){if(_before==null)return;Document=EditorDocument.Deserialize(_before);_before=null;}
     public void Change(Action<EditorDocument> change){Begin();try{change(Document);Commit();}catch{Cancel();throw;}}
-    public void Undo(){CheckAuthorization();Commit();if(!CanUndo)return;_redo.Add(Document.Serialize());TrimHistory(_redo);Document=EditorDocument.Deserialize(_undo[^1]);_undo.RemoveAt(_undo.Count-1);Dirty=true;Changed?.Invoke();}
-    public void Redo(){CheckAuthorization();Commit();if(!CanRedo)return;_undo.Add(Document.Serialize());TrimHistory(_undo);Document=EditorDocument.Deserialize(_redo[^1]);_redo.RemoveAt(_redo.Count-1);Dirty=true;Changed?.Invoke();}
-    public void RequireSave()=>Dirty=true;
+    public void Undo(){CheckAuthorization();Commit();if(!CanUndo)return;_redo.Add(Document.Serialize());TrimHistory(_redo);Document=EditorDocument.Deserialize(_undo[^1]);_undo.RemoveAt(_undo.Count-1);Dirty=true;Revision++;Changed?.Invoke();}
+    public void Redo(){CheckAuthorization();Commit();if(!CanRedo)return;_undo.Add(Document.Serialize());TrimHistory(_undo);Document=EditorDocument.Deserialize(_redo[^1]);_redo.RemoveAt(_redo.Count-1);Dirty=true;Revision++;Changed?.Invoke();}
+    public void RequireSave(){Dirty=true;Revision++;}
     public void MarkSaved()=>Dirty=false;
+    public bool MarkSaved(long revision){if(Revision!=revision)return false;Dirty=false;return true;}
 }

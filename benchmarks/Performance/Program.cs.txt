@@ -1,0 +1,8 @@
+using Captovix;
+using System.Diagnostics;
+using System.Text.Json;
+var doc=new EditorDocument{OriginalWidth=1920,OriginalHeight=1080,Annotations=Enumerable.Range(0,5000).Select(i=>new Annotation{Kind=AnnotationKind.Callout,Text=i==0?new string('a',20000):"Ghi chú",X1=i%100,Y1=i%100,X2=i%100+220,Y2=i%100+120}).ToList()};
+object Measure(string name,Action action){for(int i=0;i<3;i++)action();var times=new List<double>();long allocated=0;for(int i=0;i<11;i++){long before=GC.GetAllocatedBytesForCurrentThread();var watch=Stopwatch.StartNew();action();watch.Stop();times.Add(watch.Elapsed.TotalMilliseconds);allocated+=GC.GetAllocatedBytesForCurrentThread()-before;}return new{name,medianMs=times.Order().ElementAt(5),allocatedBytes=allocated/11};}
+var session=new EditorSession(doc);session.Begin();
+var snapshot=typeof(EditorDocument).GetMethod("Snapshot");
+Console.WriteLine(JsonSerializer.Serialize(new{runtime=System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,os=System.Runtime.InteropServices.RuntimeInformation.OSDescription,annotations=5000,textChars=20000,samples=new[]{Measure("1000 Begin calls during one text transaction",()=>{for(int i=0;i<1000;i++)session.Begin();}),Measure("snapshot of 5000 annotations",()=>{var copy=snapshot==null?doc.Clone():(EditorDocument)snapshot.Invoke(doc,null)!;if(copy.Annotations.Count!=5000)throw new Exception();})}},new JsonSerializerOptions{WriteIndented=true}));

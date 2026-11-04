@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private MediaItem? Selected => MediaList.SelectedItem as MediaItem;
     public MainWindow()
     {
+        var startupClock=Stopwatch.StartNew();using var measurement=PerformanceTimings.Measure("window.construct");bool firstPaint=true;ContentRendered+=(_,_)=>{if(!firstPaint)return;firstPaint=false;PerformanceTimings.Record("window.first-paint",startupClock.Elapsed.TotalMilliseconds);};
         WindowPlacement.Attach(this);InitializeComponent();Activated+=(_,_)=>QueueUpdateNotice();InitializeBrand();InitializeEditor();_store=new();RebuildRecent();MediaList.ItemsSource=_recentItems;
         CollectionViewSource.GetDefaultView(_recentItems).Filter=o=>{var i=(MediaItem)o;return LibraryMatch(i);};
         _store.Items.CollectionChanged+=(_,_)=>{if(_libraryRefreshHold==0)RebuildRecent();};CountLabel.Text=$"{_recentItems.Count}/{_store.Items.Count}";
@@ -150,7 +151,7 @@ public partial class MainWindow : Window
     private void Refresh_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;RefreshSources();}
     private void SourceMode_Changed(object sender,SelectionChangedEventArgs e){if(DisplayPicker==null||WindowPicker==null)return;bool window=SourceMode.SelectedIndex==1;DisplayPicker.Visibility=window?Visibility.Collapsed:Visibility.Visible;WindowPicker.Visibility=window?Visibility.Visible:Visibility.Collapsed;}
     private void Search_Changed(object sender,TextChangedEventArgs e){if(_store!=null)CollectionViewSource.GetDefaultView(_recentItems).Refresh();if(LibrarySearchButton!=null)LibrarySearchButton.SetResourceReference(Control.ForegroundProperty,string.IsNullOrWhiteSpace(SearchBox.Text)?"Text":"AccentText");}
-    private void Media_Changed(object sender,SelectionChangedEventArgs e)
+    private async void Media_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(_changingSelection)return;if(MediaList.SelectedItems.Count>1){SetStatus($"Đã chọn {MediaList.SelectedItems.Count} nội dung · Delete để xóa / Xuất nhiều.");return;}
         Surface.CancelInteraction();
@@ -167,7 +168,7 @@ public partial class MainWindow : Window
         if(!File.Exists(item.FilePath)){SetStatus("File đã được di chuyển hoặc xóa bên ngoài app.");CopyButton.IsEnabled=ExportButton.IsEnabled=false;return;}
         try {
             if(item.IsVideo){VideoPreview.Visibility=VideoTools.Visibility=Visibility.Visible;VideoPreview.Source=new Uri(item.FilePath);VideoPreview.Play();VideoPreview.Pause();}
-            else OpenImage(item);
+            else await OpenImageAsync(item);
         }catch(Exception ex){App.Log(ex);SetStatus("Không mở được file: "+ex.Message);CopyButton.IsEnabled=ExportButton.IsEnabled=false;MessageBox.Show(this,ex.Message,"Không mở được nội dung");}
     }
     private void UpdateMetadata(MediaItem item)=>Metadata.Text=$"{(item.IsVideo?"VIDEO MP4 / H.264":"ẢNH GỐC PNG")}\n{item.Width} × {item.Height} pixel\n{item.Created:dd/MM/yyyy HH:mm:ss}\n\nNguồn\n{item.Source}\n\n{(item.IsVideo?$"Mic: {(item.Microphone?"Bật":"Tắt")}\nTiếng máy: {(item.SystemAudio?"Bật":"Tắt")}\nFPS cấu hình: {item.Fps}\n":"")}\n{item.FilePath}";
@@ -239,7 +240,7 @@ public partial class MainWindow : Window
         try{if(_loaded){_store.SaveSettings(Settings());_store.Save();}}
         catch(Exception ex){App.Log(ex);e.Cancel=true;MessageBox.Show(this,"Chưa lưu được cấu hình/thư viện. Hãy kiểm tra thư mục dữ liệu trước khi đóng.\n"+ex.Message,"Captovix");return;}
         if(!_exitRequested&&!_updateApplying&&_workflow.CloseToTray&&_tray?.Ready==true){e.Cancel=true;Hide();_tray.Notify("Captovix đang chạy nền. Nhấp biểu tượng để mở Editor; chọn Thoát để đóng hoàn toàn.");return;}
-        SuspendWorkflow();
+        _imageLoadGeneration++;_imageLoadCancellation?.Cancel();UnloadEditor();SuspendWorkflow();
         _updateUiClosed=true;_updateCheckTimer.Stop();_updateCancellation?.Cancel();_saveTimer.Stop();_videoTimer.Stop();VideoPreview.Close();var hwnd=new WindowInteropHelper(this).Handle;foreach(var i in _hotkeys)Native.UnregisterHotKey(hwnd,i);
     }
 }

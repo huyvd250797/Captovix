@@ -1,3 +1,27 @@
+# Hiệu chỉnh Callout V1.37.0 theo mô phỏng đã duyệt
+
+- CalloutGestureChecks:2.000trường hợp ở4hướng và801bước quét ngang, kiểm đuôi ghim/rộng-cao độc lập/kích thước hợp lệ/Undo-Redo; có xử lý sai số số thực tại ngưỡng36px để không bị hủy hộp nhỏ khi thả.
+- EditorCoreChecks cập nhật ví dụ kéo ngang/dọc/chéo, nhấn đơn và giữ đuôi. TextStudioWindowsChecks/PerformanceWindowsChecks cập nhật kiểm kích thước thay đổi trong lúc kéo và giữ sau thả khi chưa nhập chữ; chỉ cross-build tại Linux.
+- Không áp dụng tăng bản1.37.1; đóng gói lại DLL và Setup1.37.0. Runtime/dependency và toàn bộ payload không liên quan giữ từ góiV1.37 gốc; đối chiếu từng byte các binary không đổi. Config license/backend giữ nguyên.
+- Chưa nghiệm thu chuột/IME/Setup trên Windows. Đang dùng V1.37 cũ cần chạy Setup mới thủ công; không qua kiểm tra cập nhật cùng phiên bản.
+
+## Kiểm tra của bản V1.37 trước hiệu chỉnh
+
+# V1.37.0 — Validation
+
+- Run-Checks.py:61suites build thành công,36logic thực thi thành công,25Windows/WPF chỉ cross-build.2.100assertions PASS; kết thúc ALL_CHECKS_OK.
+- EditorCore: snapshot nhanh có nội dung serialize giống bản gốc và không dùng chung mutable fields; save revision cũ không đánh dấu sạch bản sửa mới. Gesture Callout giữ220×120,tip đầu tiên và đi theo cảX/Y khi kéo4hướng.
+- BatchChecks:30mục gần đây, pin lịch sử vẫn trong30, giữ toàn bộ metadata/ảnh cũ.
+- PerformanceWindowsChecks mới: offscreenrender trên STA worker, kéo Callout chuẩn, scene drawing tái dùng khi zoom, edit vô hiệu cache, giữ tool khi load, decodedcache rỗng sau100vòngload/close. Chỉ compile, chưa chạy Windows. EditorWindowsChecks cập nhật chờ async và kiểm chuyển nhanh không áp dụng kết quả cũ; Refinement/QuickCapture kiểm giữCallout/Crop.
+- Sau thay đổi STA/lifecycle cuối: build lại PerformanceWindowsChecks và EditorWindowsChecks,0warning/0error; publish app từ cùng source. Task autosave không chờ UI, final-save chờ worker trước để không bị bản cũ ghi đè. Worker xóa action/cache để không giữ snapshot/bitmap cuối.
+- Microbenchmark logic đo trênLinux/.NET10.0.0:5.000chú thích, một đoạn20.000ký tự; warmup3/sample11/median. Begin1000lần:3,818→0,0194ms; snapshot133,9469→6,518ms; allocation20.472.582→3.321.275byte. File JSON thô và script tái lập trong source. Chạy lại script thành công; số thay đổi theo tải host, không là Windows UI benchmark.
+- Startup/firstpaint/open/frame/autosave có buffer đoRAM giới hạn128mẫu, không tạo menu chẩn đoán trở lại. Chưa có số FPS/inputlatency/working-setWindows; chưa kết luận hếtlag/khôngleak trên mọi máy.
+- Giữ schema17, runtimeWindows10.0.13, dependency và pipelinepixel hiện hữu. Không cần migrationDB; publiclicenseconfig, backend/admin không đổi. Không gọi production tạoKEY/trial.
+- Kiểm gói: chạy SDKUpdateChecks với nupkg mới, CRC/hash/feed/nuspec/source/payload/icon/OCR và cấu hình nền qua Verify-Packages. Chưa thực thi Setup hoặc restart update trên Linux.
+- Chưa pushGitHub/deploy/publishrelease. Windows acceptance theo docs/PERFORMANCE-RESPONSIVENESS-V137.md:startup,4K/cuộndài,chuột/IME/Callout,zoom,autosave lỗi/thoát,chuyển nhanh,RAM,càiđè.
+
+## Lịch sử kiểm tra
+
 # V1.36.0 — Validation
 
 - 60 suites biên dịch thành công; 36 bộ logic chạy thành công trên Linux, 24 bộ Windows/WPF chỉ biên dịch. scripts/Run-Checks.py kết thúc ALL_CHECKS_OK.
