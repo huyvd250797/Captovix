@@ -1,0 +1,18 @@
+{
+  "before_bytes": 182470478,
+  "after_bytes": 161006789,
+  "removed": [
+    {
+      "path": "ScreenRecorderLib.pdb",
+      "bytes": 15659008
+    },
+    {
+      "path": "ScreenRecorderLib.xml",
+      "bytes": 37513
+    },
+    {
+      "path": ".System.Private.CoreLib.dll.RcPB2Y",
+      "bytes": 5767168
+    }
+  ]
+}

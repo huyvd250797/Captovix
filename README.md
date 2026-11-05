@@ -1,3 +1,52 @@
+# Captovix V1.42.0 — Element Recognition & Fidelity
+
+M5 trên source V1.41.1 Boss cung cấp. Kế thừa sửa lỗi khởi động/popup của V1.41.1; không đổi runtime, dependency, license hay backend.
+
+- **Thêm → Mockup → Quét vùng / Quét toàn ảnh**: khung control và chữ tạo thành đối tượng riêng trong cùng nhóm; Alt+click/chọn trong cây để sửa chữ riêng. Label ngoài control giữ liên kết với ô nhập; khối đã chọn ghép nhóm với phần tử bên trong. OCR không tự áp dụng.
+- Lấy màu chữ/nền/viền, ước lượng độ dày viền/bo góc từ ảnh. So khung chữ với Segoe UI/Arial/Tahoma/Calibri có trên máy để ước lượng font/cỡ chữ. Rà soát có thể sửa font, cỡ, màu/độ dày viền, bo góc trước áp dụng. Font raster không có định danh chắc chắn; ảnh/gradient, control phức tạp vẫn cần sửa tay.
+- **Menu Thêm / popup / modal:** một viền 1 DIP; màu trung tính `#7C828B` khi sáng, `#959DA9` khi tối. Viền không đổi theo màu nhấn. Bỏ khung/bóng dư của menu Thêm.
+- **Thiết lập → Hệ thống → Dung lượng & bộ nhớ:** thống kê ứng dụng, ảnh/video gốc theo thư viện (kể cả vị trí tùy chọn), bản chỉnh sửa, thumbnail, Cache, Temp, OcrJobs. Chọn dọn từng loại có thể tạo lại hoặc giải phóng cache RAM. Chỉ xóa tệp đã thống kê, không thay đổi và cũ hơn 24 giờ; bỏ qua liên kết/đường dẫn ngoài phạm vi, lỗi quyền và tệp đang dùng. Không xóa ảnh/video gốc, chỉnh sửa, bản sao lưu, KEY, runtime hay mô hình OCR.
+- Thumbnail đã xóa được dựng lại từ ảnh **và bản chỉnh sửa** khi yêu cầu; lưu thumbnail qua cache có giới hạn. Cache lớp ảnh giảm trần giữ từ 256 MiB xuống 96 MiB; không giảm độ phân giải ảnh nguồn. Phân tích OCR dùng lại kết quả hình học; lấy mẫu màu trực tiếp thay vì cấp phát ảnh con lớn cho từng khung.
+
+## Nhận bản và nâng cấp
+
+- Source: `Captovix V1.42.0 — Element Recognition & Fidelity.zip`.
+- Bộ cài đầy đủ: `Captovix-v1.42.0-Full-Setup.exe`; gói cập nhật: `Captovix-v1.42.0-Update-Packages.zip` (chỉ có khi đóng gói thành công, xem VALIDATION).
+- Đóng Captovix cả khay/Task Manager rồi cài đè đúng thư mục hiện có. Không uninstall/xóa thư viện. Sao lưu thư mục dữ liệu và media trước khi thử bản mới.
+- **Không cần chạy migration mới. Không cần deploy lại backend.** Dùng các trường/nhóm schema tối đa21 sẵn có; không reset trial hay KEY.
+- Linux có thể cross-build Windows và kiểm gói, nhưng **chưa xác nhận chạy giao diện/cài đặt trên Windows thật**. Không coi `Build succeeded` là đã nghiệm thu mở app. Kết quả và giới hạn nằm ở `docs/VALIDATION.md`; checklist ở `docs/WINDOWS-ACCEPTANCE-V142.md`.
+
+## Build từ source trên Windows
+
+1. Giải nén, mở PowerShell tại thư mục chứa `Build.cmd`; cài .NET10 SDK, Python3, NSIS3 và Git khi cần push.
+2. Chạy `python scripts/Run-Checks.py` (hoặc PowerShell `$env:DOTNET_EXE='C:\Program Files\dotnet\dotnet.exe'` nếu dotnet chưa trên PATH). Trên Windows các fixture WPF phải chạy qua; mọi lỗi cần xử lý trước phát hành.
+3. Chạy `powershell -ExecutionPolicy Bypass -File scripts/Build-Windows.ps1`. Giữ `license-config.json` và `update-source.json` hiện có; không đưa khóa ký riêng vào source.
+4. Script restore bản dependency đã ghim, publish self-contained win-x64 với .NET10.0.13 và OCR, loại PDB/XML tài liệu và tệp copy dở có bản chính, tạo gói Velopack + bộ cài NSIS và ZIP source. Không bật trimming WPF hoặc cắt DLL/mô hình OCR theo phỏng đoán.
+5. Gói nằm trong `artifacts`. Kiểm tra thêm bằng `python scripts/Verify-Packages.py --source-zip "artifacts/Captovix V1.42.0 — Element Recognition & Fidelity.zip"` và thực hiện checklist Windows.
+6. Audit thư mục bất kỳ: `python scripts/Audit-Storage.py artifacts/win-x64 --output artifacts/storage-audit.json`. Chỉ đọc; các tệp trùng khác đường dẫn có thể là hợp đồng runtime nên không tự xóa.
+
+Đây là ứng dụng Windows WPF; không deploy chương trình desktop lên Vercel/Netlify. Trang admin/backend hiện có giữ nguyên. Khi cần đưa source vào GitHub: clone/fetch repo hiện có, chép thay source ứng dụng đã kiểm, `git add .`, `git commit -m "Captovix v1.42.0: Element Recognition & Fidelity"`, `git push`; không force push. Để auto-update, publish đủ năm asset rời theo `scripts/README-PUBLISH.txt` sau nghiệm thu Windows. Lần bàn giao này chưa push hoặc publish release.
+
+Nếu lỗi mở app: giữ nguyên dữ liệu, lấy `%LOCALAPPDATA%\HuyVo\Captovix\errors.log`; không xóa KEY. Có thể cài lại bộ cài V1.41.1 vào đúng vị trí để quay lại; giữ backup dữ liệu trước khi rollback. Thư mục ảnh gốc có thể nằm ngoài App.DataRoot theo thiết lập của Boss.
+
+Tiếp theo **V1.43.0 — Update, Recovery & Release Quality**: kiểm nâng cấp/cài đè, retry/khôi phục, gói lỗi và hồi quy Windows/DPI/theme. Gửi ZIP V1.42.0 mới nhất để tiếp tục.
+
+## Lịch sử tài liệu các phiên bản trước (thông tin bên dưới chỉ áp dụng phiên bản tương ứng)
+
+# Captovix V1.41.1 — Startup & Popup Recovery
+
+Bản vá lỗi không mở sau cập nhật1.41: loại khóa StyleTreeViewItem trùng trong Themes, sửa logical parent của popup và bổ sung thông báo/log cho lỗi trước OnStartup. Giữ toàn bộ M4 và dữ liệu cũ.
+
+**Khôi phục:** đóng Captovix cả Task Manager/khay, chạy `Captovix-v1.41.1-Full-Setup.exe` vào đường dẫn đang cài. Không cần app1.41 mở được; không uninstall/xóa thư viện/KEY. Không cần migration mới hoặc deploy backend. Nếu còn lỗi, gửi `%LOCALAPPDATA%\HuyVo\Captovix\errors.log` mới nhất.
+
+- Source: `Captovix V1.41.1 — Startup & Popup Recovery.zip`.
+- Update: `Captovix-v1.41.1-Update-Packages.zip`. Publish đủ5assets rời lên stable v1.41.1/Latest để các máy đang chạy app nhận cập nhật. Chưa publish trong lần bàn giao này.
+- Hướng dẫn và nguyên nhân: [Startup Recovery](docs/STARTUP-POPUP-RECOVERY-V1411.md); kiểm tra trong [VALIDATION](docs/VALIDATION.md).
+- Build theo scripts/Build-Windows.ps1; scripts/Run-Checks.py tự đưa StartupResourceChecks và StartupWindowsChecks vào danh sách. FixtureWPF cần Windows, hostLinux chỉ cross-build.
+- Không đổi dependency/runtime/OCR/license/backend/schema21. Tiếp theo roadmap vẫn V1.42.0 — Storage & Package Optimization; chưa xây tiếp.
+
+## Tài liệu phiên bản trước
+
 # Captovix V1.41.0 — Groups & Layout Editing
 
 M4: nhóm lồng nhau, cây đối tượng/chọn cha-con, di chuyển panel/sửa label riêng, thuộc tính chung và bố cục giữ qua lưu/mở lại. Kế thừa toàn bộ M3 từ source1.40 Boss gửi.

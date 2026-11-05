@@ -70,7 +70,7 @@ public partial class MainWindow
         try{_autoSaveWork?.GetAwaiter().GetResult();if(_autoSaveWork?.IsCompletedSuccessfully==true&&ReferenceEquals(_autoSaveSession,_session))_session?.MarkSaved(_autoSaveRevision);}catch(Exception ex){App.Log(ex);}
         if(_session==null||_activeItem==null||Surface.Original==null||!_session.Dirty)return true;
         try{
-            DocumentStore.Save(_activeItem,_session,Surface.Original);SavedLabel.Text="✓ Đã lưu";SavedLabel.Foreground=new SolidColorBrush(Color.FromRgb(35,148,110));return true;
+            DocumentStore.Save(_activeItem,_session,Surface.Original);_store.RequestThumbnail(_activeItem);SavedLabel.Text="✓ Đã lưu";SavedLabel.Foreground=new SolidColorBrush(Color.FromRgb(35,148,110));return true;
         }catch(Exception ex){App.Log(ex);SavedLabel.Text="Chưa lưu · Ctrl+S thử lại";SavedLabel.Foreground=Brushes.Firebrick;SetStatus("Không lưu được chú thích: "+ex.Message);if(report)AppDialog.Show(this,"Chưa lưu được phần chỉnh sửa. Nội dung vẫn đang ở Editor; hãy kiểm tra dung lượng/quyền thư mục và nhấn Ctrl+S.\n\n"+ex.Message,"Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);return false;}
     }
     private void UnloadEditor()

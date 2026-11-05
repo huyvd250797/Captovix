@@ -152,6 +152,11 @@ try
         var backend1400=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1400,"1.40.0",source);
         var update1400=await backend1400.CheckAsync();Check(update1400?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.40.0"),"Installed1.40.0 discovers actual M4 release");
         await backend1400.DownloadAsync(update1400!,_=>{},default);Check(File.Exists(Path.Combine(from1400,Path.GetFileName(package))),"Installed1.40.0 downloads and verifies full M4 package");
+        var from1410=Path.Combine(root,"patch-from1410");Directory.CreateDirectory(from1410);
+        var installed1410=new TestVelopackLocator(VersionInfo.AppId,"1.41.0",from1410);
+        var backend1410=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1410,"1.41.0",source);
+        var update1410=await backend1410.CheckAsync();Check(update1410?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.41.0"),"Installed1.41.0 discovers actual startup recovery patch");
+        await backend1410.DownloadAsync(update1410!,_=>{},default);Check(File.Exists(Path.Combine(from1410,Path.GetFileName(package))),"Installed1.41.0 downloads and verifies full recovery package");
         // Change expected SHA-256 while keeping SHA-1: ensure explicit SHA-256 check rejects it.
         asset.SHA256 = new string('0', 64); WriteFeed(asset);
         release = await sdk.CheckAsync(); var rejected = false;
@@ -172,7 +177,7 @@ try
         Check(rejected, "Feed without SHA-256 is rejected");
     }
     var jump=Path.Combine(root,"direct-jump");Directory.CreateDirectory(jump);
-    foreach(var target in new[]{"1.33.0","1.36.0","1.37.0","1.37.1","1.37.2","1.37.3","1.38.0","1.39.0","1.40.0"}){
+    foreach(var target in new[]{"1.33.0","1.36.0","1.37.0","1.37.1","1.37.2","1.37.3","1.38.0","1.39.0","1.40.0","1.41.0","1.41.1","1.42.0"}){
         File.WriteAllText(Path.Combine(jump,"releases.win.json"),JsonSerializer.Serialize(new{Assets=new[]{new{PackageId=VersionInfo.AppId,Version=target,Type="Full",FileName=$"HuyVo.Captovix-{target}-full.nupkg",SHA256=new string('A',64),SHA1=new string('B',40),Size=100}}}));
         var installed=new TestVelopackLocator(VersionInfo.AppId,"1.31.0",Path.Combine(root,"jump-"+target));
         var direct=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl=UpdateSettings.StableFeed},installed,"1.31.0",new SimpleFileSource(new DirectoryInfo(jump)));

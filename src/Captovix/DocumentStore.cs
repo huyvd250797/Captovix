@@ -45,7 +45,7 @@ public static class DocumentStore
         MediaStore.AtomicWrite(editPath,json);session.MarkSaved();
         try{
             var thumb=EditorRenderer.Render(original,doc,240);var path=ThumbnailPath(item.Id);Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            var temp=path+".tmp";var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(thumb));using(var f=File.Create(temp))encoder.Save(f);File.Move(temp,path,true);item.Thumbnail=thumb;
+            var temp=path+".tmp";var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(thumb));using(var f=File.Create(temp))encoder.Save(f);File.Move(temp,path,true);
         }catch(Exception ex){App.Log(ex);}
     }
     public static void Delete(MediaItem item){File.Delete(EditPath(item.Id));File.Delete(ThumbnailPath(item.Id));}

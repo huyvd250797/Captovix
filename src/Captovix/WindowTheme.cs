@@ -16,7 +16,7 @@ internal static class WindowTheme
             // Windows 11 supports explicit caption/text colours; Windows 10 keeps native fallback.
             if(OperatingSystem.IsWindowsVersionAtLeast(10,0,22000)){
                 int ColorRef(string key){var c=((SolidColorBrush)Application.Current.Resources[key]).Color;return c.R|(c.G<<8)|(c.B<<16);}
-                int caption=ColorRef("AppBackground"),text=ColorRef("Text"),border=ColorRef("Line");
+                int caption=ColorRef("AppBackground"),text=ColorRef("Text"),border=ColorRef("PopupLine");
                 DwmSetWindowAttribute(hwnd,35,ref caption,4);DwmSetWindowAttribute(hwnd,36,ref text,4);DwmSetWindowAttribute(hwnd,34,ref border,4);
             }
         }catch(DllNotFoundException){}catch(EntryPointNotFoundException){}

@@ -1,3 +1,18 @@
+# V1.42.0 — Element Recognition & Fidelity
+
+- M5: chữ/control riêng theo nhóm, liên kết label–input và khối–con; giữ màu, ước lượng viền/bo góc/font, chỉnh trong rà soát trước Apply.
+- Một viền popup/menu/modal mảnh theo sáng/tối; bỏ viền và bóng dư của Thêm, không dùng màu nhấn cho khung.
+- Trang Dung lượng & bộ nhớ, dọn có chọn lọc cache/thumbnail/temp cũ; giữ nguồn, chỉnh sửa, backup, KEY; thumbnail dựng lại từ bản chỉnh.
+- Giới hạn cache raster96MiB, thumbnail16MiB; giảm cấp phát khi lấy màu và tái sử dụng phân tích hình học. Không giảm chất lượng ảnh gốc.
+- Không migration/backend mới. Giữ sửa lỗi startup1.41.1. Native Windows chưa nghiệm thu trong môi trường Linux; xem VALIDATION.
+
+# V1.41.1 — Startup & Popup Recovery
+
+- Fix duplicate implicit TreeViewItem resource trong Themes gây lỗi nạp WPF trước MainWindow/OnStartup.
+- Fix gắn nội dung popup vào hai logical parent; giữ outline/theme/feedback của M4.
+- Ghi log và thông báo native nếu lỗi khởi động trước dispatcher handler; giữ thứ tự Velopack/worker.
+- Thêm resource startup regression và native BAML/modal fixture. Không đổi dữ liệu/schema/runtime/license/backend. Chưa nghiệm thu Windows native.
+
 # V1.41.0 — Groups & Layout Editing
 
 - Nhóm cha/con nhiều cấp, cây chọn đối tượng, scope chỉnh con, giữ nhóm khi căn/resize/move/sắp lớp, thuộc tính dùng chung, clipboard/nhân bản độc lập và schema21/backup.

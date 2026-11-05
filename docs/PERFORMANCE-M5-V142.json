@@ -1,0 +1,20 @@
+{
+  "host": "Linux x64 / .NET SDK10.0.100",
+  "scope": "pure logic allocation fixture; not Windows process RAM or UI latency",
+  "sample_frame": [
+    1600,
+    1000
+  ],
+  "sample_control": [
+    10,
+    10,
+    1500,
+    900
+  ],
+  "sample_allocated_bytes": 1216,
+  "previous_region_copy_minimum_bytes": 5477056,
+  "raster_cache_budget_before_bytes": 268435456,
+  "raster_cache_budget_after_bytes": 100663296,
+  "thumbnail_cache_budget_bytes": 16777216,
+  "windows_memory_latency_measurements": "pending"
+}

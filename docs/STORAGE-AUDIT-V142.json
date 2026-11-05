@@ -1,0 +1,109 @@
+{
+  "folder": "/workspace/scratch/101ff3fb429b/app/Captovix-v1.41.1/artifacts/win-x64",
+  "file_count": 498,
+  "bytes": 161758973,
+  "largest": [
+    {
+      "path": "System.Private.CoreLib.dll",
+      "bytes": 16033576
+    },
+    {
+      "path": "PresentationFramework.dll",
+      "bytes": 15824720
+    },
+    {
+      "path": "PresentationCore.dll",
+      "bytes": 8324904
+    },
+    {
+      "path": "System.Private.Xml.dll",
+      "bytes": 7788368
+    },
+    {
+      "path": "D3DCompiler_47_cor3.dll",
+      "bytes": 4741488
+    },
+    {
+      "path": "coreclr.dll",
+      "bytes": 4613416
+    },
+    {
+      "path": "x64/leptonica-1.82.0.dll",
+      "bytes": 4168192
+    },
+    {
+      "path": "tessdata/eng.traineddata",
+      "bytes": 4113088
+    },
+    {
+      "path": "System.Linq.Expressions.dll",
+      "bytes": 3639080
+    },
+    {
+      "path": "x64/tesseract50.dll",
+      "bytes": 2788352
+    },
+    {
+      "path": "System.Data.Common.dll",
+      "bytes": 2770728
+    },
+    {
+      "path": "System.Security.Cryptography.dll",
+      "bytes": 2549584
+    },
+    {
+      "path": "Microsoft.DiaSymReader.Native.amd64.dll",
+      "bytes": 2377016
+    },
+    {
+      "path": "WindowsBase.dll",
+      "bytes": 2176848
+    },
+    {
+      "path": "clrjit.dll",
+      "bytes": 2095912
+    },
+    {
+      "path": "System.Private.DataContractSerialization.dll",
+      "bytes": 2062120
+    },
+    {
+      "path": "wpfgfx_cor3.dll",
+      "bytes": 1956648
+    },
+    {
+      "path": "System.Private.Windows.Core.dll",
+      "bytes": 1906472
+    },
+    {
+      "path": "System.Text.Json.dll",
+      "bytes": 1890088
+    },
+    {
+      "path": "System.Net.Http.dll",
+      "bytes": 1746728
+    }
+  ],
+  "duplicates": [
+    {
+      "bytes_each": 1356120,
+      "sha256": "4e2109c88298f0a614aac82b23310b13835673a8e192a6a8b75c25459e591169",
+      "paths": [
+        "mscordaccore_amd64_amd64_10.0.1326.50504.dll",
+        "mscordaccore.dll"
+      ],
+      "action": "review only; paths may be runtime contracts"
+    },
+    {
+      "bytes_each": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "paths": [
+        "licenses/Tesseract-wrapper-LICENSE.txt",
+        "licenses/tessdata-fast-Apache-2.0.txt",
+        "licenses/Tesseract-Apache-2.0.txt"
+      ],
+      "action": "review only; paths may be runtime contracts"
+    }
+  ],
+  "warnings": []
+}

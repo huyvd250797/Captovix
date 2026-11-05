@@ -46,7 +46,8 @@ if ($UpdateSource) {
     if ($UpdateKind -eq 'GitHub' -and ($uri.Host -ne 'github.com' -or -not $uri.IsDefaultPort -or $uri.AbsolutePath.Trim('/').Split('/').Count -ne 2)) { throw 'Use https://github.com/OWNER/REPO for GitHub updates.' }
     @{SourceKind=$UpdateKind;SourceUrl=$UpdateSource.TrimEnd('/');AutoCheck=$true} | ConvertTo-Json | Set-Content (Join-Path $payload 'update-source.json') -Encoding utf8
 }
-Get-ChildItem $payload -Recurse -Include *.pdb,*.xml | Remove-Item -Force
+python scripts/Prepare-Payload.py $payload --report (Join-Path $artifactRoot "payload-cleanup.json")
+if ($LASTEXITCODE -ne 0) { throw 'Payload cleanup failed.' }
 dotnet tool restore
 if ($LASTEXITCODE -ne 0) { throw 'Unable to restore the pinned Velopack CLI.' }
 $vpkArgs = @('--skip-updates','pack','--packId','HuyVo.Captovix','--packVersion',$version,'--packDir',$payload,'--mainExe','Captovix.exe','--packTitle','Captovix','--packAuthors','HuyVo','--runtime','win-x64','--channel','win','--icon','src/Captovix/Assets/Captovix.ico','--releaseNotes','docs/RELEASE-NOTES.md','--framework','vcredist143-x64','--noPortable','--outputDir',$releases)

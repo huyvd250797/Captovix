@@ -45,7 +45,7 @@ public partial class MainWindow
     {
         if(_studioPopup!=null)_studioPopup.IsOpen=false;
         var popup=_studioPopup=new Popup{PlacementTarget=anchor,Placement=PlacementMode.Bottom,StaysOpen=false,AllowsTransparency=true};
-        var frame=new Border{Child=new ScrollViewer{Content=content,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,MaxHeight=Math.Max(150,Math.Min(450,SystemParameters.WorkArea.Height-100))},CornerRadius=new(9),BorderThickness=new(1.5),Margin=new(12),Effect=new System.Windows.Media.Effects.DropShadowEffect{Color=Colors.Black,BlurRadius=16,ShadowDepth=3,Opacity=.38}};frame.SetResourceReference(Border.BackgroundProperty,"Surface");frame.SetResourceReference(Border.BorderBrushProperty,"AccentText");frame.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Escape){popup.IsOpen=false;e.Handled=true;}};popup.Child=frame;PopupPresentation.Attach(popup);popup.IsOpen=true;
+        var frame=new Border{Child=new ScrollViewer{Content=content,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,MaxHeight=Math.Max(150,Math.Min(450,SystemParameters.WorkArea.Height-100))},CornerRadius=new(9),BorderThickness=new(0),Margin=new(0)};frame.SetResourceReference(Border.BackgroundProperty,"Surface");frame.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Escape){popup.IsOpen=false;e.Handled=true;}};popup.Child=frame;PopupPresentation.Attach(popup);popup.IsOpen=true;
     }
     internal static BitmapSource StampImage(StampSpec spec)
     {

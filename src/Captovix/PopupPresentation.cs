@@ -14,13 +14,17 @@ public static class PopupPresentation
  public static void SetEnabled(DependencyObject d,bool value)=>d.SetValue(EnabledProperty,value);
  public static bool GetEnabled(DependencyObject d)=>(bool)d.GetValue(EnabledProperty);
  private static readonly ConditionalWeakTable<Popup,object> Attached=new();
- public static void Attach(Popup popup){if(Attached.TryGetValue(popup,out _))return;Attached.Add(popup,new());popup.Opened+=(_,_)=>{if(popup.Child is not FrameworkElement child||child.Tag as string=="@popup-frame")return;popup.Child=null;var border=new Border{Tag="@popup-frame",Child=child,Padding=new(1),Margin=new(12),CornerRadius=new(9),BorderThickness=new(1.5),Effect=Shadow()};border.SetResourceReference(Border.BackgroundProperty,"Surface");border.SetResourceReference(Border.BorderBrushProperty,"AccentText");popup.AllowsTransparency=true;popup.Child=border;};}
+ public static void Attach(Popup popup){if(Attached.TryGetValue(popup,out _))return;Attached.Add(popup,new());popup.Opened+=(_,_)=>{if(popup.Child is not FrameworkElement child||child.Tag as string=="@popup-frame"||popup.TemplatedParent is ContextMenu)return;if(child is Border inner){inner.BorderThickness=new(0);inner.Effect=null;}
+ popup.Child=null;var border=new Border{Tag="@popup-frame",Child=child,Padding=new(1),Margin=new(12),CornerRadius=new(9),BorderThickness=new(1),Effect=Shadow()};border.SetResourceReference(Border.BackgroundProperty,"Surface");border.SetResourceReference(Border.BorderBrushProperty,"PopupLine");popup.AllowsTransparency=true;popup.Child=border;};}
  internal static DropShadowEffect Shadow()=>new(){Color=Colors.Black,BlurRadius=18,ShadowDepth=3,Opacity=.38};
  internal static void DecorateWindow(Window w,FrameworkElement root)
  {
-  if(w is MainWindow)return;var original=root;var border=new Border{Child=original,BorderThickness=new(1.5),Effect=Shadow()};border.SetResourceReference(Border.BorderBrushProperty,"AccentText");border.SetResourceReference(Border.BackgroundProperty,"AppBackground");w.Content=border;
+  if(w is MainWindow)return;
+  // Detach from Window before parenting this content under the common frame.
+  if(ReferenceEquals(w.Content,root))w.Content=null;
+  var original=root;var border=new Border{Child=original,BorderThickness=new(1),Effect=Shadow()};border.SetResourceReference(Border.BorderBrushProperty,"PopupLine");border.SetResourceReference(Border.BackgroundProperty,"AppBackground");w.Content=border;
   // Inactive-modal feedback animates only its outline; the window never hides.
-  var glow=new DropShadowEffect{Color=Colors.MediumPurple,BlurRadius=20,ShadowDepth=0,Opacity=0};var overlay=new Border{IsHitTestVisible=false,BorderThickness=new(2),Opacity=0,Effect=glow};overlay.SetResourceReference(Border.BorderBrushProperty,"AccentText");
+  var glow=new DropShadowEffect{Color=Colors.Silver,BlurRadius=20,ShadowDepth=0,Opacity=0};var overlay=new Border{IsHitTestVisible=false,BorderThickness=new(1),Opacity=0,Effect=glow};overlay.SetResourceReference(Border.BorderBrushProperty,"PopupLine");
   border.Child=null;var layer=new Grid();layer.Children.Add(original);layer.Children.Add(overlay);border.Child=layer;
   DateTime last=DateTime.MinValue;void Pulse(){if(!w.IsVisible||!w.IsEnabled||DateTime.UtcNow-last<TimeSpan.FromMilliseconds(600))return;last=DateTime.UtcNow;overlay.BeginAnimation(UIElement.OpacityProperty,new DoubleAnimationUsingKeyFrames{Duration=TimeSpan.FromMilliseconds(650),KeyFrames={new LinearDoubleKeyFrame(0,KeyTime.FromTimeSpan(TimeSpan.Zero)),new LinearDoubleKeyFrame(1,KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(140))),new LinearDoubleKeyFrame(.2,KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(290))),new LinearDoubleKeyFrame(.9,KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(420))),new LinearDoubleKeyFrame(0,KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(650)))}});glow.BeginAnimation(DropShadowEffect.OpacityProperty,new DoubleAnimation(.85,0,TimeSpan.FromMilliseconds(650)));}
   var owner=w.Owner;var ownerHandle=owner==null?0:new WindowInteropHelper(owner).Handle;var source=ownerHandle==0?null:HwndSource.FromHwnd(ownerHandle);var self=HwndSource.FromHwnd(new WindowInteropHelper(w).Handle);

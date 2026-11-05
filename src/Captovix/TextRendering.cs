@@ -12,6 +12,9 @@ public static partial class EditorRenderer
     private sealed class LayoutEntry { public LayoutEntry(){}  public object? Key;public FormattedText? Layout;public Rect? InkBounds; }
     private static double CacheCoordinate(double value)=>Math.Round(value,6);
     private static object LayoutKey(Annotation a)=> (a.Text,a.FontFamily,a.FontSize,a.Bold,a.Italic,a.Underline,a.LineSpacing,a.TextAlignment,TextStudio.Foreground(a),CacheCoordinate(a.Mockup!=null||a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth),CultureInfo.CurrentUICulture.Name);
+    [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<FormattedText,ScanInkBox>? _scanInk;
+    private sealed class ScanInkBox(Rect bounds){public Rect Bounds= bounds;}
+    private static bool ScanLabel(Annotation a)=>a.Mockup is {FromScan:true,Type:MockupKind.Label or MockupKind.Title};
     public static FormattedText TextLayout(Annotation a,string? text=null,Brush? ink=null)
     {
         LayoutEntry? cached=null;object? key=null;
@@ -22,6 +25,7 @@ public static partial class EditorRenderer
         if(a.LineSpacing>0)layout.LineHeight=a.FontSize*a.LineSpacing;
         if(text==null){
             double width=a.Mockup!=null||a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame&&a.Width>=2?TextContent(a).Width:a.TextWidth;
+            if(ScanLabel(a))width=0; // OCR lines are independent, fixed ink frames; do not introduce wraps.
             if(width>0){layout.MaxTextWidth=Math.Max(1,width);layout.TextAlignment=WpfAlignment(a.TextAlignment);}
         }if(cached!=null){cached.Key=key;cached.Layout=layout;cached.InkBounds=null;}return layout;
     }
@@ -35,7 +39,9 @@ public static partial class EditorRenderer
     }
     public static Point TextOrigin(Annotation a,FormattedText layout)
     {
-        var inner=TextContent(a);double offset=a.Mockup!=null||a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame?Math.Max(0,inner.Height-layout.Height)*(int)a.VerticalAlignment/2:0;return new(inner.X,inner.Y+offset);
+        var inner=TextContent(a);
+        if(ScanLabel(a)){var ink=(_scanInk??=new()).GetValue(layout,l=>new ScanInkBox(l.BuildGeometry(new(0,0)).Bounds)).Bounds;if(!ink.IsEmpty)return new(inner.X-ink.X,inner.Y+(inner.Height-ink.Height)/2-ink.Y);}
+        double offset=a.Mockup!=null||a.Kind==AnnotationKind.Callout||a.Kind==AnnotationKind.Text&&a.TextFrame?Math.Max(0,inner.Height-layout.Height)*(int)a.VerticalAlignment/2:0;return new(inner.X,inner.Y+offset);
     }
     public static Rect TextInkBounds(Annotation a)
     {

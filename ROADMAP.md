@@ -1,4 +1,4 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.41.0
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.42.0
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
@@ -15,8 +15,9 @@ Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Ph�
 | Backlog — Editor Workflow & Usability | Ít bước, nhất quán | Chọn/kéo/resize, chữ/Callout/Stamp, công cụ động, phím/cuộn/Undo, popup | Workflow/properties | Không mất thay đổi, giữ vị trí | Dự kiến |
 | Backlog — Image Tools & OCR Usability | Nhận chữ và sửa ảnh dễ hơn | Vùng OCR/copy, zoom/pan, màu/nét/Clone/phối cảnh/Trước-Sau-Hủy | Pixel/OCR | Preview/xuất/Undo khớp | Chuyển từ1.37cũ |
 | V1.41.0 — Groups & Layout Editing (M4) | Chỉnh bố cục theo quan hệ | Nhóm lồng/cây/cha-con/thuộc tính chung; popup chuẩn/More gọn; mở vị trí tệp | Schema21 + backup; client-only | Logic/build/package; nghiệm thu native Windows còn chờ | Đã triển khai theo Boss |
+| V1.41.1 — Startup & Popup Recovery | Khôi phục mở app1.41 | Bỏ resource trùng, sửa logical parent popup, log/fallback khởi động | Bản vá client; không đổi schema/runtime/backend | Kiểm source/resource/build/package; Windows native còn chờ | Bản vá theo lỗi Boss báo |
 | Backlog — Library & Export Experience | Thư viện/xuất thuận tiện | Thumbnail theo vùng, tìm/lọc/chọn nhiều/khôi phục, dragout/batch | Library/export | Cuộn mượt, tiến trình/hủy/thử lại | Dự kiến |
-| V1.42.0 — Storage & Package Optimization | Giảm phần dung lượng dư | Audit bộ cài/app/cache/temp, dọn an toàn | Packaging/storage | Có trước/sau, giữ runtime/OCR | Dự kiến |
+| V1.42.0 — Element Recognition & Fidelity (M5) | Quét form ít sửa tay; dung lượng rõ ràng | Chữ/control riêng, nhóm/quan hệ, font/màu/viền/bo góc, viền trung tính, trang dung lượng/dọn an toàn | Schema có sẵn tối đa21; giới hạn cache và audit payload | Logic/cross-build/gói; native Windows còn chờ | Đã triển khai theo Boss, chưa nghiệm thu Windows |
 | V1.43.0 — Update, Recovery & Release Quality | Phát hành ổn định | Update thẳng, retry/backup/khôi phục, cài đè/theme/DPI/Windows QA | Update/release | Giữ ảnh/license/config, gói lỗi không áp dụng | Dự kiến |
 
 ## Phần Mockup theo mốc Boss chọn
@@ -24,7 +25,9 @@ Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Ph�
 - M1 — Text & Button Editing: V1.38.0, đã triển khai; chỉ nền phẳng, không tự tách toàn giao diện.
 - M2 — Element Scan & Review: V1.39.0, đã triển khai; kiểm logic/build/package, nghiệm thu native Windows và SQL sản xuất còn chờ.
 - M3 — Move & Background Recovery: V1.40.0, đã triển khai; ưu tiên nền phẳng, cần nghiệm thu Windows native.
-- M4 — Groups & Layout Editing: V1.41.0, đã triển khai, cần nghiệm thu Windows native. Các mốc Mockup tiếp theo giữ trong kế hoạch đã trao đổi; chưa gán số và không tự thêm phạm vi vào M1. V1.39 cũ Editor Workflow & Usability chuyển backlog chưa gán số; V1.40 cũ Image Tools & OCR chuyển backlog chưa gán số. Boss chọn M4 cho1.41; Library & Export chuyển backlog chưa gán số. Các dự kiến1.42–1.43 giữ nguyên. Mốc sau M4 chưa được chọn xây dựng.
+- M4 — Groups & Layout Editing: V1.41.0, đã triển khai, cần nghiệm thu Windows native. Các mốc Mockup tiếp theo giữ trong kế hoạch đã trao đổi; chưa gán số và không tự thêm phạm vi vào M1. V1.39 cũ Editor Workflow & Usability chuyển backlog chưa gán số; V1.40 cũ Image Tools & OCR chuyển backlog chưa gán số. Boss chọn M4 cho1.41; Library & Export chuyển backlog chưa gán số. M5 được Boss chọn cho V1.42.0 và gộp Storage & Package Optimization vào cùng bản. V1.43.0 giữ kế hoạch kiểm phát hành/khôi phục.
+
+- M5 — Element Recognition & Fidelity: V1.42.0, đã triển khai; font/bo góc là ước lượng cần rà soát, native Windows còn chờ.
 
 ## Lịch sử roadmap
 

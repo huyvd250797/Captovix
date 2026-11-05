@@ -18,6 +18,7 @@ public static class AppearanceManager
         bool dark=AppearanceSettings.UseDark(Current.Mode,SystemLight());var r=Application.Current.Resources;
         void Brush(string key,string light,string night){var value=(Color)ColorConverter.ConvertFromString(dark?night:light);var brush=new SolidColorBrush(value);brush.Freeze();r[key]=brush;}
         Brush("Surface","#FFFFFF","#23262E");Brush("AppBackground","#F3F4F8","#1B1E25");Brush("Text","#243348","#DCE1EA");Brush("Muted","#586679","#A5AFBF");Brush("Line","#DCE3E9","#3B424F");Brush("Soft","#EEF1F7","#303641");Brush("Hover","#E7EBF2","#353D4B");Brush("Workspace","#E9EDF1","#181B21");Brush("Danger","#B42342","#F29AA9");Brush("Warning","#835300","#DFC28B");Brush("RecordBackground","#FFF1F2","#362930");Brush("RecordText","#BE123C","#EBA0B0");
+        Brush("PopupLine","#7C828B","#959DA9");
         Brush("Accent",Current.Accent,Current.Accent);Brush("OnAccent",AppearanceSettings.WhiteText(Current.Accent)?"#FFFFFF":"#000000",AppearanceSettings.WhiteText(Current.Accent)?"#FFFFFF":"#000000");
         // A readable accent label/selection outline is distinct from the user's exact button paint.
         Brush("AccentText",AppearanceSettings.WhiteText(Current.Accent)?Current.Accent:"#5925AE",AppearanceSettings.WhiteText(Current.Accent)?"#C4A5FF":Current.Accent);

@@ -16,7 +16,7 @@ public partial class MainWindow
         try{
             _autoSaveWork=StaImageWorker.Run(()=>{try{DocumentStore.Save(savedItem,snapshot,image);}finally{EditorRenderer.ReleaseImageCaches(image);}});
             await _autoSaveWork;
-            if(ReferenceEquals(_session,session)&&session.MarkSaved(revision)){if(savedItem.Thumbnail!=null)item.Thumbnail=savedItem.Thumbnail;SavedLabel.Text="✓ Đã lưu";SavedLabel.Foreground=Brushes.SeaGreen;}
+            if(ReferenceEquals(_session,session)&&session.MarkSaved(revision)){_store.RequestThumbnail(item);SavedLabel.Text="✓ Đã lưu";SavedLabel.Foreground=Brushes.SeaGreen;}
         }catch(Exception ex){App.Log(ex);if(ReferenceEquals(_session,session)){SavedLabel.Text="Chưa lưu · Ctrl+S thử lại";SetStatus("Không lưu được chú thích: "+ex.Message);}}
         finally{_autoSaveSession=null;_autoSaveWork=null;_autoSaveRevision=0;_autoSaveRunning=false;if(_session?.Dirty==true){_saveTimer.Stop();_saveTimer.Start();}}
     }
