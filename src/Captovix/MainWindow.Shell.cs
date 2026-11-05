@@ -36,7 +36,8 @@ public partial class MainWindow
         System.Windows.Automation.AutomationProperties.SetName(LibraryLayoutButton,LibraryLayoutButton.ToolTip.ToString());
         LibraryFooterRow.Height=double.NaN;LibraryFooterRow.Width=_libraryBottom?34:double.NaN;LibraryFooterRow.Orientation=_libraryBottom?Orientation.Vertical:Orientation.Horizontal;
         DockPanel.SetDock(LibraryHeader,Dock.Top);LibraryHeader.Width=double.NaN;LibraryHeader.Visibility=_libraryBottom?Visibility.Collapsed:Visibility.Visible;
-        var factory=new FrameworkElementFactory(typeof(VirtualizingStackPanel));factory.SetValue(VirtualizingStackPanel.OrientationProperty,_libraryBottom?Orientation.Horizontal:Orientation.Vertical);MediaList.ItemsPanel=new ItemsPanelTemplate(factory);
+        VirtualizingPanel.SetScrollUnit(MediaList,ScrollUnit.Pixel);
+        var factory=new FrameworkElementFactory(typeof(VirtualizingStackPanel));factory.SetValue(VirtualizingPanel.ScrollUnitProperty,ScrollUnit.Pixel);factory.SetValue(VirtualizingStackPanel.OrientationProperty,_libraryBottom?Orientation.Horizontal:Orientation.Vertical);MediaList.ItemsPanel=new ItemsPanelTemplate(factory);
         _mediaCardStyle??=MediaList.ItemContainerStyle;var style=new Style(typeof(ListBoxItem),_mediaCardStyle);style.Setters.Add(new Setter(FrameworkElement.WidthProperty,_libraryBottom?Math.Clamp((_filmstripHeight-36)*1.4,85,250):double.NaN));MediaList.ItemContainerStyle=style;
         ScrollViewer.SetHorizontalScrollBarVisibility(MediaList,_libraryBottom?ScrollBarVisibility.Auto:ScrollBarVisibility.Disabled);ScrollViewer.SetVerticalScrollBarVisibility(MediaList,_libraryBottom?ScrollBarVisibility.Disabled:ScrollBarVisibility.Auto);
         Dispatcher.BeginInvoke(()=>{if(_fitMode&&_session!=null)FitImage();if(Selected!=null)MediaList.ScrollIntoView(Selected);});

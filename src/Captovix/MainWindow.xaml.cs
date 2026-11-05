@@ -29,7 +29,7 @@ public partial class MainWindow : Window
     private MediaItem? Selected => MediaList.SelectedItem as MediaItem;
     public MainWindow()
     {
-        var startupClock=Stopwatch.StartNew();using var measurement=PerformanceTimings.Measure("window.construct");bool firstPaint=true;ContentRendered+=(_,_)=>{if(!firstPaint)return;firstPaint=false;PerformanceTimings.Record("window.first-paint",startupClock.Elapsed.TotalMilliseconds);};
+        var startupClock=Stopwatch.StartNew();using var measurement=PerformanceTimings.Measure("window.construct");bool firstPaint=true;ContentRendered+=(_,_)=>{if(!firstPaint)return;firstPaint=false;PerformanceTimings.Record("window.first-paint",startupClock.Elapsed.TotalMilliseconds);ReleaseRecoveryState.Healthy(App.DataRoot,VersionInfo.Current);};
         WindowPlacement.Attach(this);InitializeComponent();Activated+=(_,_)=>QueueUpdateNotice();InitializeBrand();InitializeEditor();_store=new();RebuildRecent();MediaList.ItemsSource=_recentItems;
         CollectionViewSource.GetDefaultView(_recentItems).Filter=o=>{var i=(MediaItem)o;return LibraryMatch(i);};
         _store.Items.CollectionChanged+=(_,_)=>{if(_libraryRefreshHold==0)RebuildRecent();};CountLabel.Text=$"{_recentItems.Count}/{_store.Items.Count}";
@@ -47,7 +47,7 @@ public partial class MainWindow : Window
         DisplayPicker.SelectedItem=_displays.FirstOrDefault(d=>d.Device==s.Display)??_displays.FirstOrDefault();
         _loaded=true;var hwnd=new WindowInteropHelper(this).Handle;HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);
         InitializeCaptureWorkflow();
-        InitializeUpdates();InitializeLicensing();
+        if(ReleaseRecoveryState.Startup(App.DataRoot,VersionInfo.Current))SetStatus("Lần cập nhật/khởi động trước chưa hoàn tất. Trợ giúp → Cập nhật & khôi phục dữ liệu để kiểm tra bản sao lưu.");InitializeUpdates();InitializeLicensing();
         if(_store.StartupWarning!=null)AppDialog.Show(this,_store.StartupWarning,"Kiểm tra dữ liệu cũ",MessageBoxButton.OK,MessageBoxImage.Warning);
     }
     private void RefreshSources()
@@ -188,6 +188,7 @@ public partial class MainWindow : Window
     private void UpdateMetadata(MediaItem item)=>Metadata.Text=$"{(item.IsVideo?"VIDEO MP4 / H.264":"ẢNH GỐC PNG")}\n{item.Width} × {item.Height} pixel\n{item.Created:dd/MM/yyyy HH:mm:ss}\n\nNguồn\n{item.Source}\n\n{(item.IsVideo?$"Mic: {(item.Microphone?"Bật":"Tắt")}\nTiếng máy: {(item.SystemAudio?"Bật":"Tắt")}\nFPS cấu hình: {item.Fps}\n":"")}\n{item.FilePath}";
     private void Copy_Click(object sender,RoutedEventArgs e)
     {if(!RequireLicense())return;
+        if(MediaList.IsKeyboardFocusWithin||MediaList.SelectedItems.Count>1){CopyLibrarySelection();return;}
         if(_session==null||!PrepareCropForExport())return;_session.Commit();
         try{ImageTransfer.Copy(Surface.Flatten());FlushEdits(false);SetStatus($"Đã copy {Surface.Layout!.Width} × {Surface.Layout.Height} px · PNG + Bitmap gồm chú thích/crop. App nhận quyết định cách dán."+PrivacyExportStatus());}
         catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Không copy được ảnh");}
@@ -249,7 +250,7 @@ public partial class MainWindow : Window
     private void TestGuide_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;var p=Path.Combine(AppContext.BaseDirectory,"docs","WINDOWS-TEST-CHECKLIST.md");if(File.Exists(p))Process.Start(new ProcessStartInfo("notepad.exe",$"\"{p}\""){UseShellExecute=true});else AppDialog.Show(this,"Xem docs/WINDOWS-TEST-CHECKLIST.md trong gói source. Kiểm tra chụp vùng/cửa sổ/toàn màn hình, scale 100–200%, màn hình phụ tọa độ âm và quay mic + tiếng máy.","Kiểm thử Captovix V"+VersionInfo.Current);}
     private void Window_Closing(object? sender,CancelEventArgs e)
     {
-        if(_busy){e.Cancel=true;_exitRequested=true;CancelCapture();SetStatus("Đang hoàn tất phiên và thoát Captovix…");return;}
+        if(_busy){e.Cancel=true;_exitRequested=true;_updatePreparationCancel?.Cancel();CancelCapture();SetStatus("Đang hoàn tất phiên và thoát Captovix…");return;}
         Surface.CancelInteraction();if(!FlushEdits()){e.Cancel=true;_exitRequested=false;return;}
         try{if(_loaded){_store.SaveSettings(Settings());_store.Save();}}
         catch(Exception ex){App.Log(ex);e.Cancel=true;AppDialog.Show(this,"Chưa lưu được cấu hình/thư viện. Hãy kiểm tra thư mục dữ liệu trước khi đóng.\n"+ex.Message,"Captovix");return;}

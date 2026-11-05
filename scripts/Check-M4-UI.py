@@ -15,6 +15,6 @@ p=(d/'PopupPresentation.cs').read_text();check('DoubleAnimationUsingKeyFrames' i
 check('RemoveHook' in p and 'w.Closed' in p,'Modal hooks are detached on close')
 check('SetResourceReference(Border.BorderBrushProperty,"PopupLine")' in p,'Dialog and popup outline follow current theme')
 check('PopupPresentation.DecorateWindow(w,root)' in (d/'WindowChromeStudio.cs').read_text(),'Normal Captovix dialogs share common chrome')
-check(all('MessageBox.Show(' not in f.read_text() for f in d.glob('*.cs') if f.name not in {'AppDialog.cs','Program.cs'}),'Normal app dialogs share common form; fatal startup retains native fallback')
+check(all('MessageBox.Show(' not in f.read_text() for f in d.glob('*.cs') if f.name not in {'AppDialog.cs','Program.cs','RecoveryWorker.cs'}),'Normal app dialogs share common form; fatal startup/isolated restore worker retain native fallback')
 a=(d/'AppDialog.cs').read_text();check(a.index('Button("Hủy"')<a.index('Button(buttons') and 'Dock.Right' in a,'Cancel remains left and confirmation right')
 print(n,'M4 UI contract checks passed; visual/native acceptance pending.')

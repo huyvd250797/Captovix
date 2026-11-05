@@ -1,0 +1,101 @@
+PASS: Feed full package size/SHA256/SHA1 match bytes
+PASS: Legacy RELEASES matches same full package
+PASS: Nupkg CRC verified
+PASS: Nuspec AppId/version verified
+PASS: Packaged payload matches published Assets/Captovix-brand-v117.ico
+PASS: Packaged payload matches published Captovix.dll
+PASS: Packaged payload matches published Captovix.exe
+PASS: Packaged payload matches published ScreenRecorderLib.dll
+PASS: Packaged payload matches published Velopack.dll
+PASS: Packaged payload matches published Captovix.runtimeconfig.json
+PASS: Packaged payload matches published update-source.json
+PASS: Packaged payload matches published README.md
+PASS: Packaged payload matches published CHANGELOG.md
+PASS: Packaged payload matches published ROADMAP.md
+PASS: Packaged payload matches published docs/WINDOWS-ACCEPTANCE-V1441.md
+PASS: Packaged payload matches published docs/WINDOWS-ACCEPTANCE-V144.md
+PASS: Packaged payload matches published docs/MODEL-EVALUATION-V144.md
+PASS: Packaged payload matches published docs/PERFORMANCE-M6-V144.json
+PASS: Packaged payload matches published docs/WINDOWS-ACCEPTANCE-V143.md
+PASS: Packaged payload matches published docs/WINDOWS-ACCEPTANCE-V142.md
+PASS: Packaged payload matches published docs/PERFORMANCE-M5-V142.json
+PASS: Packaged payload matches published docs/PAYLOAD-CLEANUP-V142.json
+PASS: Packaged payload matches published docs/STORAGE-AUDIT-V142.json
+PASS: Packaged payload matches published docs/STARTUP-POPUP-RECOVERY-V1411.md
+PASS: Packaged payload matches published docs/GROUPS-LAYOUT-EDITING-V141.md
+PASS: Packaged payload matches published docs/MOVE-BACKGROUND-RECOVERY-V140.md
+PASS: Packaged payload matches published docs/ELEMENT-SCAN-REVIEW-V139.md
+PASS: Packaged payload matches published docs/ACTIVATION-METADATA-V139.md
+PASS: Packaged payload matches published docs/MOCKUP-M1-V138.md
+PASS: Packaged payload matches published docs/IMAGE-COMPOSITION-TEMPLATES.md
+PASS: Packaged payload matches published docs/SCROLLING-CAPTURE-APPEARANCE.md
+PASS: Packaged payload matches published docs/WINDOWS-TEST-V1.14.md
+PASS: Packaged payload matches published docs/VALIDATION.md
+PASS: Packaged payload matches published docs/CAPTURE-RELIABILITY.md
+PASS: Packaged payload matches published docs/OCR-TEXT-EXTRACTION.md
+PASS: Packaged payload matches published docs/ASSISTED-IMAGE-EDITING.md
+PASS: Packaged payload matches published docs/IMAGE-LIBRARY-PROJECTS.md
+PASS: Packaged payload matches published docs/BATCH-EXPORT-DOCUMENTATION.md
+PASS: Packaged payload matches published docs/IMAGE-RELEASE-PERFORMANCE.md
+PASS: Packaged payload matches published docs/LAYOUT-PRECISION.md
+PASS: Packaged payload matches published docs/OBJECT-EDITING-PRECISION.md
+PASS: Packaged payload matches published docs/TEXT-CALLOUT-REFINEMENT.md
+PASS: Packaged payload matches published docs/CAPTURE-PRECISION.md
+PASS: Packaged payload matches published docs/SCROLLING-CAPTURE-QUALITY.md
+PASS: Packaged payload matches published docs/SMART-ELEMENT-CAPTURE.md
+PASS: Packaged payload matches published docs/CAPTURE-IMAGE-STUDIO.md
+PASS: Packaged payload matches published docs/COLOR-PICKER-STUDIO-ACCESS.md
+PASS: Packaged payload matches published docs/LICENSING-GUIDE.md
+PASS: Packaged payload matches published docs/SERVERLESS-LICENSING.md
+PASS: Packaged payload matches published docs/CAPTURE-FIDELITY-RELIABILITY.md
+PASS: Packaged payload matches published docs/QUICK-CAPTURE-EXPERIENCE.md
+PASS: Packaged payload matches published docs/capture-pixel-test.html
+PASS: Packaged payload matches published Licensing.Shared.dll
+PASS: Packaged payload matches published docs/PERFORMANCE-BENCHMARK.json
+PASS: Packaged payload matches published Tesseract.dll
+PASS: Packaged payload matches published x64/tesseract50.dll
+PASS: Packaged payload matches published x64/leptonica-1.82.0.dll
+PASS: Packaged payload matches published tessdata/eng.traineddata
+PASS: Packaged payload matches published tessdata/vie.traineddata
+PASS: Packaged payload matches published tessdata/models.json
+PASS: Packaged payload matches published docs/RELEASE-NOTES.md
+PASS: Packaged payload matches published docs/PERFORMANCE-RESPONSIVENESS-V137.md
+PASS: Packaged payload matches published docs/PERFORMANCE-V137-before.json
+PASS: Packaged payload matches published docs/PERFORMANCE-V137-after.json
+PASS: Packaged licensing protocol is the current build with activatedAt support
+PASS: Native application host version matches release
+PASS: Application dependency version matches release
+PASS: .NET10.0.13 self-contained runtime declared
+PASS: Stable source baked into package
+PASS: Runtime icon equals approved source artwork
+PASS: Bundled OCR model hash and size: eng
+PASS: Bundled OCR model hash and size: vie
+PASS: Windows x64 OCR package has no x86 native payload
+PASS: Approved icon in all PE sizes: Captovix.exe
+PASS: Approved icon in all PE sizes: Squirrel.exe
+PASS: No debug symbols in release payload
+PASS: Canonical release setup is the migration/directory wrapper
+PASS: Setup wrapper icon is approved artwork; MUI2 cannot override it
+PASS: Exactly five release assets
+PASS: Assets manifest points to canonical package and installer
+PASS: Protected foundation unchanged: src/Captovix/CaptureEngine.cs
+PASS: Protected foundation unchanged: installer/InstallPath.nsh
+PASS: Startup updater/OCR/Hybrid worker ordering and native fallback unchanged from supplied source
+PASS: Startup failure has independent native fallback and diagnostic log
+PASS: Installer changes only version; core arguments and approved MUI icon retained
+PASS: License trust configuration is embedded and certificates require signature verification
+PASS: No server signing key or admin token environment in desktop payload
+PASS: License/backend unchanged from supplied source: src/Captovix/license-config.json
+PASS: License/backend unchanged from supplied source: supabase/functions/licensing/index.ts
+PASS: License/backend unchanged from supplied source: admin/config.json
+PASS: Frozen capture saves retained physical pixels and releases snapshot
+PASS: GDI worker restores DPI context and validates PNG pixel roundtrip
+PASS: Desktop photos retain unscaled physical pixel blits
+PASS: Migration changes only signed activation metadata, preserving policy and protections
+PASS: ZIP CRC: Captovix V1.44.1 — Mockup Workflow & Editor Polish.zip
+PASS: Source ZIP contains complete clean tree
+PASS: Source ZIP byte comparison
+PASS: ZIP CRC: Captovix-v1.44.1-Update-Packages.zip
+PASS: Update ZIP includes five assets and publishing instructions
+PASS: Update ZIP assets match verified release bytes
+100 artifact integrity checks passed. Windows install/render/input acceptance is pending.

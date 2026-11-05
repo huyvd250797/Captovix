@@ -1,25 +1,13 @@
-# V1.44.0 — M6 Advanced UI Reconstruction: validation
+# V1.45.0 — Validation
 
-Ngày05/11/2026. Host Linuxx64, SDK.NET10.0.100. Windowsx64/.NET10.0.13, Velopack1.2.161, NSIS3.09 và OCR/backend/license giữ nền1.43.
+05/11/2026. Nền đúng ZIPV1.44.1 Boss cung cấp, SDK.NET10.0.100Linux, Windowsx64/.NET10.0.13 và OCR/Velopack1.2.161 giữ nguyên.
 
-## Phạm vi kiểm tra
+Kiểm hồi quy Run-Checks.py và focusedReleaseQualityChecks/UpdateChecks/Windowscrossbuild. Bộ mới kiểm dữ liệu sourceRaster mộtPNG, khôngerase khiapply, chuyển riêng label khiedit, undo,groupmove,save/reopen,copy/detach, bỏquétcũgiữprivacy; backup/manifest/restore/tamper/journal. ReleaseQualityWindowsChecks mới kiểm pixelđúngnguồn và khôngmấtnộidungkhiOCR/font sai; chỉcompile trênhostLinux.
 
-82project:47logic chạy trên Linux và35WPF/Windows chỉ cross-build. Hồi quy chạy tuần tự theo2phần log; lỗi nhóm lồng nhau tìm được ở M6 đã sửa và chạy lại các bộ liên quan. Không dùng kết quả compile để coi như đã cài/mở app trên Windows.
+Chưa có nativeWindows/Setup/WPF/IME/scrollvậtlý hoặc benchmarkWorkingSet/p95Windows trongphiênnày. Không tuyênbố đạt hoànchỉnh cổng nghiệmthu; WINDOWS-ACCEPTANCE-V145.md là yêu cầu trướcstable. Source/bộ cài/góiUpdate là bản bàn giao để kiểm trênWindows, chưapush/publish.
 
-M6ReconstructionChecks22PASS: TimesNewRoman14px xanh nghiêng/gạch chân giữ qua sửa/undo/redo/serialize, schema22/nhóm panel–row–control không nhiều cha, màu nền control đồng bộ text, historylossless, dedup, bảng grid, fallback nền phức tạp, normalizedcrop và giao thức/hủy AI. M6WindowsChecks có renderer/sidebar/doubleclick/backup22/reopenpixel; chưa chạy native.
+Khôi phục binary là công cụ cứu hộ/cài lại FullSetup, không tựrollback exe khi processkhônglên. Restore dữliệu là thao tácrõràng có checksum/staging/safetybackup và chờappđóng. Ghi nhậnHealthy chỉfirstpaint. Backup512MB,140MB/tệp,10000tệp; bản cũthiếu manifest khôngautorestored. KhôngmigrationSQL, khôngđổiKEY/backend. Schema23 có.pre-v1.45.bak.
 
-PERFORMANCE-M6-V144.json: controlled fixture40bước sửa cùng PNG1MB, lịch sử JSON lặp115159580byte so với dữ liệu chia sẻ/nén2713262byte. Đây là retained payload theo mô hình lịch sử, không phải working set toàn tiến trình hoặc đo cùng máy Windows. Không giảm chất lượng source/export. Một ảnh TaskManager thật854×749 do Boss cung cấp đã chạy smoke phân tích pixel, không sửa ảnh nguồn; chưa có groundtruth nên không dùng để khẳng định độ chính xác form. Không đính kèm ảnh riêng tư trong source.
+Pixelbacking giữ nội dung gốc; OCR chưa ra khôngtự thànhtext cónghĩa nhưng vẫn ở nền/nhóm. Chỉ vùng cụthể sửa mới vẽlạibằng thuộc tính hiệncó. Font từbitmap cònước lượng; nền chỗcũ khidi chuyển còncần ràsoát. Không thểbịa phục hồi chữ từ ảnhphẳng đãmất.
 
-Giữ Check-M4-UI.py11PASS (menu/Explorer/chrome/themes). Verify-Packages.py kiểm byte/runtime/OCR/installericons/feedhash/sourceZIP sau đóng gói; kết quả trong PACKAGE-VALIDATION-V144.txt. StartupResourceChecks giữ guardparent ContextMenu/ToolTip và fallback fatal độc lập.
-
-## Các giới hạn chưa được nghiệm thu
-
-- Chưa chạy Setup, WPF, UIA, IME và khởi động thực trên Windows10/11 trong phiên này. Bắt buộc chạy WINDOWS-ACCEPTANCE-V144.md trước phát hành rộng, đặc biệt tránh lặp lỗi không mở app.
-- Chưa có model vision/trọng số thật được đo trên bộ>=30form; HTTP giả lập chỉ xác minh adapter. MODEL-EVALUATION-V144.md nêu lựa chọn, tiêu chí và phần chưa đạt. Không vector hóa mọi icon hoặc tái dựng mọi table widget; pixel gốc/giữ ảnh là fallback có chủ đích.
-- Font từ bitmap chỉ là ước lượng; thiếu stylecomplete UI phải rà soát/xác nhận hoặc giữ ảnh. Sau khi xác nhận, sửa chữ không tự fit lại cỡ. Font phải có trên máy.
-- Chưa đo p95UI hoặc RAM của toàn tiến trình trên máy Boss trước/sau. Cache48+16MiB, history có ngân sách nhưng giữ tối thiểu1bước; ảnh8K, OCR, recorder và dịch vụAI có working set riêng.
-- Chưa push/publish GitHub Releases và chưa ký Captovix bằng chứng thư thương mại. Không migration/deploy backend/đổi KEY. Semantic role mới nâng sidecar22 có backup.pre-v1.44.bak.
-
-## Phiên bản kế tiếp
-
-V1.45.0 — Update, Recovery & Release Quality: kiểm update/cài đè/khôi phục trên Windows thật, bảo vệ dữ liệu và cải thiện theo kết quả corpus/đo cùng máy.
+Đóng gói từthưmục cótênriêng mỗi lượt, stamp/đối chiếuDLL trực tiếpvớipayload, runtime/models/hash/feed/sourceZIP. Báocáo cuối và kíchthước được thêm trong sourceZIP sau khi build. Các báo cáo V144/V1441 là lịch sử.

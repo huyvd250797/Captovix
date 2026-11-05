@@ -33,6 +33,7 @@ public static class DocumentStore
             int priorVersion=0;
             try{using var prior=System.Text.Json.JsonDocument.Parse(File.ReadAllText(editPath));if(prior.RootElement.ValueKind==System.Text.Json.JsonValueKind.Object&&prior.RootElement.TryGetProperty("Version",out var version)&&version.ValueKind==System.Text.Json.JsonValueKind.Number&&version.TryGetInt32(out var number))priorVersion=number;}
             catch(System.Text.Json.JsonException){ /* Keep corrupt sidecar bytes before replacing the recovered document. */ }
+            if(priorVersion<23&&doc.Version>=23&&!File.Exists(editPath+".pre-v1.45.bak"))File.Copy(editPath,editPath+".pre-v1.45.bak");
             if(priorVersion<22&&doc.Version>=22&&!File.Exists(editPath+".pre-v1.44.bak"))File.Copy(editPath,editPath+".pre-v1.44.bak");
             if(priorVersion<21&&session.Document.Version>=21&&!File.Exists(editPath+".pre-v1.41.bak"))File.Copy(editPath,editPath+".pre-v1.41.bak");
             if(priorVersion>EditorDocument.MaximumSupportedVersion)throw new InvalidDataException("Không ghi đè sidecar từ phiên bản app mới hơn.");

@@ -1,0 +1,13 @@
+V1.45.0 validation on Linux; native Windows execution pending.
+48 pure .NET projects executed successfully; 37 Windows projects compiled, not executed.
+Focused release quality: 15 logic cases; real-package audit: 7 cases.
+Actual update SDK integration: 97 checks. Artifact integrity: 104 checks.
+Final native publish: succeeded.
+No actual Windows installer/UI/DPI/RAM result is claimed.
+
+  Determining projects to restore...
+  Restored /workspace/scratch/101ff3fb429b/v145/Captovix-v1.44.1/src/Licensing.Shared/Licensing.Shared.csproj (in 7.01 sec).
+  Restored /workspace/scratch/101ff3fb429b/v145/Captovix-v1.44.1/src/Captovix/Captovix.csproj (in 7.03 sec).
+  Licensing.Shared -> /workspace/scratch/101ff3fb429b/v145/Captovix-v1.44.1/src/Licensing.Shared/bin/x64/Release/net10.0/Licensing.Shared.dll
+  Captovix -> /workspace/scratch/101ff3fb429b/v145/Captovix-v1.44.1/src/Captovix/bin/x64/Release/net10.0-windows/win-x64/Captovix.dll
+  Captovix -> /workspace/scratch/101ff3fb429b/v145/Captovix-v1.44.1/artifacts/win-x64/

@@ -16,6 +16,7 @@ public static class AnnotationClipboard
     {
         ConnectorStudio.Resolve(doc);var ids=AnnotationEditing.ExpandGroups(doc,selection);var objects=doc.Annotations.Where(a=>ids.Contains(a.Id)).Select(a=>a.Copy()).ToList();
         if(objects.Count==0)throw new InvalidOperationException("Chọn đối tượng để copy.");
+        MockupRasterState.DetachCopies(doc,objects);
         foreach(var a in objects){if(a.Mockup?.RecoveryId!=null){a.Mockup.RecoveryId=null;a.Mockup.EraseOriginal=false;}if(a.StartAnchor is {} start&&!ids.Contains(start.TargetId))a.StartAnchor=null;if(a.EndAnchor is {} end&&!ids.Contains(end.TargetId))a.EndAnchor=null;}
         var packet=new AnnotationClipboardPacket{SourceWidth=doc.OriginalWidth,SourceHeight=doc.OriginalHeight,Objects=objects};var json=JsonSerializer.Serialize(packet,EditorDocument.JsonOptions);Read(json);return json;
     }
@@ -34,7 +35,7 @@ public static class AnnotationClipboard
         var box=AnnotationEditing.Union(objects.Select(bounds));var view=movementBounds??doc.Viewport;
         double left=Math.Clamp(box.X+offset,view.X,view.Right-Math.Min(view.Width,box.Width)),top=Math.Clamp(box.Y+offset,view.Y,view.Bottom-Math.Min(view.Height,box.Height));
         foreach(var a in objects){
-            a.Id=idMap[a.Id];if(a.Mockup is {} mockup){mockup.EraseOriginal=false;mockup.RecoveryId=null;mockup.LabelForId=mockup.LabelForId is {} target&&idMap.TryGetValue(target,out var linked)?linked:null;}a.Locked=false;a.Visible=true;
+            a.Id=idMap[a.Id];if(a.Mockup is {} mockup){mockup.EraseOriginal=false;mockup.RecoveryId=null;MockupRasterState.Remap(mockup,idMap);mockup.LabelForId=mockup.LabelForId is {} target&&idMap.TryGetValue(target,out var linked)?linked:null;}a.Locked=false;a.Visible=true;
             GroupLayout.Set(a,GroupLayout.Chain(a).Select(group=>{if(!groups.TryGetValue(group,out var mapped))groups[group]=mapped=Guid.NewGuid().ToString("N");return mapped;}));
             a.StartAnchor=a.StartAnchor is {} start&&idMap.TryGetValue(start.TargetId,out var sid)?start with{TargetId=sid}:null;
             a.EndAnchor=a.EndAnchor is {} end&&idMap.TryGetValue(end.TargetId,out var eid)?end with{TargetId=eid}:null;

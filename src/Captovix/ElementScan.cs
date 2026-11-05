@@ -35,7 +35,7 @@ public sealed class ScanElement
 public sealed record ScanResult(List<ScanElement> Elements,bool Truncated,string Warning="");
 public static class ElementScan
 {
-    public const int MaxCandidates=200,MaxApply=120;
+    public const int MaxCandidates=200,MaxApply=2000;
     public static string Label(MockupKind kind)=>kind switch{MockupKind.Label=>"Chữ",MockupKind.Title=>"Tiêu đề",MockupKind.Button=>"Nút",MockupKind.Input=>"Ô nhập",_=>"Khối giao diện"};
     public static PixelRect Clamp(PixelRect r,PixelRect region)=>r.Intersect(region);
     public static double Overlap(PixelRect a,PixelRect b){var i=a.Intersect(b);double v=(double)i.Width*i.Height;return v/Math.Max(1,(double)a.Width*a.Height+(double)b.Width*b.Height-v);}
@@ -127,7 +127,7 @@ public static class ElementScan
     }
     public static List<Annotation> Prepare(EditorDocument document,IReadOnlyList<ScanElement> candidates,PixelRect scanBounds)
     {
-        var selected=candidates.Where(x=>x.Include&&!x.KeepImage).ToArray();int outputCount=selected.Sum(x=>1+(x.TextRuns.Count>0&&x.Text==string.Join("\n",x.TextRuns.Select(t=>t.Text))?x.TextRuns.Count:0));if(selected.Length==0)throw new InvalidDataException("Chọn ít nhất một phần tử đã kiểm tra.");if(selected.Length>MaxApply||document.Annotations.Count+outputCount>10000||outputCount>MaxApply)throw new InvalidDataException("Tối đa120 phần tử mỗi lần áp dụng.");
+        var selected=candidates.Where(x=>x.Include&&!x.KeepImage).ToArray();int outputCount=selected.Sum(x=>1+(x.TextRuns.Count>0&&x.Text==string.Join("\n",x.TextRuns.Select(t=>t.Text))?x.TextRuns.Count:0));if(selected.Length==0)throw new InvalidDataException("Chọn ít nhất một phần tử đã kiểm tra.");if(selected.Length>MaxApply||document.Annotations.Count+outputCount>10000||outputCount>MaxApply)throw new InvalidDataException("Tối đa2000 đối tượng mỗi lần áp dụng.");
         for(int i=0;i<selected.Length;i++)for(int j=i+1;j<selected.Length;j++)if(Overlap(selected[i].Bounds,selected[j].Bounds)>.90)throw new InvalidDataException("Có khung đã chọn gần trùng nhau. Bỏ chọn hoặc sửa khung trước khi áp dụng.");
         var all=candidates.ToDictionary(x=>x.Id);var map=selected.ToDictionary(x=>x.Id,_=>Guid.NewGuid().ToString("N"));var result=new List<Annotation>();
         foreach(var item in selected.OrderBy(x=>x.Kind==MockupKind.Block?0:1).ThenByDescending(x=>(long)x.Bounds.Width*x.Bounds.Height)){
@@ -141,7 +141,14 @@ public static class ElementScan
         }
         var blocks=selected.Where(x=>x.Kind==MockupKind.Block).OrderByDescending(x=>(long)x.Bounds.Width*x.Bounds.Height).ToArray();
         var blockGroups=blocks.ToDictionary(x=>x.Id,_=>Guid.NewGuid().ToString("N"));
-        foreach(var a in result){var b=new PixelRect((int)a.Left,(int)a.Top,(int)a.Width,(int)a.Height);var parents=blocks.Where(x=>a.Id==map[x.Id]||Contains(x.Bounds,b,.98)&&(long)x.Bounds.Width*x.Bounds.Height>(long)b.Width*b.Height).Select(x=>blockGroups[x.Id]).ToList();parents.AddRange(GroupLayout.Chain(a));if(parents.Count>0)GroupLayout.Set(a,parents);}
+        // Each block has one parent. Overlapping panels cannot give a group
+        // two different ancestor paths when Select all converts the whole form.
+        static long Area(PixelRect b)=>(long)b.Width*b.Height;
+        ScanElement? Container(PixelRect b)=>blocks.Where(x=>Area(x.Bounds)>Area(b)&&Contains(x.Bounds,b,.98)).OrderBy(x=>Area(x.Bounds)).ThenBy(x=>x.Id).FirstOrDefault();
+        var blockChains=new Dictionary<string,string[]>();
+        string[] Chain(ScanElement block){if(blockChains.TryGetValue(block.Id,out var cached))return cached;var parent=Container(block.Bounds);var chain=parent==null?Array.Empty<string>():Chain(parent);return blockChains[block.Id]=chain.Length<13?chain.Concat(new[]{blockGroups[block.Id]}).ToArray():chain;}
+        var mainIds=map.Values.ToHashSet();var splitParents=result.Where(a=>mainIds.Contains(a.Id)&&a.GroupId!=null).ToDictionary(a=>a.GroupId!);
+        foreach(var a in result){var original=GroupLayout.Chain(a);var owner=original.LastOrDefault() is {} group&&splitParents.TryGetValue(group,out var split)?split:a;var box=new PixelRect((int)owner.Left,(int)owner.Top,(int)owner.Width,(int)owner.Height);var block=blocks.FirstOrDefault(x=>owner.Id==map[x.Id])??Container(box);var parents=block==null?Array.Empty<string>():Chain(block);if(parents.Length>0)GroupLayout.Set(a,parents.Concat(original));}
         var originalChains=result.ToDictionary(a=>a.Id,GroupLayout.Chain);var rows=new Dictionary<string,string>();var controls=result.Where(a=>a.Mockup?.Type is MockupKind.Button or MockupKind.Input&&originalChains[a.Id].LastOrDefault() is {} leaf&&!blockGroups.Values.Contains(leaf)).ToDictionary(a=>originalChains[a.Id][^1]);
         foreach(var a in result){var owner=selected.FirstOrDefault(x=>map[x.Id]==a.Id);var parent=originalChains[a.Id].LastOrDefault() is {} leaf&&controls.TryGetValue(leaf,out var found)?found:null;owner??=parent==null?null:selected.FirstOrDefault(x=>map[x.Id]==parent.Id);
             if(owner?.LayoutGroup is not {} row)continue;var chain=originalChains[a.Id];bool control=parent!=null;var prefix=control&&chain.Length>0?chain[..^1]:chain;string key=string.Join("/",prefix)+":"+row;if(!rows.TryGetValue(key,out var group))rows[key]=group=Guid.NewGuid().ToString("N");GroupLayout.Set(a,prefix.Concat(new[]{group}).Concat(control?chain[^1..]:Array.Empty<string>()));}

@@ -1,0 +1,23 @@
+{
+  "version": "1.44.1",
+  "payload_bytes": 167434030,
+  "files": [
+    {
+      "name": "Captovix-v1.44.1-Full-Setup.exe",
+      "bytes": 99931795,
+      "sha256": "ff31b8540a049362cde04e229319c6248c0afdbbb928590fed80d3c205356810"
+    },
+    {
+      "name": "Captovix-v1.44.1-Update-Packages.zip",
+      "bytes": 174410918,
+      "sha256": "aeebdb5b10cf2769000ea8b50f917dcc4e7004083ca274341c35851858bd33ff"
+    },
+    {
+      "name": "HuyVo.Captovix-1.44.1-full.nupkg",
+      "bytes": 74761773,
+      "sha256": "d4cd2310e34f63034f5426947d0d2865d1e89fdc5abac7f0ce3d02dbcfd5bd94"
+    }
+  ],
+  "windows_native_status": "PENDING; cross-build is not install/IME/drag-drop acceptance",
+  "source_hash_note": "Final source ZIP rebuilt after report, no recursive self-hash"
+}

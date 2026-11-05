@@ -15,7 +15,7 @@ public partial class MainWindow
     private void InitializeVisualStudio()
     {
         LoadUtilityStars();_favorites=StyleFavoriteStore.Load(App.DataRoot,out var warning);_favoritesReadOnly=warning!=null;if(warning!=null)VisualStudioError.Text=warning;
-        void Directions(UniformGrid grid,bool frame){for(int n=0;n<9;n++){int direction=n;var button=new Button{Content=DirectionArrows[n],Tag=n,Padding=new(5),Margin=new(2),ToolTip=frame?"Hướng bóng toàn ảnh":"Hướng bóng đối tượng"};button.Click+=(_,_)=>{
+        void Directions(UniformGrid grid,bool frame){for(int n=0;n<9;n++){int direction=n;var button=new Button{Content=new TextBlock{Text=DirectionArrows[n],FontSize=18,HorizontalAlignment=HorizontalAlignment.Center},Tag=n,Padding=new(2),MinHeight=32,Margin=new(2),HorizontalContentAlignment=HorizontalAlignment.Center,ToolTip=new[]{"Trên trái","Trên","Trên phải","Trái","Bóng quanh","Phải","Dưới trái","Dưới","Dưới phải"}[n]};System.Windows.Automation.AutomationProperties.SetName(button,button.ToolTip.ToString());button.Click+=(_,_)=>{
             FlushAutoProperties();if(frame){var offset=StudioStyle.Offset(direction,_frameShadowDistance);ApplyAppearance(a=>{a.Shadow=true;a.ShadowX=(int)offset.X;a.ShadowY=(int)offset.Y;});}
             else{_shadowDirection=direction;bool old=_syncProperties;_syncProperties=true;ObjectShadowEnabled.IsChecked=true;_syncProperties=old;ApplyObjectShadow();}
         };grid.Children.Add(button);}}

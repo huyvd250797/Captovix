@@ -88,6 +88,6 @@ public sealed class UpdateSession(IUpdateBackend backend)
             backend.Apply(Release);
             return true;
         }
-        catch (Exception ex) { Stage = UpdateStage.Ready; Message = "Chưa áp dụng được cập nhật. Nội dung đã lưu; hãy thử lại."; Failed?.Invoke(ex); Notify(); return false; }
+        catch (Exception ex) { Stage = ex is System.IO.InvalidDataException?UpdateStage.Available:UpdateStage.Ready; Message = ex is System.IO.InvalidDataException?"Gói không còn hợp lệ. Hãy tải lại; chưa áp dụng cập nhật.":"Chưa áp dụng được cập nhật. Nội dung đã lưu; hãy thử lại."; Failed?.Invoke(ex); Notify(); return false; }
     }
 }

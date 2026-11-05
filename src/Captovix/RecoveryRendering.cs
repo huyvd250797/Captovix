@@ -15,7 +15,10 @@ public static partial class EditorRenderer
     public static BitmapSource RecoveredSampling(BitmapSource source,EditorDocument doc){if(doc.Recoveries.Count==0)return source;if(_recoveredSampling is {} cached&&ReferenceEquals(source,cached.Source)&&ReferenceEquals(doc,cached.Document)&&cached.Patches.Length==doc.Recoveries.Count&&cached.Patches.Select((x,i)=>ReferenceEquals(x.Patch,doc.Recoveries[i])&&x.Color==x.Patch.Background&&x.Mask==x.Patch.Mask).All(x=>x))return cached.Result;
         var pixels=ImageTransfer.Bgra(source);foreach(var p in doc.Recoveries){var bits=Convert.FromBase64String(p.Mask);int rgb=Convert.ToInt32(p.Background[1..],16);for(int y=0;y<p.Bounds.Height;y++)for(int x=0;x<p.Bounds.Width;x++){int bit=y*p.Bounds.Width+x;if((bits[bit>>3]&(1<<(bit&7)))==0)continue;int at=((p.Bounds.Y+y)*source.PixelWidth+p.Bounds.X+x)*4;pixels[at]=(byte)rgb;pixels[at+1]=(byte)(rgb>>8);pixels[at+2]=(byte)(rgb>>16);pixels[at+3]=255;}}var result=ImageTransfer.Bitmap(source.PixelWidth,source.PixelHeight,pixels);_recoveredSampling=(source,doc,result,doc.Recoveries.Select(p=>(p,p.Background,p.Mask)).ToArray());return result;
     }
-    public static void DrawRecoveries(DrawingContext dc,EditorDocument doc){foreach(var p in doc.Recoveries)dc.DrawImage(RecoveryImage(p),new Rect(p.Bounds.X,p.Bounds.Y,p.Bounds.Width,p.Bounds.Height));}
+    private sealed record MaskSummary(bool Full);
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<string,MaskSummary> FullMasks=new();
+    public static void DrawRecoveries(DrawingContext dc,EditorDocument doc){foreach(var p in doc.Recoveries){var rect=new Rect(p.Bounds.X,p.Bounds.Y,p.Bounds.Width,p.Bounds.Height);if(FullMasks.GetValue(p.Mask,m=>new(Convert.FromBase64String(m).All(b=>b==255))).Full)dc.DrawRectangle(Ink(p.Background),null,rect);else dc.DrawImage(RecoveryImage(p),rect);}}
+
 }
 public sealed partial class EditorSurface
 {

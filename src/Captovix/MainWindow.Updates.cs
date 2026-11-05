@@ -8,6 +8,7 @@ public partial class MainWindow
     private UpdateSession? _updates;
     private CancellationTokenSource? _updateCancellation;
     private bool _updateApplying, _updateUiClosed;
+    private CancellationTokenSource? _updatePreparationCancel;
     private readonly System.Windows.Threading.DispatcherTimer _updateCheckTimer = new() { Interval = TimeSpan.FromMinutes(30) };
 
     private void InitializeUpdates()
@@ -138,20 +139,18 @@ public partial class MainWindow
     }
     private void CancelUpdate_Click(object sender, RoutedEventArgs e) => _updateCancellation?.Cancel();
     private void DeferUpdate_Click(object sender, RoutedEventArgs e){var version=_updates?.Release?.Version;if(version!=null)_updatePromptPolicy.Offer(version,true,false);_settingsDialog?.Close();FlyUpdateBadge(null,version);}
-    private void ApplyUpdate_Click(object sender, RoutedEventArgs e)
+    private async void ApplyUpdate_Click(object sender, RoutedEventArgs e)
     {
         if (_updates == null) return;
-        _updates.Apply(_busy, () => {
-            Surface.CancelInteraction();
-            if (!FlushEdits()) return false;
-            _store.Save(); _store.SaveSettings(Settings()); UpdateSettingsStore.Save(App.DataRoot, _updateSettings);
-            MediaStore.AtomicWrite(Path.Combine(App.DataRoot, "editor-resume.json"), System.Text.Json.JsonSerializer.Serialize(Selected?.Id));
-            UpdateBackup.Create(App.DataRoot, VersionInfo.Current, _updates.Release!.Version);
-            _updateApplying = true; SuspendWorkflow(); VideoPreview.Close(); _videoTimer.Stop();
-            return true;
-        });
+        if(_busy||_updateApplying||_updates.Stage!=UpdateStage.Ready)return;
+        try{Surface.CancelInteraction();if(!FlushEdits())return;_store.Save();_store.SaveSettings(Settings());UpdateSettingsStore.Save(App.DataRoot,_updateSettings);MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"editor-resume.json"),System.Text.Json.JsonSerializer.Serialize(Selected?.Id));
+            _updateApplying=true;SuspendWorkflow();_busy=true;RenderUpdateUi();SetStatus("Đang sao lưu và kiểm tra dữ liệu trước cập nhật…");
+            string next=_updates.Release!.Version;using var preparation=new CancellationTokenSource();_updatePreparationCancel=preparation;var backup=await Task.Run(()=>UpdateBackup.Create(App.DataRoot,VersionInfo.Current,next,preparation.Token));preparation.Token.ThrowIfCancellationRequested();
+            ReleaseRecoveryState.Write(App.DataRoot,new(VersionInfo.Current,next,backup,"Applying",DateTimeOffset.UtcNow));_busy=false;
+            _updates.Apply(false,()=>{VideoPreview.Close();_videoTimer.Stop();return true;});
+        }catch(Exception ex){App.Log(ex);SetStatus("Chưa cập nhật: "+ex.Message);}finally{_busy=false;_updatePreparationCancel=null;}
         // ApplyUpdatesAndRestart normally exits the process. A failure leaves the Editor usable.
-        _updateApplying = false; if(_workflowSuspended)ResumeWorkflow(); _videoTimer.Start(); RenderUpdateUi();
+        _updateApplying = false; if(_workflowSuspended)ResumeWorkflow(); _videoTimer.Start(); RenderUpdateUi();if(_exitRequested)RequestExit();
     }
 
     private void RestoreEditorAfterUpdate()

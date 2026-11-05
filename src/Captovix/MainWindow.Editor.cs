@@ -204,10 +204,11 @@ public partial class MainWindow
         else if(!_fitMode)Surface.SetZoom(physical/newDpi.DpiScaleX);
         var session=_session;Dispatcher.BeginInvoke(()=>{if(!ReferenceEquals(_session,session))return;if(_fitMode)FitImage();else Surface.Refresh();},DispatcherPriority.Loaded);
     }
-    private void Viewport_Changed(object sender,SizeChangedEventArgs e){if(_fitMode&&_session!=null)FitImage();}
+    private void Viewport_Changed(object sender,SizeChangedEventArgs e){if(_fitMode&&_inlineId==null&&_session!=null)FitImage();}
     private void Editor_KeyDown(object sender,KeyEventArgs e)
     {if(!LicenseRuntime.Full){e.Handled=true;return;}
         if(_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin)||_toolKeyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))return;
+        if(e.Key==Key.C&&MediaList.IsKeyboardFocusWithin&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){CopyLibrarySelection();e.Handled=true;return;}
         if(e.Key==Key.A&&MediaList.IsKeyboardFocusWithin&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){MediaList.SelectAll();e.Handled=true;return;}
         if(e.Key==Key.Delete&&MediaList.IsKeyboardFocusWithin){Delete_Click(sender,e);e.Handled=true;return;}
         if(e.Key==Key.Escape&&Surface.Tool==EditorTool.Stamp){Surface.CancelInteraction();e.Handled=true;return;}

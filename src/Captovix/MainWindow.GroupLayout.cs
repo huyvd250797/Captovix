@@ -47,6 +47,7 @@ public partial class MainWindow
  private void MediaRight_Click(object sender,MouseButtonEventArgs e)
  {
   if(Ancestor<ListBoxItem>(e.OriginalSource as DependencyObject)?.DataContext is not MediaItem item)return;
-  var menu=new ContextMenu();var location=new MenuItem{Header="Mở vị trí tệp",Icon=AppIcons.Content("FolderLocation","",16)};location.Click+=(_,_)=>{try{if(!System.IO.File.Exists(item.FilePath))throw new System.IO.FileNotFoundException("Tệp không còn ở vị trí đã lưu.");var info=new System.Diagnostics.ProcessStartInfo("explorer.exe"){UseShellExecute=true};info.ArgumentList.Add("/select,");info.ArgumentList.Add(System.IO.Path.GetFullPath(item.FilePath));System.Diagnostics.Process.Start(info);}catch(Exception ex){AppDialog.Show(this,ex.Message,"Mở vị trí tệp");}};menu.Items.Add(location);AppMenus.Decorate(menu);menu.PlacementTarget=MediaList;menu.IsOpen=true;e.Handled=true;
+  if(!MediaList.SelectedItems.Contains(item))MediaList.SelectedItem=item;
+  var menu=new ContextMenu();var copy=new MenuItem{Header="Copy ảnh đã chọn"};copy.Click+=(_,_)=>CopyLibrarySelection();menu.Items.Add(copy);var location=new MenuItem{Header="Mở vị trí tệp",Icon=AppIcons.Content("FolderLocation","",16)};location.Click+=(_,_)=>{try{if(!System.IO.File.Exists(item.FilePath))throw new System.IO.FileNotFoundException("Tệp không còn ở vị trí đã lưu.");var info=new System.Diagnostics.ProcessStartInfo("explorer.exe"){UseShellExecute=true};info.ArgumentList.Add("/select,");info.ArgumentList.Add(System.IO.Path.GetFullPath(item.FilePath));System.Diagnostics.Process.Start(info);}catch(Exception ex){AppDialog.Show(this,ex.Message,"Mở vị trí tệp");}};menu.Items.Add(location);AppMenus.Decorate(menu);menu.PlacementTarget=MediaList;menu.IsOpen=true;e.Handled=true;
  }
 }

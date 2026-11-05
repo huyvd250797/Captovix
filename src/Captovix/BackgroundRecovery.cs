@@ -31,6 +31,7 @@ public static class BackgroundRecovery
     }
     public static void Finalize(EditorDocument before,EditorDocument document,Func<Annotation,EditorDocument,RecoveryPatch> prepare)
     {
+        MockupRasterState.Reconcile(before,document,prepare);
         var previous=before.Annotations.ToDictionary(a=>a.Id);var current=document.Annotations.ToDictionary(a=>a.Id);
         var work=new List<(Annotation Source,Annotation? Current)>();
         foreach(var old in before.Annotations.Where(a=>a.Mockup is {EraseOriginal:true,RecoveryId:null}))if(!current.TryGetValue(old.Id,out var next)||old.X1!=next.X1||old.Y1!=next.Y1||old.X2!=next.X2||old.Y2!=next.Y2||old.Rotation!=next.Rotation||old.Visible!=next.Visible)work.Add((old,next));

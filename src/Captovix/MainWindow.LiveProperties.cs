@@ -18,7 +18,7 @@ public partial class MainWindow
             else if(control is ComboBox combo){combo.SelectionChanged+=(_,_)=>ScheduleProperty(section,true);if(combo.IsEditable){combo.AddHandler(TextBoxBase.TextChangedEvent,new TextChangedEventHandler((_,_)=>ScheduleProperty(section,false)));combo.LostKeyboardFocus+=(_,_)=>FlushAutoProperties();}}
             else if(control is CheckBox check){check.Checked+=(_,_)=>ScheduleProperty(section,true);check.Unchecked+=(_,_)=>ScheduleProperty(section,true);}
         }}
-        Wire("Shape","ShapeStrokeHex","ShapeFillHex","ShapeThickness","ShapeStrokeOpacity","ShapeFillOpacity","ShapeStrokeEnabled","ShapeFillEnabled","ShapeDash","ShapeRadius","ShapeStarPoints","ShapeStarInset","ShapeArrowTip","ShapeDoubleArrow","ShapeArrowSize");
+        Wire("Shape","ShapeStrokeHex","ShapeFillHex","ShapeThickness","ShapeStrokeOpacity","ShapeFillOpacity","ShapeStrokeEnabled","ShapeFillEnabled","ShapeDash","ShapeRadius","ShapeStarPoints","ShapeStarInset","ShapeArrowTip","ShapeArrowSize");
         Wire("Text","TextFontPicker","TextBold","TextItalic","TextUnderline","TextForeground","TextAlignmentPicker","TextVerticalPicker","TextPaddingField","TextWrapWidth","TextSpacing","TextAutoFit","TextBackgroundHex","TextBackgroundOpacity","TextBorderToggle","CalloutKindPicker","StepKindPicker");
         Wire("Focus","FocusRegionPicker","FocusColorField","FocusOpacityField","FocusZoomField","FocusBorder","FocusBorderWidth","FocusMaskKind","FocusStrength");
         Wire("Object","ObjectX","ObjectY","ObjectWidth","ObjectHeight","ObjectAngle");Wire("Step","StepNumber");Wire("Name","LayerName");

@@ -17,7 +17,7 @@ public static partial class EditorRenderer
     }
     public static Rect ContentBounds(Annotation a)
     {
-        var drawing=new DrawingGroup();using(var context=drawing.Open())DrawAnnotation(context,a);return drawing.Bounds;
+        if(a.Mockup is {RasterBacking:true} or {PreserveRaster:true})return Bounds(a);var drawing=new DrawingGroup();using(var context=drawing.Open())DrawAnnotation(context,a);return drawing.Bounds;
     }
     public static bool Hit(Annotation a,Point p,double tolerance)=>a.Visible&&!a.Locked&&HitLocal(a,LocalPoint(a,p),tolerance);
 }

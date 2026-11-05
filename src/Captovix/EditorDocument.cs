@@ -20,17 +20,24 @@ public sealed record RecoveryPatch
 public enum AnnotationKind { Arrow, Rectangle, Ellipse, Text, Highlight, Step, Blur, Pixelate, Cover, Callout, Freehand, RoundedRectangle, Triangle, Diamond, Trapezoid, Pentagon, Hexagon, Star, Line, Magnifier, Spotlight, ImageLayer }
 public readonly record struct AnnotationPoint(double X,double Y);
 public enum MockupKind { Label,Title,Button,Input,Block }
+public sealed record RasterClear(string ElementId,PixelRect Bounds,string Background);
 public sealed record MockupElement
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? RecoveryId {get;set;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool FromScan {get;set;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? LabelForId {get;set;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? SemanticRole {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool RasterBacking {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool PreserveRaster {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool RasterDetached {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? RasterOwnerId {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PixelRect? RasterImageBounds {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public List<RasterClear>? RasterClears {get;set;}
     public MockupKind Type {get;set;}
     public PixelRect SourceBounds {get;set;}
     public string Background {get;set;}="#FFFFFF";
     public bool EraseOriginal {get;set;}=true;
-    public MockupElement Copy()=>this with{};
+    public MockupElement Copy()=>this with{RasterClears=RasterClears?.ToList()};
     public void Validate(Annotation a,int width,int height)
     {
         if(SemanticRole!=null&&!new[]{"Icon","Table","Tab","Menu","Panel","Row","Column"}.Contains(SemanticRole))throw new InvalidDataException("Loại cấu trúc Mockup không hợp lệ.");
@@ -114,7 +121,7 @@ public sealed class Annotation
 
 public sealed class EditorDocument
 {
-    public const int MaximumSupportedVersion=22;
+    public const int MaximumSupportedVersion=23;
     public string? PixelBasePng {get;set;}
     public int Version {get;set;}=12;
     public int OriginalWidth {get;set;}
@@ -160,7 +167,7 @@ public sealed class EditorDocument
         ConnectorStudio.Resolve(this);
         if(Appearance==null)throw new InvalidDataException("Thiếu cấu hình ảnh.");
         _=new ImageLayout(Viewport,Appearance);
-        GroupLayout.Validate(this);PixelStudio.Validate(this);Version=Annotations.Any(a=>a.Mockup?.SemanticRole!=null)?22:Annotations.Any(a=>a.GroupPath?.Count>0)?21:Recoveries.Count>0||RecoveryHistory.Count>0?20:Annotations.Any(a=>a.Mockup is {} m&&(m.FromScan||m.Type is MockupKind.Input or MockupKind.Block||m.LabelForId!=null))?19:Annotations.Any(a=>a.Mockup!=null)?18:Annotations.Any(a=>a.TextFrame)?17:Annotations.Any(a=>a.Kind==AnnotationKind.Step&&(a.StepStrokeColor!=null||a.StepFillVisible!=null))?16:Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
+        MockupRasterState.Validate(this);GroupLayout.Validate(this);PixelStudio.Validate(this);Version=Annotations.Any(a=>a.Mockup is {RasterBacking:true} or {RasterOwnerId:not null} or {PreserveRaster:true})?23:Annotations.Any(a=>a.Mockup?.SemanticRole!=null)?22:Annotations.Any(a=>a.GroupPath?.Count>0)?21:Recoveries.Count>0||RecoveryHistory.Count>0?20:Annotations.Any(a=>a.Mockup is {} m&&(m.FromScan||m.Type is MockupKind.Input or MockupKind.Block||m.LabelForId!=null))?19:Annotations.Any(a=>a.Mockup!=null)?18:Annotations.Any(a=>a.TextFrame)?17:Annotations.Any(a=>a.Kind==AnnotationKind.Step&&(a.StepStrokeColor!=null||a.StepFillVisible!=null))?16:Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
     }
     private static bool ValidColor(string color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public bool ApplyCrop(PixelRect crop)
@@ -207,4 +214,46 @@ public sealed class EditorSession
     public void RequireSave(){Dirty=true;Revision++;}
     public void MarkSaved()=>Dirty=false;
     public bool MarkSaved(long revision){if(Revision!=revision)return false;Dirty=false;return true;}
+}
+
+// Lossless scan backing: one PNG per scanned region, references for editable pieces.
+public static class MockupRasterState
+{
+    public static int RemoveLegacyScans(EditorDocument doc){var old=doc.Annotations.Where(a=>a.Mockup is {FromScan:true,RasterBacking:false,PreserveRaster:false,RasterOwnerId:null,RasterDetached:false}).ToArray();var recoveries=old.Select(a=>a.Mockup!.RecoveryId).Where(id=>id!=null).ToHashSet();var ids=old.Select(a=>a.Id).ToHashSet();doc.Annotations.RemoveAll(a=>ids.Contains(a.Id));var keep=doc.Annotations.Select(a=>a.Mockup?.RecoveryId).ToHashSet();doc.Recoveries.RemoveAll(p=>recoveries.Contains(p.Id)&&!keep.Contains(p.Id));return old.Length;}
+    static PixelRect Box(Annotation a)=>new((int)Math.Round(a.Left),(int)Math.Round(a.Top),(int)Math.Round(a.Width),(int)Math.Round(a.Height));
+    public static List<Annotation> Attach(List<Annotation> pieces,PixelRect region,string png){
+        if(PixelStudio.PngSize(png)!=(region.Width,region.Height)||(long)region.Width*region.Height>20_000_000)throw new InvalidDataException("Ảnh quét phải giữ nguyên kích thước pixel vùng nguồn.");
+        var root=new Annotation{Kind=AnnotationKind.Rectangle,Name="Ảnh nền Mockup · giữ toàn bộ nội dung",X1=region.X,Y1=region.Y,X2=region.Right,Y2=region.Bottom,PixelPng=png,StrokeEnabled=false,Mockup=new(){Type=MockupKind.Block,SourceBounds=region,EraseOriginal=false,FromScan=true,RasterBacking=true,PreserveRaster=true,RasterClears=[]}};
+        string group=Guid.NewGuid().ToString("N");root.GroupId=group;
+        foreach(var a in pieces){a.Mockup!.RasterOwnerId=root.Id;a.Mockup.PreserveRaster=true;a.Mockup.EraseOriginal=false;GroupLayout.Set(a,new[]{group}.Concat(GroupLayout.Chain(a)));}
+        return new[]{root}.Concat(pieces).ToList();
+    }
+    public static void Validate(EditorDocument doc){var ids=doc.Annotations.ToDictionary(a=>a.Id);foreach(var a in doc.Annotations){if(a.Mockup is not {} m)continue;
+        if(m.RasterOwnerId is {} owner&&(!ids.TryGetValue(owner,out var root)||root.Mockup?.RasterBacking!=true||root.PixelPng==null||m.SourceBounds.Intersect(root.Mockup.SourceBounds)!=m.SourceBounds))throw new InvalidDataException("Phần tử quét không còn lớp ảnh nguồn hợp lệ.");
+        if(m.RasterBacking&&(a.PixelPng==null||PixelStudio.PngSize(a.PixelPng)!=(m.SourceBounds.Width,m.SourceBounds.Height)))throw new InvalidDataException("Thiếu ảnh nền Mockup nguyên pixel.");
+        if(m.RasterImageBounds is {} b&&(b.Width<1||b.Height<1||m.SourceBounds.Intersect(b)!=m.SourceBounds||a.PixelPng==null||PixelStudio.PngSize(a.PixelPng)!=(b.Width,b.Height)))throw new InvalidDataException("Khung ảnh nguồn Mockup không khớp.");
+        if(m.RasterClears is {} clears&&(clears.Count>10000||clears.Any(c=>c.Bounds.IsEmpty||c.Bounds.Intersect(m.SourceBounds)!=c.Bounds||c.Background.Length!=7||!c.Background.StartsWith('#')||!c.Background[1..].All(Uri.IsHexDigit))))throw new InvalidDataException("Vùng chỉnh sửa Mockup không hợp lệ.");
+    }}
+    static bool AppearanceChanged(Annotation a,Annotation b)=>a.Text!=b.Text||a.FontFamily!=b.FontFamily||a.FontSize!=b.FontSize||a.Bold!=b.Bold||a.Italic!=b.Italic||a.Underline!=b.Underline||a.TextColor!=b.TextColor||a.Color!=b.Color||a.FillColor!=b.FillColor||a.Stroke!=b.Stroke||a.StrokeEnabled!=b.StrokeEnabled||a.CornerRadius!=b.CornerRadius||a.TextAlignment!=b.TextAlignment||a.VerticalAlignment!=b.VerticalAlignment||a.TextPadding!=b.TextPadding||a.LineSpacing!=b.LineSpacing||a.Mockup!.Type!=b.Mockup!.Type||a.Mockup.Background!=b.Mockup.Background;
+    public static void Reconcile(EditorDocument before,EditorDocument doc,Func<Annotation,EditorDocument,RecoveryPatch> prepare){
+        var current=doc.Annotations.ToDictionary(a=>a.Id);
+        foreach(var old in before.Annotations.Where(a=>a.Mockup?.RasterBacking==true)){
+            current.TryGetValue(old.Id,out var next);
+            if(next==null){foreach(var detached in doc.Annotations.Where(a=>a.Mockup?.RasterOwnerId==old.Id&&a.Mockup.RasterDetached)){detached.PixelPng=old.PixelPng;detached.Mockup!.RasterImageBounds=old.Mockup!.SourceBounds;detached.Mockup.RasterOwnerId=null;}doc.Annotations.RemoveAll(a=>a.Mockup?.RasterOwnerId==old.Id);}
+            if(!old.Mockup!.RasterDetached&&old.Mockup.RecoveryId==null&&(next==null||Box(old)!=Box(next)||old.Rotation!=next.Rotation||old.Visible!=next.Visible)){
+                var bounds=old.Mockup.SourceBounds;var mask=new byte[checked((bounds.Width*bounds.Height+7)/8)];Array.Fill(mask,(byte)255);var patch=new RecoveryPatch{Bounds=bounds,Kind=MockupKind.Block,Background=old.Mockup.Background,Mask=Convert.ToBase64String(mask),NeedsReview=true};doc.Recoveries.Add(patch);if(next?.Mockup is {} m)m.RecoveryId=patch.Id;
+            }
+        }
+        foreach(var old in before.Annotations.Where(a=>a.Mockup is {PreserveRaster:true,RasterBacking:false,RasterOwnerId:null})){var next=doc.Annotations.FirstOrDefault(a=>a.Id==old.Id);if(next!=null&&AppearanceChanged(old,next)){next.Mockup!.PreserveRaster=false;next.Mockup.RasterImageBounds=null;next.PixelPng=null;}}
+        current=doc.Annotations.ToDictionary(a=>a.Id);
+        foreach(var old in before.Annotations.Where(a=>a.Mockup?.RasterOwnerId!=null)){
+            var owner=old.Mockup!.RasterOwnerId!;if(!current.TryGetValue(owner,out var root))continue;current.TryGetValue(old.Id,out var next);
+            bool appearance=next!=null&&AppearanceChanged(old,next);if(appearance&&next?.Mockup is {} m)m.PreserveRaster=false;
+            bool translatedTogether=false;var previousRoot=before.Annotations.FirstOrDefault(x=>x.Id==owner);if(previousRoot!=null&&next!=null)translatedTogether=Math.Abs((old.Left-previousRoot.Left)/previousRoot.Width-(next.Left-root.Left)/root.Width)<.0001&&Math.Abs((old.Top-previousRoot.Top)/previousRoot.Height-(next.Top-root.Top)/root.Height)<.0001&&Math.Abs(old.Width/previousRoot.Width-next.Width/root.Width)<.0001&&Math.Abs(old.Height/previousRoot.Height-next.Height/root.Height)<.0001;
+            bool changed=next==null||!translatedTogether&&(Box(old)!=Box(next)||old.Rotation!=next.Rotation)||old.Visible!=next?.Visible||appearance;
+            if(!changed||old.Mockup.RasterDetached)continue;var holes=root.Mockup!.RasterClears??=[];if(!holes.Any(h=>h.ElementId==old.Id))holes.Add(new(old.Id,old.Mockup.SourceBounds,old.Mockup.Background));
+        }
+    }
+    public static void DetachCopies(EditorDocument original,List<Annotation> copies){var copied=copies.Select(a=>a.Id).ToHashSet();foreach(var a in copies){if(a.Mockup is not {} m)continue;if(m.RasterBacking)m.RasterDetached=true;if(m.RasterOwnerId is {} id&&!copied.Contains(id)){var root=original.Annotations.First(x=>x.Id==id);a.PixelPng=root.PixelPng;m.RasterImageBounds=root.Mockup!.SourceBounds;m.RasterOwnerId=null;m.RasterDetached=true;}}}
+    public static void Remap(MockupElement m,IReadOnlyDictionary<string,string> ids){if(m.RasterBacking||m.RasterOwnerId is {} original&&!ids.ContainsKey(original))m.RasterDetached=true;if(m.RasterOwnerId is {} owner)m.RasterOwnerId=ids.TryGetValue(owner,out var next)?next:owner;if(m.RasterClears!=null)m.RasterClears=m.RasterClears.Select(h=>h with{ElementId=ids.TryGetValue(h.ElementId,out var id)?id:h.ElementId}).ToList();}
 }

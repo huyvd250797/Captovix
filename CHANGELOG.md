@@ -1,3 +1,28 @@
+# V1.45.0 — Update, Recovery & Release Quality
+
+- Sửa gốc cuộn thư viện: ScrollUnit đặt trên ListBox sở hữu panel, không chỉ paneltemplate. AppScrolling dùng LineUp/Down/Left/Right của WPF cho danh sách, không nhân pixel thành48phần tử; hỗ trợ tích lũy delta nhỏ, cuộn ngang, giữ virtualization.
+- Mockup dùng nguồn nguyên pixel, bỏ bản preview1200px. Config/rà soát có100%pixel thật theo DPI, phóng to và vừa khung; OCR nhận snapshot nguyên kích thước, không nhận bitmap xem trước thu nhỏ.
+- Quét/Chọn tất cả/Áp dụng giữ nguyên hình ảnh qua một PNG nền chung và các tham chiếu vùng. Không vẽ lại cả form bằng font/nền ước lượng. Nội dung OCR chưa nhận ra vẫn có trong nền và di chuyển cùng nhóm. Chỉ phần cụ thể sửa nội dung/kiểu mới chuyển sang chữ/hình vẽ; di chuyển riêng dùng pixel gốc, không tự đổi font/màu.
+- Quét lại ảnh có Mockup cũ: phát hiện lớp quét kiểu cũ, xem lại ảnh nguồn thay vì các khối trắng đang che chữ. Chỉ thay lớp quét cũ khi Áp dụng, có Undo; giữ các vùng che thông tin. Không phục hồi được nội dung đã mất nếu chỉ còn ảnh xuất phẳng không có nguồn.
+- Editor schema23 lưu lớp nguồn/quan hệ/vùng thay đổi; lưu nâng cấp có backup.pre-v1.45.bak. Không SQL migration, không đổi runtime/OCR/backend/KEY. Bitmap nền chỉ lưu một lần mỗi vùng quét; chia sẻ chuỗi trong Undo, cache giải mã weakreference và giải phóng cùng scene.
+- Cập nhật kiểm hash/kích thước lúc tải và ngay trước áp dụng, đối chiếu AppId/version/runtime/OCR và release-quality.json; gói cache bị đổi quay lại trạng thái tải lại. Sao lưu chạy nền có hủy khi đóng; thất bại không bàn giao updater.
+- Backup có manifestSHA256, tên tệp whitelist, giới hạn dung lượng và chặn liên kết/traversal. Restore kiểm toàn bộ trước ghi, tạo bản an toàn, staging và hoàn tác khi ghi lỗi; chạy helper sau khi app đã đóng. Giữ ảnh/video nguồn, chỉ khôi phục metadata/edit và license mã hóa trên cùng máy.
+- Trợ giúp → Cập nhật & khôi phục dữ liệu: xem/chọn bản backup, kiểm tra rồi phục hồi. Nhật ký Applying/Starting/Healthy phân biệt cập nhật gián đoạn; Healthy nghĩa cửa sổ vẽ được lần đầu, không phải toàn app đã được nghiệm thu.
+- Recovery.cmd/Recovery.ps1 chạy độc lập bằng WindowsPowerShell/WinForms khi app lỗi: mở dữ liệu/backup, xuất chẩn đoán, chọn FullSetup cài lại. Không tự xóa dữ liệu hay tự hạ binary. Có checklist và script smokeWindowsSandbox, chặn publishstable khi chưa có bằng chứng Windows.
+- Chưa chạy nativeWindows/Setup/IME/scroll vật lý trong hostLinux. Pixel tests WPF mới chỉ compile; không cam kết OCR nhận đúng mọi chữ hoặc tự nhận chính xác mọi font. AI/model tùy chọn giữ nguyên, không kèm trọng số.
+
+# V1.44.1 — Mockup Workflow & Editor Polish
+
+- Nút Mockup mở thẳng cửa sổ cấu hình: chọn Quét vùng, kéo khung trên bản xem rồi bấm Quét; hoặc chọn Quét toàn ảnh rồi Quét. Ngôn ngữ OCR truyền sang rà soát. Tạo thủ công/nền-mặt nạ nằm trong Tùy chọn khác, không còn menu4dòng chính.
+- Rà soát có Chọn tất cả; loại khung gần trùng, có thể chuyển cả gợi ý chưa chắc theo lựa chọn chủ động, không gán giả trạng thái đã xác nhận font. Nâng giới hạn một lần từ120 lên200khung quét/2000đối tượng sinh ra; giữ trần10000đối tượng/tài liệu. Sau Áp dụng chuyển công cụ Chọn và mở thuộc tính Mockup bên phải.
+- Sửa inline dùng cùng font/cỡ/B/I/U và đo chiều rộng dòng gốc trước khi nhập; không tự tăng font hoặc ép dòng gốc bị rớt dòng. Chữ thêm vượt chiều rộng này mới wrap và mở rộng chiều cao, giữ nguyên cỡ chữ; renderer và sidebar cùng xử lý wrap. Hủy/không đổi nội dung không tự ghi thay đổi kích thước.
+- Thư viện ảo hóa cuộn theo pixel, không dùng khoảng cách pixel như số phần tử; filmstrip ngang nhận cuộn thường theo ngang. Giữ chọn nhiều ảnh khi bắt đầu kéo.
+- Sao góc trái, X góc phải; nút26px, margin2px, giảm padding card. Thanh công cụ căn giữa toàn app với hai khoảng bên cân xứng; header chỉ Captovix và V1.44.1.
+- Mũi tên có Không đầu cạnh Hai đầu, chọn loại này bỏ loại kia. Bóng đổ dùng9nút hướng gọn, bỏ biểu tượng ô vuông thừa, tooltip và trạng thái chọn rõ.
+- Ctrl+C/menu Copy/kéo thả nhiều ảnh xuất PNG đã chỉnh/crop đúng chất lượng, dạng FileDrop chuẩn Windows. Render lần lượt trên workerSTA, không giữ toàn bộ ảnh giải mã trongRAM. Ứng dụng đích phải hỗ trợ dán/thả danh sách tệp. Dữ liệu gốc không bị chuyển/xóa.
+- Tệp chuyển ảnh đặt dưới Temp/LibraryExports, giữ để dán sau; tự dọn tệp cũ hơn24giờ trong vùng temp này khi chuẩn bị lần tiếp, có thể dọn trong Dung lượng. Không dọn ảnh gốc/KEY/dự án.
+- Không migration/schema/runtime/dependency/backend/license mới. Giữ schema tối đa22 và sửa startup/popup nền. Windows native/IME/cài đặt và paste/drag thực tế cần nghiệm thu riêng.
+
 # V1.44.0 — M6 Advanced UI Reconstruction
 
 - Ghép UI/OCR, loại khung trùng; liên kết label–input, nhóm theo hàng/cột và panel, giữ tọa độ và khoảng cách nguồn. Nhận cấu trúc Table/Tab/Menu/Icon từ UI và gợi ý model; đường lưới bảng có thêm bộ phân tích ảnh giới hạn. Không tự chuyển hàng loạt; icon/đường lưới/nền phức tạp có thể giữ pixel nguồn.

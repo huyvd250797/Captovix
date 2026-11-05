@@ -59,7 +59,7 @@ public static class AnnotationEditing
         if(doc.Annotations.Count+originals.Length>10000||doc.Annotations.Sum(a=>a.Points.Count)+originals.Sum(a=>a.Points.Count)>100000)throw new InvalidOperationException("Nhân bản vượt giới hạn tài liệu.");
         var idMap=originals.ToDictionary(a=>a.Id,_=>Guid.NewGuid().ToString("N"));var groupMap=new Dictionary<string,string>();var result=new HashSet<string>();
         var delta=ClampMove(Union(originals.Select(bounds)),movementBounds??doc.Viewport,16,16);
-        foreach(var a in originals){var copy=a.Copy();copy.Id=idMap[a.Id];if(copy.Mockup is {} mockup){mockup.EraseOriginal=false;mockup.RecoveryId=null;mockup.LabelForId=mockup.LabelForId is {} target&&idMap.TryGetValue(target,out var linked)?linked:null;}
+        foreach(var a in originals){var copy=a.Copy();copy.Id=idMap[a.Id];if(copy.Mockup is {} mockup){mockup.EraseOriginal=false;mockup.RecoveryId=null;MockupRasterState.Remap(mockup,idMap);mockup.LabelForId=mockup.LabelForId is {} target&&idMap.TryGetValue(target,out var linked)?linked:null;}
             copy.StartAnchor=copy.StartAnchor is {} start&&idMap.TryGetValue(start.TargetId,out var startId)?start with{TargetId=startId}:null;
             copy.EndAnchor=copy.EndAnchor is {} end&&idMap.TryGetValue(end.TargetId,out var endId)?end with{TargetId=endId}:null;
             GroupLayout.Set(copy,GroupLayout.Chain(copy).Select((group,index)=>{if(doc.EditingGroup is {} scope&&Array.IndexOf(GroupLayout.Chain(a),scope)>=index)return group;if(!groupMap.ContainsKey(group))groupMap[group]=Guid.NewGuid().ToString("N");return groupMap[group];}));

@@ -33,7 +33,7 @@ public static partial class EditorRenderer
         dc.PushClip(sourceClip);DrawSpotlights(dc,doc);dc.Pop();
         DrawingGroup? protectedSource=doc.Annotations.Any(a=>a.Visible&&a.Kind==AnnotationKind.Magnifier)?ProtectedSource(source,doc,draftIds,sampling):null;
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction&&a.Kind!=AnnotationKind.Spotlight)){
-            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);DrawMagnifier(dc,protectedSource!,a);dc.Pop();}else{DrawMockupPatch(dc,a);DrawAnnotation(dc,a,a.Id==editingTextId);}
+            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);DrawMagnifier(dc,protectedSource!,a);dc.Pop();}else if(a.Mockup is {RasterBacking:true} or {PreserveRaster:true}&&a.Id!=editingTextId){DrawRasterMockup(dc,a,doc);}else{DrawMockupPatch(dc,a);DrawAnnotation(dc,a,a.Id==editingTextId);}
         }
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))

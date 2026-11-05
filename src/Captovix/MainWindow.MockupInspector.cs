@@ -5,11 +5,11 @@ namespace Captovix;
 public partial class MainWindow
 {
     MockupInspector? _mockupInspector;EditorSession? _inspectorSession;
-    private void OpenMockupInspector(Annotation a){InspectorPane.Visibility=Visibility.Visible;InspectorColumn.MinWidth=210;InspectorColumn.Width=new(Math.Max(250,_inspectorWidth));SyncProperties();MockupProperties.BringIntoView();}
+    private void OpenMockupInspector(Annotation a){if(InspectorPane.Visibility!=Visibility.Visible){_fitMode=false;InspectorPane.Visibility=Visibility.Visible;InspectorColumn.MinWidth=210;InspectorColumn.Width=new(Math.Max(250,_inspectorWidth));}SyncProperties();MockupProperties.BringIntoView();}
     private void SyncMockupInspector(Annotation a){
         if(_mockupInspector==null){
             var panel=_mockupInspector=new MockupInspector();MockupInspectorHost.Children.Add(panel);
-            panel.Changed=(id,change)=>{if(_session==null||!ReferenceEquals(_session,_inspectorSession))return;EndInlineText(true);_session.Change(d=>MockupEditing.Apply(d,id,change));Surface.Refresh();SetStatus("Đã sửa Mockup · Ctrl+Z hoàn tác.");};
+            panel.Changed=(id,change)=>{if(_session==null||!ReferenceEquals(_session,_inspectorSession))return;EndInlineText(true);_session.Change(d=>{var old=d.Annotations.First(a=>a.Id==id);double width=EditorRenderer.MockupEditingWidth(old);string text=old.Text;MockupEditing.Apply(d,id,change);var next=d.Annotations.First(a=>a.Id==id);if(text!=change.Text){next.Text=text;EditorRenderer.SetMockupText(next,change.Text,width);}});Surface.Refresh();SetStatus("Đã sửa Mockup · Ctrl+Z hoàn tác.");};
             panel.EditText=BeginInlineText;panel.PickColor=()=>NativeColorPicker.Pick(this);
             panel.PickScreen=async target=>{var session=_session;string? id=Surface.SelectedId;long revision=session?.Revision??-1;var color=await ScreenColorPicker.PickAsync(this);if(color!=null&&ReferenceEquals(_session,session)&&session?.Revision==revision&&Surface.SelectedId==id)panel.SetPickedColor(target,color);};
             panel.Recognize=async (language,token)=>{if(_session is not {} session||Surface.Selected is not {Mockup:not null} selected||Surface.Original is not {} source)return;long revision=session.Revision;string id=selected.Id;var region=new PixelRect((int)selected.Left,(int)selected.Top,(int)selected.Width,(int)selected.Height).Intersect(session.Document.Viewport);BitmapSource? snapshot=null;var doc=session.Document.Snapshot();

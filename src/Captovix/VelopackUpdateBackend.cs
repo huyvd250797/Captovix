@@ -73,12 +73,15 @@ public sealed class VelopackUpdateBackend : IUpdateBackend, IUpdateDiagnostics
         var digest = Convert.ToHexString(await SHA256.HashDataAsync(stream, token));
         if (stream.Length != asset.Size || !digest.Equals(asset.SHA256, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("SHA-256/kích thước gói không khớp. Không áp dụng bản cập nhật.");
+        await Task.Run(()=>ReleasePackageAudit.Validate(path,VersionInfo.AppId,asset.Version.ToString()),token);
     }
 
     public void Apply(UpdateRelease release)
     {
         if (!CanApply || release.Payload is not UpdateInfo info) throw new InvalidOperationException("Không có gói sẵn sàng.");
         Validate(info.TargetFullRelease);
+        var asset=info.TargetFullRelease;var path=Path.Combine(_locator.PackagesDir!,asset.FileName);using(var stream=File.OpenRead(path))if(stream.Length!=asset.Size||!Convert.ToHexString(SHA256.HashData(stream)).Equals(asset.SHA256,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("Gói cache đã đổi sau khi tải; tải lại trước khi áp dụng.");
+        ReleasePackageAudit.Validate(path,VersionInfo.AppId,asset.Version.ToString());
         _manager.ApplyUpdatesAndRestart(info.TargetFullRelease);
     }
 }

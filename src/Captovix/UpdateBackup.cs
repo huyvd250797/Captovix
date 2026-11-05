@@ -1,38 +1,28 @@
 using System.IO;
 using System.IO.Compression;
-
+using System.Security.Cryptography;
+using System.Text.Json;
 namespace Captovix;
+public sealed record BackupFile(string Path,long Bytes,string Sha256);
+public sealed record BackupManifest(int Format,string From,string To,DateTimeOffset Created,List<BackupFile> Files);
 public static class UpdateBackup
 {
-    // Only lightweight state and annotation JSON. Originals and thumbnails stay in place.
-    public static string Create(string root, string currentVersion, string nextVersion)
-    {
-        var folder = Path.Combine(root, "Backups"); Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, "before-update-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") + "-" + Guid.NewGuid().ToString("N")[..6] + ".zip");
-        var temp = path + ".tmp";
-        try
-        {
-            using (var zip = ZipFile.Open(temp, ZipArchiveMode.Create))
-            {
-                foreach (var name in new[] { "library.json", "settings.json", "update-settings.json", "editor-resume.json", "annotation-presets.json", "capture-workflow.json", "style-favorites.json", "tool-stars.json", "tool-order.json", "batch-export.json", "editor-layout.json", "media-location.json", "recent-capture-regions.json" })
-                {
-                    var source = Path.Combine(root, name);
-                    if (File.Exists(source)) zip.CreateEntryFromFile(source, name);
-                }
-                var appearance=Path.Combine(root,"appearance-settings.json");if(File.Exists(appearance))zip.CreateEntryFromFile(appearance,"appearance-settings.json");
-                var edits = Path.Combine(root, "Edits");
-                if (Directory.Exists(edits))
-                    foreach (var source in Directory.EnumerateFiles(edits, "*", SearchOption.TopDirectoryOnly).Where(p=>p.EndsWith(".json",StringComparison.OrdinalIgnoreCase)||p.EndsWith(".lastgood.bak",StringComparison.OrdinalIgnoreCase)))
-                    {
-                        if ((File.GetAttributes(source) & FileAttributes.ReparsePoint) != 0) throw new IOException("Không sao lưu liên kết ngoài thư mục dữ liệu.");
-                        zip.CreateEntryFromFile(source, "Edits/" + Path.GetFileName(source));
-                    }
-                using var writer = new StreamWriter(zip.CreateEntry("backup-info.txt").Open());
-                writer.WriteLine($"Captovix {currentVersion} -> {nextVersion}\nUTC: {DateTimeOffset.UtcNow:O}\nMetadata and edit documents only. Media files are not included.");
-            }
-            File.Move(temp, path);
-            return path;
-        }
-        catch { File.Delete(temp); throw; }
+    static readonly HashSet<string> Settings=new(StringComparer.OrdinalIgnoreCase){"library.json","settings.json","update-settings.json","editor-resume.json","annotation-presets.json","capture-workflow.json","style-favorites.json","tool-stars.json","tool-order.json","tool-order-v133.json","batch-export.json","editor-layout.json","media-location.json","recent-capture-regions.json","appearance-settings.json","ui-model.json"};
+    public static bool Allowed(string name)=>Settings.Contains(name)||name.StartsWith("Edits/",StringComparison.Ordinal)&&!name[6..].Contains('/')&&(name.EndsWith(".json")||name.EndsWith(".bak"))||name is "licensing/device.bin" or "licensing/certificate.bin";
+    static bool Plain(string p){for(string? v=Path.GetFullPath(p);v!=null;v=Path.GetDirectoryName(v))if((File.Exists(v)||Directory.Exists(v))&&(File.GetAttributes(v)&FileAttributes.ReparsePoint)!=0)return false;return true;}
+    public static string Create(string root,string currentVersion,string nextVersion,CancellationToken token=default){
+        if(!Plain(root))throw new IOException("Không sao lưu qua liên kết thư mục.");string folder=Path.Combine(root,"Backups");Directory.CreateDirectory(folder);string path=Path.Combine(folder,"before-update-"+DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff")+"-"+Guid.NewGuid().ToString("N")[..6]+".zip"),temp=path+".tmp";var files=new List<BackupFile>();
+        try{using(var zip=ZipFile.Open(temp,ZipArchiveMode.Create)){
+            var names=Settings.ToList();if(Directory.Exists(Path.Combine(root,"Edits")))names.AddRange(Directory.EnumerateFiles(Path.Combine(root,"Edits")).Select(p=>"Edits/"+Path.GetFileName(p)).Where(Allowed));names.AddRange(new[]{"licensing/device.bin","licensing/certificate.bin"});long total=0;
+            foreach(string name in names){token.ThrowIfCancellationRequested();string source=Path.Combine(root,name);if(!File.Exists(source))continue;if(!Plain(source))throw new IOException("Không sao lưu liên kết ngoài thư mục dữ liệu.");var info=new FileInfo(source);if(info.Length>140_000_000||(total+=info.Length)>512_000_000||files.Count>=10000)throw new IOException("Sao lưu vượt512MB/10000tệp; xuất dự án riêng trước khi cập nhật.");string hash;using(var input=File.OpenRead(source)){hash=Convert.ToHexString(SHA256.HashData(input));input.Position=0;using var output=zip.CreateEntry(name,CompressionLevel.Fastest).Open();input.CopyTo(output);}files.Add(new(name,info.Length,hash));}
+            using(var writer=new StreamWriter(zip.CreateEntry("backup-manifest.json").Open()))writer.Write(JsonSerializer.Serialize(new BackupManifest(1,currentVersion,nextVersion,DateTimeOffset.UtcNow,files)));
+            using var note=new StreamWriter(zip.CreateEntry("backup-info.txt").Open());note.Write($"Captovix {currentVersion} -> {nextVersion}\nMetadata, edits and same-machine encrypted license only. Original media excluded.");
+        }File.Move(temp,path);Inspect(path);return path;}catch{File.Delete(temp);throw;}
+    }
+    public static BackupManifest Inspect(string path){using var zip=ZipFile.OpenRead(path);if(zip.Entries.Count>10002)throw new InvalidDataException("Quá nhiều tệp trong sao lưu.");var manifest=zip.GetEntry("backup-manifest.json")??throw new InvalidDataException("Bản sao lưu cũ thiếu manifest; không tự động ghi đè dữ liệu.");if(manifest.Length>4_000_000)throw new InvalidDataException("Manifest quá lớn.");using var source=manifest.Open();var data=JsonSerializer.Deserialize<BackupManifest>(source)??throw new InvalidDataException("Manifest trống.");if(data.Format!=1||data.Files==null||data.Files.Count>10000||data.Files.Sum(f=>f.Bytes)>512_000_000)throw new InvalidDataException("Bản sao lưu vượt giới hạn.");var names=new HashSet<string>(StringComparer.OrdinalIgnoreCase);foreach(var f in data.Files){if(!Allowed(f.Path)||f.Path.Contains("..")||f.Path.IndexOfAny(new[]{':','\\','<','>','"','|','?','*'})>=0||f.Bytes<0||!names.Add(f.Path))throw new InvalidDataException("Đường dẫn sao lưu không an toàn.");var entry=zip.GetEntry(f.Path)??throw new InvalidDataException("Thiếu tệp sao lưu: "+f.Path);if(entry.Length!=f.Bytes||entry.Length>140_000_000)throw new InvalidDataException("Kích thước sao lưu không khớp.");using var file=entry.Open();using var hash=IncrementalHash.CreateHash(HashAlgorithmName.SHA256);var buffer=new byte[65536];long length=0;int read;while((read=file.Read(buffer,0,buffer.Length))>0){length+=read;if(length>f.Bytes)throw new InvalidDataException("Tệp nén vượt kích thước đã khai báo.");hash.AppendData(buffer,0,read);}if(length!=f.Bytes||Convert.ToHexString(hash.GetHashAndReset())!=f.Sha256)throw new InvalidDataException("Tệp sao lưu sai checksum: "+f.Path);}return data;}
+    public static string Restore(string root,string path,string version){var manifest=Inspect(path);if(!Plain(root))throw new IOException("Thư mục khôi phục không an toàn.");string safety=Create(root,version,"before-data-restore");var staging=Path.Combine(root,"Temp","Restore-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(staging);var committed=new List<(string Target,string? Old)>();
+        try{using var zip=ZipFile.OpenRead(path);foreach(var f in manifest.Files){string target=Path.GetFullPath(Path.Combine(root,f.Path));if(!target.StartsWith(Path.GetFullPath(root)+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase)||!Plain(target))throw new IOException("Không khôi phục qua liên kết.");string file=Path.Combine(staging,"new",f.Path);Directory.CreateDirectory(Path.GetDirectoryName(file)!);zip.GetEntry(f.Path)!.ExtractToFile(file);using(var check=File.OpenRead(file))if(check.Length!=f.Bytes||Convert.ToHexString(SHA256.HashData(check))!=f.Sha256)throw new InvalidDataException("Tệp sao lưu đã đổi khi chuẩn bị khôi phục.");if(f.Path.StartsWith("Edits/")&&f.Path.EndsWith(".json")){using var json=JsonDocument.Parse(File.ReadAllText(file));if(json.RootElement.TryGetProperty("Version",out var schema)&&schema.GetInt32()>23)throw new InvalidDataException("Bản sao lưu chứa tài liệu của phiên bản app mới hơn.");}}
+            foreach(var f in manifest.Files){string target=Path.Combine(root,f.Path),fresh=Path.Combine(staging,"new",f.Path),old=Path.Combine(staging,"old",f.Path);Directory.CreateDirectory(Path.GetDirectoryName(target)!);string? previous=null;if(File.Exists(target)){Directory.CreateDirectory(Path.GetDirectoryName(old)!);File.Copy(target,old);previous=old;}committed.Add((target,previous));File.Move(fresh,target,true);}return safety;
+        }catch{foreach(var c in committed.AsEnumerable().Reverse()){if(c.Old==null)File.Delete(c.Target);else File.Copy(c.Old,c.Target,true);}throw;}finally{try{Directory.Delete(staging,true);}catch{}}
     }
 }

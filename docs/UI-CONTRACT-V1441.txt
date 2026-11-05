@@ -1,0 +1,12 @@
+PASS: More grid uses two real columns rather than overflowing wrap tiles
+PASS: Groups runs through the normal dynamic Studio command path
+PASS: Inspector exposes hierarchy tree
+PASS: Library tile right click routes to its actual source item
+PASS: Open location validates file and passes Explorer arguments separately
+PASS: Outside click feedback animates outline only
+PASS: Modal hooks are detached on close
+PASS: Dialog and popup outline follow current theme
+PASS: Normal Captovix dialogs share common chrome
+PASS: Normal app dialogs share common form; fatal startup retains native fallback
+PASS: Cancel remains left and confirmation right
+11 M4 UI contract checks passed; visual/native acceptance pending.

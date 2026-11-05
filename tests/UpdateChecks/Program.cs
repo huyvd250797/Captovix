@@ -177,7 +177,7 @@ try
         Check(rejected, "Feed without SHA-256 is rejected");
     }
     var jump=Path.Combine(root,"direct-jump");Directory.CreateDirectory(jump);
-    foreach(var target in new[]{"1.33.0","1.36.0","1.37.0","1.37.1","1.37.2","1.37.3","1.38.0","1.39.0","1.40.0","1.41.0","1.41.1","1.42.0","1.43.0","1.44.0"}){
+    foreach(var target in new[]{"1.33.0","1.36.0","1.37.0","1.37.1","1.37.2","1.37.3","1.38.0","1.39.0","1.40.0","1.41.0","1.41.1","1.42.0","1.43.0","1.44.0","1.44.1","1.45.0"}){
         File.WriteAllText(Path.Combine(jump,"releases.win.json"),JsonSerializer.Serialize(new{Assets=new[]{new{PackageId=VersionInfo.AppId,Version=target,Type="Full",FileName=$"HuyVo.Captovix-{target}-full.nupkg",SHA256=new string('A',64),SHA1=new string('B',40),Size=100}}}));
         var installed=new TestVelopackLocator(VersionInfo.AppId,"1.31.0",Path.Combine(root,"jump-"+target));
         var direct=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl=UpdateSettings.StableFeed},installed,"1.31.0",new SimpleFileSource(new DirectoryInfo(jump)));

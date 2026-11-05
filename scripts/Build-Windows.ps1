@@ -39,7 +39,7 @@ dotnet publish src/Captovix/Captovix.csproj -c Release -r win-x64 --self-contain
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 Copy-Item docs,licenses -Destination $payload -Recurse -Force
 Copy-Item README.md,CHANGELOG.md,ROADMAP.md,THIRD-PARTY-NOTICES.txt -Destination $payload -Force
-Copy-Item scripts/Install-Local.ps1,scripts/Install.cmd,scripts/Launch.cmd,scripts/Summarize-Fidelity.ps1 -Destination $payload -Force
+Copy-Item scripts/Recovery.cmd,scripts/Recovery.ps1,scripts/Install-Local.ps1,scripts/Install.cmd,scripts/Launch.cmd,scripts/Summarize-Fidelity.ps1 -Destination $payload -Force
 if ($UpdateSource) {
     $uri = [uri]$UpdateSource
     if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https' -or $uri.UserInfo -or $uri.Query -or $uri.Fragment) { throw 'UpdateSource must be HTTPS without credentials/query/fragment.' }
@@ -50,6 +50,8 @@ python scripts/Prepare-Payload.py $payload --report (Join-Path $artifactRoot "pa
 if ($LASTEXITCODE -ne 0) { throw 'Payload cleanup failed.' }
 dotnet tool restore
 if ($LASTEXITCODE -ne 0) { throw 'Unable to restore the pinned Velopack CLI.' }
+python scripts/Stamp-Release.py $payload
+if ($LASTEXITCODE -ne 0) { throw 'Release stamp failed.' }
 $vpkArgs = @('--skip-updates','pack','--packId','HuyVo.Captovix','--packVersion',$version,'--packDir',$payload,'--mainExe','Captovix.exe','--packTitle','Captovix','--packAuthors','HuyVo','--runtime','win-x64','--channel','win','--icon','src/Captovix/Assets/Captovix.ico','--releaseNotes','docs/RELEASE-NOTES.md','--framework','vcredist143-x64','--noPortable','--outputDir',$releases)
 dotnet tool run vpk -- @vpkArgs
 if ($LASTEXITCODE -ne 0) { throw 'Velopack packaging failed.' }

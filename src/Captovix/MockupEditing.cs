@@ -4,6 +4,7 @@ public static class MockupEditing
 {
     public static void Apply(EditorDocument document,string id,MockupChanges c){
         var a=document.Annotations.FirstOrDefault(a=>a.Id==id)??throw new InvalidOperationException("Đối tượng không còn tồn tại.");if(a.Mockup==null||a.Locked||!a.Visible)throw new InvalidOperationException("Hiện và mở khóa Mockup trước khi sửa.");
+        if(a.Mockup.RasterBacking)throw new InvalidOperationException("Chọn chữ/nút bên trong nhóm để sửa; lớp nền giữ toàn bộ nội dung ảnh gốc.");
         var next=a.Copy();next.Text=c.Text;next.FontFamily=c.Font;next.FontSize=c.Size;next.Bold=c.Bold;next.Italic=c.Italic;next.Underline=c.Underline;next.TextAlignment=c.Align;next.VerticalAlignment=c.Vertical;next.TextPadding=c.Padding;next.LineSpacing=c.Spacing;next.TextColor=c.Ink;next.Mockup!.Background=c.Background;next.FillColor=c.Fill;next.Color=c.Stroke;next.StrokeEnabled=c.Border>0;next.Stroke=Math.Max(1,c.Border);next.CornerRadius=c.Radius;next.Mockup.Type=c.Kind;
         TextStudio.Validate(next);ShapeStudio.ValidateStyle(next);next.Mockup.Validate(next,document.OriginalWidth,document.OriginalHeight);
         var children=document.Annotations.Where(x=>x.Id!=id&&x.Mockup is {Type:MockupKind.Label or MockupKind.Title}&&a.GroupId!=null&&x.GroupId==a.GroupId&&x.Left>=a.Left&&x.Top>=a.Top&&x.Left+x.Width<=a.Left+a.Width&&x.Top+x.Height<=a.Top+a.Height).ToArray();

@@ -1,35 +1,45 @@
-# Captovix V1.44.0 — M6 Advanced UI Reconstruction
+# Captovix V1.45.0 — Update, Recovery & Release Quality
 
-Nâng trực tiếp từ source V1.43.0 Boss cung cấp. Mục tiêu: quét form → rà soát các phần chưa chắc → tạo đối tượng có cấu trúc, sửa từng phần hoặc di chuyển nhóm.
+Nâng từ đúng ZIPV1.44.1 Boss gửi. Bản này sửa cuộn thư viện, ảnh Mockup mờ và lớp quét làm mất chữ; đồng thời bổ sung kiểm gói, backup, khôi phục và cứu hộ. Chưa push/phát hành GitHub Releases.
 
-## Dùng bản này
+## Cài đặt
 
-1. Cài Full Setup để cài mới/cài đè; giữ dữ liệu, license và thiết lập. Chưa publish GitHub Releases. Các file Update-Packages chỉ dùng khi chủ app phát hành đúng hướng dẫn kèm ZIP.
-2. Chụp trực tiếp với Hybrid bật, hoặc mở ảnh cũ như trước. Chọn **Thêm → Mockup → Quét vùng/toàn ảnh**.
-3. Rà khung/quan hệ/cấu trúc, chọn phần cần chuyển. Font từ ảnh là ước lượng: kiểm tra tên font, cỡ px, đậm/nghiêng/gạch chân, màu, rồi đánh dấu **Đã xác nhận định dạng chữ**. Nếu chưa chắc hoặc nền phức tạp, chọn **Giữ dạng ảnh gốc**. Chọn kết quả rõ không tự chọn chữ chưa xác nhận. Phần giữ ảnh không sinh đối tượng thay thế, pixel nguồn vẫn nằm trong ảnh nền.
-4. Xem trước, đối chiếu ảnh gốc và Áp dụng. Chữ của nút/ô nhập được tách khỏi hình control, giữ cùng nhóm. Nhóm hàng/cột/khu vực không tự thay đổi tọa độ; có thể vào nhóm để sửa riêng hoặc di chuyển cả nhóm.
-5. Chọn đối tượng Mockup: thuộc tính nằm bên phải. Double-click chữ để gõ ngay trên ảnh. Có đầy đủ font/cỡ/B/I/U, căn chữ/padding/giãn dòng, màu chữ/nền che/nền control/viền, dày viền/bo góc/loại, OCR/Dừng, chọn màu màn hình và bản so sánh nhỏ. Nền & mặt nạ giữ công cụ chuyên biệt hiện có.
-6. Đổi text không thay cỡ/font/màu/định dạng. Ví dụ Times New Roman14px, xanh, nghiêng sẽ giữ các thuộc tính đó qua Undo/Redo/lưu lại. Font cần được cài đúng trên máy; không khẳng định có thể suy ra chính xác mọi font chỉ từ bitmap.
+Đóng Captovix cả khay, chạy Captovix-v1.45.0-Full-Setup.exe vào vị trí đang cài. Giữ dữ liệu/license/config như nền cũ. FullSetup không tự lùi phiên bản hay xóa thư viện. Không cần chạy migration mới/Supabase/backend. Nghiệm thu Windows thật vẫn đang chờ: xem docs/WINDOWS-ACCEPTANCE-V145.md trước phát hành rộng.
 
-## AI/model tùy chọn
+## Mockup rõ ảnh và giữ nội dung
 
-Mở **AI cấu trúc** trong cửa sổ rà soát. Chạy dịch vụ Ollama vision riêng, nhập endpoint mặc định `http://127.0.0.1:11434`, bấm **Model đã cài**, chọn model có vision, lưu cấu hình và **Phân tích AI**. Endpoint HTTPS tùy chọn cần tương thích `/api/tags` và `/api/chat`; không có API key UI trong bản này. Chưa có model mặc định đã nghiệm thu: xem `docs/MODEL-EVALUATION-V144.md`.
+1. Mở ảnh → Mockup → Quét vùng hoặc toàn ảnh. Mặc định100%pixel thật theoDPI; dùng cuộn/phóng to để đọc chữ, Vừa khung để xem toàn bố cục. Nguồn không bị nén mất dữ liệu hoặc thu xuống1200px; hình vừa khung có thể nhỏ về thị giác nhưng OCR vẫn nhận pixel nguồn đầy đủ.
+2. Quét dùng vùng8×8px tới20MP. Config có thể tham chiếu ảnh gốc lớn mà không nhân bản toàn bitmap; ảnh đã chỉnh vượt20MP cần Crop vùng nhỏ trước để tránh dựng một bitmap quá lớn. Crop có thể hoàn tác.
+3. Rà soát/chọn tất cả/áp dụng: **giữ hình ảnh gốc**. Một PNG chung giữ toàn nội dung; các khung là phần tử có thể chọn. OCR sai/không nhận ra không còn làm chữ biến mất ngay khi áp dụng. Nội dung chưa nhận diện đi cùng lớp nền/nhóm.
+4. Double-click phần tử chữ OCR để sửa riêng, thuộc tính bên phải. Pixel nguồn dùng đến khi thực sự thay nội dung/kiểu; phần được sửa chuyển sang text/control. OCR/font ước lượng có thể cần sửa thủ công một lần; không khẳng định mọi chữ đều tự thành text đúng. Không thể tự sửa nội dung chưa nhận ra bằng text nếu chưa thêm khung/OCR thủ công.
+5. Di chuyển cả nhóm giữ cả vùng ảnh/biểu tượng/bảng/nội dung chưa nhận ra. Vào nhóm hoặc double-click để chọn/sửa phần riêng. Chọn lớp nền chỉ để di chuyển nhóm; không đổi font/màu cả nền. Nền vị trí cũ khi di chuyển vẫn có thể cần rà soát ở Nền & mặt nạ, nhất là nền phức tạp.
+6. Nếu mở ảnh từng bị quét kiểu cũ1.44.x, config thông báo dùng lại ảnh nguồn bên dưới các lớp quét cũ. Chỉ loại lớp quét cũ khi Áp dụng, Undo phục hồi trạng thái trước. Các vùng che thông tin không bị bỏ. Nếu chỉ còn ảnh xuất phẳng đã mất chữ, app không thể khôi phục nội dung không còn trong file.
 
-Chỉ nút phân tích mới gửi bản xem vùng quét (cạnh dài tối đa1536px). Ảnh nguồn/capture/export giữ pixel gốc. Model trả cấu trúc/khung; OCR là nguồn chữ, AI không thay chữ bằng nội dung tự sinh. Gợi ý AI mặc định giữ dạng ảnh và không tự Áp dụng. Hủy/lỗi/không có dịch vụ vẫn dùng ảnh/OCR. Không cài thêm trọng số vào bộ cài. Giới hạn100gợi ý/model, tổng200khung và tối đa120phần tử Áp dụng như nền cũ.
+Schema23 mới chỉ khi dùng lớp Mockup giữpixel. Lần lưu nâng cấp có `.pre-v1.45.bak`; bản cũ tối đa22 không đọc được23. Giữ bản sao dự án khi muốn quay lại bản cũ. Không có SQL/migration phải chạy.
 
-## Bộ nhớ, dung lượng và dữ liệu
+## Cuộn thư viện
 
-- Undo giữ chung PNG/mặt nạ bất biến giữa các bước, nén dữ liệu thuộc tính; tối đa100bước và ngân sách mặc định16MB cho lịch sử, vẫn giữ ít nhất một bước dù bản thân ảnh lớn hơn ngân sách. Bộ nhớ toàn tiến trình còn gồm WPF, ảnh đang mở, OCR/native và quay video: không đồng nghĩa app luôn dưới16MB.
-- Raster cache48MiB, thumbnail16MiB. Bản xem so sánh chỉ dựng khi yêu cầu, nhỏ480px và xóa khi đổi đối tượng. Không nén mất dữ liệu/giảm chất lượng capture để giảm RAM.
-- Giữ trang Dung lượng & bộ nhớ: xem ảnh nguồn, chỉnh sửa, thumbnails/cache/temp, chọn dọn cache/temp an toàn. Không tự xóa ảnh gốc, project, backup hoặc khóa bản quyền. Model chạy ở dịch vụ riêng cũng tiêu thụ RAM/VRAM; dùng chế độ ảnh/OCR khi máy thiếu tài nguyên.
-- Không có migration Supabase mới; không đổi backend/KEY/runtime/OCR. Editor tối đa22 chỉ khi semantic role mới được lưu; trước nâng cấp sidecar có backup `.pre-v1.44.bak`. Bản app cũ không đọc được schema22; giữ bản sao dự án trước khi quay lại bản cũ.
-- Hybrid vẫn buộc metadata vào hash/pixel nguồn, chuẩn hóa DPI/crop/màn hình như V1.43. Nguồn không có UIA dùng quét ảnh. Bản nhận diện nâng cao có fallback; chưa cam kết tái dựng hoàn hảo mọi form.
+Cả dọc và ngang dùng lệnh cuộn native của WPF, không tự cộng48 đơn vị vào danh sách đang đếm theo phần tử. ScrollUnit đặt trên chính ListBox. Giữ virtualization và chọn nhiều ảnh; Ctrl+C/FileDrop xuất PNG đã chỉnh lần lượt, temp24giờ giữ nềnV1.44.1. Ứng dụng nhận phải hỗ trợ dán/thả danh sách tệp.
 
-## Build, kiểm thử và phiên bản kế tiếp
+## Cập nhật và khôi phục
 
-Build Windowsx64/.NET10 bằng `scripts/Run-Checks.py`, `scripts/Build-Windows.ps1`, `scripts/Package-Source.py`; xem `docs/VALIDATION.md`, `docs/WINDOWS-ACCEPTANCE-V144.md`. WPF/installer cần chạy trên Windows thật trước phát hành rộng; Linux chỉ cross-build các phần đó.
+Luồng: kiểm feed → tải/kiểmSHA256 → kiểm thành phần/version/bản đối chiếu gói → sao lưu nền → kiểm lại cache → bàn giao updater → theo dõi lần mở cửa sổ đầu tiên. Gói bị thay/saihash/thiếuDLL/khácAppId bị chặn, có thể tải lại. `release-quality.json` là bản đối chiếu nhất quán, không phải chữ ký nhà phát hành.
 
-Tiếp theo: **V1.45.0 — Update, Recovery & Release Quality**: củng cố cập nhật/cài đè/khôi phục, nghiệm thu Windows và đo độ trễ/RAM trên cùng máy. M6 tiếp tục hiệu chỉnh theo bộ form thực tế sau nghiệm thu.
+Trong **Trợ giúp → Cập nhật & khôi phục dữ liệu**, chọn bản backup → kiểm → xác nhận → app đóng → helper khôi phục → mở lại. Backup có hash/tệpwhitelist; kiểm trước ghi, staging và bản an toàn trước restore. Restore không xóa tệp mới ngoài danh sách; bản an toàn giữ dữ liệu hiện có để quay lại. Ảnh/video nguồn không nằm trong backup này và không bị thay.
+
+Backup giữ metadata, EditJSON/backup, thiết lập và `licensing/device.bin`/`certificate.bin` đã mã hóaDPAPI. License chỉ dùng trên cùng máy/tài khoản, không đổi quyền/trial/server. Giới hạn512MB/bản,140MB/tệp,10000tệp; nếu vượt hoặc thiếu quyền/dung lượng, cập nhật trongapp dừng để giữ phiên cũ. Có thể sao lưu dự án riêng và dùng FullSetup cài đè. Backup cũ không có manifest vẫn được giữ nhưng không tự restore đè; cần kiểm thủ công.
+
+Nếu app không mở được, chạy **Recovery.cmd** trong thư mục chứa Captovix.exe: công cụ PowerShell/WinForms không phụ thuộc theme/DLL app, mở backup, xuất chẩn đoán và chọn FullSetup tin cậy cài lại. Binary rollback không tự động; dùng bộ cài đã kiểm chứng và backup dữ liệu tương thích. Không ghi đè schema mới bằng app cũ.
+
+Nhật ký mở cửa sổ chỉ chứng minh firstpaint; không thay thế kiểm chụp/quay/OCR/IME/scroll. Không tự gọi update thành công khi mới tải xong.
+
+## Xác minh và giới hạn
+
+HostLinux kiểm logic và cross-build WPF; **chưa chạy Setup/app trên Windows thật**. Script `Windows-Sandbox-Smoke.ps1` chỉ cho chạy trong WindowsSandbox và ghi báo cáo cài/mở cửa sổ. Chạy thêm toàn bộ nativefixtures và checklistV145; smoke cửa sổ không đủ nghiệm thu.
+
+Publish-GitHub.ps1 yêu cầu artifacts/windows-acceptance.json đúng version/platform/windowVisible và manualAcceptance=PASS sau khi kiểm thật. Bản bàn giao chưa có bằng chứng này, chưa publish stable. Không giảm chất lượng ảnh để giảmRAM; lịch sử/cache/bản xem được giới hạn, mỗi vùng chỉ một PNG, không nhân bitmap cho mỗi chữ. Chưa đo peakWindowsRAM/p95UI trên máy Boss.
+
+Tiếp theo đề xuất **V1.46.0 — Mockup Fidelity & Editing Reliability**: hiệu chỉnh trên bộ form thực tế, font/định dạng khi sửa, nền sau di chuyển và hiệu năng dự án nhiều vùng quét. Chưa tự bắt đầu phiên bản này.
 
 ## Dựng lại từ source trên Windows
 
@@ -67,6 +77,6 @@ Lỗi restore: kiểm mạng/proxy/NuGet, cài SDK10; không đổi xuống runt
 
 Bản bàn giao chưa push hoặc tạo GitHub Release. Với repo mới: tạo repo GitHub rồi `git init`, `git add .`, `git commit`, `git branch -M main`, thêm remote đúngrepo và push. Với repo có source: clone/fetch/pull nhánh trước, tích hợp source bản này, xem `git diff`, commit/push; không force-push để bỏ lỗi fetchfirst. Kiểm tra .gitignore và không push prerequisites/artifacts/privateconfig.
 
-Captovix là app desktopWPF, không deploy binaries lên Vercel/Netlify để chạy như web. Backend Supabase/licensing đang dùng giữ nguyên. Sau nghiệm thu Windows, xem `scripts/README-PUBLISH.txt`, upload đúng5assets từ Update-Packages lên GitHub Releases tagv1.44.0. Không chỉ upload ZIP. Kiểm tra source/update/feed URL và thử update máy test trước stableLatest.
+Captovix là app desktopWPF, không deploy binaries lên Vercel/Netlify để chạy như web. Backend Supabase/licensing đang dùng giữ nguyên. Sau nghiệm thu Windows, xem `scripts/README-PUBLISH.txt`, upload đúng5assets từ Update-Packages lên GitHub Releases tagv1.45.0. Không chỉ upload ZIP. Kiểm tra source/update/feed URL và thử update máy test trước stableLatest.
 
-Không cần chạy migration mới từ1.43.0. Giữ bản sao thư mục dữ liệu/dự án khi nâng cấp; schema22 có backup trước ghi mới. Nếu quay lại bản cũ, dùng bản sao/backup tương thích, không ép đọc hoặc ghi đè schema22. Gửi lại chính sourceZIP mới này để tiếp tục V1.45.0.
+Không cần chạy migration mới từ1.44.1. Giữ bản sao thư mục dữ liệu/dự án khi nâng cấp; schema22 có backup trước ghi mới. Nếu quay lại bản cũ, dùng bản sao/backup tương thích, không ép đọc hoặc ghi đè schema22. Gửi lại chính sourceZIP mới này để tiếp tục V1.45.0.

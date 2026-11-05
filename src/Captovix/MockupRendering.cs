@@ -11,7 +11,7 @@ public static partial class EditorRenderer
     }
     private static void DrawMockup(DrawingContext dc,Annotation a,bool suppressText=false)
     {
-        if(a.Mockup==null)return;var rect=new Rect(a.Left,a.Top,a.Width,a.Height);
+        if(a.Mockup==null)return;if(a.Mockup.RasterBacking)return;var rect=new Rect(a.Left,a.Top,a.Width,a.Height);
         // Label/title also get an opaque current-area background so old glyphs
         // never bleed through the replacement while editing in place.
         dc.DrawRectangle(Ink(a.Mockup.Background),null,rect);

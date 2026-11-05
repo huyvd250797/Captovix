@@ -1,4 +1,4 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.44.0
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.45.0
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
@@ -19,9 +19,13 @@ Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Ph�
 | Backlog — Library & Export Experience | Thư viện/xuất thuận tiện | Thumbnail theo vùng, tìm/lọc/chọn nhiều/khôi phục, dragout/batch | Library/export | Cuộn mượt, tiến trình/hủy/thử lại | Dự kiến |
 | V1.42.0 — Element Recognition & Fidelity (M5) | Quét form ít sửa tay; dung lượng rõ ràng | Chữ/control riêng, nhóm/quan hệ, font/màu/viền/bo góc, viền trung tính, trang dung lượng/dọn an toàn | Schema có sẵn tối đa21; giới hạn cache và audit payload | Logic/cross-build/gói; native Windows còn chờ | Đã triển khai theo Boss, chưa nghiệm thu Windows |
 | V1.43.0 — M5 Hybrid Smart Capture | UI khớp screenshot, menu chuột phải hoạt động | UIA + pixel/OCR, DPI/crop/nhiều màn hình, metadata giới hạn, sửa ContextMenu/ToolTip và menu lớp | Sidecar UI riêng/hash; không đổi schema21/backend | Kiểm logic/cross-build/gói; native Windows còn chờ | Đã triển khai theo Boss; cần nghiệm thu Windows |
-| V1.45.0 — Update, Recovery & Release Quality | Phát hành ổn định | Update thẳng, retry/backup/khôi phục, cài đè/theme/DPI/Windows QA | Update/release | Giữ ảnh/license/config, gói lỗi không áp dụng | Dự kiến |
+| V1.45.0 — Update, Recovery & Release Quality | Giữ nội dung, cập nhật có kiểm tra và khôi phục | Sửa wheel/ảnhquét/giữpixel; packageaudit/backup/restore/rescue/gate | Schema23 cóbackup, không backend/migration | Logic/cross-build/gói; nativeWindows còn chờ | Đã triển khai, chưa nghiệm thu Windows |
 
 | V1.44.0 — M6 Advanced UI Reconstruction | Form có cấu trúc, sửa nhanh | Nhóm/quan hệ/dedup, typography, sidebar và inline, AI tùy chọn, Undo tiết kiệm RAM | Schema22 có backup; không migration backend | Logic/cross-build/gói; native Windows và chất lượng model còn chờ | Đã triển khai, cần nghiệm thu thực tế |
+
+| V1.44.1 — Mockup Workflow & Editor Polish | Quét và sửa ít bước, cuộn/chia sẻ đúng | Cấu hình quét thống nhất, chọn tất cả, inline text, wheel, đa ảnh, arrow/shadow/toolbar/header | Giữ schema22/runtime/backend; PNG xuất tuần tự | Logic/cross-build/gói; native Windows còn chờ | Đã triển khai theo yêu cầu Boss |
+
+| V1.46.0 — Mockup Fidelity & Editing Reliability | Hiệu chỉnh theo form thật | Font/edit, nền khi di chuyển, dự án nhiều vùng quét | Theo kết quả corpus và Windows | Bộ form và số đo thực tế | Đề xuất, chưa triển khai |
 
 ## Phần Mockup theo mốc Boss chọn
 
