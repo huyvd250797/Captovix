@@ -3,10 +3,10 @@ using System.Text.RegularExpressions;
 using System.IO;
 namespace Captovix;
 public enum AppearanceMode { System, Light, Dark }
-public sealed record AppearanceSettings(AppearanceMode Mode=AppearanceMode.System,string Accent="#7C3AED",int Schema=1)
+public sealed record AppearanceSettings(AppearanceMode Mode=AppearanceMode.System,string Accent="#7C3AED",int Schema=1,bool AccentGradient=false,string AccentEnd="#2563EB",bool IconUsesAccent=true,string IconColor="#7C3AED",bool IconGradient=false,string IconEnd="#2563EB",double GradientAngle=45)
 {
     public static string FileName=>"appearance-settings.json";
-    public void Validate(){if(Schema!=1||!Enum.IsDefined(Mode)||!Regex.IsMatch(Accent??"","^#[0-9a-fA-F]{6}$"))throw new InvalidDataException("Thiết lập giao diện không hợp lệ hoặc thuộc phiên bản mới hơn.");}
+    public void Validate(){if(Schema!=1||!Enum.IsDefined(Mode)||!Regex.IsMatch(Accent??"","^#[0-9a-fA-F]{6}$"))throw new InvalidDataException("Thiết lập giao diện không hợp lệ hoặc thuộc phiên bản mới hơn.");if(!Regex.IsMatch(AccentEnd??"","^#[0-9a-fA-F]{6}$")||!Regex.IsMatch(IconColor??"","^#[0-9a-fA-F]{6}$")||!Regex.IsMatch(IconEnd??"","^#[0-9a-fA-F]{6}$")||!double.IsFinite(GradientAngle)||GradientAngle<0||GradientAngle>360)throw new InvalidDataException("Màu hoặc góc gradient không hợp lệ.");}
     public static AppearanceSettings Load(string root,out string? warning)
     {
         warning=null;var path=Path.Combine(root,FileName);if(!File.Exists(path))return new();

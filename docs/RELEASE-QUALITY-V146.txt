@@ -1,0 +1,24 @@
+PASS Apply lossless scan writes23 and does not erase source pixels
+PASS One shared backing PNG; all guessed elements preserve original pixels
+PASS Only edited text switches to vector and creates one local clearing region
+PASS Undo restores original image-backed scan and clears no other text
+PASS Move entire group carries unknown content without cutting every child
+PASS Save/reopen preserves exact PNG once
+PASS Copied raster groups detach from original erasure anchors
+PASS Rescan restores source under old destructive scan but retains privacy masks
+PASS Manifest backs up metadata/edits and encrypted same-machine identity
+PASS Restore creates safety snapshot and keeps source media intact
+PASS Reject changed checksum before touching user data
+PASS Failed restore leaves current data intact
+PASS First expected launch after update is not falsely reported as a failed launch
+PASS Interrupted launch is recognized on next attempt
+PASS Successful first paint closes recovery journal
+15 release quality logic checks passed. Native fidelity still requires Windows.
+PASS Production package passes release quality audit
+PASS Wrong AppId rejected
+PASS Wrong version rejected
+PASS Missing release quality stamp rejected
+PASS Altered runtime bytes rejected by stamp
+PASS Missing OCR component rejected
+PASS Traversal entry rejected
+7 real package quality checks passed.

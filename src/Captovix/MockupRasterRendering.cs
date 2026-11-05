@@ -16,7 +16,8 @@ public static partial class EditorRenderer
         var holes=root.Mockup.RasterClears??[];bool repaint=!m.RasterBacking&&holes.Any(h=>h.Bounds.Intersect(piece)==piece)&&m.PreserveRaster;
         DrawObjectShadow(dc,a);dc.PushTransform(ObjectTransform(a));try{
             var dest=new Rect(a.Left,a.Top,a.Width,a.Height);dc.PushClip(new RectangleGeometry(dest));
-            if(moved||repaint){var bitmap=ScanBitmap(png);double sx=a.Width/piece.Width,sy=a.Height/piece.Height;dc.DrawImage(bitmap,new Rect(a.Left-(piece.X-source.X)*sx,a.Top-(piece.Y-source.Y)*sy,source.Width*sx,source.Height*sy));}
+            bool caption=DrawOriginalCaption(dc,a,root,doc,moved||repaint);
+            if(!caption&&(moved||repaint)){var bitmap=ScanBitmap(png);double sx=a.Width/piece.Width,sy=a.Height/piece.Height;dc.DrawImage(bitmap,new Rect(a.Left-(piece.X-source.X)*sx,a.Top-(piece.Y-source.Y)*sy,source.Width*sx,source.Height*sy));}
             foreach(var h in holes){if(h.ElementId==a.Id||(long)h.Bounds.Width*h.Bounds.Height>=(long)piece.Width*piece.Height)continue;var intersection=h.Bounds.Intersect(piece);if(intersection.IsEmpty)continue;dc.DrawRectangle(Ink(h.Background),null,MapPiece(intersection,piece,a));}
             dc.Pop();
         }finally{dc.Pop();}

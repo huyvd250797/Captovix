@@ -1,0 +1,93 @@
+V1.46.0: logic/cross-build, Linux host. Native Windows execution pending.
+87 projects: 49 pure .NET, 38 WPF.
+
+AdvancedAnnotationChecks: BUILD/RUN PASS
+AdvancedScrollChecks: BUILD/RUN PASS
+AnnotationChecks: BUILD/RUN PASS
+AssistedChecks: BUILD/RUN PASS
+AssistedWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+BatchChecks: BUILD/RUN PASS
+BatchWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+CalloutGestureChecks: BUILD/RUN PASS
+CalloutInteractionWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+CaptureBoundsChecks: BUILD/RUN PASS
+CaptureBoundsWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+CaptureFidelityWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+CaptureQuality133WindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+CaptureReliabilityChecks: BUILD/RUN PASS
+CaptureWorkflowChecks: BUILD/RUN PASS
+CompositionChecks: BUILD/RUN PASS
+CompositionWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ConnectorChecks: BUILD/RUN PASS
+ConnectorWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+EditorCoreChecks: BUILD/RUN PASS
+EditorWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ElementScanChecks: BUILD/RUN PASS
+ElementScanWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ErrorDialogChecks: BUILD/RUN PASS
+FidelityWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+FocusPrivacyChecks: BUILD/RUN PASS
+FocusPrivacyWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+FrozenCaptureChecks: BUILD/RUN PASS
+GeometryChecks: BUILD/RUN PASS
+GroupLayoutChecks: BUILD/RUN PASS
+GroupLayoutWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+HybridCaptureChecks: BUILD/RUN PASS
+HybridPopupWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ImageAppearanceChecks: BUILD/RUN PASS
+ImageFidelityChecks: BUILD/RUN PASS
+ImageLayerThreadWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ImageStudioChecks: BUILD/RUN PASS
+ImageStudioWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+InstallerContractChecks: BUILD/RUN PASS
+LibraryChecks: BUILD/RUN PASS
+LibraryWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+LicensingChecks: BUILD/RUN PASS
+M6ReconstructionChecks: BUILD/RUN PASS
+M6WindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+MockupChecks: BUILD/RUN PASS
+MockupReliabilityChecks: BUILD/RUN PASS
+MockupReliabilityWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+MockupWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+MoveRecoveryChecks: BUILD/RUN PASS
+MoveRecoveryWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ObjectControlChecks: BUILD/RUN PASS
+ObjectWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+OcrChecks: BUILD/RUN PASS
+OcrWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+PerformanceWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+PixelStudioChecks: BUILD/RUN PASS
+PixelStudioWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+PrecisionChecks: BUILD/RUN PASS
+PrecisionWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+QuickCaptureChecks: BUILD/RUN PASS
+QuickCaptureWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+RefinementChecks: BUILD/RUN PASS
+RefinementWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ReleaseChecks: BUILD/RUN PASS
+ReleaseQualityChecks: BUILD/RUN PASS
+ReleaseQualityWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ReleaseWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ScrollAppearanceChecks: BUILD/RUN PASS
+ScrollAppearanceWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ScrollQualityChecks: BUILD/RUN PASS
+ServerlessInteropChecks: BUILD/RUN PASS
+ShapeStudioChecks: BUILD/RUN PASS
+ShapeWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+ShellLayoutChecks: BUILD/RUN PASS
+SmartCaptureChecks: BUILD/RUN PASS
+SmartCaptureWindowsFixture: BUILD PASS; WINDOWS RUN PENDING
+SmartRefinementWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+StartupResourceChecks: BUILD/RUN PASS
+StartupWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+StorageMaintenanceChecks: BUILD/RUN PASS
+StudioReliabilityChecks: BUILD/RUN PASS
+StudioReliabilityWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+TextClipboardChecks: BUILD/RUN PASS
+TextStudioWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+UpdateChecks: BUILD/RUN PASS
+ViewportChecks: BUILD/RUN PASS
+WorkflowPolishWindowsChecks: BUILD PASS; WINDOWS RUN PENDING
+
+Focused final rerun: MockupReliabilityChecks, ElementScanChecks, M6ReconstructionChecks; MockupReliabilityWindowsChecks compile.
+Actual package integration/audit and CRC/hash checks are recorded separately after packaging.

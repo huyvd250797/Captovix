@@ -1,12 +1,9 @@
-# V1.45.0 — Update, Recovery & Release Quality
+# V1.46.0 — Mockup Fidelity & Editing Reliability
 
-- Sửa gốc cuộn thư viện: ScrollUnit đặt trên ListBox sở hữu panel, không chỉ paneltemplate. AppScrolling dùng LineUp/Down/Left/Right của WPF cho danh sách, không nhân pixel thành48phần tử; hỗ trợ tích lũy delta nhỏ, cuộn ngang, giữ virtualization.
-- Mockup dùng nguồn nguyên pixel, bỏ bản preview1200px. Config/rà soát có100%pixel thật theo DPI, phóng to và vừa khung; OCR nhận snapshot nguyên kích thước, không nhận bitmap xem trước thu nhỏ.
-- Quét/Chọn tất cả/Áp dụng giữ nguyên hình ảnh qua một PNG nền chung và các tham chiếu vùng. Không vẽ lại cả form bằng font/nền ước lượng. Nội dung OCR chưa nhận ra vẫn có trong nền và di chuyển cùng nhóm. Chỉ phần cụ thể sửa nội dung/kiểu mới chuyển sang chữ/hình vẽ; di chuyển riêng dùng pixel gốc, không tự đổi font/màu.
-- Quét lại ảnh có Mockup cũ: phát hiện lớp quét kiểu cũ, xem lại ảnh nguồn thay vì các khối trắng đang che chữ. Chỉ thay lớp quét cũ khi Áp dụng, có Undo; giữ các vùng che thông tin. Không phục hồi được nội dung đã mất nếu chỉ còn ảnh xuất phẳng không có nguồn.
-- Editor schema23 lưu lớp nguồn/quan hệ/vùng thay đổi; lưu nâng cấp có backup.pre-v1.45.bak. Không SQL migration, không đổi runtime/OCR/backend/KEY. Bitmap nền chỉ lưu một lần mỗi vùng quét; chia sẻ chuỗi trong Undo, cache giải mã weakreference và giải phóng cùng scene.
-- Cập nhật kiểm hash/kích thước lúc tải và ngay trước áp dụng, đối chiếu AppId/version/runtime/OCR và release-quality.json; gói cache bị đổi quay lại trạng thái tải lại. Sao lưu chạy nền có hủy khi đóng; thất bại không bàn giao updater.
-- Backup có manifestSHA256, tên tệp whitelist, giới hạn dung lượng và chặn liên kết/traversal. Restore kiểm toàn bộ trước ghi, tạo bản an toàn, staging và hoàn tác khi ghi lỗi; chạy helper sau khi app đã đóng. Giữ ảnh/video nguồn, chỉ khôi phục metadata/edit và license mã hóa trên cùng máy.
-- Trợ giúp → Cập nhật & khôi phục dữ liệu: xem/chọn bản backup, kiểm tra rồi phục hồi. Nhật ký Applying/Starting/Healthy phân biệt cập nhật gián đoạn; Healthy nghĩa cửa sổ vẽ được lần đầu, không phải toàn app đã được nghiệm thu.
-- Recovery.cmd/Recovery.ps1 chạy độc lập bằng WindowsPowerShell/WinForms khi app lỗi: mở dữ liệu/backup, xuất chẩn đoán, chọn FullSetup cài lại. Không tự xóa dữ liệu hay tự hạ binary. Có checklist và script smokeWindowsSandbox, chặn publishstable khi chưa có bằng chứng Windows.
-- Chưa chạy nativeWindows/Setup/IME/scroll vật lý trong hostLinux. Pixel tests WPF mới chỉ compile; không cam kết OCR nhận đúng mọi chữ hoặc tự nhận chính xác mọi font. AI/model tùy chọn giữ nguyên, không kèm trọng số.
+- Thuộc tính Mockup có mẫu màu, bảng màu nhanh, font mẫu, B/I/U dạng nút và bản xem trước. Áp dụng cho cả rà soát trước quét và inspector sau áp dụng.
+- Ctrl+B/Ctrl+I/Ctrl+U nhận chữ Mockup. Mở/đóng inline không đổi nội dung sẽ hủy giao dịch; giữ số thực font đầy đủ trong inspector để không tự ghi vì làm tròn.
+- Nút có label luôn tách thành lớp thân nút và lớp nhãn phía trên, kể cả UI Automation chỉ trả tên nút. Có nút chọn từng lớp; thay thân không cập nhật thuộc tính chữ.
+- Đổi nền control phẳng giữ glyph raster của caption chưa sửa qua alpha mask, có cache; không thay font khi chỉ đổi màu thân. Font OCR dùng thêm đối chiếu nét ảnh và khung; font UI đã xác nhận vẫn được ưu tiên.
+- Biểu tượng chỉnh màu ở góc phải menu. Màu nhấn và icon có màu đơn/gradient hai điểm/hướng; đồng bộ hoặc chọn màu icon riêng. Logo header/cửa sổ/tray theo cấu hình; EXE/installer/shortcut giữ logo tĩnh gốc.
+- Bỏ mục Cập nhật & khôi phục dữ liệu khỏi menu, giữ backup/kiểm gói/cứu hộ nội bộ. Nút Quay đỏ tươi/chữ trắng.
+- Không có SQL/migration mới; schema tài liệu tối đa 23 và appearance schema 1 giữ tương thích. Chưa nghiệm thu Windows native; không tuyên bố nhận diện chính xác mọi font hoặc phục hồi mọi nền phức tạp.

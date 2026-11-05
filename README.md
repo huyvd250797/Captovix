@@ -1,45 +1,32 @@
-# Captovix V1.45.0 — Update, Recovery & Release Quality
+# Captovix V1.46.0 — Mockup Fidelity & Editing Reliability
 
-Nâng từ đúng ZIPV1.44.1 Boss gửi. Bản này sửa cuộn thư viện, ảnh Mockup mờ và lớp quét làm mất chữ; đồng thời bổ sung kiểm gói, backup, khôi phục và cứu hộ. Chưa push/phát hành GitHub Releases.
+Nâng cấp từ đúng source ZIP V1.45.0 Boss gửi. Bản này tập trung vào thao tác sửa Mockup, tách nút và nhãn, mẫu màu trực quan và giao diện cá nhân. Bộ cài Windows x64 tự chứa runtime .NET 10.0.13; không nâng dependencies hoặc thay cấu hình bản quyền/backend.
 
-## Cài đặt
+## Sử dụng Mockup
 
-Đóng Captovix cả khay, chạy Captovix-v1.45.0-Full-Setup.exe vào vị trí đang cài. Giữ dữ liệu/license/config như nền cũ. FullSetup không tự lùi phiên bản hay xóa thư viện. Không cần chạy migration mới/Supabase/backend. Nghiệm thu Windows thật vẫn đang chờ: xem docs/WINDOWS-ACCEPTANCE-V145.md trước phát hành rộng.
+- Mở ảnh → Mockup → quét vùng hoặc toàn ảnh → rà soát/chọn tất cả → áp dụng. Nguồn vẫn giữ đầy đủ pixel; chế độ 100% và Vừa khung chỉ thay khung nhìn.
+- Nút có chữ luôn tạo thân nút và nhãn chữ ở lớp phía trên, cùng một nhóm. Dùng hai nút **Nút / Ô nhập** và **Nhãn chữ** trong thuộc tính để chọn riêng. Sửa nhãn chỉ đổi chữ; đổi nền/viền/bo góc thân nút không sửa nội dung nhãn.
+- Thuộc tính bên phải có bản xem trước, mẫu màu hiện tại, bảng màu nhanh, hộp chọn màu, font mẫu và nút B/I/U. Ctrl+B, Ctrl+I, Ctrl+U áp dụng cho toàn đối tượng chữ Mockup đang chọn, kể cả khi nhập trực tiếp; không phải định dạng riêng vài ký tự trong một đối tượng.
+- Double-click chữ để nhập tại chỗ. Mở rồi đóng hoặc nhập rồi trả lại đúng nội dung ban đầu sẽ hủy phiên sửa: giữ nguyên font, kích thước, vị trí và lớp pixel gốc, không tạo thay đổi do làm tròn số. Chữ một dòng không tự xuống dòng khi vừa mở; nội dung dài hơn phạm vi vẫn xuống dòng.
+- OCR có đối chiếu hình dạng nét ảnh với các font phổ biến đã cài. Font đầy đủ từ UI Automation được ưu tiên nếu khớp screenshot. Ảnh không chứa danh tính font: đây là lựa chọn gần giống, không bảo đảm đoán đúng mọi font. Nếu font lưu trong dự án không có trên máy, renderer chọn font phổ biến gần khung chữ nhất và không ghi đè tên font gốc khi chỉ mở/đóng sửa.
+- Khi đổi màu thân nút nền phẳng, nhãn chưa sửa giữ nét chữ ảnh gốc qua mặt nạ alpha thay vì dựng lại bằng font ước lượng. Khi thực sự sửa nội dung/kiểu nhãn, nhãn chuyển sang chữ chỉnh sửa. Nền gradient, icon nằm trong chữ hoặc ảnh nền phức tạp vẫn cần rà soát.
+- Undo/Redo, lưu/mở lại, chọn riêng/nhóm và di chuyển tiếp tục dùng nền giữ nội dung V1.45. Phần chưa OCR vẫn là ảnh đi cùng nhóm; không khẳng định mọi pixel đã thành phần tử text. Nền phức tạp tại vị trí cũ sau di chuyển có thể cần sửa trong Nền & mặt nạ.
 
-## Mockup rõ ảnh và giữ nội dung
+## Màu giao diện và icon
 
-1. Mở ảnh → Mockup → Quét vùng hoặc toàn ảnh. Mặc định100%pixel thật theoDPI; dùng cuộn/phóng to để đọc chữ, Vừa khung để xem toàn bố cục. Nguồn không bị nén mất dữ liệu hoặc thu xuống1200px; hình vừa khung có thể nhỏ về thị giác nhưng OCR vẫn nhận pixel nguồn đầy đủ.
-2. Quét dùng vùng8×8px tới20MP. Config có thể tham chiếu ảnh gốc lớn mà không nhân bản toàn bitmap; ảnh đã chỉnh vượt20MP cần Crop vùng nhỏ trước để tránh dựng một bitmap quá lớn. Crop có thể hoàn tác.
-3. Rà soát/chọn tất cả/áp dụng: **giữ hình ảnh gốc**. Một PNG chung giữ toàn nội dung; các khung là phần tử có thể chọn. OCR sai/không nhận ra không còn làm chữ biến mất ngay khi áp dụng. Nội dung chưa nhận diện đi cùng lớp nền/nhóm.
-4. Double-click phần tử chữ OCR để sửa riêng, thuộc tính bên phải. Pixel nguồn dùng đến khi thực sự thay nội dung/kiểu; phần được sửa chuyển sang text/control. OCR/font ước lượng có thể cần sửa thủ công một lần; không khẳng định mọi chữ đều tự thành text đúng. Không thể tự sửa nội dung chưa nhận ra bằng text nếu chưa thêm khung/OCR thủ công.
-5. Di chuyển cả nhóm giữ cả vùng ảnh/biểu tượng/bảng/nội dung chưa nhận ra. Vào nhóm hoặc double-click để chọn/sửa phần riêng. Chọn lớp nền chỉ để di chuyển nhóm; không đổi font/màu cả nền. Nền vị trí cũ khi di chuyển vẫn có thể cần rà soát ở Nền & mặt nạ, nhất là nền phức tạp.
-6. Nếu mở ảnh từng bị quét kiểu cũ1.44.x, config thông báo dùng lại ảnh nguồn bên dưới các lớp quét cũ. Chỉ loại lớp quét cũ khi Áp dụng, Undo phục hồi trạng thái trước. Các vùng che thông tin không bị bỏ. Nếu chỉ còn ảnh xuất phẳng đã mất chữ, app không thể khôi phục nội dung không còn trong file.
+Bấm biểu tượng ống hút màu ở góc phải thanh menu, hoặc Hiển thị → Giao diện & màu sắc. Chọn Sáng/Tối/Theo hệ thống; đổi màu nhấn dạng màu đơn hoặc gradient hai màu và hướng gradient. Bật **Icon dùng cùng màu nhấn** để đồng bộ, hoặc bỏ chọn và đặt màu/gradient riêng cho icon.
 
-Schema23 mới chỉ khi dùng lớp Mockup giữpixel. Lần lưu nâng cấp có `.pre-v1.45.bak`; bản cũ tối đa22 không đọc được23. Giữ bản sao dự án khi muốn quay lại bản cũ. Không có SQL/migration phải chạy.
+Bản xem trước và giao diện cập nhật theo lựa chọn; hình dáng logo đã duyệt giữ nguyên. Màu cá nhân áp dụng cho logo trong app, icon cửa sổ và khay hệ thống. Biểu tượng tĩnh của bộ cài/tệp EXE/shortcut vẫn là nhận diện Captovix gốc. Nút Quay dùng nền đỏ tươi #EF3F51 và chữ trắng ở cả hai chế độ sáng/tối.
 
-## Cuộn thư viện
+Theo yêu cầu hiện tại, bỏ mục **Cập nhật & khôi phục dữ liệu** khỏi menu. Sao lưu trước cập nhật, kiểm hash/gói, Recovery.cmd và dữ liệu backup cũ vẫn giữ để bảo toàn an toàn nâng cấp. Mục bản quyền/khôi phục KEY không thay đổi.
 
-Cả dọc và ngang dùng lệnh cuộn native của WPF, không tự cộng48 đơn vị vào danh sách đang đếm theo phần tử. ScrollUnit đặt trên chính ListBox. Giữ virtualization và chọn nhiều ảnh; Ctrl+C/FileDrop xuất PNG đã chỉnh lần lượt, temp24giờ giữ nềnV1.44.1. Ứng dụng nhận phải hỗ trợ dán/thả danh sách tệp.
+## Nâng cấp và kiểm tra
 
-## Cập nhật và khôi phục
+Đóng app cả khay rồi chạy Captovix-v1.46.0-Full-Setup.exe vào đường dẫn đang cài. Không cần chạy migration mới, không reset database/Supabase. Document schema vẫn tối đa 23, không nâng schema mới; appearance schema 1 có thêm trường tùy chọn tương thích với tệp V1.45. Giữ backup và ảnh gốc trước khi thử bản mới.
 
-Luồng: kiểm feed → tải/kiểmSHA256 → kiểm thành phần/version/bản đối chiếu gói → sao lưu nền → kiểm lại cache → bàn giao updater → theo dõi lần mở cửa sổ đầu tiên. Gói bị thay/saihash/thiếuDLL/khácAppId bị chặn, có thể tải lại. `release-quality.json` là bản đối chiếu nhất quán, không phải chữ ký nhà phát hành.
+Kiểm thử logic/cross-build và kiểm gói được ghi trong docs/VALIDATION.md và docs/WINDOWS-ACCEPTANCE-V146.md. Host hiện tại là Linux: chưa chạy app, bộ cài, phím vật lý hoặc đo RAM trên Windows thật; không coi biên dịch WPF là nghiệm thu Windows. Publish stable vẫn cần báo cáo Windows thật.
 
-Trong **Trợ giúp → Cập nhật & khôi phục dữ liệu**, chọn bản backup → kiểm → xác nhận → app đóng → helper khôi phục → mở lại. Backup có hash/tệpwhitelist; kiểm trước ghi, staging và bản an toàn trước restore. Restore không xóa tệp mới ngoài danh sách; bản an toàn giữ dữ liệu hiện có để quay lại. Ảnh/video nguồn không nằm trong backup này và không bị thay.
-
-Backup giữ metadata, EditJSON/backup, thiết lập và `licensing/device.bin`/`certificate.bin` đã mã hóaDPAPI. License chỉ dùng trên cùng máy/tài khoản, không đổi quyền/trial/server. Giới hạn512MB/bản,140MB/tệp,10000tệp; nếu vượt hoặc thiếu quyền/dung lượng, cập nhật trongapp dừng để giữ phiên cũ. Có thể sao lưu dự án riêng và dùng FullSetup cài đè. Backup cũ không có manifest vẫn được giữ nhưng không tự restore đè; cần kiểm thủ công.
-
-Nếu app không mở được, chạy **Recovery.cmd** trong thư mục chứa Captovix.exe: công cụ PowerShell/WinForms không phụ thuộc theme/DLL app, mở backup, xuất chẩn đoán và chọn FullSetup tin cậy cài lại. Binary rollback không tự động; dùng bộ cài đã kiểm chứng và backup dữ liệu tương thích. Không ghi đè schema mới bằng app cũ.
-
-Nhật ký mở cửa sổ chỉ chứng minh firstpaint; không thay thế kiểm chụp/quay/OCR/IME/scroll. Không tự gọi update thành công khi mới tải xong.
-
-## Xác minh và giới hạn
-
-HostLinux kiểm logic và cross-build WPF; **chưa chạy Setup/app trên Windows thật**. Script `Windows-Sandbox-Smoke.ps1` chỉ cho chạy trong WindowsSandbox và ghi báo cáo cài/mở cửa sổ. Chạy thêm toàn bộ nativefixtures và checklistV145; smoke cửa sổ không đủ nghiệm thu.
-
-Publish-GitHub.ps1 yêu cầu artifacts/windows-acceptance.json đúng version/platform/windowVisible và manualAcceptance=PASS sau khi kiểm thật. Bản bàn giao chưa có bằng chứng này, chưa publish stable. Không giảm chất lượng ảnh để giảmRAM; lịch sử/cache/bản xem được giới hạn, mỗi vùng chỉ một PNG, không nhân bitmap cho mỗi chữ. Chưa đo peakWindowsRAM/p95UI trên máy Boss.
-
-Tiếp theo đề xuất **V1.46.0 — Mockup Fidelity & Editing Reliability**: hiệu chỉnh trên bộ form thực tế, font/định dạng khi sửa, nền sau di chuyển và hiệu năng dự án nhiều vùng quét. Chưa tự bắt đầu phiên bản này.
+Phiên bản tiếp theo đề xuất: **V1.47.0 — Mockup Review & Workflow Consistency**: rà soát hàng loạt các phần chưa chắc, đồng bộ thao tác giữa lớp/nhóm và cải thiện trải nghiệm dự án nhiều vùng quét. Chưa tự bắt đầu bản này.
 
 ## Dựng lại từ source trên Windows
 
@@ -77,6 +64,6 @@ Lỗi restore: kiểm mạng/proxy/NuGet, cài SDK10; không đổi xuống runt
 
 Bản bàn giao chưa push hoặc tạo GitHub Release. Với repo mới: tạo repo GitHub rồi `git init`, `git add .`, `git commit`, `git branch -M main`, thêm remote đúngrepo và push. Với repo có source: clone/fetch/pull nhánh trước, tích hợp source bản này, xem `git diff`, commit/push; không force-push để bỏ lỗi fetchfirst. Kiểm tra .gitignore và không push prerequisites/artifacts/privateconfig.
 
-Captovix là app desktopWPF, không deploy binaries lên Vercel/Netlify để chạy như web. Backend Supabase/licensing đang dùng giữ nguyên. Sau nghiệm thu Windows, xem `scripts/README-PUBLISH.txt`, upload đúng5assets từ Update-Packages lên GitHub Releases tagv1.45.0. Không chỉ upload ZIP. Kiểm tra source/update/feed URL và thử update máy test trước stableLatest.
+Captovix là app desktopWPF, không deploy binaries lên Vercel/Netlify để chạy như web. Backend Supabase/licensing đang dùng giữ nguyên. Sau nghiệm thu Windows, xem `scripts/README-PUBLISH.txt`, upload đúng5assets từ Update-Packages lên GitHub Releases tag v1.46.0. Không chỉ upload ZIP. Kiểm tra source/update/feed URL và thử update máy test trước stableLatest.
 
-Không cần chạy migration mới từ1.44.1. Giữ bản sao thư mục dữ liệu/dự án khi nâng cấp; schema22 có backup trước ghi mới. Nếu quay lại bản cũ, dùng bản sao/backup tương thích, không ép đọc hoặc ghi đè schema22. Gửi lại chính sourceZIP mới này để tiếp tục V1.45.0.
+Không cần chạy migration mới từ V1.45.0. Giữ bản sao thư mục dữ liệu/dự án khi nâng cấp; schema 23 có backup trước ghi mới. Nếu quay lại bản cũ, dùng bản sao/backup tương thích, không ép đọc hoặc ghi đè schema 23. Gửi lại chính sourceZIP mới này để tiếp tục V1.47.0.

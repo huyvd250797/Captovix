@@ -11,6 +11,7 @@ public partial class MainWindow
     private bool _endingInline,_syncInline;
     private bool _inlineRefreshQueued;
     private double _inlineWrapWidth;
+    private string _inlineInitialText="";
     private void UpdateInlineValue(Annotation a,string value){if(a.Mockup!=null)EditorRenderer.SetMockupText(a,value,_inlineWrapWidth);else a.Text=value;}
 
     private void BeginInlineText()
@@ -19,7 +20,7 @@ public partial class MainWindow
         if(_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {} a||a.Kind is not (AnnotationKind.Text or AnnotationKind.Callout)&&a.Mockup==null)return;
         _textTimer.Stop();_session.Commit();_saveTimer.Stop();
         
-        _inlineWrapWidth=a.Mockup!=null?EditorRenderer.MockupEditingWidth(a):0;_imeComposing=false;_inlineId=a.Id;_session.Begin();Surface.InlineEditingId=a.Id;_syncInline=true;try{InlineText.Text=a.Text;}finally{_syncInline=false;}InlineText.Visibility=Visibility.Visible;Surface.InvalidateVisual();PositionInlineText();
+        _inlineInitialText=a.Text;_inlineWrapWidth=a.Mockup!=null?EditorRenderer.MockupEditingWidth(a):0;_imeComposing=false;_inlineId=a.Id;_session.Begin();Surface.InlineEditingId=a.Id;_syncInline=true;try{InlineText.Text=a.Text;_inlineInitialText=InlineText.Text;}finally{_syncInline=false;}InlineText.Visibility=Visibility.Visible;Surface.InvalidateVisual();PositionInlineText();
         Dispatcher.BeginInvoke(()=>{if(_inlineId!=a.Id)return;InlineText.Focus();InlineText.SelectAll();InlineText.BringIntoView();},DispatcherPriority.Input);
         SetStatus("Đang sửa chữ trên ảnh · Ctrl+Enter hoàn tất · Esc hủy · Enter xuống dòng.");
     }
@@ -41,7 +42,7 @@ public partial class MainWindow
         InlineText.VerticalContentAlignment=callout||a.Mockup!=null?a.VerticalAlignment==TextVertical.Center?VerticalAlignment.Center:a.VerticalAlignment==TextVertical.Bottom?VerticalAlignment.Bottom:VerticalAlignment.Top:VerticalAlignment.Top;
         InlineText.Height=callout?Math.Max(1,content.Height):a.TextFrame&&a.Kind==AnnotationKind.Text?Math.Max(1,content.Height):Math.Max(a.FontSize+4,textLayout.Height+4);
         if(a.TextFrame&&a.Kind==AnnotationKind.Text){InlineText.Width=Math.Max(1,content.Width);InlineText.TextWrapping=TextWrapping.Wrap;InlineText.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;}else InlineText.VerticalScrollBarVisibility=ScrollBarVisibility.Hidden;
-        if(a.Mockup!=null){InlineText.MaxLength=2000;InlineText.Width=Math.Max(24,_inlineWrapWidth+4);InlineText.Height=Math.Max(content.Height,textLayout.Height+4);if(scanLine)InlineText.VerticalContentAlignment=VerticalAlignment.Top;InlineText.TextWrapping=TextWrapping.Wrap;InlineText.IsUndoEnabled=false;}else InlineText.MaxLength=20000;
+        if(a.Mockup!=null){InlineText.MaxLength=2000;InlineText.Width=Math.Max(24,_inlineWrapWidth+4);InlineText.Height=Math.Max(content.Height,textLayout.Height+4);if(scanLine)InlineText.VerticalContentAlignment=VerticalAlignment.Top;InlineText.TextWrapping=scanLine&&InlineText.Text==_inlineInitialText&&!InlineText.Text.Contains('\n')?TextWrapping.NoWrap:TextWrapping.Wrap;InlineText.IsUndoEnabled=false;}else{InlineText.MaxLength=20000;InlineText.IsUndoEnabled=true;}
         InlineText.MaxHeight=100000;
     }
     private void EndInlineText(bool commit)
@@ -50,7 +51,7 @@ public partial class MainWindow
         try{
             if(commit&&_imeComposing&&_activeComposition is {} composition)TextCompositionManager.CompleteComposition(composition);
             var id=_inlineId;var text=InlineText.Text;_inlineId=null;_imeComposing=false;_activeComposition=null;InlineText.Visibility=Visibility.Collapsed;Surface.InlineEditingId=null;
-            if(_session is {} session){if(commit&&session.Document.Annotations.FirstOrDefault(a=>a.Id==id) is {} target){UpdateInlineValue(target,text);if(target.Kind==AnnotationKind.Text&&string.IsNullOrWhiteSpace(text))session.Document.Annotations.Remove(target);else if(target.Mockup==null)EditorRenderer.FitText(target,Surface.EditingBounds,true);Surface.FitSelectionCanvas();session.Commit();}else session.Cancel();}
+            if(_session is {} session){if(commit&&text!=_inlineInitialText&&session.Document.Annotations.FirstOrDefault(a=>a.Id==id) is {} target){UpdateInlineValue(target,text);if(target.Kind==AnnotationKind.Text&&string.IsNullOrWhiteSpace(text))session.Document.Annotations.Remove(target);else if(target.Mockup==null)EditorRenderer.FitText(target,Surface.EditingBounds,true);Surface.FitSelectionCanvas();session.Commit();}else session.Cancel();}
             if(Surface.Tool is EditorTool.Text or EditorTool.Callout){Surface.Cursor=Cursors.Cross;SetStatus("Sẵn sàng · Giữ công cụ "+(Surface.Tool==EditorTool.Callout?"Callout":"Chữ")+" để vẽ tiếp.");}Surface.InvalidateVisual();SyncProperties();SavedLabel.Text=_session?.Dirty==true?"Đang lưu…":"✓ Đã lưu";if(_session?.Dirty==true){_saveTimer.Stop();_saveTimer.Start();}
         }finally{_endingInline=false;}
     }

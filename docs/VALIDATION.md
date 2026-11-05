@@ -1,13 +1,13 @@
-# V1.45.0 — Validation
+# V1.46.0 — Validation
 
-05/11/2026. Nền đúng ZIPV1.44.1 Boss cung cấp, SDK.NET10.0.100Linux, Windowsx64/.NET10.0.13 và OCR/Velopack1.2.161 giữ nguyên.
+Ngày 05/11/2026. Nền: source V1.45.0 Boss đính kèm. SDK .NET 10.0.100 trên Linux, target Windows x64, runtime tự chứa 10.0.13. Giữ phiên bản dependencies, licensing và backend.
 
-Kiểm hồi quy Run-Checks.py và focusedReleaseQualityChecks/UpdateChecks/Windowscrossbuild. Bộ mới kiểm dữ liệu sourceRaster mộtPNG, khôngerase khiapply, chuyển riêng label khiedit, undo,groupmove,save/reopen,copy/detach, bỏquétcũgiữprivacy; backup/manifest/restore/tamper/journal. ReleaseQualityWindowsChecks mới kiểm pixelđúngnguồn và khôngmấtnộidungkhiOCR/font sai; chỉcompile trênhostLinux.
+Source gồm 87 dự án kiểm tra: 49 thuần .NET và 38 Windows/WPF. Bộ mới MockupReliabilityChecks kiểm tách nút có tên nhưng không OCR runs, thứ tự lớp/nhóm, font giữ nguyên, sửa thân/nhãn độc lập, nhãn nhiều dòng, cấu hình gradient và tương thích appearance cũ. MockupReliabilityWindowsChecks có fixture pixel/glyph khi đổi nền, no-op inspector và gradient/icon; chỉ biên dịch trên Linux.
 
-Chưa có nativeWindows/Setup/WPF/IME/scrollvậtlý hoặc benchmarkWorkingSet/p95Windows trongphiênnày. Không tuyênbố đạt hoànchỉnh cổng nghiệmthu; WINDOWS-ACCEPTANCE-V145.md là yêu cầu trướcstable. Source/bộ cài/góiUpdate là bản bàn giao để kiểm trênWindows, chưapush/publish.
+Tệp CHECKS-V146.txt và PACKAGE-VALIDATION-V146.txt ghi kết quả cuối sau khi kiểm/đóng gói. Báo cáo V145 và trước đó là lịch sử. Hai assertion cũ được cập nhật theo hành vi mới: nút UI-only có hai lớp; caption không còn bị thay thuộc tính nền khi sửa thân.
 
-Khôi phục binary là công cụ cứu hộ/cài lại FullSetup, không tựrollback exe khi processkhônglên. Restore dữliệu là thao tácrõràng có checksum/staging/safetybackup và chờappđóng. Ghi nhậnHealthy chỉfirstpaint. Backup512MB,140MB/tệp,10000tệp; bản cũthiếu manifest khôngautorestored. KhôngmigrationSQL, khôngđổiKEY/backend. Schema23 có.pre-v1.45.bak.
+Chưa chạy bộ cài, app hoặc WPF fixtures trên Windows thật. Không khẳng định phím vật lý/DPI/IME/scroll native đạt, không có số đo RAM hoặc p95 Windows mới. Checklist bắt buộc trước stable: WINDOWS-ACCEPTANCE-V146.md. First-paint smoke vẫn không thay thế nghiệm thu toàn app.
 
-Pixelbacking giữ nội dung gốc; OCR chưa ra khôngtự thànhtext cónghĩa nhưng vẫn ở nền/nhóm. Chỉ vùng cụthể sửa mới vẽlạibằng thuộc tính hiệncó. Font từbitmap cònước lượng; nền chỗcũ khidi chuyển còncần ràsoát. Không thểbịa phục hồi chữ từ ảnhphẳng đãmất.
+Không có SQL/migration mới. Schema tài liệu vẫn tối đa 23; appearance schema 1 thêm trường tùy chọn. Menu khôi phục dữ liệu được bỏ theo yêu cầu, nhưng backup trước update, hash/audit và Recovery.cmd vẫn giữ. KEY/backend/ảnh nguồn không bị thay.
 
-Đóng gói từthưmục cótênriêng mỗi lượt, stamp/đối chiếuDLL trực tiếpvớipayload, runtime/models/hash/feed/sourceZIP. Báocáo cuối và kíchthước được thêm trong sourceZIP sau khi build. Các báo cáo V144/V1441 là lịch sử.
+Font ảnh raster chỉ được đối chiếu gần giống, không chứng minh danh tính font. Khi không sửa, lớp gốc và định dạng lưu giữ nguyên. Sau khi đổi màu thân phẳng, caption chưa sửa dùng nét raster/mặt nạ alpha; nhãn có nhiều màu hoặc nền phức tạp vẫn cần rà soát. Nền vị trí cũ sau di chuyển chưa có inpaint tổng quát. Icon cá nhân áp dụng trong app/cửa sổ/tray; EXE/installer/shortcut giữ icon tĩnh đã duyệt.

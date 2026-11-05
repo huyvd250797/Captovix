@@ -1,0 +1,99 @@
+PASS: Normalize GitHub repository URL
+PASS: Reject invalid source http://github.com/a/b
+PASS: Reject invalid source https://token@github.com/a/b
+PASS: Reject invalid source https://github.com/a/b?token=secret
+PASS: Reject invalid source https://github.com/a/b#x
+PASS: Reject invalid source https://github.com/a/b/releases
+PASS: Reject invalid source https://github.com:444/a/b
+PASS: Reject invalid source https://example.com/a/b
+PASS: Reject invalid source file:///C:/feed
+PASS: Static HTTPS folder
+PASS: Reject JSON URL instead of directory
+PASS: GitHub source resolves directly to stable feed without release-list paging
+PASS: Migrate publisher source while preserving opt-out
+PASS: Keep custom publisher unchanged
+PASS: 404 reports missing feed instead of latest version
+PASS: Timeout reports retryable source error
+PASS: Portable release button opens a page instead of the feed directory redirect
+PASS: Custom feed keeps its manual release target
+PASS: First daily check
+PASS: New app session checks even with a recent persisted timestamp
+PASS: Session polls no more than every30minutes
+PASS: Session can discover a release after30minutes
+PASS: Session preserves explicit auto-check opt-out
+PASS: 24-hour throttle
+PASS: Changed source clears daily throttle
+PASS: Auto check opt-out
+PASS: Recover from clock moving backward
+PASS: Packaged defaults
+PASS: Saved source overrides packaged default
+PASS: Blank saved source disables packaged defaults
+PASS: Corrupt override never switches publisher silently
+PASS: Concurrent checks coalesced
+PASS: Available release and notes
+PASS: Concurrent downloads prevented
+PASS: Cancel restores retry action
+PASS: Corrupt download cannot apply
+PASS: Successful download ready for explicit restart
+PASS: Capture blocks apply before any save/exit
+PASS: Save failure prevents exit
+PASS: Backup failure prevents exit
+PASS: Apply launch error remains retryable
+PASS: Apply follows successful preparation only
+PASS: Repeated restart cannot apply twice
+PASS: Defer never applies cached update
+PASS: Portable notify-only mode
+PASS: No update available
+PASS: Offline check leaves current app usable
+PASS: Custom annotation presets are included in update backups
+PASS: Metadata and annotation backup
+PASS: Backup excludes original media
+PASS: Annotation backup remains exact
+PASS: Update backup leaves originals and documents untouched
+PASS: SDK recognizes test installed app
+PASS: SDK discovers real packaged version
+PASS: SDK download and SHA-256 verification pass
+PASS: Installed1.37.0 discovers actual patch package newer than1.37.0
+PASS: Installed1.37.0 downloads and verifies patch Full package
+PASS: Installed1.37.1 discovers actual newer patch
+PASS: Installed1.37.1 downloads and verifies actual full patch
+PASS: Installed1.37.2 discovers actual newer patch
+PASS: Installed1.37.2 downloads and verifies actual full patch
+PASS: Installed1.37.3 discovers actual newer M1 release
+PASS: Installed1.37.3 downloads and verifies actual full M1 package
+PASS: Installed1.38.0 discovers actual newer M2 release
+PASS: Installed1.38.0 downloads and verifies actual full M2 package
+PASS: Installed1.39.0 discovers actual newer M3 release
+PASS: Installed1.39.0 downloads and verifies actual full M3 package
+PASS: Installed1.40.0 discovers actual M4 release
+PASS: Installed1.40.0 downloads and verifies full M4 package
+PASS: Installed1.41.0 discovers actual startup recovery patch
+PASS: Installed1.41.0 downloads and verifies full recovery package
+PASS: Real package with wrong SHA-256 is rejected
+PASS: Another app package is never offered
+PASS: SDK does not offer older release
+PASS: SDK does not offer the same version
+PASS: Prerelease never reaches the stable apply flow
+PASS: Feed without SHA-256 is rejected
+PASS: Installed1.31 directly targets1.33.0 without intermediate packages
+PASS: Installed1.31 directly targets1.36.0 without intermediate packages
+PASS: Installed1.31 directly targets1.37.0 without intermediate packages
+PASS: Installed1.31 directly targets1.37.1 without intermediate packages
+PASS: Installed1.31 directly targets1.37.2 without intermediate packages
+PASS: Installed1.31 directly targets1.37.3 without intermediate packages
+PASS: Installed1.31 directly targets1.38.0 without intermediate packages
+PASS: Installed1.31 directly targets1.39.0 without intermediate packages
+PASS: Installed1.31 directly targets1.40.0 without intermediate packages
+PASS: Installed1.31 directly targets1.41.0 without intermediate packages
+PASS: Installed1.31 directly targets1.41.1 without intermediate packages
+PASS: Installed1.31 directly targets1.42.0 without intermediate packages
+PASS: Installed1.31 directly targets1.43.0 without intermediate packages
+PASS: Installed1.31 directly targets1.44.0 without intermediate packages
+PASS: Installed1.31 directly targets1.44.1 without intermediate packages
+PASS: Installed1.31 directly targets1.45.0 without intermediate packages
+PASS: Installed1.31 directly targets1.46.0 without intermediate packages
+PASS: Production SDK discovers stable version at feed position15
+PASS: Diagnostics show exact resolved stable endpoint
+PASS: Up-to-date message displays actual source version
+PASS: Empty feed is an error rather than a false latest-version result
+98 update checks passed.

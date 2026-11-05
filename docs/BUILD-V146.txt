@@ -1,0 +1,6 @@
+  Determining projects to restore...
+  Restored /workspace/scratch/101ff3fb429b/v146/Captovix-v1.45.0/src/Licensing.Shared/Licensing.Shared.csproj (in 209 ms).
+  Restored /workspace/scratch/101ff3fb429b/v146/Captovix-v1.45.0/src/Captovix/Captovix.csproj (in 230 ms).
+  Licensing.Shared -> /workspace/scratch/101ff3fb429b/v146/Captovix-v1.45.0/src/Licensing.Shared/bin/x64/Release/net10.0/Licensing.Shared.dll
+  Captovix -> /workspace/scratch/101ff3fb429b/v146/Captovix-v1.45.0/src/Captovix/bin/x64/Release/net10.0-windows/win-x64/Captovix.dll
+  Captovix -> /workspace/scratch/101ff3fb429b/v146/Captovix-v1.45.0/artifacts/publish-v146-final03/

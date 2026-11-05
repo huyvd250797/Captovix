@@ -125,9 +125,19 @@ public static class ElementScan
         for(int k=0;k<limit;k++){int x=b.X+k,y=b.Y+k;string c=Pixel(x,y);if(Distance(c,item.Colors.Background)>30||Distance(item.Colors.Fill,item.Colors.Background)<24&&Distance(c,item.BorderColor)<24)break;radius=k+1;}
         item.Radius=radius<2?0:Math.Clamp(radius*2,0,limit);
     }
+    // UI Automation may supply a button name without OCR text runs. Always
+    // separate its visual body from its editable caption, preserving z-order.
+    static ScanElement SplitReady(ScanElement source){
+        if(source.Kind!=MockupKind.Button||string.IsNullOrWhiteSpace(source.Text)||source.TextRuns.Count==1&&source.Text==source.TextRuns[0].Text)return source;
+        var copy=System.Text.Json.JsonSerializer.Deserialize<ScanElement>(System.Text.Json.JsonSerializer.Serialize(source))!;
+        var b=source.OcrBounds?.Intersect(source.Bounds)??source.Bounds;
+        if(source.TextRuns.Count>1&&source.Text==string.Join("\n",source.TextRuns.Select(t=>t.Text))){int x=source.TextRuns.Min(t=>t.Bounds.X),y=source.TextRuns.Min(t=>t.Bounds.Y),right=source.TextRuns.Max(t=>t.Bounds.Right),bottom=source.TextRuns.Max(t=>t.Bounds.Bottom);b=new PixelRect(x,y,right-x,bottom-y).Intersect(source.Bounds);}
+        if(b.Width<8||b.Height<8)b=source.Bounds;
+        copy.TextRuns=[new(b,source.Text,source.TextRuns.FirstOrDefault()?.Foreground??source.Colors.Foreground)];return copy;
+    }
     public static List<Annotation> Prepare(EditorDocument document,IReadOnlyList<ScanElement> candidates,PixelRect scanBounds)
     {
-        var selected=candidates.Where(x=>x.Include&&!x.KeepImage).ToArray();int outputCount=selected.Sum(x=>1+(x.TextRuns.Count>0&&x.Text==string.Join("\n",x.TextRuns.Select(t=>t.Text))?x.TextRuns.Count:0));if(selected.Length==0)throw new InvalidDataException("Chọn ít nhất một phần tử đã kiểm tra.");if(selected.Length>MaxApply||document.Annotations.Count+outputCount>10000||outputCount>MaxApply)throw new InvalidDataException("Tối đa2000 đối tượng mỗi lần áp dụng.");
+        var selected=candidates.Where(x=>x.Include&&!x.KeepImage).Select(SplitReady).ToArray();int outputCount=selected.Sum(x=>1+(x.TextRuns.Count>0&&x.Text==string.Join("\n",x.TextRuns.Select(t=>t.Text))?x.TextRuns.Count:0));if(selected.Length==0)throw new InvalidDataException("Chọn ít nhất một phần tử đã kiểm tra.");if(selected.Length>MaxApply||document.Annotations.Count+outputCount>10000||outputCount>MaxApply)throw new InvalidDataException("Tối đa2000 đối tượng mỗi lần áp dụng.");
         for(int i=0;i<selected.Length;i++)for(int j=i+1;j<selected.Length;j++)if(Overlap(selected[i].Bounds,selected[j].Bounds)>.90)throw new InvalidDataException("Có khung đã chọn gần trùng nhau. Bỏ chọn hoặc sửa khung trước khi áp dụng.");
         var all=candidates.ToDictionary(x=>x.Id);var map=selected.ToDictionary(x=>x.Id,_=>Guid.NewGuid().ToString("N"));var result=new List<Annotation>();
         foreach(var item in selected.OrderBy(x=>x.Kind==MockupKind.Block?0:1).ThenByDescending(x=>(long)x.Bounds.Width*x.Bounds.Height)){
@@ -136,7 +146,7 @@ public static class ElementScan
             var a=MockupStudio.Create(item.Bounds,new(0,0,document.OriginalWidth,document.OriginalHeight),item.Colors);a.Id=map[item.Id];a.Mockup!.Type=item.Kind;a.Mockup.FromScan=true;a.Mockup.LabelForId=item.LabelForId is {} link&&map.TryGetValue(link,out var id)?id:null;a.Name="Mockup · "+Label(item.Kind);a.Text=item.Text;a.FontSize=Math.Clamp(item.Kind is MockupKind.Input or MockupKind.Button?item.Bounds.Height*.45:item.Bounds.Height*.65,8,72);a.TextPadding=item.Kind is MockupKind.Input or MockupKind.Button?4:item.OcrBounds!=null?2:0;a.TextAlignment=item.Kind==MockupKind.Button?TextAlign.Center:TextAlign.Left;a.Bold=item.Kind==MockupKind.Title;a.StrokeEnabled=item.Kind==MockupKind.Input;a.Color=item.BorderColor;a.Stroke=Math.Max(1,item.BorderWidth);a.StrokeEnabled=item.BorderWidth>0;a.CornerRadius=item.Radius;a.FontFamily=item.FontFamily;a.FontSize=item.FontSize>0?item.FontSize:a.FontSize;a.Bold=item.FontBold;a.Italic=item.FontItalic;a.Underline=item.FontUnderline;a.Mockup.SemanticRole=item.SemanticRole;
             bool split=item.TextRuns.Count>0&&item.Text==string.Join("\n",item.TextRuns.Select(t=>t.Text));
             if(split){a.Text="";string group=Guid.NewGuid().ToString("N");a.GroupId=group;result.Add(a);
-                foreach(var run in item.TextRuns){var bounds=run.Bounds.Intersect(item.Bounds);if(bounds.Width<8||bounds.Height<8)continue;var text=MockupStudio.Create(bounds,new(0,0,document.OriginalWidth,document.OriginalHeight),new(item.Colors.Fill,item.Colors.Fill,run.Foreground,1));text.Text=run.Text;text.Name="Mockup · Chữ trong "+Label(item.Kind);text.Mockup!.FromScan=true;text.Mockup.EraseOriginal=false;text.FontFamily=item.FontFamily;text.FontSize=a.FontSize;text.Bold=a.Bold;text.Italic=a.Italic;text.Underline=a.Underline;text.GroupId=group;result.Add(text);}
+                foreach(var run in item.TextRuns){var bounds=run.Bounds.Intersect(item.Bounds);if(bounds.Width<8||bounds.Height<8)continue;var text=MockupStudio.Create(bounds,new(0,0,document.OriginalWidth,document.OriginalHeight),new(item.Colors.Fill,item.Colors.Fill,run.Foreground,1));text.Text=run.Text;text.Name="Mockup · Chữ trong "+Label(item.Kind);text.Mockup!.FromScan=true;text.Mockup.EraseOriginal=false;text.Mockup.Type=MockupKind.Label;text.TextPadding=0;text.StrokeEnabled=false;text.TextAlignment=bounds==item.Bounds?TextAlign.Center:TextAlign.Left;text.VerticalAlignment=bounds==item.Bounds?TextVertical.Center:TextVertical.Top;text.FontFamily=item.FontFamily;text.FontSize=a.FontSize;text.Bold=a.Bold;text.Italic=a.Italic;text.Underline=a.Underline;text.GroupId=group;result.Add(text);}
             }else result.Add(a);
         }
         var blocks=selected.Where(x=>x.Kind==MockupKind.Block).OrderByDescending(x=>(long)x.Bounds.Width*x.Bounds.Height).ToArray();

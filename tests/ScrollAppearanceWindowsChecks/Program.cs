@@ -26,7 +26,7 @@ internal static class Program
         Check(chrome.Background==app.Resources["Hover"],mode+" hover uses theme brush rather than Windows white chrome");
         Check(menu.Foreground==app.Resources["Text"],mode+" hover preserves readable foreground");
         menu.IsEnabled=false;Check(menu.Foreground==app.Resources["Muted"],mode+" disabled menu has muted foreground");
-        Check(app.Resources["BrandMark"] is System.Windows.Media.Imaging.BitmapImage,mode+" branded mark loads from pack URI");
+        Check(app.Resources["BrandMark"] is System.Windows.Media.Imaging.BitmapSource,mode+" personal brand mark is a decoded image source");
     }
     int width=64,height=80;var random=new Random(114);var raw=new byte[width*140*4];random.NextBytes(raw);for(int i=3;i<raw.Length;i+=4)raw[i]=255;
     var session=new ScrollSession{Width=width,Height=height,Folder=root};session.Save();

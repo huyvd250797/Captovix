@@ -9,7 +9,7 @@ internal static class WindowTheme
     internal static void ApplyAll(){foreach(Window window in Application.Current.Windows)Apply(window);}
     internal static void Apply(Window window)
     {
-        var hwnd=new WindowInteropHelper(window).Handle;if(hwnd==0)return;
+        window.SetResourceReference(Window.IconProperty,"BrandMark");var hwnd=new WindowInteropHelper(window).Handle;if(hwnd==0)return;
         try{
             bool dark=((SolidColorBrush)Application.Current.Resources["Surface"]).Color.R<100;int flag=dark?1:0;
             if(DwmSetWindowAttribute(hwnd,20,ref flag,4)!=0)DwmSetWindowAttribute(hwnd,19,ref flag,4);

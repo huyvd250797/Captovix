@@ -5,7 +5,22 @@ namespace Captovix;
 public static partial class EditorRenderer
 {
     private static readonly Lazy<Dictionary<string,FontFamily>> InstalledFonts=new(()=>System.Windows.Media.Fonts.SystemFontFamilies.GroupBy(f=>f.Source,StringComparer.OrdinalIgnoreCase).ToDictionary(g=>g.Key,g=>g.First(),StringComparer.OrdinalIgnoreCase));
-    public static FontFamily TextFont(Annotation a)=>InstalledFonts.Value.TryGetValue(a.FontFamily,out var font)?font:new FontFamily("Segoe UI");
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,FallbackFont> FallbackFonts=new();
+    sealed class FallbackFont{public FallbackFont(){} public object? Key;public FontFamily Font=new("Segoe UI");}
+    public static FontFamily TextFont(Annotation a){
+        if(InstalledFonts.Value.TryGetValue(a.FontFamily,out var font))return font;
+        if(a.Mockup==null||string.IsNullOrWhiteSpace(a.Text))return new FontFamily("Segoe UI");
+        var entry=FallbackFonts.GetOrCreateValue(a);object key=(a.FontFamily,a.Text,a.FontSize,a.Bold,a.Italic,a.Mockup.SourceBounds);
+        if(Equals(key,entry.Key))return entry.Font;double best=double.MaxValue;
+        foreach(string name in new[]{"Segoe UI","Arial","Tahoma","Calibri","Times New Roman","Georgia","Cambria","Courier New"}){
+            if(!InstalledFonts.Value.TryGetValue(name,out var candidate))continue;
+            var typeface=new Typeface(candidate,a.Italic?FontStyles.Italic:FontStyles.Normal,a.Bold?FontWeights.Bold:FontWeights.Normal,FontStretches.Normal);
+            var sample=new FormattedText(a.Text[..Math.Min(200,a.Text.Length)],CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,typeface,a.FontSize,Brushes.Black,1).BuildGeometry(new(0,0)).Bounds;
+            var target=a.Mockup.SourceBounds;if(sample.IsEmpty)continue;double score=Math.Abs(sample.Width-target.Width)/Math.Max(1,target.Width)+Math.Abs(sample.Height-target.Height)/Math.Max(1,target.Height);
+            if(score<best){best=score;entry.Font=candidate;}
+        }
+        entry.Key=key;return entry.Font;
+    }
     public static TextAlignment WpfAlignment(TextAlign align)=>align==TextAlign.Center?TextAlignment.Center:align==TextAlign.Right?TextAlignment.Right:TextAlignment.Left;
     public static bool HasTextFont(Annotation a)=>InstalledFonts.Value.ContainsKey(a.FontFamily);
     [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,LayoutEntry>? _layouts;

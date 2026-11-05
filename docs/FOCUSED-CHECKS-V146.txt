@@ -1,0 +1,96 @@
+PASS UI-only button with a name produces two layers without OCR runs
+PASS Preparing split layers never mutates reviewed candidates
+PASS Only caption owns button text
+PASS Caption is above the control and shares its leaf group
+PASS Split caption retains captured typeface and formatting
+PASS Recolouring a button never changes its caption properties
+PASS Editing caption text never changes button properties
+PASS OCR multi-line button caption is one label layer above a single body
+PASS Independent icon/accent gradients survive settings roundtrip
+PASS V1.45 appearance settings remain compatible
+PASS Invalid gradient settings are rejected before saving
+PASS Invalid gradient settings are rejected before saving
+12 Mockup reliability logic checks passed.
+PASS: Scanning does not mutate source pixels
+PASS: All proposals default to unchecked; scanning cannot apply them
+PASS: OCR merges into button without duplicate line/object
+PASS: Source offset preserved for input detection
+PASS: Nearby label is paired with input control
+PASS: Larger OCR line is proposed as title
+PASS: Low-confidence OCR is explicitly uncertain
+PASS: Input geometry remains review-required even with clear OCR
+PASS: Duplicate candidate bounds removed
+PASS: Flat full background is not misclassified as one editable control
+PASS: Apply requires explicit selected elements
+PASS: Review-only proposals do not change document/history
+PASS: Approved controls split into grouped editable text and shape objects
+PASS: Approved label/control relationship maps to new object IDs
+PASS: M2 writes protected schema19 in a single edit
+PASS: Undo restores exact pre-scan document
+PASS: Redo restores exact approved objects and links
+PASS: Save/reopen retains input, relationship and original source
+PASS: Control and text are independent members of one group
+PASS: Text child uses control fill and cannot erase original source independently
+PASS: Borderless output retains valid stored stroke width
+PASS: Reviewed font, border color, width and corner radius survive materialization
+PASS: Large control color sampling allocates under 1MB instead of a full raster copy
+SAMPLE_ALLOCATED_BYTES=1216
+PASS: OCR merge reuses visual analysis without changing proposal count
+PASS: Selected container and contained controls receive consistent parent grouping
+PASS: Review cannot apply duplicate selected frames
+PASS: Copy/paste remaps label/control IDs without source erasure
+PASS: Duplicate keeps relationship within duplicate set
+PASS: Invalid edited bounds rejected atomically
+PASS: Failed apply keeps prior document intact
+PASS: Image analysis supports cancellation
+PASS: Large scans are capped with an explicit truncation warning
+PASS: Malformed raster rejected
+PASS: Trial status suppresses a second trial and keeps upgrade available
+PASS: Trial uses original start timestamp and rounded remaining days
+PASS: Expired trial never resets or permits restart
+PASS: Perpetual status has check mark and no trial offer
+PASS: Perpetual activation date comes from activation metadata
+PASS: Refresh cannot change the displayed activation timestamp
+PASS: Old certificate never fabricates an activation date from refresh time
+PASS: Fresh installation can choose trial/key
+PASS: Unverified perpetual lease does not claim active entitlement
+42 element scan/review/license presentation checks passed.
+PASS Times14px blue italic underline and geometry retained
+PASS Times14px blue italic underline and geometry retained
+PASS Undo text
+PASS Times14px blue italic underline and geometry retained
+PASS Times14px blue italic underline and geometry retained
+PASS Save/reopen text
+PASS Semantic role upgrades document22
+PASS Nested row/control/panel group topology validates
+PASS Changing control fill keeps independent caption source backing and typography
+PASS History uses under1/15 repeated JSON storage for40 image/text edits
+PASS History shares immutable original image string
+PASS Compressed history restores exact source and text
+HISTORY_BASELINE_BYTES=115187180 HISTORY_RETAINED_BYTES=2713201 CAPTURE40_MS=272.79
+PASS Cancel restores lossless snapshot
+PASS Failed transaction rolls back without history
+PASS Intersecting grid detected as table retained losslessly
+PASS UI/OCR duplicate resolved in favor of UI match
+PASS Aligned row grouped, complex background retained
+PASS Model coordinates outside screenshot rejected
+PASS AI coordinates normalized into cropped source; fallback image default
+PASS HTTP protocol sends preview, requests JSON and unloads optional model
+PASS Remote model endpoint requires HTTPS
+PASS Optional AI cancellation preserves base scan
+PASS Select all keeps140 distinct frames and excludes duplicate geometry
+PASS Explicit select-all converts estimates without falsifying style confirmation
+PASS Apply more than120 scanned frames succeeds in one batch
+PASS Overlapping panels and split text form a single-parent group tree
+26 M6 reconstruction checks passed. Model quality is NOT validated by mock HTTP tests.
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Licensing.Shared -> /workspace/scratch/101ff3fb429b/v146/Captovix-v1.45.0/src/Licensing.Shared/bin/x64/Release/net10.0/Licensing.Shared.dll
+  Captovix -> /workspace/scratch/101ff3fb429b/v146/Captovix-v1.45.0/src/Captovix/bin/x64/Release/net10.0-windows/win-x64/Captovix.dll
+  MockupReliabilityWindowsChecks -> /workspace/scratch/101ff3fb429b/v146/Captovix-v1.45.0/tests/MockupReliabilityWindowsChecks/bin/x64/Release/net10.0-windows/win-x64/MockupReliabilityWindowsChecks.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:14.76

@@ -1,9 +1,12 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.45.0
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.46.0
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/thứ tự |
 | --- | --- | --- | --- | --- | --- |
+| V1.46.0 — Mockup Fidelity & Editing Reliability | Sửa Mockup trực quan, giữ nội dung | Mẫu màu/B-I-U/preview, nút-nhãn riêng, font gần giống, mở/đóng không đổi, icon/accent gradient, nút Quay đỏ | Không đổi schema 23; giữ runtime/backend; alpha glyph cache và no-op transaction | Logic và build; cần nghiệm thu Windows theo checklist V146 | Đã triển khai; kiểm Windows còn chờ |
+| V1.47.0 — Mockup Review & Workflow Consistency | Rà soát và thao tác nhiều vùng nhất quán | Rà soát hàng loạt khung chưa chắc, đồng bộ lớp/nhóm và dự án nhiều vùng | Đề xuất sau V1.46, chưa triển khai | Bộ ảnh thực tế và kết quả kiểm Windows làm căn cứ | Đề xuất |
+
 | V1.37.0 — Performance & Responsiveness | Phản hồi nhanh hơn | Startup, mở/chuyển, kéo/resize/chữ dài/zoom, cache, lưu nền; giữ tool,30ảnh,Callout kéo để tạo/tâm giữ đuôi | Worker/generation, snapshot/revision, drawing/lifecycle | Logic/build/package đạt; số đo Windows/native/RAM còn chờ | Đã triển khai; chưa nghiệm thu Windows toàn app |
 | V1.37.1 — Performance & Responsiveness | Phát hành bản vá Callout có số phiên bản mới | Kế thừa sửa click ngoài/tâm kéo, cập nhật app/installer/feed | Tăng PATCH đồng bộ, gói Full | Máy1.37.0 nhận1.37.1 trong kiểm thử feed; Windows native còn chờ | Đã đóng gói; chưa publish |
 | V1.37.2 — Capture Bounds Fix | Sửa lỗi Crop vượt frame | Giới hạn gợi ý/kéo/resize/phím/xác nhận và guard cuối | Tọa độ pixel vật lý; snapshot không đổi | Logic/cross-build/package đạt; Windows native còn chờ | Bản vá trước1.38; chưa publish |
@@ -25,7 +28,6 @@ Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Ph�
 
 | V1.44.1 — Mockup Workflow & Editor Polish | Quét và sửa ít bước, cuộn/chia sẻ đúng | Cấu hình quét thống nhất, chọn tất cả, inline text, wheel, đa ảnh, arrow/shadow/toolbar/header | Giữ schema22/runtime/backend; PNG xuất tuần tự | Logic/cross-build/gói; native Windows còn chờ | Đã triển khai theo yêu cầu Boss |
 
-| V1.46.0 — Mockup Fidelity & Editing Reliability | Hiệu chỉnh theo form thật | Font/edit, nền khi di chuyển, dự án nhiều vùng quét | Theo kết quả corpus và Windows | Bộ form và số đo thực tế | Đề xuất, chưa triển khai |
 
 ## Phần Mockup theo mốc Boss chọn
 
