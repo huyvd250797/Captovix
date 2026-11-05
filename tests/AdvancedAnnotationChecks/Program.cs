@@ -64,6 +64,6 @@ before=session.Document.Serialize();session.Change(x=>AnnotationEditing.Reorder(
 Validate(session.Document);clone=EditorDocument.Deserialize(session.Document.Serialize());Validate(clone);Check(clone.Serialize()==session.Document.Serialize(),"Reopen preserves layer order, groups and object identities");
 var bounded=new EditorSession(Doc(),2048);bounded.Change(x=>x.Annotations.Add(new(){Kind=AnnotationKind.Text,Text=new string('x',1800)}));
 for(int i=0;i<8;i++)bounded.Change(x=>x.Annotations[0].Text=new string((char)('a'+i),1800));
-bounded.Undo();Check(bounded.Document.Annotations[0].Text[0]=='g'&&!bounded.CanUndo,"Large annotation history evicts older snapshots but retains the latest undo");
+bounded.Undo();Check(bounded.Document.Annotations[0].Text[0]=='g'&&System.Text.Json.JsonSerializer.SerializeToElement(bounded.HistoryStats).GetProperty("Bytes").GetInt64()<=4096,"Compressed annotation history stays within byte budget and retains latest undo");
 bounded.Redo();Check(bounded.Document.Annotations[0].Text[0]=='h',"Memory-bounded history retains a matching redo");
 Console.WriteLine($"{passed} advanced annotation checks passed.");

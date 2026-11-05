@@ -27,8 +27,11 @@ public static class BackgroundRecovery
     public static bool Covers(RecoveryPatch patch,int x,int y){if(x<patch.Bounds.X||y<patch.Bounds.Y||x>=patch.Bounds.Right||y>=patch.Bounds.Bottom)return false;var mask=Convert.FromBase64String(patch.Mask);int p=(y-patch.Bounds.Y)*patch.Bounds.Width+x-patch.Bounds.X;return (mask[p>>3]&(1<<(p&7)))!=0;}
     public static void Finalize(string beforeJson,EditorDocument document,Func<Annotation,EditorDocument,RecoveryPatch> prepare)
     {
-        if(!document.Annotations.Any(a=>a.Mockup!=null)&&document.Recoveries.Count==0&&!beforeJson.Contains("\"Mockup\"",StringComparison.Ordinal)&&!beforeJson.Contains("\"Mask\"",StringComparison.Ordinal))return;
-        var before=EditorDocument.Deserialize(beforeJson);var previous=before.Annotations.ToDictionary(a=>a.Id);var current=document.Annotations.ToDictionary(a=>a.Id);
+        Finalize(EditorDocument.Deserialize(beforeJson),document,prepare);
+    }
+    public static void Finalize(EditorDocument before,EditorDocument document,Func<Annotation,EditorDocument,RecoveryPatch> prepare)
+    {
+        var previous=before.Annotations.ToDictionary(a=>a.Id);var current=document.Annotations.ToDictionary(a=>a.Id);
         var work=new List<(Annotation Source,Annotation? Current)>();
         foreach(var old in before.Annotations.Where(a=>a.Mockup is {EraseOriginal:true,RecoveryId:null}))if(!current.TryGetValue(old.Id,out var next)||old.X1!=next.X1||old.Y1!=next.Y1||old.X2!=next.X2||old.Y2!=next.Y2||old.Rotation!=next.Rotation||old.Visible!=next.Visible)work.Add((old,next));
         foreach(var a in document.Annotations.Where(a=>a.Mockup is {EraseOriginal:true,RecoveryId:null}&&!previous.ContainsKey(a.Id)))work.Add((a,a));

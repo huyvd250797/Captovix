@@ -35,6 +35,7 @@ public static class EditorShortcutRules
 }
 public sealed class CaptureWorkflowSettings
 {
+    public bool HybridUi {get;set;}=true;
     public bool RequireEnter {get;set;}
     public List<EditorShortcut> EditorHotkeys {get;set;}=[];
     public CapturePhotoStyle PhotoStyle {get;set;}=new();

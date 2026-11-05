@@ -8,6 +8,7 @@ public sealed class FrozenDesktop : IDisposable
 {
     private FrozenFrame? _frame;
     private BitmapSource? _image;
+    public HybridEvidence? Hybrid {get;set;}
     public DateTimeOffset CapturedAt {get;}
     public string Topology {get;}
     public FrozenFrame Frame=>_frame??throw new ObjectDisposedException(nameof(FrozenDesktop));

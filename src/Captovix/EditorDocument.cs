@@ -25,6 +25,7 @@ public sealed record MockupElement
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? RecoveryId {get;set;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool FromScan {get;set;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? LabelForId {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? SemanticRole {get;set;}
     public MockupKind Type {get;set;}
     public PixelRect SourceBounds {get;set;}
     public string Background {get;set;}="#FFFFFF";
@@ -32,6 +33,7 @@ public sealed record MockupElement
     public MockupElement Copy()=>this with{};
     public void Validate(Annotation a,int width,int height)
     {
+        if(SemanticRole!=null&&!new[]{"Icon","Table","Tab","Menu","Panel","Row","Column"}.Contains(SemanticRole))throw new InvalidDataException("Loại cấu trúc Mockup không hợp lệ.");
         if(RecoveryId!=null&&!Guid.TryParseExact(RecoveryId,"N",out _)||LabelForId!=null&&!Guid.TryParseExact(LabelForId,"N",out _)||a.Kind!=AnnotationKind.Rectangle||!Enum.IsDefined(Type)||!StudioStyle.Hex(Background)||SourceBounds.Width<1||SourceBounds.Height<1||Math.Abs((long)SourceBounds.X)>1000000||Math.Abs((long)SourceBounds.Y)>1000000||SourceBounds.Width>32768||SourceBounds.Height>32768||a.Width<8||a.Height<8||a.Text.Length>2000||EraseOriginal&&(SourceBounds.X<0||SourceBounds.Y<0||(long)SourceBounds.X+SourceBounds.Width>width||(long)SourceBounds.Y+SourceBounds.Height>height))throw new InvalidDataException("Đối tượng Mockup hoặc vùng che nền không hợp lệ.");
     }
 }
@@ -112,7 +114,7 @@ public sealed class Annotation
 
 public sealed class EditorDocument
 {
-    public const int MaximumSupportedVersion=21;
+    public const int MaximumSupportedVersion=22;
     public string? PixelBasePng {get;set;}
     public int Version {get;set;}=12;
     public int OriginalWidth {get;set;}
@@ -158,7 +160,7 @@ public sealed class EditorDocument
         ConnectorStudio.Resolve(this);
         if(Appearance==null)throw new InvalidDataException("Thiếu cấu hình ảnh.");
         _=new ImageLayout(Viewport,Appearance);
-        GroupLayout.Validate(this);PixelStudio.Validate(this);Version=Annotations.Any(a=>a.GroupPath?.Count>0)?21:Recoveries.Count>0||RecoveryHistory.Count>0?20:Annotations.Any(a=>a.Mockup is {} m&&(m.FromScan||m.Type is MockupKind.Input or MockupKind.Block||m.LabelForId!=null))?19:Annotations.Any(a=>a.Mockup!=null)?18:Annotations.Any(a=>a.TextFrame)?17:Annotations.Any(a=>a.Kind==AnnotationKind.Step&&(a.StepStrokeColor!=null||a.StepFillVisible!=null))?16:Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
+        GroupLayout.Validate(this);PixelStudio.Validate(this);Version=Annotations.Any(a=>a.Mockup?.SemanticRole!=null)?22:Annotations.Any(a=>a.GroupPath?.Count>0)?21:Recoveries.Count>0||RecoveryHistory.Count>0?20:Annotations.Any(a=>a.Mockup is {} m&&(m.FromScan||m.Type is MockupKind.Input or MockupKind.Block||m.LabelForId!=null))?19:Annotations.Any(a=>a.Mockup!=null)?18:Annotations.Any(a=>a.TextFrame)?17:Annotations.Any(a=>a.Kind==AnnotationKind.Step&&(a.StepStrokeColor!=null||a.StepFillVisible!=null))?16:Annotations.Any(a=>a.ImageStyle is {} style&&(style.Mask!=LayerMask.Rectangle||style.Opacity!=1))?15:Appearance.HasPrecision?14:Appearance.DrawOutsideImage?13:12;
     }
     private static bool ValidColor(string color)=>color is {Length:7}&&color[0]=='#'&&color.AsSpan(1).ToString().All(Uri.IsHexDigit);
     public bool ApplyCrop(PixelRect crop)
@@ -174,33 +176,34 @@ public sealed class EditorSession
 {
     public static Func<bool> AuthorizeMutation {get;set;}=()=>true;
     private static void CheckAuthorization(){if(!AuthorizeMutation())throw new InvalidOperationException("Công cụ chỉnh sửa đang khóa theo trạng thái bản quyền.");}
-    private readonly List<string> _undo=[];
-    private readonly List<string> _redo=[];
-    private string? _before;
+    private readonly List<HistorySnapshot> _undo=[];
+    private readonly List<HistorySnapshot> _redo=[];
+    private HistorySnapshot? _before;
     private readonly int _historyCharBudget;
     public EditorDocument Document {get;private set;}
     public bool Dirty {get;private set;}
     public long Revision {get;private set;}
-    public object HistoryStats=>new{Undo=_undo.Count,Redo=_redo.Count,Bytes=2L*(_undo.Sum(s=>(long)s.Length)+_redo.Sum(s=>(long)s.Length)),BudgetChars=_historyCharBudget};
+    public object HistoryStats=>new{Undo=_undo.Count,Redo=_redo.Count,Bytes=HistorySnapshot.RetainedBytes(_undo.Concat(_redo)),BudgetChars=_historyCharBudget};
     public bool CanUndo=>_undo.Count>0;
     public bool CanRedo=>_redo.Count>0;
     public bool InTransaction=>_before!=null;
     public Action<string,EditorDocument>? BeforeCommit {get;set;}
+    public Action<HistorySnapshot,EditorDocument>? BeforeCommitSnapshot {get;set;}
     public event Action? Changed;
     public EditorSession(EditorDocument document,int historyCharBudget=8_000_000){Document=document;_historyCharBudget=Math.Max(1024,historyCharBudget);}
-    private void TrimHistory(List<string> entries){long chars=entries.Sum(s=>(long)s.Length);while(entries.Count>1&&(entries.Count>100||chars>_historyCharBudget)){chars-=entries[0].Length;entries.RemoveAt(0);}}
-    public void Begin(){CheckAuthorization();if(_before!=null)return;ConnectorStudio.Resolve(Document);_before=Document.Serialize();}
+    private void TrimHistory(List<HistorySnapshot> entries){while(entries.Count>1&&(entries.Count>100||HistorySnapshot.RetainedBytes(_undo.Concat(_redo))>2L*_historyCharBudget))entries.RemoveAt(0);}
+    public void Begin(){CheckAuthorization();if(_before!=null)return;ConnectorStudio.Resolve(Document);_before=HistorySnapshot.Capture(Document);}
     public void Commit()
     {
         if(_before==null)return;ConnectorStudio.Resolve(Document);var before=_before;
-        if(before==Document.Serialize()){_before=null;return;}
-        try{BeforeCommit?.Invoke(before,Document);}catch{Document=EditorDocument.Deserialize(before);_before=null;throw;}_before=null;
+        if(before.Same(HistorySnapshot.Capture(Document))){_before=null;return;}
+        try{BeforeCommitSnapshot?.Invoke(before,Document);BeforeCommit?.Invoke(before.ExpandJson(),Document);}catch{Document=before.Restore();_before=null;throw;}_before=null;
         _undo.Add(before);TrimHistory(_undo);_redo.Clear();Dirty=true;Revision++;Changed?.Invoke();
     }
-    public void Cancel(){if(_before==null)return;Document=EditorDocument.Deserialize(_before);_before=null;}
+    public void Cancel(){if(_before==null)return;Document=_before.Restore();_before=null;}
     public void Change(Action<EditorDocument> change){Begin();try{change(Document);Commit();}catch{Cancel();throw;}}
-    public void Undo(){CheckAuthorization();Commit();if(!CanUndo)return;_redo.Add(Document.Serialize());TrimHistory(_redo);Document=EditorDocument.Deserialize(_undo[^1]);_undo.RemoveAt(_undo.Count-1);Dirty=true;Revision++;Changed?.Invoke();}
-    public void Redo(){CheckAuthorization();Commit();if(!CanRedo)return;_undo.Add(Document.Serialize());TrimHistory(_undo);Document=EditorDocument.Deserialize(_redo[^1]);_redo.RemoveAt(_redo.Count-1);Dirty=true;Revision++;Changed?.Invoke();}
+    public void Undo(){CheckAuthorization();Commit();if(!CanUndo)return;_redo.Add(HistorySnapshot.Capture(Document));TrimHistory(_redo);Document=_undo[^1].Restore();_undo.RemoveAt(_undo.Count-1);Dirty=true;Revision++;Changed?.Invoke();}
+    public void Redo(){CheckAuthorization();Commit();if(!CanRedo)return;_undo.Add(HistorySnapshot.Capture(Document));TrimHistory(_undo);Document=_redo[^1].Restore();_redo.RemoveAt(_redo.Count-1);Dirty=true;Revision++;Changed?.Invoke();}
     public void RequireSave(){Dirty=true;Revision++;}
     public void MarkSaved()=>Dirty=false;
     public bool MarkSaved(long revision){if(Revision!=revision)return false;Dirty=false;return true;}

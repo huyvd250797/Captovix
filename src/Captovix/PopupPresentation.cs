@@ -14,7 +14,7 @@ public static class PopupPresentation
  public static void SetEnabled(DependencyObject d,bool value)=>d.SetValue(EnabledProperty,value);
  public static bool GetEnabled(DependencyObject d)=>(bool)d.GetValue(EnabledProperty);
  private static readonly ConditionalWeakTable<Popup,object> Attached=new();
- public static void Attach(Popup popup){if(Attached.TryGetValue(popup,out _))return;Attached.Add(popup,new());popup.Opened+=(_,_)=>{if(popup.Child is not FrameworkElement child||child.Tag as string=="@popup-frame"||popup.TemplatedParent is ContextMenu)return;if(child is Border inner){inner.BorderThickness=new(0);inner.Effect=null;}
+ public static void Attach(Popup popup){if(Attached.TryGetValue(popup,out _))return;Attached.Add(popup,new());popup.Opened+=(_,_)=>{if(popup.Child is not FrameworkElement child||child.Tag as string=="@popup-frame"||child is ContextMenu or ToolTip||popup.TemplatedParent is ContextMenu or ToolTip)return;if(child is Border inner){inner.BorderThickness=new(0);inner.Effect=null;}
  popup.Child=null;var border=new Border{Tag="@popup-frame",Child=child,Padding=new(1),Margin=new(12),CornerRadius=new(9),BorderThickness=new(1),Effect=Shadow()};border.SetResourceReference(Border.BackgroundProperty,"Surface");border.SetResourceReference(Border.BorderBrushProperty,"PopupLine");popup.AllowsTransparency=true;popup.Child=border;};}
  internal static DropShadowEffect Shadow()=>new(){Color=Colors.Black,BlurRadius=18,ShadowDepth=3,Opacity=.38};
  internal static void DecorateWindow(Window w,FrameworkElement root)

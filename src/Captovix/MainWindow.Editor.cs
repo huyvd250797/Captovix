@@ -64,6 +64,7 @@ public partial class MainWindow
     }
     private bool FlushEditsCore(bool report=true)
     {
+        if(_mockupInspector?.Flush()==false)return false;
         FlushAutoProperties();
         EndInlineText(true);_textTimer.Stop();_session?.Commit();_saveTimer.Stop();
         // Finish the older worker before a final save/load can overtake it. Worker never waits for UI.
@@ -75,6 +76,7 @@ public partial class MainWindow
     }
     private void UnloadEditor()
     {
+        _mockupInspector?.Clear();_inspectorSession=null;
         _imageLoadGeneration++;_imageLoadCancellation?.Cancel();EndInlineText(false);_textTimer.Stop();_saveTimer.Stop();if(_session!=null)_session.Changed-=Session_Changed;
         _spaceHeld=false;EndPan();Surface.CancelInteraction();
         // Load raises callbacks synchronously. Release the old session first so

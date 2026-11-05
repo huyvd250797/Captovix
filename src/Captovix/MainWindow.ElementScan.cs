@@ -23,7 +23,8 @@ public partial class MainWindow
             if(region.Width<8||region.Height<8||(long)region.Width*region.Height>OcrContract.MaxPixels){SetStatus("Quét phần tử: chọn vùng8×8px đến20MP. Với ảnh dài/lớn hơn20MP, hãy dùng Quét vùng.");return;}
             _mockupOpen=true;long revision=session.Revision;
             async Task<BitmapSource> Load(CancellationToken token){BitmapSource? snapshot=null;await StaImageWorker.Run(()=>{try{token.ThrowIfCancellationRequested();snapshot=EditorRenderer.MockupSnapshot(original,document,region);token.ThrowIfCancellationRequested();}finally{EditorRenderer.ReleaseImageCaches(original);}});return snapshot!;}
-            var dialog=new ElementScanReviewWindow(region,document,Load){Owner=this};if(dialog.ShowDialog()!=true||dialog.Result is not {} result)return;
+            var active=_activeItem;var hybrid=active==null?null:await Task.Run(()=>HybridCapture.Load(App.DataRoot,active.Id,active.FilePath,document.OriginalWidth,document.OriginalHeight));
+            var dialog=new ElementScanReviewWindow(region,document,Load,hybrid){Owner=this};if(dialog.ShowDialog()!=true||dialog.Result is not {} result)return;
             if(!ReferenceEquals(_session,session)||!ReferenceEquals(Surface.Original,original)||session.Revision!=revision){SetStatus("Ảnh đã thay đổi trong lúc rà soát; chưa áp dụng kết quả. Hãy quét lại ảnh hiện tại.");return;}
             var prior=session.Document.Annotations.Select(x=>x.Id).ToHashSet();session.Change(d=>ElementScan.Apply(d,result,region));var added=session.Document.Annotations.Where(x=>!prior.Contains(x.Id)).Select(x=>x.Id).ToArray();Surface.SelectIds(added);Surface.Refresh();SyncProperties();SetStatus($"Đã áp dụng {added.Length} phần tử đã chọn · Ctrl+Z hoàn tác toàn bộ lần áp dụng · nhấp đúp phần tử để sửa Mockup.");
         }catch(Exception ex){App.Log(ex);SetStatus("Chưa áp dụng quét phần tử: "+ex.Message);}finally{_mockupOpen=false;}

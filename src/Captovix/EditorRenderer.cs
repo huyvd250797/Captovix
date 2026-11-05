@@ -41,7 +41,7 @@ public static partial class EditorRenderer
     }
     private static void DrawLocalAnnotation(DrawingContext dc,Annotation a,bool suppressText=false)
     {
-        if(a.Mockup!=null){DrawMockup(dc,a);return;}
+        if(a.Mockup!=null){DrawMockup(dc,a,suppressText);return;}
         if(ConnectorStudio.IsPath(a)){DrawConnector(dc,a);return;}
         if(ShapeStudio.IsClosed(a.Kind)||ShapeStudio.IsLine(a.Kind)){DrawStrokeShape(dc,a);return;}
         var brush=ShapeStudio.HasStroke(a.Kind)?ShapeInk(a.Color,a.StrokeOpacity):Ink(a.Color);var pen=new Pen(brush,a.Stroke){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};

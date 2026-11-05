@@ -11,6 +11,7 @@ public static class Program
         // Pending updates only apply after the user explicitly chooses Restart.
         VelopackApp.Build().SetAppUserModelId("velopack."+VersionInfo.AppId).SetAutoApplyOnStartup(false).OnBeforeUninstallFastCallback(_=>StartupRegistration.RemoveOwned()).Run();
         if(args.Length>0&&args[0]=="--ocr-worker"){Environment.ExitCode=OcrWorker.Run(args);return;}
+        if(args.Contains("--hybrid-ui-probe",StringComparer.Ordinal)){Environment.ExitCode=HybridProbeHost.Run();return;}
         if(args.Contains("--element-probe",StringComparer.Ordinal)){Environment.ExitCode=ElementProbeHost.Run();return;}
         if(args.Contains("--fidelity-check",StringComparer.Ordinal)){Environment.ExitCode=FidelityWindowsProbe.RunInteractive();return;}
         App.StartedAutomatically=args.Contains("--captovix-autostart",StringComparer.Ordinal);

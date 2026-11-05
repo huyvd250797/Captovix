@@ -4,7 +4,7 @@ using System.Windows.Media.Imaging;
 namespace Captovix;
 public static class RasterPixels
 {
-    private static readonly BudgetCache<string,BitmapSource> Cache=new(96L*1024*1024,128,ReferenceEqualityComparer.Instance);
+    private static readonly BudgetCache<string,BitmapSource> Cache=new(48L*1024*1024,128,ReferenceEqualityComparer.Instance);
     public static CacheSnapshot CacheStats=>Cache.Stats;
     public static void ClearCache()=>Cache.Clear();
     public static BitmapSource Decode(string data){if(Cache.TryGet(data,out var cached))return cached;var expected=PixelStudio.PngSize(data);using var stream=new MemoryStream(Convert.FromBase64String(data));var image=BitmapDecoder.Create(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];if(image.PixelWidth!=expected.Width||image.PixelHeight!=expected.Height)throw new InvalidDataException("Kích thước PNG không khớp.");// A frozen BitmapFrame still delegates IsDownloading/metadata to its owning

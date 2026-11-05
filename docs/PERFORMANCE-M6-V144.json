@@ -1,0 +1,25 @@
+{
+  "host": "Linux x64 / .NET10.0.100",
+  "scope": "Controlled history storage and one real screenshot smoke; not Windows working set, OCR, model quality or UI latency",
+  "history": {
+    "edits": 40,
+    "shared_png_input_bytes": 1000000,
+    "baseline_repeated_utf16_json_bytes": 115159580,
+    "retained_compressed_and_shared_bytes": 2713262,
+    "capture40_ms": 449.36,
+    "source_restore_exact": true
+  },
+  "real_screenshot_smoke": {
+    "Width": 854,
+    "Height": 749,
+    "Proposals": 26,
+    "Tables": 1,
+    "Milliseconds": 72.1845,
+    "Accuracy": "Not measured; no annotated ground truth/OCR/nativeUI in Linux"
+  },
+  "cache_budget_bytes": {
+    "raster": 50331648,
+    "thumbnail": 16777216
+  },
+  "windows_process_ram_before_after": "PENDING; do not infer from history fixture"
+}

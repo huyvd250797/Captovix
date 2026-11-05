@@ -1,0 +1,233 @@
+Báo cáo V1.43.0 sau đóng gói từ source cuối có busy/cancel và watchdog. Chưa nghiệm thu Windows native.
+
+PASS: Feed full package size/SHA256/SHA1 match bytes
+PASS: Legacy RELEASES matches same full package
+PASS: Nupkg CRC verified
+PASS: Nuspec AppId/version verified
+PASS: Packaged payload matches published Assets/Captovix-brand-v117.ico
+PASS: Packaged payload matches published Captovix.dll
+PASS: Packaged payload matches published Captovix.exe
+PASS: Packaged payload matches published ScreenRecorderLib.dll
+PASS: Packaged payload matches published Velopack.dll
+PASS: Packaged payload matches published Captovix.runtimeconfig.json
+PASS: Packaged payload matches published update-source.json
+PASS: Packaged payload matches published README.md
+PASS: Packaged payload matches published CHANGELOG.md
+PASS: Packaged payload matches published ROADMAP.md
+PASS: Packaged payload matches published docs/WINDOWS-ACCEPTANCE-V143.md
+PASS: Packaged payload matches published docs/WINDOWS-ACCEPTANCE-V142.md
+PASS: Packaged payload matches published docs/PERFORMANCE-M5-V142.json
+PASS: Packaged payload matches published docs/PAYLOAD-CLEANUP-V142.json
+PASS: Packaged payload matches published docs/STORAGE-AUDIT-V142.json
+PASS: Packaged payload matches published docs/STARTUP-POPUP-RECOVERY-V1411.md
+PASS: Packaged payload matches published docs/GROUPS-LAYOUT-EDITING-V141.md
+PASS: Packaged payload matches published docs/MOVE-BACKGROUND-RECOVERY-V140.md
+PASS: Packaged payload matches published docs/ELEMENT-SCAN-REVIEW-V139.md
+PASS: Packaged payload matches published docs/ACTIVATION-METADATA-V139.md
+PASS: Packaged payload matches published docs/MOCKUP-M1-V138.md
+PASS: Packaged payload matches published docs/IMAGE-COMPOSITION-TEMPLATES.md
+PASS: Packaged payload matches published docs/SCROLLING-CAPTURE-APPEARANCE.md
+PASS: Packaged payload matches published docs/WINDOWS-TEST-V1.14.md
+PASS: Packaged payload matches published docs/VALIDATION.md
+PASS: Packaged payload matches published docs/CAPTURE-RELIABILITY.md
+PASS: Packaged payload matches published docs/OCR-TEXT-EXTRACTION.md
+PASS: Packaged payload matches published docs/ASSISTED-IMAGE-EDITING.md
+PASS: Packaged payload matches published docs/IMAGE-LIBRARY-PROJECTS.md
+PASS: Packaged payload matches published docs/BATCH-EXPORT-DOCUMENTATION.md
+PASS: Packaged payload matches published docs/IMAGE-RELEASE-PERFORMANCE.md
+PASS: Packaged payload matches published docs/LAYOUT-PRECISION.md
+PASS: Packaged payload matches published docs/OBJECT-EDITING-PRECISION.md
+PASS: Packaged payload matches published docs/TEXT-CALLOUT-REFINEMENT.md
+PASS: Packaged payload matches published docs/CAPTURE-PRECISION.md
+PASS: Packaged payload matches published docs/SCROLLING-CAPTURE-QUALITY.md
+PASS: Packaged payload matches published docs/SMART-ELEMENT-CAPTURE.md
+PASS: Packaged payload matches published docs/CAPTURE-IMAGE-STUDIO.md
+PASS: Packaged payload matches published docs/COLOR-PICKER-STUDIO-ACCESS.md
+PASS: Packaged payload matches published docs/LICENSING-GUIDE.md
+PASS: Packaged payload matches published docs/SERVERLESS-LICENSING.md
+PASS: Packaged payload matches published docs/CAPTURE-FIDELITY-RELIABILITY.md
+PASS: Packaged payload matches published docs/QUICK-CAPTURE-EXPERIENCE.md
+PASS: Packaged payload matches published docs/capture-pixel-test.html
+PASS: Packaged payload matches published Licensing.Shared.dll
+PASS: Packaged payload matches published docs/PERFORMANCE-BENCHMARK.json
+PASS: Packaged payload matches published Tesseract.dll
+PASS: Packaged payload matches published x64/tesseract50.dll
+PASS: Packaged payload matches published x64/leptonica-1.82.0.dll
+PASS: Packaged payload matches published tessdata/eng.traineddata
+PASS: Packaged payload matches published tessdata/vie.traineddata
+PASS: Packaged payload matches published tessdata/models.json
+PASS: Packaged payload matches published docs/RELEASE-NOTES.md
+PASS: Packaged payload matches published docs/PERFORMANCE-RESPONSIVENESS-V137.md
+PASS: Packaged payload matches published docs/PERFORMANCE-V137-before.json
+PASS: Packaged payload matches published docs/PERFORMANCE-V137-after.json
+PASS: Packaged licensing protocol is the current build with activatedAt support
+PASS: Native application host version matches release
+PASS: Application dependency version matches release
+PASS: .NET10.0.13 self-contained runtime declared
+PASS: Stable source baked into package
+PASS: Runtime icon equals approved source artwork
+PASS: Bundled OCR model hash and size: eng
+PASS: Bundled OCR model hash and size: vie
+PASS: Windows x64 OCR package has no x86 native payload
+PASS: Approved icon in all PE sizes: Captovix.exe
+PASS: Approved icon in all PE sizes: Squirrel.exe
+PASS: No debug symbols in release payload
+PASS: Canonical release setup is the migration/directory wrapper
+PASS: Setup wrapper icon is approved artwork; MUI2 cannot override it
+PASS: Exactly five release assets
+PASS: Assets manifest points to canonical package and installer
+PASS: Protected foundation unchanged: src/Captovix/CaptureEngine.cs
+PASS: Protected foundation unchanged: installer/InstallPath.nsh
+PASS: Existing updater/OCR/element worker ordering retained; isolated Hybrid worker added before WPF
+PASS: Startup failure has independent native fallback and diagnostic log
+PASS: Installer changes only version; core arguments and approved MUI icon retained
+PASS: License trust configuration is embedded and certificates require signature verification
+PASS: No server signing key or admin token environment in desktop payload
+PASS: License/backend unchanged from supplied source: src/Captovix/license-config.json
+PASS: License/backend unchanged from supplied source: supabase/functions/licensing/index.ts
+PASS: License/backend unchanged from supplied source: admin/config.json
+PASS: Frozen capture saves retained physical pixels and releases snapshot
+PASS: GDI worker restores DPI context and validates PNG pixel roundtrip
+PASS: Desktop photos retain unscaled physical pixel blits
+PASS: Migration changes only signed activation metadata, preserving policy and protections
+PASS: ZIP CRC: Captovix V1.43.0 — M5 Hybrid Smart Capture.zip
+PASS: Source ZIP contains complete clean tree
+PASS: Source ZIP byte comparison
+PASS: ZIP CRC: Captovix-v1.43.0-Update-Packages.zip
+PASS: Update ZIP includes five assets and publishing instructions
+PASS: Update ZIP assets match verified release bytes
+96 artifact integrity checks passed. Windows install/render/input acceptance is pending.
+
+PASS: Normalize GitHub repository URL
+PASS: Reject invalid source http://github.com/a/b
+PASS: Reject invalid source https://token@github.com/a/b
+PASS: Reject invalid source https://github.com/a/b?token=secret
+PASS: Reject invalid source https://github.com/a/b#x
+PASS: Reject invalid source https://github.com/a/b/releases
+PASS: Reject invalid source https://github.com:444/a/b
+PASS: Reject invalid source https://example.com/a/b
+PASS: Reject invalid source file:///C:/feed
+PASS: Static HTTPS folder
+PASS: Reject JSON URL instead of directory
+PASS: GitHub source resolves directly to stable feed without release-list paging
+PASS: Migrate publisher source while preserving opt-out
+PASS: Keep custom publisher unchanged
+PASS: 404 reports missing feed instead of latest version
+PASS: Timeout reports retryable source error
+PASS: Portable release button opens a page instead of the feed directory redirect
+PASS: Custom feed keeps its manual release target
+PASS: First daily check
+PASS: New app session checks even with a recent persisted timestamp
+PASS: Session polls no more than every30minutes
+PASS: Session can discover a release after30minutes
+PASS: Session preserves explicit auto-check opt-out
+PASS: 24-hour throttle
+PASS: Changed source clears daily throttle
+PASS: Auto check opt-out
+PASS: Recover from clock moving backward
+PASS: Packaged defaults
+PASS: Saved source overrides packaged default
+PASS: Blank saved source disables packaged defaults
+PASS: Corrupt override never switches publisher silently
+PASS: Concurrent checks coalesced
+PASS: Available release and notes
+PASS: Concurrent downloads prevented
+PASS: Cancel restores retry action
+PASS: Corrupt download cannot apply
+PASS: Successful download ready for explicit restart
+PASS: Capture blocks apply before any save/exit
+PASS: Save failure prevents exit
+PASS: Backup failure prevents exit
+PASS: Apply launch error remains retryable
+PASS: Apply follows successful preparation only
+PASS: Repeated restart cannot apply twice
+PASS: Defer never applies cached update
+PASS: Portable notify-only mode
+PASS: No update available
+PASS: Offline check leaves current app usable
+PASS: Custom annotation presets are included in update backups
+PASS: Metadata and annotation backup
+PASS: Backup excludes original media
+PASS: Annotation backup remains exact
+PASS: Update backup leaves originals and documents untouched
+PASS: SDK recognizes test installed app
+PASS: SDK discovers real packaged version
+PASS: SDK download and SHA-256 verification pass
+PASS: Installed1.37.0 discovers actual patch package newer than1.37.0
+PASS: Installed1.37.0 downloads and verifies patch Full package
+PASS: Installed1.37.1 discovers actual newer patch
+PASS: Installed1.37.1 downloads and verifies actual full patch
+PASS: Installed1.37.2 discovers actual newer patch
+PASS: Installed1.37.2 downloads and verifies actual full patch
+PASS: Installed1.37.3 discovers actual newer M1 release
+PASS: Installed1.37.3 downloads and verifies actual full M1 package
+PASS: Installed1.38.0 discovers actual newer M2 release
+PASS: Installed1.38.0 downloads and verifies actual full M2 package
+PASS: Installed1.39.0 discovers actual newer M3 release
+PASS: Installed1.39.0 downloads and verifies actual full M3 package
+PASS: Installed1.40.0 discovers actual M4 release
+PASS: Installed1.40.0 downloads and verifies full M4 package
+PASS: Installed1.41.0 discovers actual startup recovery patch
+PASS: Installed1.41.0 downloads and verifies full recovery package
+PASS: Real package with wrong SHA-256 is rejected
+PASS: Another app package is never offered
+PASS: SDK does not offer older release
+PASS: SDK does not offer the same version
+PASS: Prerelease never reaches the stable apply flow
+PASS: Feed without SHA-256 is rejected
+PASS: Installed1.31 directly targets1.33.0 without intermediate packages
+PASS: Installed1.31 directly targets1.36.0 without intermediate packages
+PASS: Installed1.31 directly targets1.37.0 without intermediate packages
+PASS: Installed1.31 directly targets1.37.1 without intermediate packages
+PASS: Installed1.31 directly targets1.37.2 without intermediate packages
+PASS: Installed1.31 directly targets1.37.3 without intermediate packages
+PASS: Installed1.31 directly targets1.38.0 without intermediate packages
+PASS: Installed1.31 directly targets1.39.0 without intermediate packages
+PASS: Installed1.31 directly targets1.40.0 without intermediate packages
+PASS: Installed1.31 directly targets1.41.0 without intermediate packages
+PASS: Installed1.31 directly targets1.41.1 without intermediate packages
+PASS: Installed1.31 directly targets1.42.0 without intermediate packages
+PASS: Installed1.31 directly targets1.43.0 without intermediate packages
+PASS: Production SDK discovers stable version at feed position15
+PASS: Diagnostics show exact resolved stable endpoint
+PASS: Up-to-date message displays actual source version
+PASS: Empty feed is an error rather than a false latest-version result
+94 update checks passed.
+
+PASS: Stable UI rectangle is bound to exact capture pixels
+PASS: Negative monitor origin translates once into screenshot pixels
+PASS: Font points convert to physical pixels at 150 percent DPI
+PASS: Font points convert at 200 percent without scaling rectangle twice
+PASS: Per-monitor-aware window DPI is used even when child crosses another monitor
+PASS: Legacy DPI-unaware window uses dominant monitor scaling for physical font size
+PASS: Any changed pixel in the UI patch rejects live metadata
+PASS: Monitor or DPI topology change rejects metadata
+PASS: Late UI result cannot be attached to a screenshot
+PASS: Moved window rejects old UI geometry
+PASS: Occluded controls are excluded even when hidden pixels are stable
+PASS: Reused HWND from another process cannot inherit capture metadata
+PASS: Crop maps physical UI bounds to the correct local image coordinates
+PASS: Native window output size mismatch falls back to image scan
+PASS: Retained screenshot crops reuse verified metadata without copying the full raster
+PASS: Partially cropped controls are not promoted into whole controls
+PASS: UI semantics refine the image control at verified screenshot coordinates
+PASS: Redaction or edited rendered pixels invalidate metadata before OCR fusion
+PASS: Images without UI data retain normal image-only detection
+PASS: Visible OCR agreement enables UI font and DPI conversion
+PASS: Unmatched accessible names never inject text missing from screenshot/OCR
+PASS: Capture UI sidecar persists independently from editor schema
+PASS: Replacing original pixels invalidates sidecar identity
+PASS: Invalid image IDs cannot escape metadata directory
+PASS: Corrupt sidecar falls back without blocking image open
+PASS: Real helper subprocess protocol returns structured UI nodes
+PASS: Stalled provider helper is killed within bounded timeout
+PASS: Malformed helper output falls back safely
+PASS: Unsupported application produces normal image-only fallback
+PASS: Cancellation terminates pending UI probe
+30 Hybrid capture/fusion/process checks passed.
+
+SHA256 Captovix-v1.43.0-Full-Setup.exe: 02fe122c85d374ceca7dbaa28a1ca665561beb5f0e48f38c2d3e634221a4d73f
+Bytes: 99888048
+
+SHA256 Captovix-v1.43.0-Update-Packages.zip: c660d5f54c11dc15cabe5cfeadddf26775090149a0cc79b17195246c39837cf6
+Bytes: 174322277

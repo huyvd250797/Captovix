@@ -11,18 +11,26 @@ public sealed class ScanElement
     public double Confidence {get;set;}
     public string Reason {get;set;}="";
     public bool Include {get;set;}
+    public string? UiSourceId {get;set;}
+    public string? UiParentId {get;set;}
     public string? LabelForId {get;set;}
     public List<ScanText> TextRuns {get;set;}=[];
     public PixelRect? OcrBounds {get;set;}
     public string FontFamily {get;set;}="Segoe UI";
     public double FontSize {get;set;}
     public bool FontBold {get;set;}
+    public bool FontItalic {get;set;}
+    public bool FontUnderline {get;set;}
+    public bool StyleVerified {get;set;}
+    public bool KeepImage {get;set;}
+    public string? SemanticRole {get;set;}
+    public string? LayoutGroup {get;set;}
     public string BorderColor {get;set;}="#808080";
     public double BorderWidth {get;set;}
     public double Radius {get;set;}
     public MockupColors Colors {get;set;}=new("#FFFFFF","#FFFFFF","#202020",1);
-    public string Label=>$"{(Include?"✓ ":"")}{ElementScan.Label(Kind)} · {Bounds.Width}×{Bounds.Height} · {Confidence:P0}"+(Uncertain?" · Cần kiểm tra":"");
-    public bool Uncertain=>Confidence<.85||Colors.Flatness<.75||Kind is MockupKind.Input or MockupKind.Block;
+    public string Label=>$"{(Include?"✓ ":"")}{ElementScan.Label(Kind)}{(SemanticRole==null?"":" / "+SemanticRole)}{(KeepImage?" · Giữ ảnh":"")} · {Bounds.Width}×{Bounds.Height} · {Confidence:P0}"+(Uncertain?" · Cần kiểm tra":"");
+    public bool Uncertain=>KeepImage||Text.Length>0&&!StyleVerified||Confidence<.85||Colors.Flatness<.75||Kind is MockupKind.Input or MockupKind.Block;
 }
 public sealed record ScanResult(List<ScanElement> Elements,bool Truncated,string Warning="");
 public static class ElementScan
@@ -80,7 +88,7 @@ public static class ElementScan
     }
     private static string Limit(string value)=>value.Length<=2000?value:value[..2000];
     private static bool Contains(PixelRect a,PixelRect b,double fraction){var i=a.Intersect(b);return (double)i.Width*i.Height>=b.Width*(double)b.Height*fraction;}
-    private static double PairScore(PixelRect label,PixelRect control){double dy=Math.Abs(label.Y+label.Height*.5-control.Y-control.Height*.5),dx=control.X-label.Right;double below=control.Y-label.Bottom;
+    public static double PairScore(PixelRect label,PixelRect control){double dy=Math.Abs(label.Y+label.Height*.5-control.Y-control.Height*.5),dx=control.X-label.Right;double below=control.Y-label.Bottom;
         double left=dx>=-2&&dx<=100&&dy<=Math.Max(12,control.Height*.6)?Math.Max(0,dx)+dy*1.5:1000;
         double top=below>=-2&&below<=48&&Math.Abs(control.X-label.X)<Math.Max(40,control.Width*.2)?Math.Max(0,below)+Math.Abs(control.X-label.X)+10:1000;return Math.Min(left,top);}
     private static bool HasBorder(byte[] p,int width,int height,PixelRect b,string fill){int reference=Convert.ToInt32(fill[1..],16),seen=0,different=0;void Test(int x,int y){int n=(y*width+x)*4;int d=Math.Abs(p[n+2]-(reference>>16&255))+Math.Abs(p[n+1]-(reference>>8&255))+Math.Abs(p[n]-(reference&255));seen++;if(d>35)different++;}for(int x=b.X;x<b.Right;x+=Math.Max(1,b.Width/40)){Test(x,b.Y);Test(x,b.Bottom-1);}for(int y=b.Y;y<b.Bottom;y+=Math.Max(1,b.Height/40)){Test(b.X,y);Test(b.Right-1,y);}return different>seen*.45;}
@@ -97,7 +105,7 @@ public static class ElementScan
         string Hex(int c)=>$"#{c:X6}";int ink=inside.Where(p=>Distance(Hex(p.Key),Hex(fill))>70).OrderByDescending(p=>p.Value).Select(p=>p.Key).FirstOrDefault(fill>0x808080?0:0xffffff);
         return new(Hex(back),Hex(fill),Hex(ink),edge[back]/(double)edge.Values.Sum());
     }
-    private static void MeasureOutline(ScanElement item,byte[] p,int w,int h,PixelRect b){
+    public static void MeasureOutline(ScanElement item,byte[] p,int w,int h,PixelRect b){
         string Pixel(int x,int y){int n=(y*w+x)*4;return $"#{p[n+2]:X2}{p[n+1]:X2}{p[n]:X2}";}
         var colors=new List<string>();var depths=new List<int>();
         // Four edge midpoints avoid rounded corners and most text glyphs.
@@ -119,26 +127,29 @@ public static class ElementScan
     }
     public static List<Annotation> Prepare(EditorDocument document,IReadOnlyList<ScanElement> candidates,PixelRect scanBounds)
     {
-        var selected=candidates.Where(x=>x.Include).ToArray();int outputCount=selected.Sum(x=>1+(x.TextRuns.Count>0&&x.Text==string.Join("\n",x.TextRuns.Select(t=>t.Text))?x.TextRuns.Count:0));if(selected.Length==0)throw new InvalidDataException("Chọn ít nhất một phần tử đã kiểm tra.");if(selected.Length>MaxApply||document.Annotations.Count+outputCount>10000||outputCount>MaxApply)throw new InvalidDataException("Tối đa120 phần tử mỗi lần áp dụng.");
+        var selected=candidates.Where(x=>x.Include&&!x.KeepImage).ToArray();int outputCount=selected.Sum(x=>1+(x.TextRuns.Count>0&&x.Text==string.Join("\n",x.TextRuns.Select(t=>t.Text))?x.TextRuns.Count:0));if(selected.Length==0)throw new InvalidDataException("Chọn ít nhất một phần tử đã kiểm tra.");if(selected.Length>MaxApply||document.Annotations.Count+outputCount>10000||outputCount>MaxApply)throw new InvalidDataException("Tối đa120 phần tử mỗi lần áp dụng.");
         for(int i=0;i<selected.Length;i++)for(int j=i+1;j<selected.Length;j++)if(Overlap(selected[i].Bounds,selected[j].Bounds)>.90)throw new InvalidDataException("Có khung đã chọn gần trùng nhau. Bỏ chọn hoặc sửa khung trước khi áp dụng.");
         var all=candidates.ToDictionary(x=>x.Id);var map=selected.ToDictionary(x=>x.Id,_=>Guid.NewGuid().ToString("N"));var result=new List<Annotation>();
         foreach(var item in selected.OrderBy(x=>x.Kind==MockupKind.Block?0:1).ThenByDescending(x=>(long)x.Bounds.Width*x.Bounds.Height)){
             if(!Enum.IsDefined(item.Kind)||item.Bounds.Width<8||item.Bounds.Height<8||item.Bounds.Intersect(scanBounds)!=item.Bounds||!double.IsFinite(item.Confidence)||item.Confidence<0||item.Confidence>1||item.Text.Length>2000)throw new InvalidDataException("Khung/nội dung không hợp lệ; sửa trước khi áp dụng.");
             if(item.LabelForId!=null&&(!all.TryGetValue(item.LabelForId,out var control)||control.Kind!=MockupKind.Input||item.Kind is not(MockupKind.Label or MockupKind.Title)))throw new InvalidDataException("Liên kết label cần trỏ đến một ô nhập trong danh sách.");
-            var a=MockupStudio.Create(item.Bounds,new(0,0,document.OriginalWidth,document.OriginalHeight),item.Colors);a.Id=map[item.Id];a.Mockup!.Type=item.Kind;a.Mockup.FromScan=true;a.Mockup.LabelForId=item.LabelForId is {} link&&map.TryGetValue(link,out var id)?id:null;a.Name="Mockup · "+Label(item.Kind);a.Text=item.Text;a.FontSize=Math.Clamp(item.Kind is MockupKind.Input or MockupKind.Button?item.Bounds.Height*.45:item.Bounds.Height*.65,8,72);a.TextPadding=item.Kind is MockupKind.Input or MockupKind.Button?4:item.OcrBounds!=null?2:0;a.TextAlignment=item.Kind==MockupKind.Button?TextAlign.Center:TextAlign.Left;a.Bold=item.Kind==MockupKind.Title;a.StrokeEnabled=item.Kind==MockupKind.Input;a.Color=item.BorderColor;a.Stroke=Math.Max(1,item.BorderWidth);a.StrokeEnabled=item.BorderWidth>0;a.CornerRadius=item.Radius;a.FontFamily=item.FontFamily;a.FontSize=item.FontSize>0?item.FontSize:a.FontSize;a.Bold=item.FontBold;
+            var a=MockupStudio.Create(item.Bounds,new(0,0,document.OriginalWidth,document.OriginalHeight),item.Colors);a.Id=map[item.Id];a.Mockup!.Type=item.Kind;a.Mockup.FromScan=true;a.Mockup.LabelForId=item.LabelForId is {} link&&map.TryGetValue(link,out var id)?id:null;a.Name="Mockup · "+Label(item.Kind);a.Text=item.Text;a.FontSize=Math.Clamp(item.Kind is MockupKind.Input or MockupKind.Button?item.Bounds.Height*.45:item.Bounds.Height*.65,8,72);a.TextPadding=item.Kind is MockupKind.Input or MockupKind.Button?4:item.OcrBounds!=null?2:0;a.TextAlignment=item.Kind==MockupKind.Button?TextAlign.Center:TextAlign.Left;a.Bold=item.Kind==MockupKind.Title;a.StrokeEnabled=item.Kind==MockupKind.Input;a.Color=item.BorderColor;a.Stroke=Math.Max(1,item.BorderWidth);a.StrokeEnabled=item.BorderWidth>0;a.CornerRadius=item.Radius;a.FontFamily=item.FontFamily;a.FontSize=item.FontSize>0?item.FontSize:a.FontSize;a.Bold=item.FontBold;a.Italic=item.FontItalic;a.Underline=item.FontUnderline;a.Mockup.SemanticRole=item.SemanticRole;
             bool split=item.TextRuns.Count>0&&item.Text==string.Join("\n",item.TextRuns.Select(t=>t.Text));
             if(split){a.Text="";string group=Guid.NewGuid().ToString("N");a.GroupId=group;result.Add(a);
-                foreach(var run in item.TextRuns){var bounds=run.Bounds.Intersect(item.Bounds);if(bounds.Width<8||bounds.Height<8)continue;var text=MockupStudio.Create(bounds,new(0,0,document.OriginalWidth,document.OriginalHeight),new(item.Colors.Fill,item.Colors.Fill,run.Foreground,1));text.Text=run.Text;text.Name="Mockup · Chữ trong "+Label(item.Kind);text.Mockup!.FromScan=true;text.Mockup.EraseOriginal=false;text.FontFamily=item.FontFamily;text.FontSize=a.FontSize;text.Bold=a.Bold;text.GroupId=group;result.Add(text);}
+                foreach(var run in item.TextRuns){var bounds=run.Bounds.Intersect(item.Bounds);if(bounds.Width<8||bounds.Height<8)continue;var text=MockupStudio.Create(bounds,new(0,0,document.OriginalWidth,document.OriginalHeight),new(item.Colors.Fill,item.Colors.Fill,run.Foreground,1));text.Text=run.Text;text.Name="Mockup · Chữ trong "+Label(item.Kind);text.Mockup!.FromScan=true;text.Mockup.EraseOriginal=false;text.FontFamily=item.FontFamily;text.FontSize=a.FontSize;text.Bold=a.Bold;text.Italic=a.Italic;text.Underline=a.Underline;text.GroupId=group;result.Add(text);}
             }else result.Add(a);
         }
         var blocks=selected.Where(x=>x.Kind==MockupKind.Block).OrderByDescending(x=>(long)x.Bounds.Width*x.Bounds.Height).ToArray();
         var blockGroups=blocks.ToDictionary(x=>x.Id,_=>Guid.NewGuid().ToString("N"));
         foreach(var a in result){var b=new PixelRect((int)a.Left,(int)a.Top,(int)a.Width,(int)a.Height);var parents=blocks.Where(x=>a.Id==map[x.Id]||Contains(x.Bounds,b,.98)&&(long)x.Bounds.Width*x.Bounds.Height>(long)b.Width*b.Height).Select(x=>blockGroups[x.Id]).ToList();parents.AddRange(GroupLayout.Chain(a));if(parents.Count>0)GroupLayout.Set(a,parents);}
+        var originalChains=result.ToDictionary(a=>a.Id,GroupLayout.Chain);var rows=new Dictionary<string,string>();var controls=result.Where(a=>a.Mockup?.Type is MockupKind.Button or MockupKind.Input&&originalChains[a.Id].LastOrDefault() is {} leaf&&!blockGroups.Values.Contains(leaf)).ToDictionary(a=>originalChains[a.Id][^1]);
+        foreach(var a in result){var owner=selected.FirstOrDefault(x=>map[x.Id]==a.Id);var parent=originalChains[a.Id].LastOrDefault() is {} leaf&&controls.TryGetValue(leaf,out var found)?found:null;owner??=parent==null?null:selected.FirstOrDefault(x=>map[x.Id]==parent.Id);
+            if(owner?.LayoutGroup is not {} row)continue;var chain=originalChains[a.Id];bool control=parent!=null;var prefix=control&&chain.Length>0?chain[..^1]:chain;string key=string.Join("/",prefix)+":"+row;if(!rows.TryGetValue(key,out var group))rows[key]=group=Guid.NewGuid().ToString("N");GroupLayout.Set(a,prefix.Concat(new[]{group}).Concat(control?chain[^1..]:Array.Empty<string>()));}
         return result;
     }
     private static int resultVersion(List<Annotation> additions)=>additions.Any(a=>a.GroupPath?.Count>0)?21:19;
     public static void Apply(EditorDocument document,IReadOnlyList<ScanElement> candidates,PixelRect scanBounds)
     {
-        var additions=Prepare(document,candidates,scanBounds);var copy=document.Snapshot();copy.Annotations.AddRange(additions);copy.Version=Math.Max(copy.Version,resultVersion(additions));copy.Validate(copy.OriginalWidth,copy.OriginalHeight,copy.SourceHash);document.Annotations.AddRange(additions);document.Version=copy.Version;
+        var additions=Prepare(document,candidates,scanBounds);var copy=document.Snapshot();copy.Annotations.AddRange(additions);copy.Version=Math.Max(copy.Version,additions.Any(a=>a.Mockup?.SemanticRole!=null)?22:resultVersion(additions));copy.Validate(copy.OriginalWidth,copy.OriginalHeight,copy.SourceHash);document.Annotations.AddRange(additions);document.Version=copy.Version;
     }
 }

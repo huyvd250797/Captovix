@@ -61,10 +61,11 @@ public partial class MainWindow
             key.PreviewKeyUp+=(_,e)=>{var k=e.Key==Key.System?e.SystemKey:e.Key;if(k==Key.Snapshot)CaptureKey(key,e);};
             row.Children.Add(enabled);row.Children.Add(key);HotkeyRows.Children.Add(row);_keyEditors[h.Action]=(enabled,key);
         }
-        _captureConfirmReady=false;RequireEnterCapture.IsChecked=_workflow.RequireEnter;_captureConfirmReady=true;RenderToolShortcuts();SyncCaptureBorder();
+        _captureConfirmReady=false;HybridCaptureToggle.IsChecked=_workflow.HybridUi;RequireEnterCapture.IsChecked=_workflow.RequireEnter;_captureConfirmReady=true;RenderToolShortcuts();SyncCaptureBorder();
         CaptureButton.ToolTip=_workflow.Hotkeys.First(h=>h.Action==PhotoAction.Region).Label;
     }
-    private void CaptureConfirm_Changed(object sender,RoutedEventArgs e){if(!_captureConfirmReady||_busy)return;try{var next=_workflow.Clone();next.RequireEnter=RequireEnterCapture.IsChecked==true;SaveWorkflow(next);SetStatus(next.RequireEnter?"Chụp: xác nhận bằng Enter.":"Chụp: thả chuột để chụp ngay.");}catch(Exception ex){WorkflowStatus.Text=ex.Message;_captureConfirmReady=false;RequireEnterCapture.IsChecked=_workflow.RequireEnter;_captureConfirmReady=true;}}
+    private void HybridCapture_Changed(object sender,RoutedEventArgs e){if(!_captureConfirmReady||_busy)return;try{var next=_workflow.Clone();next.HybridUi=HybridCaptureToggle.IsChecked==true;SaveWorkflow(next);SetStatus(next.HybridUi?"Hybrid Smart Capture đã bật.":"Chụp ảnh/OCR; không thu thập cấu trúc UI.");}catch(Exception ex){App.Log(ex);_captureConfirmReady=false;HybridCaptureToggle.IsChecked=_workflow.HybridUi;_captureConfirmReady=true;SetStatus(ex.Message);}}
+    private void CaptureConfirm_Changed(object sender,RoutedEventArgs e){if(!_captureConfirmReady||_busy)return;try{var next=_workflow.Clone();next.RequireEnter=RequireEnterCapture.IsChecked==true;SaveWorkflow(next);SetStatus(next.RequireEnter?"Chụp: xác nhận bằng Enter.":"Chụp: thả chuột để chụp ngay.");}catch(Exception ex){WorkflowStatus.Text=ex.Message;_captureConfirmReady=false;HybridCaptureToggle.IsChecked=_workflow.HybridUi;RequireEnterCapture.IsChecked=_workflow.RequireEnter;_captureConfirmReady=true;}}
     private void PauseKeysForEditing()
     {
         _editingCaptureKeys=true;_photoKeys?.Stop();var hwnd=new WindowInteropHelper(this).Handle;foreach(var id in _hotkeys)Native.UnregisterHotKey(hwnd,id);_hotkeys.Clear();

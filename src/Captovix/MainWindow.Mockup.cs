@@ -20,8 +20,9 @@ public partial class MainWindow
     {
         if(Surface.Selected is not {Mockup:not null} a)return;
         if(a.Locked||!a.Visible){SetStatus("Mở khóa và hiện đối tượng Mockup trước khi sửa.");return;}
-        var region=MockupStudio.Region(a.Left,a.Top,a.Left+a.Width,a.Top+a.Height,_session!.Document.Viewport);
-        await OpenMockupAsync(region,a);
+        OpenMockupInspector(a);
+        if(a.Text.Length>0||a.Mockup.Type is MockupKind.Label or MockupKind.Title)BeginInlineText();
+        await Task.CompletedTask;
     }
     private async Task OpenMockupAsync(PixelRect region,Annotation? editing)
     {
@@ -43,8 +44,9 @@ public partial class MainWindow
     }
     private void SyncMockup()
     {
-        bool selected=Surface.Selected?.Mockup!=null&&Surface.SelectedIds.Count==1;
+        bool selected=Surface.Selected?.Mockup!=null;
         MockupProperties.Visibility=selected?Visibility.Visible:Visibility.Collapsed;
-        if(selected){ShapeStudioPanel.Visibility=Visibility.Collapsed;VisualStudioPanel.Visibility=Visibility.Collapsed;PropertyTitle.Text="Mockup · "+ElementScan.Label(Surface.Selected!.Mockup!.Type);var recovery=_session?.Document.Recoveries.FirstOrDefault(p=>p.Id==Surface.Selected.Mockup.RecoveryId);MockupDescription.Text=recovery==null?"Nhấp đúp để sửa. Di chuyển/xóa sẽ tách nền cũ; Ctrl+Z hoàn tác.":recovery.NeedsReview?"Nền đã tách · cần kiểm tra màu/vùng giữ trong Nền & mặt nạ.":"Nền đã tách · di chuyển/xóa không làm hiện lại phần tử cũ.";}
+        if(!selected){_mockupInspector?.Clear();_inspectorSession=null;}
+        if(selected){SyncMockupInspector(Surface.Selected!);ShapeStudioPanel.Visibility=Visibility.Collapsed;VisualStudioPanel.Visibility=Visibility.Collapsed;PropertyTitle.Text="Mockup · "+ElementScan.Label(Surface.Selected!.Mockup!.Type);var recovery=_session?.Document.Recoveries.FirstOrDefault(p=>p.Id==Surface.Selected.Mockup.RecoveryId);MockupDescription.Text=recovery==null?"Nhấp đúp sửa chữ ngay trên ảnh · thuộc tính bên phải. Di chuyển/xóa sẽ tách nền cũ; Ctrl+Z hoàn tác.":recovery.NeedsReview?"Nền đã tách · cần kiểm tra màu/vùng giữ trong Nền & mặt nạ.":"Nền đã tách · di chuyển/xóa không làm hiện lại phần tử cũ.";}
     }
 }

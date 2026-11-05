@@ -66,7 +66,7 @@ public sealed partial class EditorSurface : FrameworkElement
     public long SceneBuilds {get;private set;}
     public void Load(BitmapSource? source,EditorSession? session)
     {
-        if(Session!=null)Session.BeforeCommit=null;if(source==null||Original!=null||Session!=null)EditorRenderer.ReleaseImageCaches(Original);_sceneDrawing=null;_primaryObject=null;_primaryDocument=null;_primaryObjectId=null;CancelInteraction();InlineEditingId=null;_hoveredId=null;ToolTip=null;ContextSourcePoint=null;PixelRegion=null;CropDraft=null;Original=source;Session=session;GroupScope=null;if(source!=null&&session!=null)session.BeforeCommit=(before,doc)=>BackgroundRecovery.Finalize(before,doc,PrepareRecovery);_primaryObject=null;_primaryDocument=null;_primaryObjectId=null;_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();CropDraftChanged?.Invoke();
+        if(Session!=null){Session.BeforeCommit=null;Session.BeforeCommitSnapshot=null;}if(source==null||Original!=null||Session!=null)EditorRenderer.ReleaseImageCaches(Original);_sceneDrawing=null;_primaryObject=null;_primaryDocument=null;_primaryObjectId=null;CancelInteraction();InlineEditingId=null;_hoveredId=null;ToolTip=null;ContextSourcePoint=null;PixelRegion=null;CropDraft=null;Original=source;Session=session;GroupScope=null;if(source!=null&&session!=null)session.BeforeCommitSnapshot=(before,doc)=>{if(before.HasRecovery||doc.Recoveries.Count>0||doc.Annotations.Any(a=>a.Mockup!=null))BackgroundRecovery.Finalize(before.Restore(),doc,PrepareRecovery);};_primaryObject=null;_primaryDocument=null;_primaryObjectId=null;_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();CropDraftChanged?.Invoke();
     }
     public void SetZoom(double zoom){Zoom=Math.Clamp(zoom,.02,8);Refresh(false);}
     public void Refresh(bool sceneChanged=true)
@@ -154,7 +154,8 @@ public sealed partial class EditorSurface : FrameworkElement
                 if(!additive){_selected.Clear();_primary=null;}
                 _draft=new(_start,_start);_action=DragAction.Marquee;SelectionChanged?.Invoke();
             }else{
-                bool enteredGroup=false;if(modifiers.HasFlag(ModifierKeys.Alt)){GroupScope=hit.GroupId;Session.Document.EditingGroup=GroupScope;_selected.Clear();}else if(clickCount==2&&GroupLayout.Effective(Session.Document,hit) is {} enter){GroupScope=enter;Session.Document.EditingGroup=enter;_selected.Clear();enteredGroup=true;}
+                bool enteredGroup=false;if(modifiers.HasFlag(ModifierKeys.Alt)){GroupScope=hit.GroupId;Session.Document.EditingGroup=GroupScope;_selected.Clear();}else if(clickCount==2&&hit.Mockup==null&&GroupLayout.Effective(Session.Document,hit) is {} enter){GroupScope=enter;Session.Document.EditingGroup=enter;_selected.Clear();enteredGroup=true;}
+                if(clickCount==2&&hit.Mockup!=null){GroupScope=hit.GroupId;Session.Document.EditingGroup=GroupScope;_selected.Clear();_selected.Add(hit.Id);_primary=hit.Id;SelectionChanged?.Invoke();MockupEditRequested?.Invoke();return;}
                 var hitIds=AnnotationEditing.ExpandGroups(Session.Document,[hit.Id]);
                 if(additive&&_selected.Contains(hit.Id)){_selected.ExceptWith(hitIds);_primary=_selected.LastOrDefault();Refresh();SelectionChanged?.Invoke();return;}
                 if(!additive&&!_selected.Contains(hit.Id))_selected.Clear();_selected.UnionWith(hitIds);_primary=hit.Id;

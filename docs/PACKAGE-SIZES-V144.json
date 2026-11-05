@@ -1,0 +1,30 @@
+{
+  "version": "1.44.0",
+  "payload_bytes": 161879327,
+  "reproducible_debug_files_removed_bytes": 15696521,
+  "installer_copy_residue_excluded_bytes": 72089600,
+  "files": [
+    {
+      "name": "Captovix-v1.44.0-Full-Setup.exe",
+      "bytes": 99912292,
+      "sha256": "3b3754cef21e45483faed9a35375e6284d49396a7f6056c6593b94142ce414ea"
+    },
+    {
+      "name": "Captovix-v1.44.0-Update-Packages.zip",
+      "bytes": 174371954,
+      "sha256": "e026c3a4999478b65234a88430745d6ce440d23eab52d3ecce846fc071731e1d"
+    },
+    {
+      "name": "HuyVo.Captovix-1.44.0-full.nupkg",
+      "bytes": 74743323,
+      "sha256": "255bff62d7c3b7e29b56cec7febf7550d640e16996d8aead9d274a90bf972fbf"
+    }
+  ],
+  "original_capture_pixels": "Unchanged; no lossy compression or resizing for saved capture/export",
+  "cache_budgets": {
+    "raster_bytes": 50331648,
+    "thumbnail_bytes": 16777216
+  },
+  "native_windows_install_startup": "PENDING",
+  "source_zip": "Rebuilt after this report; source ZIP hash intentionally not self-embedded"
+}
