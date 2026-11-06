@@ -5,7 +5,7 @@ internal sealed class CaptureCrosshair : FrameworkElement
 {
     Point _point;bool _show;
     public CaptureCrosshair(){IsHitTestVisible=false;SnapsToDevicePixels=true;}
-    public void Update(Point point,bool show){_point=point;_show=show;InvalidateVisual();}
+    public void Update(Point point,bool show){if(_show==show&&(!show||_point==point))return;_point=point;_show=show;InvalidateVisual();}
     protected override void OnRender(DrawingContext dc)
     {
         if(!_show)return;var dpi=VisualTreeHelper.GetDpi(this);double unit=1/dpi.DpiScaleX;

@@ -13,8 +13,8 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
-    <Version>1.46.4</Version>
-    <ReleaseTitle>Recovery Center &amp; Startup Repair</ReleaseTitle>
+    <Version>1.50.0</Version>
+    <ReleaseTitle>Stability &amp; Release Quality</ReleaseTitle>
     <StartupObject>Captovix.Program</StartupObject>
     <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
     <PublishTrimmed>false</PublishTrimmed>

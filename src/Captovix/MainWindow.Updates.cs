@@ -142,6 +142,7 @@ public partial class MainWindow
     private async void ApplyUpdate_Click(object sender, RoutedEventArgs e)
     {
         if (_updates == null) return;
+        if(_exportInProgress){SetStatus("Hãy chờ xuất xong trước khi cập nhật.");return;}
         if(_busy||_updateApplying||_updates.Stage!=UpdateStage.Ready)return;
         try{Surface.CancelInteraction();if(!FlushEdits())return;_store.Save();_store.SaveSettings(Settings());UpdateSettingsStore.Save(App.DataRoot,_updateSettings);MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"editor-resume.json"),System.Text.Json.JsonSerializer.Serialize(Selected?.Id));
             _updateApplying=true;SuspendWorkflow();_busy=true;RenderUpdateUi();SetStatus("Đang sao lưu và kiểm tra dữ liệu trước cập nhật…");

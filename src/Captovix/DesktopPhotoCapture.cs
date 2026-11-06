@@ -15,9 +15,6 @@ internal static class DesktopPhotoCapture
     internal static void SavePixels(int width,int height,byte[] pixels,string path)
     {
         ImageTransfer.Save(ImageTransfer.Bitmap(width,height,pixels),path);
-        var decoded=MediaStore.LoadImage(path);
-        if(decoded.PixelWidth!=width||decoded.PixelHeight!=height||!pixels.AsSpan().SequenceEqual(ImageTransfer.Bgra(decoded)))
-            throw new InvalidOperationException("PNG không giữ đúng pixel nguồn. File pending được giữ để kiểm tra.");
     }
     internal static byte[] ReadPixels(PixelRect region,IReadOnlyList<DisplayInfo> displays,bool cursor)
     {

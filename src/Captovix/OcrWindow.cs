@@ -8,7 +8,7 @@ using Microsoft.Win32;
 namespace Captovix;
 internal sealed partial class OcrWindow:Window
 {
-    private readonly BitmapSource _snapshot;
+    private BitmapSource _snapshot;
     private readonly Image _previewImage=new(){Stretch=Stretch.Fill};
     private readonly ScrollViewer _scroll=new(){HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
     private readonly TextBlock _zoomLabel=new(){VerticalAlignment=VerticalAlignment.Center,Margin=new(8,0,8,0)};
@@ -38,6 +38,12 @@ internal sealed partial class OcrWindow:Window
     public OcrWindow(BitmapSource snapshot,bool assist=false,bool allowInPlace=true)
     {
         SetResourceReference(StyleProperty,typeof(Window));_snapshot=snapshot;_region=new(0,0,0,0);
+        Closed+=(_,_)=>{
+            _previewImage.Source=null;
+            _lens.Background=null;
+            EditorRenderer.ReleaseImageCaches(_snapshot,clearSharedRaster:false);
+            _snapshot=null!;
+        };
         Title="Captovix · Nhận chữ từ ảnh";Width=Math.Min(1160,SystemParameters.WorkArea.Width-32);Height=Math.Min(820,SystemParameters.WorkArea.Height-32);MinWidth=720;MinHeight=500;WindowStartupLocation=WindowStartupLocation.CenterOwner;
         var grid=new Grid{Margin=new(16)};grid.ColumnDefinitions.Add(new(){Width=new(1,GridUnitType.Star)});grid.ColumnDefinitions.Add(new(){Width=new(320)});Content=grid;
         var preview=new Grid{Margin=new(0,0,14,0)};preview.RowDefinitions.Add(new(){Height=GridLength.Auto});preview.RowDefinitions.Add(new());

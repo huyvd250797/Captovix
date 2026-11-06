@@ -12,7 +12,7 @@ public partial class App : Application
 
     internal void ConfirmStartup()
     {
-        if (StartupFailure != null) return;
+        if (_startupHealthy || StartupFailure != null) return;
         _startupHealthy = true;
         ReleaseRecoveryState.Healthy(DataRoot, VersionInfo.Current);
         try { StartupHealthSignal.Signal(); }
@@ -47,10 +47,10 @@ public partial class App : Application
             }
             _errorDialogs.Report(()=>{Log(a.Exception);AppDialog.Show("Có lỗi: " + a.Exception.Message + "\nBáo cáo lỗi được lưu trong thư mục dữ liệu của app.", "Captovix");});
         };
-        AppScrolling.Initialize();Dispatcher.BeginInvoke(BrandShortcuts.Repair,System.Windows.Threading.DispatcherPriority.ApplicationIdle);WindowTheme.Initialize();AppearanceManager.Initialize();
+        AppScrolling.Initialize();Dispatcher.BeginInvoke(()=>{AppearanceManager.SaveShortcutBrand();BrandShortcuts.Repair();},System.Windows.Threading.DispatcherPriority.ApplicationIdle);WindowTheme.Initialize();AppearanceManager.Initialize();
         base.OnStartup(e);
     }
     public static string DataRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HuyVo", "Captovix");
     public static void Log(Exception e) { try { Directory.CreateDirectory(DataRoot); File.AppendAllText(Path.Combine(DataRoot, "errors.log"), $"{DateTimeOffset.Now:O} {e}\n"); } catch { } }
-    protected override void OnExit(ExitEventArgs e) { StaImageWorker.Stop();AppearanceManager.Stop(); _singleInstance?.Dispose(); base.OnExit(e); }
+    protected override void OnExit(ExitEventArgs e) { if(_startupHealthy)PerformanceTimings.WriteReport();StaImageWorker.Stop();AppearanceManager.Stop(); _singleInstance?.Dispose(); base.OnExit(e); }
 }

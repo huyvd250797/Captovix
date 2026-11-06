@@ -117,7 +117,7 @@ public partial class MainWindow
         Show();if(WindowState==WindowState.Minimized)WindowState=WindowState.Maximized;Activate();
         if(id!=null&&_store.Items.FirstOrDefault(i=>i.Id==id) is {} item){SearchBox.Clear();MediaList.SelectedItem=item;MediaList.ScrollIntoView(item);}
     }
-    private void RequestExit(){_exitRequested=true;if(_busy){CancelCapture();return;}Close();if(IsVisible)_exitRequested=false;}
+    private void RequestExit(){_exitRequested=true;if(_busy){CancelCapture();return;}Close();if(IsVisible&&!_closeAfterExport)_exitRequested=false;}
     private void CancelCapture(){if(_fidelityProcess!=null){try{_fidelityProcess.CloseMainWindow();}catch(Exception ex){App.Log(ex);}return;}if(_recordingActive)StopRecording();else _captureCancellation?.Cancel();}
     private void RegisterCaptureEscape(){_escapeRegistered=Native.RegisterHotKey(new WindowInteropHelper(this).Handle,990,0x4000,0x1B);}
     private void ReleaseCaptureEscape(){if(_escapeRegistered)Native.UnregisterHotKey(new WindowInteropHelper(this).Handle,990);_escapeRegistered=false;}

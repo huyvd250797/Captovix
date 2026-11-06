@@ -3,7 +3,12 @@ $ErrorActionPreference = 'Stop'
 $nativeEvidence=Join-Path (Split-Path $PSScriptRoot -Parent) 'artifacts/windows-acceptance.json'
 if(!(Test-Path $nativeEvidence)){throw 'Native Windows acceptance evidence missing. Review packages may be built locally; stable publication is blocked.'}
 $native=Get-Content $nativeEvidence -Raw | ConvertFrom-Json
-if($native.version -ne '1.46.4' -or $native.platform -ne 'Windows' -or !$native.windowVisible -or $native.manualAcceptance -ne 'PASS'){throw 'Windows native acceptance has not passed for this release.'}
+if($native.version -ne '1.50.0' -or $native.platform -ne 'Windows' -or !$native.windowVisible -or $native.manualAcceptance -ne 'PASS'){throw 'Windows native acceptance has not passed for this release.'}
+
+$requiredChecks = @('FreshInstall','OverwriteInstall','InAppUpdate','DataIntegrity','StartupRecovery','MixedDpiCapture','LongSession','Latency','Appearance')
+foreach($name in $requiredChecks){
+    if(!$native.checks -or $native.checks.$name -cne 'PASS'){throw "Windows acceptance is missing or failed: $name"}
+}
 
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $uri = [uri]$RepoUrl

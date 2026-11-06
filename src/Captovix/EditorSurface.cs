@@ -68,18 +68,29 @@ public sealed partial class EditorSurface : FrameworkElement
     {
         if(Session!=null){Session.BeforeCommit=null;Session.BeforeCommitSnapshot=null;}if(source==null||Original!=null||Session!=null)EditorRenderer.ReleaseImageCaches(Original);_sceneDrawing=null;_primaryObject=null;_primaryDocument=null;_primaryObjectId=null;CancelInteraction();InlineEditingId=null;_hoveredId=null;ToolTip=null;ContextSourcePoint=null;PixelRegion=null;CropDraft=null;Original=source;Session=session;GroupScope=null;if(source!=null&&session!=null)session.BeforeCommitSnapshot=(before,doc)=>{if(before.HasRecovery||doc.Recoveries.Count>0||doc.Annotations.Any(a=>a.Mockup!=null))BackgroundRecovery.Finalize(before.Restore(),doc,PrepareRecovery);};_primaryObject=null;_primaryDocument=null;_primaryObjectId=null;_selected.Clear();_primary=null;Refresh();SelectionChanged?.Invoke();CropDraftChanged?.Invoke();
     }
-    public void SetZoom(double zoom){Zoom=Math.Clamp(zoom,.02,8);Refresh(false);}
+    public void SetZoom(double zoom)
+    {
+        Zoom=Math.Clamp(zoom,.02,8);
+        UpdateViewportVisual();
+    }
+    private void UpdateViewportVisual()
+    {
+        RenderOptions.SetBitmapScalingMode(this,ImageFidelity.IsIntegerZoom(PhysicalZoom)?BitmapScalingMode.NearestNeighbor:BitmapScalingMode.HighQuality);
+        var layout=Layout;
+        Width=layout==null?1:layout.Width*Zoom+2*WorkspacePad;
+        Height=layout==null?1:layout.Height*Zoom+2*WorkspacePad;
+        InvalidateVisual();
+        VisualChanged?.Invoke();
+    }
     public void Refresh(bool sceneChanged=true)
     {
         if(sceneChanged){_sceneDrawing=null;_primaryDocument=null;}
-        RenderOptions.SetBitmapScalingMode(this,ImageFidelity.IsIntegerZoom(PhysicalZoom)?BitmapScalingMode.NearestNeighbor:BitmapScalingMode.HighQuality);
         if(sceneChanged&&Session!=null)ConnectorStudio.Resolve(Session.Document);
-        var v=Layout;if(v!=null){Width=v.Width*Zoom+2*WorkspacePad;Height=v.Height*Zoom+2*WorkspacePad;}else{Width=Height=1;}
         if(Session!=null){if(GroupScope!=null&&!Session.Document.Annotations.Any(a=>GroupLayout.Chain(a).Contains(GroupScope)))GroupScope=null;Session.Document.EditingGroup=GroupScope;}
         if(Session!=null)_selected.UnionWith(AnnotationEditing.ExpandGroups(Session.Document,_selected));
         _selected.RemoveWhere(id=>Session?.Document.Annotations.Any(a=>a.Id==id)!=true);
         if(_primary==null||!_selected.Contains(_primary))_primary=_selected.LastOrDefault();
-        InvalidateVisual();VisualChanged?.Invoke();
+        UpdateViewportVisual();
     }
     public void NotifySelection()=>SelectionChanged?.Invoke();
     public BitmapSource Flatten(int maxWidth=0)=>Original!=null&&Session!=null?EditorRenderer.Render(Original,Session.Document,maxWidth):throw new InvalidOperationException("Chưa có ảnh để xuất.");
@@ -186,9 +197,35 @@ public sealed partial class EditorSurface : FrameworkElement
         }
         CaptureMouse();InvalidateVisual();
     }
+    private (Point Position,ModifierKeys Modifiers)? _queuedDrag;
     protected override void OnMouseMove(MouseEventArgs e)
     {
-        base.OnMouseMove(e);if(Session!=null)PointerMove(SourcePoint(e),Keyboard.Modifiers);
+        base.OnMouseMove(e);
+        if(Session==null)return;
+        var position=SourcePoint(e);
+        var modifiers=Keyboard.Modifiers;
+        if(_action is DragAction.Move or DragAction.CalloutBodyMove or DragAction.Resize or DragAction.Rotate or DragAction.ImagePan)
+        {
+            if(_queuedDrag==null)CompositionTarget.Rendering+=ApplyQueuedDrag;
+            _queuedDrag=(position,modifiers);
+        }
+        else PointerMove(position,modifiers);
+    }
+    private void ApplyQueuedDrag(object? sender,EventArgs e)
+    {
+        var pending=_queuedDrag;
+        ClearQueuedDrag();
+        if(Dragging&&pending is {} drag)
+        {
+            using var measurement=PerformanceTimings.Measure("editor.drag");
+            PointerMove(drag.Position,drag.Modifiers);
+        }
+    }
+    private void ClearQueuedDrag()
+    {
+        if(_queuedDrag==null)return;
+        CompositionTarget.Rendering-=ApplyQueuedDrag;
+        _queuedDrag=null;
     }
     public void PointerMove(Point p,ModifierKeys modifiers=ModifierKeys.None)
     {
@@ -239,6 +276,7 @@ public sealed partial class EditorSurface : FrameworkElement
     }
     public void PointerUp(Point p,ModifierKeys modifiers=ModifierKeys.None)
     {
+        ClearQueuedDrag();
         if(!Dragging||Session==null)return;PointerMove(p,modifiers);
         if(_action==DragAction.MockupRegion){EndMockup();return;}
         if(_action==DragAction.PixelRegion){_action=DragAction.None;ReleaseMouseCapture();try{PixelRegion?.Validate(Session.Document.Viewport);}catch{PixelRegion=null;}InvalidateVisual();SelectionChanged?.Invoke();return;}
@@ -258,6 +296,7 @@ public sealed partial class EditorSurface : FrameworkElement
     protected override void OnLostMouseCapture(MouseEventArgs e){base.OnLostMouseCapture(e);if(Dragging)CancelInteraction();}
     public void CancelInteraction()
     {
+        ClearQueuedDrag();
         if(!Dragging)return;if(_action==DragAction.PixelRegion){_action=DragAction.None;PixelRegion=_pixelBefore;ReleaseMouseCapture();InvalidateVisual();SelectionChanged?.Invoke();return;}var action=_action;_action=DragAction.None;_draft=null;_guideX=_guideY=null;
         if(action is DragAction.Crop or DragAction.CropMove or DragAction.CropResize){CropDraft=_cropBefore;CropDraftChanged?.Invoke();}
         else if(action!=DragAction.Marquee)Session?.Cancel();

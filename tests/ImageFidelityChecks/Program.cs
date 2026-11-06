@@ -36,4 +36,8 @@ foreach(var dpi in new uint[]{96,120,144,168,192}){
  var requested=new PixelRect(-300,-50,600,250);var split=CaptureGeometry.Split(requested,new[]{("left",new PixelRect(-1920,-100,1920,1080)),("right",new PixelRect(0,0,2560,1440))});
  Check(split.Count==2&&split[0].Crop==new PixelRect(1620,50,300,250)&&split[0].X==0&&split[1].X==300&&split[1].Y==50,$"Source-local crops and output offsets remain physical pixels at DPI {dpi}; no second DPI multiplication");
 }
+var stripes=new byte[source.Length/4*3];
+ImageFidelity.WhiteRgb(source.AsSpan(0,7*4),stripes.AsSpan(0,7*3));
+ImageFidelity.WhiteRgb(source.AsSpan(7*4),stripes.AsSpan(7*3));
+Check(stripes.SequenceEqual(ImageFidelity.WhiteRgb(source)),"Stripe conversion keeps JPEG/OCR alpha compositing");
 Console.WriteLine($"{count} image fidelity checks passed.");

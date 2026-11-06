@@ -48,7 +48,7 @@ public static class ImageFidelity
         for(int channel=0;channel<3;channel++)dest[di+channel]=(byte)((source[si+channel]*sa*255+dest[di+channel]*da*(255-sa)+denominator/2)/denominator);
         dest[di+3]=(byte)((denominator+127)/255);
     }
-    public static void OverlayPremultiplied(byte[] destination,byte[] overlay)
+    public static void OverlayPremultiplied(Span<byte> destination,ReadOnlySpan<byte> overlay)
     {
         if(destination.Length!=overlay.Length||destination.Length%4!=0)throw new ArgumentException("Sai kích thước lớp ảnh.");
         for(int i=0;i<destination.Length;i+=4){
@@ -60,8 +60,13 @@ public static class ImageFidelity
     public static byte[] WhiteRgb(byte[] bgra)
     {
         if(bgra.Length%4!=0)throw new ArgumentException("Sai dữ liệu BGRA.");var bgr=new byte[checked(bgra.Length/4*3)];
-        for(int i=0,j=0;i<bgra.Length;i+=4,j+=3)for(int c=0;c<3;c++)bgr[j+c]=(byte)((bgra[i+c]*bgra[i+3]+255*(255-bgra[i+3])+127)/255);
+        WhiteRgb(bgra,bgr);
         return bgr;
+    }
+    internal static void WhiteRgb(ReadOnlySpan<byte> bgra,Span<byte> bgr)
+    {
+        for(int i=0,j=0;i<bgra.Length;i+=4,j+=3)
+            for(int c=0;c<3;c++)bgr[j+c]=(byte)((bgra[i+c]*bgra[i+3]+255*(255-bgra[i+3])+127)/255);
     }
 }
 public sealed record CapturePixelEvidence(int RequestedWidth,int RequestedHeight,int ActualWidth,int ActualHeight,string Backend,string ColorAssessment="SDR8 pipeline; HDR/wide gamut not assessed");

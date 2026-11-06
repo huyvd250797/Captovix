@@ -27,8 +27,7 @@ public sealed class CaptureTray : IDisposable
     }
     private void RefreshBrand(){try{
         if(Application.Current.Resources["BrandMark"] is not System.Windows.Media.Imaging.BitmapSource bitmap)return;
-        var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));using var png=new System.IO.MemoryStream();encoder.Save(png);byte[] bytes=png.ToArray();using var ico=new System.IO.MemoryStream();using(var writer=new System.IO.BinaryWriter(ico,System.Text.Encoding.UTF8,true)){writer.Write((ushort)0);writer.Write((ushort)1);writer.Write((ushort)1);writer.Write((byte)128);writer.Write((byte)128);writer.Write((ushort)0);writer.Write((ushort)1);writer.Write((ushort)32);writer.Write(bytes.Length);writer.Write(22);writer.Write(bytes);}
-        var path=System.IO.Path.Combine(App.DataRoot,"personal-icon.ico");System.IO.Directory.CreateDirectory(App.DataRoot);System.IO.File.WriteAllBytes(path+".tmp",ico.ToArray());System.IO.File.Move(path+".tmp",path,true);var next=LoadImage(0,path,1,32,32,0x10);if(next==0)return;var old=_icon;bool destroy=_owned;_icon=next;_owned=true;_data.Icon=next;_data.Flags=2;ShellNotify(1,ref _data);if(destroy&&old!=0)DestroyIcon(old);
+        var next=ShellBrandIcon.Create(bitmap,32,32);if(next==0)return;var old=_icon;bool destroy=_owned;_icon=next;_owned=true;_data.Icon=next;_data.Flags=2;ShellNotify(1,ref _data);if(destroy&&old!=0)DestroyIcon(old);
     }catch(Exception ex){App.Log(ex);}}
     public bool Add(){ShellNotify(2,ref _data);_data.Flags=1|2|4|128;Ready=ShellNotify(0,ref _data);if(Ready){_data.Version=4;ShellNotify(4,ref _data);}return Ready;}
     public void Notify(string text){if(!Ready)return;_data.Flags=16;_data.InfoTitle="Captovix";_data.Info=text.Length>255?text[..255]:text;_data.InfoFlags=1;ShellNotify(1,ref _data);}

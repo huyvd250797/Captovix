@@ -128,11 +128,17 @@ public static class ElementScan
     // UI Automation may supply a button name without OCR text runs. Always
     // separate its visual body from its editable caption, preserving z-order.
     static ScanElement SplitReady(ScanElement source){
-        if(source.Kind!=MockupKind.Button||string.IsNullOrWhiteSpace(source.Text)||source.TextRuns.Count==1&&source.Text==source.TextRuns[0].Text)return source;
+        if(source.Kind!=MockupKind.Button||source.Bounds.Width<8||source.Bounds.Height<8||string.IsNullOrWhiteSpace(source.Text)||source.TextRuns.Count==1&&source.Text==source.TextRuns[0].Text&&source.TextRuns[0].Bounds.Intersect(source.Bounds) is { Width: >=8, Height: >=8 })return source;
         var copy=System.Text.Json.JsonSerializer.Deserialize<ScanElement>(System.Text.Json.JsonSerializer.Serialize(source))!;
-        var b=source.OcrBounds?.Intersect(source.Bounds)??source.Bounds;
+        var b=(source.OcrBounds??source.TextRuns.FirstOrDefault()?.Bounds??source.Bounds).Intersect(source.Bounds);
         if(source.TextRuns.Count>1&&source.Text==string.Join("\n",source.TextRuns.Select(t=>t.Text))){int x=source.TextRuns.Min(t=>t.Bounds.X),y=source.TextRuns.Min(t=>t.Bounds.Y),right=source.TextRuns.Max(t=>t.Bounds.Right),bottom=source.TextRuns.Max(t=>t.Bounds.Bottom);b=new PixelRect(x,y,right-x,bottom-y).Intersect(source.Bounds);}
-        if(b.Width<8||b.Height<8)b=source.Bounds;
+        if(b.IsEmpty)b=source.Bounds;
+        if(b.Width<8||b.Height<8){
+            int w=Math.Max(8,b.Width),h=Math.Max(8,b.Height);
+            int x=Math.Clamp(b.X-(w-b.Width)/2,source.Bounds.X,source.Bounds.Right-w);
+            int y=Math.Clamp(b.Y-(h-b.Height)/2,source.Bounds.Y,source.Bounds.Bottom-h);
+            b=new(x,y,w,h);
+        }
         copy.TextRuns=[new(b,source.Text,source.TextRuns.FirstOrDefault()?.Foreground??source.Colors.Foreground)];return copy;
     }
     public static List<Annotation> Prepare(EditorDocument document,IReadOnlyList<ScanElement> candidates,PixelRect scanBounds)

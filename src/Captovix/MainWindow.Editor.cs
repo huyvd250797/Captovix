@@ -16,6 +16,7 @@ public partial class MainWindow
     private EditorSession? _session;
     private MediaItem? _activeItem;
     private bool _editorReady,_syncProperties,_changingSelection,_fitMode=true,_actualPixels;
+    private (bool Fit, bool Actual)? _readoutView;
     private void InitializeEditor()
     {
         _saveTimer.Tick+=async(_,_)=>{_saveTimer.Stop();if(_session?.InTransaction==true||_inlineId!=null){if(_session?.Dirty==true)_saveTimer.Start();return;}await AutoSaveAsync();};
@@ -48,9 +49,12 @@ public partial class MainWindow
             ImageFidelityHint.Text=ImageFidelity.CanCopyPixels(layout)?"PNG/Copy: giữ pixel vùng không chỉnh. Vừa khung chỉ đổi cách xem.":"Xuất/Copy có resize theo thiết lập; zoom chỉ đổi cách xem.";
             RestoreCropButton.IsEnabled=session.Document.Crop!=null||session.Document.Appearance.OutputCrop!=null;
             ZoomLabel.Text=$"{Surface.PhysicalZoom*100:0.#}%";
-            FitViewButton.SetResourceReference(Control.BackgroundProperty,_fitMode?"Accent":"Surface");FitViewButton.SetResourceReference(Control.ForegroundProperty,_fitMode?"OnAccent":"Text");
-            ActualViewButton.SetResourceReference(Control.BackgroundProperty,_actualPixels?"Accent":"Surface");ActualViewButton.SetResourceReference(Control.ForegroundProperty,_actualPixels?"OnAccent":"Text");
-            ZoomLabel.ToolTip=Surface.PhysicalZoom<.999?"Ảnh đang thu nhỏ để vừa khung. Chọn Rõ nét · 100% để kiểm tra chữ và pixel gốc; file lưu giữ kích thước gốc.":"1 pixel ảnh tương ứng "+$"{Surface.PhysicalZoom:0.##}"+" pixel màn hình. Zoom không thay đổi file lưu.";
+            if (_readoutView != (_fitMode, _actualPixels))
+            {
+                _readoutView = (_fitMode, _actualPixels);
+                FitViewButton.SetResourceReference(Control.BackgroundProperty,_fitMode?"Accent":"Surface");FitViewButton.SetResourceReference(Control.ForegroundProperty,_fitMode?"OnAccent":"Text");
+                ActualViewButton.SetResourceReference(Control.BackgroundProperty,_actualPixels?"Accent":"Surface");ActualViewButton.SetResourceReference(Control.ForegroundProperty,_actualPixels?"OnAccent":"Text");
+            }
             ZoomLabel.ToolTip=$"Zoom xem {Surface.PhysicalZoom*100:0.#}% · Windows scale {Surface.DisplayScale*100:0.#}%. Vừa khung có thể làm chữ trông nhỏ/mềm hơn; 100% = 1 pixel ảnh trên 1 pixel màn hình. Copy/PNG dùng kích thước Xuất / Copy, không dùng zoom.";
         }else{
             OriginalSizeLabel.Text=ImageSizeLabel.Text=ImageFidelityHint.Text="";ZoomLabel.Text="—";RestoreCropButton.IsEnabled=false;
@@ -62,11 +66,26 @@ public partial class MainWindow
         UndoButton.IsEnabled=_session?.CanUndo==true;RedoButton.IsEnabled=_session?.CanRedo==true;
         Surface.Refresh();SyncProperties();_saveTimer.Stop();_saveTimer.Start();
     }
+    private bool PrepareEditorSave()
+    {
+        var previous = _licenseCheckpoint;
+        _licenseCheckpoint = true;
+        try
+        {
+            if (_mockupInspector?.Flush() == false) return false;
+            FlushAutoProperties();
+            EndInlineText(true);
+            _textTimer.Stop();
+            _session?.Commit();
+            _saveTimer.Stop();
+            return true;
+        }
+        finally { _licenseCheckpoint = previous; }
+    }
+
     private bool FlushEditsCore(bool report=true)
     {
-        if(_mockupInspector?.Flush()==false)return false;
-        FlushAutoProperties();
-        EndInlineText(true);_textTimer.Stop();_session?.Commit();_saveTimer.Stop();
+        if (!PrepareEditorSave()) return false;
         // Finish the older worker before a final save/load can overtake it. Worker never waits for UI.
         try{_autoSaveWork?.GetAwaiter().GetResult();if(_autoSaveWork?.IsCompletedSuccessfully==true&&ReferenceEquals(_autoSaveSession,_session))_session?.MarkSaved(_autoSaveRevision);}catch(Exception ex){App.Log(ex);}
         if(_session==null||_activeItem==null||Surface.Original==null||!_session.Dirty)return true;
@@ -76,6 +95,7 @@ public partial class MainWindow
     }
     private void UnloadEditor()
     {
+        CancelQueuedWheelZoom();
         _mockupInspector?.Clear();_inspectorSession=null;
         _imageLoadGeneration++;_imageLoadCancellation?.Cancel();EndInlineText(false);_textTimer.Stop();_saveTimer.Stop();if(_session!=null)_session.Changed-=Session_Changed;
         _spaceHeld=false;EndPan();Surface.CancelInteraction();
@@ -94,7 +114,7 @@ public partial class MainWindow
         try{
         await _imageLoadWorker.WaitAsync(token);
         (BitmapSource bitmap,EditorSession session,string? warning) loaded;
-        try{loaded=await Task.Run(()=>{try{token.ThrowIfCancellationRequested();var image=MediaStore.LoadImage(item.FilePath);token.ThrowIfCancellationRequested();var editing=DocumentStore.Load(item,image,out var message);token.ThrowIfCancellationRequested();return(image,editing,message);}catch(OperationCanceledException){EditorRenderer.ReleaseImageCaches();throw;}},token);}finally{_imageLoadWorker.Release();}
+        try{loaded=await Task.Run(()=>{try{token.ThrowIfCancellationRequested();var image=MediaStore.LoadImage(item.FilePath);token.ThrowIfCancellationRequested();var editing=DocumentStore.Load(item,image,out var message,token);token.ThrowIfCancellationRequested();return(image,editing,message);}catch(OperationCanceledException){EditorRenderer.ReleaseImageCaches(clearSharedRaster:false);throw;}},token);}finally{_imageLoadWorker.Release();}
         if(token.IsCancellationRequested||generation!=_imageLoadGeneration||!ReferenceEquals(Selected,item))return;
         var (bitmap,session,warning)=loaded;
         _activeItem=item;_session=session;session.Changed+=Session_Changed;
@@ -102,7 +122,7 @@ public partial class MainWindow
         Surface.SetDisplayScale(VisualTreeHelper.GetDpi(this).DpiScaleX);Surface.Load(bitmap,session);if(Surface.Tool==EditorTool.Crop)Surface.StartCrop();CopyButton.IsEnabled=ExportButton.IsEnabled=true;SavedLabel.Text="✓ Đã lưu";_fitMode=true;_actualPixels=false;
         _=Dispatcher.BeginInvoke(()=>{if(ReferenceEquals(_session,session))FitImage();},DispatcherPriority.Loaded);
         if(warning!=null){if(session.Dirty){SavedLabel.Text="Đã khôi phục · Ctrl+S để lưu";SavedLabel.SetResourceReference(TextBlock.ForegroundProperty,"Warning");}SetStatus("Kiểm tra trạng thái khôi phục tài liệu.");AppDialog.Show(this,warning,"Kiểm tra dữ liệu chỉnh sửa",MessageBoxButton.OK,MessageBoxImage.Warning);}
-        }catch(OperationCanceledException){}catch(Exception ex){if(generation==_imageLoadGeneration){App.Log(ex);SetStatus("Không mở được ảnh: "+ex.Message);SavedLabel.Text="Không mở được ảnh";}}
+        }catch(OperationCanceledException){}catch(Exception ex){if(!token.IsCancellationRequested&&generation==_imageLoadGeneration&&ReferenceEquals(Selected,item)){App.Log(ex);SetStatus("Không mở được ảnh: "+ex.Message);SavedLabel.Text="Không mở được ảnh";}}
         finally{if(ReferenceEquals(_imageLoadCancellation,cancellation))_imageLoadCancellation=null;cancellation.Dispose();}
     }
     private void SelectTool(EditorTool tool)
@@ -219,7 +239,7 @@ public partial class MainWindow
             if(ctrl&&e.Key==Key.Z){FlushAutoProperties();Surface.CancelInteraction();_session?.Undo();Surface.Refresh();SyncProperties();}
             e.Handled=true;return;
         }
-        if(ctrl&&e.Key==Key.S){if(Surface.Tool==EditorTool.Crop&&!ApplyCropFromFields()){e.Handled=true;return;}if(StepNumber.IsKeyboardFocusWithin)CommitStep();_session?.Commit();FlushEdits();e.Handled=true;return;}
+        if(ctrl&&e.Key==Key.S){if(Surface.Tool==EditorTool.Crop&&!ApplyCropFromFields()){e.Handled=true;return;}if(StepNumber.IsKeyboardFocusWithin)CommitStep();_ = SaveEditorAsync();e.Handled=true;return;}
         if(typing||Keyboard.FocusedElement is ComboBox or ComboBoxItem||_session==null||_busy)return;
         if(TryToolShortcut(e))return;
         if(!ctrl&&e.Key==Key.F2){BeginInlineText();e.Handled=true;return;}

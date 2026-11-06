@@ -24,9 +24,4 @@ public partial class MainWindow
         root.Children.Add(new TextBlock{Text="Có thể vẽ trực tiếp trong khoảng trống quanh ảnh. Crop dùng tọa độ đầu ra, bao gồm cả chú thích. Nền và tự mở rộng áp dụng ngay.",TextWrapping=TextWrapping.Wrap,Margin=new(0,12,0,0)});root.Children.Add(error);
         var close=new Button{Content="Đóng",HorizontalAlignment=HorizontalAlignment.Right};close.Click+=(_,_)=>w.Close();root.Children.Add(close);w.ShowDialog();
     }
-
-    private void PerformanceReport_Click(object sender,RoutedEventArgs e)
-    {if(!RequireLicense())return;
-        var report=new{Version=VersionInfo.Current,Runtime=System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,MemoryManaged=GC.GetTotalMemory(false),MemoryProcess=Environment.WorkingSet,Media=_store.Items.Count,Recent=_recentItems.Count,Thumbnails=_store.ThumbnailCacheStats,Decoded=RasterPixels.CacheStats,Renders=RenderMetrics.Snapshot(),History=_session?.HistoryStats,WindowsDesktopAcceptance="Chưa tự kết luận; xem checklist V1.21"};string json=JsonSerializer.Serialize(report,new JsonSerializerOptions{WriteIndented=true});var box=new TextBox{Text=json,IsReadOnly=true,AcceptsReturn=true,TextWrapping=TextWrapping.Wrap,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};var w=new Window{Owner=this,Title="Captovix · Hiệu năng thực tế trên máy này",Width=660,Height=540,WindowStartupLocation=WindowStartupLocation.CenterOwner};var panel=new DockPanel{Margin=new(14)};w.Content=panel;var copy=new Button{Content="Copy báo cáo",HorizontalAlignment=HorizontalAlignment.Left};DockPanel.SetDock(copy,Dock.Bottom);panel.Children.Add(copy);copy.Click+=(_,_)=>Clipboard.SetText(json);panel.Children.Add(box);w.ShowDialog();
-    }
 }

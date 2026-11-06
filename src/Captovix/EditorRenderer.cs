@@ -129,13 +129,39 @@ public static partial class EditorRenderer
         // Keep untouched source pixels out of WPF's premultiplied resampling path.
         byte[]? frame=null;var style=doc.Appearance;
         if(!style.Transparent||style.BorderWidth>0||style.Shadow){var visual=new DrawingVisual();using(var dc=visual.RenderOpen())DrawFrame(dc,layout,style);var rendered=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);rendered.Render(visual);frame=ImageTransfer.Bgra(rendered);}
-        source=RasterPixels.Source(source,doc);var pixels=ImageFidelity.CopyPixels(ImageTransfer.Bgra(source),source.PixelWidth,source.PixelHeight,doc.Viewport,layout,frame);
-        if(doc.Annotations.Count>0||doc.Recoveries.Count>0){
+        source=RasterPixels.Source(source,doc);
+        var view=doc.Viewport;
+        bool direct=frame==null&&layout.A==1&&layout.B==0&&layout.C==0&&layout.D==1
+            && layout.Width==view.Width&&layout.Height==view.Height
+            && layout.Canvas==new ImageRect(0,0,view.Width,view.Height)
+            && layout.ToOutput(view.X,view.Y)==new ImagePoint(0,0);
+        bool hasOverlay=doc.Annotations.Count>0||doc.Recoveries.Count>0;
+        BitmapSource? cropped=null;
+        if(direct){
+            var bgra=ImageTransfer.AsBgra(source);
+            cropped=view==new PixelRect(0,0,source.PixelWidth,source.PixelHeight)
+                ? bgra : new CroppedBitmap(bgra,new Int32Rect(view.X,view.Y,view.Width,view.Height));
+            if(!hasOverlay){
+                if(Math.Abs(cropped.DpiX-96)>=.001||Math.Abs(cropped.DpiY-96)>=.001)return ImageTransfer.Detach(cropped);
+                if(!cropped.IsFrozen)cropped.Freeze();
+                return cropped;
+            }
+        }
+        var pixels=cropped!=null?ImageTransfer.Bgra(cropped):ImageFidelity.CopyPixels(ImageTransfer.Bgra(source),source.PixelWidth,source.PixelHeight,view,layout,frame);
+        if(hasOverlay){
             var overlay=new DrawingVisual();using(var dc=overlay.RenderOpen()){
                 dc.PushClip(new RectangleGeometry(OutputClip(layout,doc.Appearance)));dc.PushTransform(new MatrixTransform(LayoutMatrix(layout)));
                 if(!doc.Appearance.DrawOutsideImage)dc.PushClip(new RectangleGeometry(new Rect(doc.Viewport.X,doc.Viewport.Y,doc.Viewport.Width,doc.Viewport.Height)));DrawOverlays(dc,source,doc);if(!doc.Appearance.DrawOutsideImage)dc.Pop();dc.Pop();dc.Pop();
             }
-            var bitmap=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);bitmap.Render(overlay);var bytes=new byte[checked(layout.Width*layout.Height*4)];bitmap.CopyPixels(bytes,checked(layout.Width*4),0);ImageFidelity.OverlayPremultiplied(pixels,bytes);
+            var bitmap=new RenderTargetBitmap(layout.Width,layout.Height,96,96,PixelFormats.Pbgra32);
+            bitmap.Render(overlay);
+            int stride=checked(layout.Width*4),stripe=Math.Min(layout.Height,ImageTransfer.StripeRows(stride));
+            var bytes=new byte[checked(stride*stripe)];
+            for(int y=0;y<layout.Height;y+=stripe){
+                int rows=Math.Min(stripe,layout.Height-y);
+                bitmap.CopyPixels(new Int32Rect(0,y,layout.Width,rows),bytes,stride,0);
+                ImageFidelity.OverlayPremultiplied(pixels.AsSpan(y*stride,rows*stride),bytes.AsSpan(0,rows*stride));
+            }
         }
         return ImageTransfer.Bitmap(layout.Width,layout.Height,pixels);
     }

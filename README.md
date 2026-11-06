@@ -1,10 +1,25 @@
-# Captovix V1.46.4 — Recovery Center & Startup Repair
+# Captovix V1.50.0 — Stability & Release Quality
 
-Trung tâm khôi phục chạy riêng với ứng dụng chính, dành cho tình huống app không vào được.
+## Bộ nhớ và chất lượng ảnh
+
+- Đường lưu PNG ghi thẳng vào tệp tạm, kiểm kích thước và đối chiếu từng pixel trước khi thay tệp đích. Ảnh chụp giữ nguyên độ phân giải. JPEG giữ chất lượng 95.
+- Cache thumbnail tối đa 12 MiB, cache lớp ảnh 32 MiB và cache hiệu ứng 16 MiB mỗi nguồn trên mỗi luồng. Undo/Redo dùng chung ngân sách mặc định 16.000.000 byte và tối đa 100 bước. Khi một bước riêng vượt ngân sách, bước đó có thể không còn trong lịch sử.
+- Dùng `scripts/Measure-Memory.ps1` và `docs/WINDOWS-ACCEPTANCE-V1490.md` để đo trước/sau trên cùng máy. Mức giảm RAM đỉnh 20% là tiêu chí nghiệm thu Windows.
+
+## Hiệu năng trình chỉnh sửa
+
+Captovix có thể tiếp tục chỉnh ảnh trong lúc xuất. Tệp xuất ghi lại nội dung tại thời điểm chọn lưu, kể cả khi chuyển sang ảnh khác. Bấm Ctrl+S để yêu cầu lưu tài liệu ở nền. Bật đo theo phiên bằng biến CAPTOVIX_MEASURE_PERFORMANCE và đọc kết quả trong performance-latest.json theo hướng dẫn nghiệm thu V1.50.0.
+
+## Copy, dán và hợp nhất ảnh
+
+1. Chọn ảnh A trong thư viện và bấm Ctrl+C. Mở ảnh B rồi bấm Ctrl+V.
+2. Ảnh A xuất hiện ở kích thước pixel gốc, bên trên ảnh nền. Có thể chỉnh vị trí trước khi hợp nhất. Canvas giữ kích thước cũ.
+3. Chọn **Hợp nhất ảnh** trong bảng thuộc tính lớp ảnh hoặc menu chuột phải. Ctrl+Z khôi phục lớp A riêng. Ảnh nguồn và các chú thích khác vẫn giữ được.
+4. Khi lớp ảnh đang chồng phía trên đối tượng khác hoặc ảnh hưởng hiệu ứng nền, Captovix yêu cầu chỉnh thứ tự hoặc vị trí để tránh làm sai bố cục.
 
 ## Trung tâm khôi phục
 
-- Khi lỗi khởi động trong app, Captovix mở Trung tâm khôi phục. Nếu Windows không tải được app, mở **Captovix Recovery Center** trong Start Menu hoặc chạy `Recovery.cmd` trong thư mục `current` của bản cài.
+- Trung tâm khôi phục đọc bảng màu và chế độ Sáng/Tối/Theo hệ thống giống app chính. Khi lỗi khởi động trong app, Captovix mở Trung tâm khôi phục. Nếu Windows không tải được app, mở **Captovix Recovery Center** trong Start Menu hoặc chạy `Recovery.cmd` trong thư mục `current` của bản cài.
 - Bấm **Thử lại**. Công cụ tìm bản mới ở kênh ổn định hiện có. Nếu chưa tìm được bản mới hoặc mạng không truy cập được, công cụ thử mở bản hiện tại. Khi có bản mới, xem ghi chú rồi chọn **Cập nhật & mở lại** hoặc **Mở bản hiện tại**.
 - Công cụ kiểm gói và tạo bản sao lưu trước cập nhật. Gói được áp dụng qua trình cập nhật đi kèm bản cài. Nếu cài thất bại hoặc màn hình chính không xác nhận khởi động, xem **Mở báo cáo lỗi** và dùng lại **Thử lại** hoặc Full Setup.
 - Cần cài bản V1.46.4 một lần để có công cụ. Khi bản cũ không mở, dùng Full Setup cài đè vào đúng thư mục.
@@ -23,17 +38,17 @@ Trung tâm khôi phục chạy riêng với ứng dụng chính, dành cho tình
 
 Bấm nút bánh răng ở góc trên bên phải rồi chọn **Giao diện · màu sắc**. Chọn Sáng/Tối/Theo hệ thống và màu nhấn dạng màu đơn hoặc gradient.
 
-Đổi riêng **Màu nền logo** và **Màu hình logo**. Bỏ chọn **Màu hình logo theo màu nhấn** để chọn màu hình hoặc gradient riêng. Nút **Khôi phục giao diện Captovix** trả logo về hình trắng trên nền tím. Giao diện, icon cửa sổ và khay hệ thống cập nhật theo lựa chọn. Bộ cài, tệp EXE và shortcut dùng hình và màu logo gốc. Nút Quay dùng nền đỏ #D82038 và chữ trắng trong cả hai chế độ.
+Đổi riêng **Màu nền logo** và **Màu hình logo**. Bỏ chọn **Màu hình logo theo màu nhấn** để chọn màu hình hoặc gradient riêng. Nút **Khôi phục giao diện Captovix** xem trước logo mặc định. Bấm **Lưu** để giữ màu đã chọn. **Hủy** hoặc đóng Thiết lập trả về màu đã lưu. Icon cửa sổ đang chạy, khay và taskbar nhận màu theo lựa chọn. Captovix cập nhật shortcut ghim thuộc bản cài. Explorer có thể lưu đệm icon ghim. Nút Quay dùng nền đỏ #D82038 và chữ trắng trong cả hai chế độ.
 
 Theo yêu cầu hiện tại, bỏ mục **Cập nhật & khôi phục dữ liệu** khỏi menu. Sao lưu trước cập nhật, kiểm hash/gói, Recovery.cmd và dữ liệu backup cũ vẫn giữ để bảo toàn an toàn nâng cấp. Mục bản quyền/khôi phục KEY không thay đổi.
 
 ## Nâng cấp và kiểm tra
 
-Đóng app cả khay rồi chạy Captovix-v1.46.4-Full-Setup.exe vào đường dẫn đang cài. Không cần chạy migration mới, không reset database/Supabase. Document schema vẫn tối đa 23, không nâng schema mới; appearance schema 1 có thêm trường tùy chọn tương thích với tệp V1.45. Bộ cài hỗ trợ cài mới và cài đè. Gói Update-Packages.zip chứa tài sản để đưa lên kênh cập nhật hiện có. Xem scripts/README-PUBLISH.txt trước khi phát hành.
+Đóng app cả khay rồi chạy Captovix-v1.50.0-Full-Setup.exe vào đường dẫn đang cài. Không cần chạy migration mới, không reset database/Supabase. Document schema vẫn tối đa 23, không nâng schema mới; appearance schema 1 có thêm trường tùy chọn tương thích với tệp V1.45. Bộ cài hỗ trợ cài mới và cài đè. Gói Update-Packages.zip chứa tài sản để đưa lên kênh cập nhật hiện có. Xem scripts/README-PUBLISH.txt trước khi phát hành.
 
-Kết quả kiểm thử logic, biên dịch chéo và kiểm gói được ghi trong docs/VALIDATION.md và docs/WINDOWS-ACCEPTANCE-V1464.md. Host hiện tại là Linux: chưa chạy app, bộ cài, phím vật lý hoặc đo RAM trên Windows thật; không coi biên dịch WPF là nghiệm thu Windows. Publish stable vẫn cần báo cáo Windows thật.
+Kết quả kiểm thử logic, biên dịch chéo và kiểm gói được ghi trong docs/VALIDATION.md và docs/WINDOWS-ACCEPTANCE-V1490.md. Host hiện tại là Linux: chưa chạy app, bộ cài, phím vật lý hoặc đo RAM trên Windows thật; không coi biên dịch WPF là nghiệm thu Windows. Publish stable vẫn cần báo cáo Windows thật.
 
-Phiên bản tiếp theo đề xuất: **V1.47.0 — Mockup Review & Workflow Consistency**: rà soát hàng loạt các phần chưa chắc, đồng bộ thao tác giữa lớp/nhóm và cải thiện trải nghiệm dự án nhiều vùng quét. Chưa tự bắt đầu bản này.
+Mốc đề xuất sau nghiệm thu là **V1.50.1 — Windows Acceptance Fixes** nếu phép thử thực tế phát hiện hồi quy.
 
 ## Dựng lại từ source trên Windows
 
@@ -71,6 +86,6 @@ Lỗi restore: kiểm mạng/proxy/NuGet, cài SDK10; không đổi xuống runt
 
 Bản bàn giao chưa push hoặc tạo GitHub Release. Với repo mới: tạo repo GitHub rồi `git init`, `git add .`, `git commit`, `git branch -M main`, thêm remote đúngrepo và push. Với repo có source: clone/fetch/pull nhánh trước, tích hợp source bản này, xem `git diff`, commit/push; không force-push để bỏ lỗi fetchfirst. Kiểm tra .gitignore và không push prerequisites/artifacts/privateconfig.
 
-Captovix là app desktopWPF, không deploy binaries lên Vercel/Netlify để chạy như web. Backend Supabase/licensing đang dùng giữ nguyên. Sau nghiệm thu Windows, xem `scripts/README-PUBLISH.txt`, upload đúng5assets từ Update-Packages lên GitHub Releases tag v1.46.4. Không chỉ upload ZIP. Kiểm tra source/update/feed URL và thử update máy test trước stableLatest.
+Captovix là app desktopWPF, không deploy binaries lên Vercel/Netlify để chạy như web. Backend Supabase/licensing đang dùng giữ nguyên. Sau nghiệm thu Windows, xem `scripts/README-PUBLISH.txt`, upload đúng5assets từ Update-Packages lên GitHub Releases tag v1.48.0. Không chỉ upload ZIP. Kiểm tra source/update/feed URL và thử update máy test trước stableLatest.
 
-Không cần chạy migration mới từ V1.45.0. Giữ bản sao thư mục dữ liệu/dự án khi nâng cấp; schema 23 có backup trước ghi mới. Nếu quay lại bản cũ, dùng bản sao/backup tương thích, không ép đọc hoặc ghi đè schema 23. Gửi lại chính sourceZIP mới này để tiếp tục V1.47.0.
+Không cần chạy migration mới từ V1.45.0. Giữ bản sao thư mục dữ liệu/dự án khi nâng cấp; schema 23 có backup trước ghi mới. Nếu quay lại bản cũ, dùng bản sao/backup tương thích, không ép đọc hoặc ghi đè schema 23. Dùng source ZIP V1.50.0 cho lần nâng cấp tiếp theo.

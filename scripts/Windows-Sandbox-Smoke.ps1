@@ -9,6 +9,6 @@ if(!$exe){throw 'Installed executable missing.'}
 Start-Process $exe.FullName
 $deadline=[DateTime]::UtcNow.AddSeconds(45);$visible=$false
 while([DateTime]::UtcNow -lt $deadline){$app=Get-Process Captovix -ErrorAction SilentlyContinue | Where-Object MainWindowHandle -ne 0 | Select-Object -First 1;if($app){$visible=$true;break};Start-Sleep -Milliseconds 500}
-$result=@{version='1.46.4';platform='Windows';scope='Sandbox Setup and visible main window only; not capture/IME/physical scrolling acceptance';setupExit=$process.ExitCode;windowVisible=$visible;timeUtc=[DateTime]::UtcNow.ToString('o');manualAcceptance='PENDING'}
+$result=@{version='1.50.0';platform='Windows';scope='Sandbox Setup and visible main window only; not capture/IME/physical scrolling acceptance';setupExit=$process.ExitCode;windowVisible=$visible;timeUtc=[DateTime]::UtcNow.ToString('o');manualAcceptance='PENDING'}
 $result|ConvertTo-Json|Set-Content -Path $Report -Encoding UTF8
 if(!$visible){throw 'Main window did not become visible; release is blocked.'}

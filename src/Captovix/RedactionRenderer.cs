@@ -12,17 +12,18 @@ public static class RedactionRenderer
         public readonly Dictionary<string,(string Key,DrawingImage Image,long Bytes)> Entries=[];
         public long Bytes;
     }
-    private static readonly ConditionalWeakTable<BitmapSource,Cache> Caches=new();
-    public static void Release(BitmapSource source)=>Caches.Remove(source);
-    private const long CacheBudget=32*1024*1024;
+    // Each renderer owns its filter cache so encoding an export cannot hold
+    // the lock needed by the editor to draw the same source bitmap.
+    [ThreadStatic] private static ConditionalWeakTable<BitmapSource,Cache>? _caches;
+    public static void Release(BitmapSource source)=>_caches?.Remove(source);
+    private const long CacheBudget=16*1024*1024;
     private static void DrawCore(DrawingContext dc,BitmapSource original,Annotation a,bool draft=false,PrivacySampling? sampling=null)
     {
         int left=(int)Math.Clamp(Math.Floor(a.Left),0,original.PixelWidth),top=(int)Math.Clamp(Math.Floor(a.Top),0,original.PixelHeight);
         int right=(int)Math.Clamp(Math.Ceiling(a.Left+a.Width),0,original.PixelWidth),bottom=(int)Math.Clamp(Math.Ceiling(a.Top+a.Height),0,original.PixelHeight);
         if(right<=left||bottom<=top)return;var rect=new Rect(left,top,right-left,bottom-top);
         if(a.Kind==AnnotationKind.Cover||draft){dc.DrawRectangle(draft?Brushes.DarkSlateGray:EditorRenderer.Ink(a.Color),null,rect);return;}
-        var cache=Caches.GetValue(original,_=>new Cache());var key=$"{left},{top},{right},{bottom}|{a.Kind}|{a.EffectSize}|{sampling?.Key}";
-        lock(cache){
+        var cache=(_caches??=new()).GetValue(original,_=>new Cache());var key=$"{left},{top},{right},{bottom}|{a.Kind}|{a.EffectSize}|{sampling?.Key}";
         if(cache.Entries.TryGetValue(a.Id,out var existing)&&existing.Key==key){dc.DrawImage(existing.Image,rect);return;}
         if(cache.Entries.Remove(a.Id,out var old))cache.Bytes-=old.Bytes;
         cache.Converted??=original.Format==PixelFormats.Bgra32?original:new FormatConvertedBitmap(original,PixelFormats.Bgra32,null,0);
@@ -34,7 +35,7 @@ public static class RedactionRenderer
             if(cache.Bytes+bytes>CacheBudget||cache.Entries.Count>=64){cache.Entries.Clear();cache.Bytes=0;}
             cache.Entries[a.Id]=(key,image,bytes);cache.Bytes+=bytes;
         }
-        dc.DrawImage(image,rect);}
+        dc.DrawImage(image,rect);
     }
     public static void Draw(DrawingContext dc,BitmapSource original,Annotation a,bool draft=false,PrivacySampling? sampling=null)
     {

@@ -21,5 +21,9 @@ Check(entry.IndexOf("--hybrid-ui-probe",StringComparison.Ordinal)<entry.IndexOf(
 var recovery=File.ReadAllText(Path.Combine(root,"src/Captovix.Recovery/RecoveryWindow.cs"));
 Check(entry.Contains("StartupHealthSignal.Probe != null || StartupRecoveryLauncher.Open"),"Probe failure does not reopen the Recovery Center");
 Check(recovery.IndexOf("if (ready.WaitOne(0))",StringComparison.Ordinal)<recovery.IndexOf("Đã khôi phục.",StringComparison.Ordinal)&&recovery.Contains("if (app.HasExited)"),"Recovery requires a startup acknowledgement from a live process");
+var mainWindow=File.ReadAllText(Path.Combine(root,"src","Captovix","MainWindow.xaml.cs"));
+Check(mainWindow.Contains("!_startupInitialized||!_firstFrameRendered||!IsVisible||WindowState==WindowState.Minimized")
+    &&recovery.Contains("!IsWindowVisible(app.MainWindowHandle)||IsIconic(app.MainWindowHandle)"),
+    "Recovery success requires initialized, rendered and visible editor");
 Check(recovery.IndexOf("UpdateBackup.Create",StringComparison.Ordinal)<recovery.IndexOf("backend.VerifyReadyPackage",StringComparison.Ordinal)&&recovery.Contains("updater.ExitCode != 0"),"Recovery backs up, re-verifies package, and checks updater exit");
 Console.WriteLine(count+" startup/resource regression checks passed. Native WPF loading requires Windows.");

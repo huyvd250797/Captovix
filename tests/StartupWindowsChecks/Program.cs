@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 internal static class Program
 {
+ [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool DestroyIcon(nint icon);
  static int n;static void Check(bool value,string title){if(!value)throw new Exception(title);n++;Console.WriteLine("PASS: "+title);}
  [STAThread]static int Main(){App? app=null;Window? owner=null;try{
   app=new App();app.InitializeComponent();app.ShutdownMode=ShutdownMode.OnExplicitShutdown;
@@ -17,6 +18,26 @@ internal static class Program
   var brandImage=typeof(AppearanceManager).GetMethod("BrandImage",BindingFlags.Static|BindingFlags.NonPublic)!;
   var custom=(System.Windows.Media.Imaging.BitmapSource)brandImage.Invoke(null,[new AppearanceSettings(IconBackground:"#244A69")])!;
   Check(custom.PixelWidth==128&&custom.PixelHeight==128,"Custom palette loads the mark resource from the app assembly");
+  var preview=typeof(AppearanceManager).GetMethod("Preview",BindingFlags.Static|BindingFlags.NonPublic)!;
+  var discard=typeof(AppearanceManager).GetMethod("DiscardPreview",BindingFlags.Static|BindingFlags.NonPublic)!;
+  var shell=typeof(MainWindow).Assembly.GetType("Captovix.ShellBrandIcon",true)!;
+  var create=shell.GetMethod("Create",BindingFlags.Static|BindingFlags.NonPublic)!;
+  var original=AppearanceManager.Current;
+  foreach(var size in new[]{16,32,48}){
+   preview.Invoke(null,[original with { IconBackground="#24CA69" }]);
+   var image=(System.Windows.Media.Imaging.BitmapSource)app.Resources["BrandMark"];
+   nint handle=(nint)create.Invoke(null,[image,size,size])!;
+   Check(handle!=0,"Live palette creates a native icon at "+size+" px");
+   try{
+    var rendered=System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(handle,Int32Rect.Empty,System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+    Check(rendered.PixelWidth==size&&rendered.PixelHeight==size,"Native icon retains DPI size");
+    var pixels=ImageTransfer.Bgra(rendered);
+    int index=(size*size/8+size/2)*4;
+    Check(pixels[index+1]>140&&pixels[index+2]<90,"Native icon includes the custom green background");
+   }finally{DestroyIcon(handle);}
+   discard.Invoke(null,null);
+   Check(AppearanceManager.Current==original,"Discard restores the saved palette");
+  }
   var chrome=typeof(MainWindow).Assembly.GetType("Captovix.WindowTheme",true)!;chrome.GetMethod("Initialize",BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(null,null);
   owner=new Window{Title="Startup regression fixture",Width=420,Height=300,Content=new TextBlock{Text="Owner"},ShowInTaskbar=false};owner.Show();Check(owner.Content is Border,"Normal window gets a frame without double-parent exception");
   foreach(bool dark in new[]{false,true}){

@@ -4,7 +4,7 @@ using System.Windows.Media.Imaging;
 namespace Captovix;
 public static class RasterPixels
 {
-    private static readonly BudgetCache<string,BitmapSource> Cache=new(48L*1024*1024,128,ReferenceEqualityComparer.Instance);
+    private static readonly BudgetCache<string,BitmapSource> Cache=new(32L*1024*1024,96,ReferenceEqualityComparer.Instance);
     public static CacheSnapshot CacheStats=>Cache.Stats;
     public static void ClearCache()=>Cache.Clear();
     public static BitmapSource Decode(string data){if(Cache.TryGet(data,out var cached))return cached;var expected=PixelStudio.PngSize(data);using var stream=new MemoryStream(Convert.FromBase64String(data));var image=BitmapDecoder.Create(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];if(image.PixelWidth!=expected.Width||image.PixelHeight!=expected.Height)throw new InvalidDataException("Kích thước PNG không khớp.");// A frozen BitmapFrame still delegates IsDownloading/metadata to its owning
@@ -13,7 +13,16 @@ public static class RasterPixels
         var detached=ImageTransfer.Detach(image);Cache.Add(data,detached,(long)data.Length*2+(long)detached.PixelWidth*detached.PixelHeight*4);return detached;}
     public static string Encode(BitmapSource image){if((long)image.PixelWidth*image.PixelHeight>PixelStudio.MaxPixels)throw new InvalidDataException("Chỉnh pixel hỗ trợ tối đa 40 triệu pixel.");var result=Convert.ToBase64String(ImageTransfer.Png(image));PixelStudio.PngSize(result);return result;}
     public static BitmapSource Source(BitmapSource original,EditorDocument doc)=>doc.PixelBasePng==null?original:Decode(doc.PixelBasePng);
-    public static void ValidateDecoded(EditorDocument doc){if(doc.PixelBasePng!=null)Decode(doc.PixelBasePng);foreach(var a in doc.Annotations)if(a.PixelPng!=null)Decode(a.PixelPng);}
+    public static void ValidateDecoded(EditorDocument doc,CancellationToken token=default)
+    {
+        token.ThrowIfCancellationRequested();
+        if(doc.PixelBasePng!=null)Decode(doc.PixelBasePng);
+        foreach(var a in doc.Annotations)
+        {
+            token.ThrowIfCancellationRequested();
+            if(a.PixelPng!=null)Decode(a.PixelPng);
+        }
+    }
 }
 
 public static partial class EditorRenderer

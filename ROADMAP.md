@@ -1,4 +1,4 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.46.4
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.50.0
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
@@ -9,7 +9,11 @@ Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Ph�
 | V1.46.2 — Original Logo & Settings | Khôi phục nhận diện và dễ mở Thiết lập | Logo gốc, nút bánh răng và hai màu logo độc lập | Giữ schema và kênh cập nhật cũ | Kiểm logo, Thiết lập, màu, cài đè và update | Đã duyệt giao diện trên Preview. Bản chính đã đóng gói, chờ kiểm cài đặt và cập nhật trên Windows |
 | V1.46.3 — Startup Recovery | Mở lại app sau khi cập nhật | Sửa đường dẫn logo còn trỏ Preview | Giữ schema và kênh cập nhật | Kiểm tài nguyên logo, cài đè và mở app | Bản vá V1.46.2, kiểm cài đè Windows còn chờ |
 | V1.46.4 — Recovery Center & Startup Repair | Khôi phục khi app lỗi khởi động | Công cụ riêng, thử lại, cài bản mới, xác nhận mở app | Dùng kênh stable và sao lưu hiện có | Nghiệm thu cài và cập nhật trên Windows | Đã triển khai, chờ nghiệm thu Windows |
-| V1.47.0 — Mockup Review & Workflow Consistency | Rà soát và thao tác nhiều vùng nhất quán | Rà soát hàng loạt khung chưa chắc, đồng bộ lớp/nhóm và dự án nhiều vùng | Đề xuất sau V1.46, chưa triển khai | Bộ ảnh thực tế và kết quả kiểm Windows làm căn cứ | Đề xuất |
+| V1.47.0 — Capture, Editing & Recovery | Chụp và ghép ảnh phản hồi tốt hơn | Lớp phủ chụp, dán pixel gốc, hợp nhất, nhãn Mockup và giao diện cứu hộ | Giữ schema và kênh cập nhật | So pixel trước/sau, Undo, kéo vùng, nhãn, thư viện và Recovery trên Windows | Đã triển khai, chờ nghiệm thu Windows |
+| V1.48.0 — Editor Responsiveness | Giảm thời gian phản hồi khi chỉnh ảnh | Mở/chuyển ảnh, cuộn, kéo, lưu và xuất | Hủy lần đọc cũ; lưu và xuất ở nền | So độ trễ trên cùng máy và bộ ảnh | Đã triển khai, chờ đo Windows |
+| V1.49.0 — Memory & Resource Efficiency | Giảm RAM đỉnh và giữ RAM ổn định | Bitmap, cache, Undo, vòng đời tác vụ và icon taskbar | Đo mốc trước/sau, giữ chất lượng ảnh | Mục tiêu giảm ít nhất 20% RAM đỉnh trong kịch bản ảnh lớn | Đã triển khai, chờ đo Windows |
+| V1.50.0 — Stability & Release Quality | Ổn định toàn app | Đo hồi quy, đa màn hình, update và cứu hộ | Nghiệm thu Windows thật | Cài mới, cài đè, cập nhật, giữ thư viện và KEY | Đã triển khai mã và kịch bản, chờ nghiệm thu Windows |
+| V1.50.1 — Windows Acceptance Fixes | Sửa hồi quy thực tế nếu có | Xử lý theo log và kết quả đo | Đối chiếu cùng máy | Chạy lại kịch bản lỗi | Đề xuất sau V1.50.0 |
 
 | V1.37.0 — Performance & Responsiveness | Phản hồi nhanh hơn | Startup, mở/chuyển, kéo/resize/chữ dài/zoom, cache, lưu nền; giữ tool,30ảnh,Callout kéo để tạo/tâm giữ đuôi | Worker/generation, snapshot/revision, drawing/lifecycle | Logic/build/package đạt; số đo Windows/native/RAM còn chờ | Đã triển khai; chưa nghiệm thu Windows toàn app |
 | V1.37.1 — Performance & Responsiveness | Phát hành bản vá Callout có số phiên bản mới | Kế thừa sửa click ngoài/tâm kéo, cập nhật app/installer/feed | Tăng PATCH đồng bộ, gói Full | Máy1.37.0 nhận1.37.1 trong kiểm thử feed; Windows native còn chờ | Đã đóng gói; chưa publish |

@@ -20,8 +20,12 @@ public partial class MainWindow
     {
         if(Surface.Selected is not {Mockup:not null} a)return;
         if(a.Locked||!a.Visible){SetStatus("Mở khóa và hiện đối tượng Mockup trước khi sửa.");return;}
+        if(a.Mockup.Type==MockupKind.Button&&MockupControlPart(a,true) is {} caption){
+            Surface.SelectInGroup([caption.Id],caption.Id,a.GroupId);
+            a=caption;
+        }
         OpenMockupInspector(a);
-        if(a.Text.Length>0||a.Mockup.Type is MockupKind.Label or MockupKind.Title)BeginInlineText();
+        if(a.Text.Length>0||a.Mockup!.Type is MockupKind.Label or MockupKind.Title)BeginInlineText();
         await Task.CompletedTask;
     }
     private async Task OpenMockupAsync(PixelRect region,Annotation? editing)

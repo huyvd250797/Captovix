@@ -18,6 +18,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Velopack" Version="1.2.161" />
-    <Compile Include="../Captovix/VersionInfo.cs;../Captovix/UpdateSettings.cs;../Captovix/UpdateSession.cs;../Captovix/UpdateBackup.cs;../Captovix/ReliableUpdateSource.cs;../Captovix/ReleasePackageAudit.cs;../Captovix/ReleaseRecoveryState.cs;../Captovix/VelopackUpdateBackend.cs;../Captovix/StartupHealthSignal.cs" />
+    <Compile Include="../Captovix/VersionInfo.cs;../Captovix/UpdateSettings.cs;../Captovix/UpdateSession.cs;../Captovix/UpdateBackup.cs;../Captovix/ReliableUpdateSource.cs;../Captovix/ReleasePackageAudit.cs;../Captovix/ReleaseRecoveryState.cs;../Captovix/VelopackUpdateBackend.cs;../Captovix/StartupHealthSignal.cs;../Captovix/AppearanceSettings.cs;../Captovix/AppearancePalette.cs" />
   </ItemGroup>
 </Project>

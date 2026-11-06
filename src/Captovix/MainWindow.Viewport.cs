@@ -31,16 +31,37 @@ public partial class MainWindow
         if(canvas){Surface.SelectIds([]);Surface.Focus();return true;}
         return false;
     }
+    private double? _queuedWheelZoom;
+    private Point _queuedWheelAnchor;
+    private void QueueWheelZoom(int delta,Point anchor)
+    {
+        if(_queuedWheelZoom==null)CompositionTarget.Rendering+=ApplyQueuedWheelZoom;
+        _queuedWheelZoom=EditorViewportMath.WheelZoom(_queuedWheelZoom??Surface.Zoom,delta);
+        _queuedWheelAnchor=anchor;
+    }
+    private void ApplyQueuedWheelZoom(object? sender,EventArgs e)
+    {
+        var zoom=_queuedWheelZoom;
+        CancelQueuedWheelZoom();
+        if(zoom is {} value)ZoomAt(value,_queuedWheelAnchor);
+    }
+    private void CancelQueuedWheelZoom()
+    {
+        if(_queuedWheelZoom==null)return;
+        CompositionTarget.Rendering-=ApplyQueuedWheelZoom;
+        _queuedWheelZoom=null;
+    }
     private void ZoomAt(double zoom,Point anchor)
     {
+        CancelQueuedWheelZoom();
         if(_session==null||Surface.IsInteracting||_panActive)return;
+        using var measurement=PerformanceTimings.Measure("editor.zoom");
         ImageScroll.UpdateLayout();var origin=Surface.TranslatePoint(new(0,0),ImageScroll);
         var source=new Point((anchor.X-origin.X-EditorSurface.WorkspacePad)/Surface.Zoom,(anchor.Y-origin.Y-EditorSurface.WorkspacePad)/Surface.Zoom);
         _fitMode=false;_actualPixels=false;Surface.SetZoom(zoom);ImageScroll.UpdateLayout();
         origin=Surface.TranslatePoint(new(0,0),ImageScroll);
         ImageScroll.ScrollToHorizontalOffset(EditorViewportMath.AnchoredOffset(ImageScroll.HorizontalOffset,origin.X+EditorSurface.WorkspacePad,source.X,Surface.Zoom,anchor.X,ImageScroll.ScrollableWidth));
         ImageScroll.ScrollToVerticalOffset(EditorViewportMath.AnchoredOffset(ImageScroll.VerticalOffset,origin.Y+EditorSurface.WorkspacePad,source.Y,Surface.Zoom,anchor.Y,ImageScroll.ScrollableHeight));
-        ImageScroll.UpdateLayout();
     }
     private void ZoomAtCenter(double zoom)=>ZoomAt(zoom,new(ImageScroll.ViewportWidth/2,ImageScroll.ViewportHeight/2));
     private void Viewport_Wheel(object sender,MouseWheelEventArgs e)
@@ -48,7 +69,7 @@ public partial class MainWindow
         if(_session==null||ImageScroll.Visibility!=Visibility.Visible)return;e.Handled=true;
         if(Surface.IsInteracting||_panActive)return;
         var intent=EditorViewportMath.Intent(Keyboard.Modifiers.HasFlag(ModifierKeys.Control),Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
-        if(intent==WheelIntent.Zoom)ZoomAt(EditorViewportMath.WheelZoom(Surface.Zoom,e.Delta),e.GetPosition(ImageScroll));
+        if(intent==WheelIntent.Zoom)QueueWheelZoom(e.Delta,e.GetPosition(ImageScroll));
         else if(intent==WheelIntent.HorizontalScroll)ImageScroll.ScrollToHorizontalOffset(EditorViewportMath.WheelOffset(ImageScroll.HorizontalOffset,e.Delta,ImageScroll.ScrollableWidth));
         else ImageScroll.ScrollToVerticalOffset(EditorViewportMath.WheelOffset(ImageScroll.VerticalOffset,e.Delta,ImageScroll.ScrollableHeight));
     }

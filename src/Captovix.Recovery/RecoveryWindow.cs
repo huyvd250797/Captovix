@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Velopack.Locators;
 
 namespace Captovix;
@@ -25,6 +26,19 @@ internal sealed class RecoveryWindow : Form
         _content = content;
         Text = "Trung tâm khôi phục Captovix";
         StartPosition = FormStartPosition.CenterScreen;
+        AutoScaleMode = AutoScaleMode.Dpi;
+        FormBorderStyle = FormBorderStyle.None;
+        DoubleBuffered = true;
+        Padding = new Padding(1);
+        var settings = AppearanceSettings.Load(RecoveryProgram.DataRoot, out _);
+        var palette = AppearancePalette.For(AppearanceSettings.UseDark(settings.Mode, AppearancePalette.SystemLight()));
+        Color Ink(string color) => ColorTranslator.FromHtml(color);
+        BackColor = Ink(palette.PopupLine);
+        ForeColor = Ink(palette.Text);
+        var chrome = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Ink(palette.AppBackground) };
+        chrome.RowStyles.Add(new(SizeType.Absolute, 36));
+        chrome.RowStyles.Add(new(SizeType.Percent, 100));
+        Controls.Add(chrome);
         MinimumSize = new(660, 380);
         Size = new(740, 445);
         Font = new Font("Segoe UI", 10);
@@ -37,17 +51,49 @@ internal sealed class RecoveryWindow : Form
         layout.RowStyles.Add(new(SizeType.Absolute, 54));
         layout.RowStyles.Add(new(SizeType.Percent, 100));
         layout.RowStyles.Add(new(SizeType.Absolute, 46));
-        Controls.Add(layout);
+        var titleBar = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty, BackColor = Ink(palette.CaptionSurface) };
+        var titleIcon = new PictureBox { Image = Icon?.ToBitmap(), SizeMode = PictureBoxSizeMode.Zoom, Width = 20, Dock = DockStyle.Left, Margin = Padding.Empty };
+        var title = new Label { Text = Text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(8,0,0,0) };
+        var dismiss = new Button { Text = "×", Dock = DockStyle.Right, Width = 44, AccessibleName = "Đóng" };
+        titleBar.Padding = new Padding(10,0,0,0);
+        titleBar.Controls.Add(title);
+        titleBar.Controls.Add(titleIcon);
+        titleBar.Controls.Add(dismiss);
+        foreach (var item in new Control[] { titleBar, title, titleIcon })
+            item.MouseDown += (_, e) => { if (e.Button == MouseButtons.Left) { ReleaseCapture(); SendMessage(Handle, 0xA1, 2, 0); } };
+        dismiss.Click += (_, _) => Close();
+        chrome.Controls.Add(titleBar,0,0);
+        chrome.Controls.Add(layout,0,1);
+        layout.Margin = Padding.Empty;
+        _notes.BackColor = Ink(palette.Surface);
+        _notes.ForeColor = ForeColor;
+        _notes.TabStop = false;
         layout.Controls.Add(new Label { Dock = DockStyle.Fill, Text = startupFailure ? "Captovix chưa thể khởi động" : "Khôi phục khởi động", Font = new Font(Font.FontFamily, 18, FontStyle.Bold) });
         layout.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "Thử mở lại ứng dụng hoặc kiểm tra bản vá từ kênh cập nhật chính." });
         layout.Controls.Add(_status);
         layout.Controls.Add(_notes);
 
+        var footer = new Panel { Dock = DockStyle.Fill };
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
         var report = new Button { Text = "Mở báo cáo lỗi", AutoSize = true };
-        var close = new Button { Text = "Đóng", AutoSize = true };
-        actions.Controls.AddRange([_update, _retry, _start, report, close]);
-        layout.Controls.Add(actions);
+        var close = new Button { Text = "Đóng", AutoSize = true, Dock = DockStyle.Left };
+        actions.Controls.AddRange([_update, _retry, _start, report]);
+        footer.Controls.Add(actions);
+        footer.Controls.Add(close);
+        layout.Controls.Add(footer);
+        foreach (var button in new[] { dismiss, close, report, _start, _retry, _update })
+        {
+            bool primary = button == _retry || button == _update;
+            button.FlatStyle = FlatStyle.Flat;
+            button.UseVisualStyleBackColor = false;
+            button.FlatAppearance.BorderColor = Ink(palette.Line);
+            button.FlatAppearance.BorderSize = button == dismiss || primary ? 0 : 1;
+            button.FlatAppearance.MouseOverBackColor = Ink(primary ? settings.Accent : palette.Hover);
+            button.BackColor = Ink(primary ? settings.Accent : button == dismiss ? palette.CaptionSurface : palette.Soft);
+            button.ForeColor = primary ? (AppearanceSettings.WhiteText(settings.Accent) ? Color.White : Color.Black) : ForeColor;
+            if (button != dismiss) button.Padding = new Padding(8,4,8,4);
+        }
+        CancelButton = close;
         close.Click += (_, _) => Close();
         report.Click += (_, _) => OpenReport();
         _retry.Click += async (_, _) => await RunAsync(CheckAndRetryAsync);
@@ -60,6 +106,11 @@ internal sealed class RecoveryWindow : Form
         _notes.Text = startupFailure ? "Chọn Thử lại để kiểm tra bản mới. Chi tiết lần khởi động lỗi nằm trong báo cáo." :
             "Chọn Thử lại để kiểm tra bản mới và thử mở Captovix. Bản cài đặt giữ nguyên thư viện và ảnh gốc.";
     }
+
+    [DllImport("user32.dll")]
+    private static extern bool ReleaseCapture();
+    [DllImport("user32.dll", EntryPoint = "SendMessageW")]
+    private static extern nint SendMessage(nint window, uint message, nint wParam, nint lParam);
 
     private async Task RunAsync(Func<Task> action)
     {
@@ -207,6 +258,12 @@ internal sealed class RecoveryWindow : Form
             }
             if (ready.WaitOne(0))
             {
+                app.Refresh();
+                if(app.HasExited||app.MainWindowHandle==0||!IsWindowVisible(app.MainWindowHandle)||IsIconic(app.MainWindowHandle))
+                {
+                    await Task.Delay(200);
+                    continue;
+                }
                 _status.Text = "Đã khôi phục. Màn hình chính của Captovix đã mở.";
                 _notes.Text = "Boss có thể đóng Trung tâm khôi phục và tiếp tục sử dụng Captovix.";
                 _start.Visible = _update.Visible = false;
@@ -217,6 +274,13 @@ internal sealed class RecoveryWindow : Form
         _status.Text = "Chưa xác nhận Captovix mở được màn hình chính. Nếu ứng dụng đang treo, hãy đóng nó rồi thử lại.";
         Log(new TimeoutException("Không nhận tín hiệu màn hình chính sau 40 giây."));
     }
+
+    [DllImport("user32.dll")]
+    [return:MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsWindowVisible(nint window);
+    [DllImport("user32.dll")]
+    [return:MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsIconic(nint window);
 
     private static bool Acquire(Mutex gate)
     {

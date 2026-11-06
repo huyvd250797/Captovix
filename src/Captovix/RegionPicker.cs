@@ -21,12 +21,62 @@ public sealed class RegionPicker : Window
         public bool KeyboardSelecting;public Native.POINT KeyboardPoint;
         public void SavePreferences()=>new QuickCapturePreferences(MagnifierVisible,CrosshairVisible).Save();
         public bool MagnifierVisible=QuickCapturePreferences.Load().Magnifier;
-        private readonly Dictionary<nint,PixelRect> _frozenWindows=[];
-        public void Pointer(Native.POINT p){foreach(var w in Windows){w.UpdateMagnifier(p);w._crosshair.Update(w.PointFromScreen(new(p.X,p.Y)),CrosshairVisible&&!w.OverToolbar(p));}}
+        private readonly Task<(WindowInfo Window, PixelRect Bounds)[]>? _frozenWindows;
+        private Native.POINT _pointer;
+        private bool _drawQueued;
+        private bool _framePending;
+        private readonly long _openedAt=System.Diagnostics.Stopwatch.GetTimestamp();
+        private bool _firstFrame=true;
+        private long? _dragFrameAt,_modalFrameAt;
+        public void Pointer(Native.POINT p){_pointer=p;QueueFrame();}
+        private void QueueFrame(bool draw=false)
+        {
+            _drawQueued |= draw;
+            if (_disposed || _framePending) return;
+            _framePending = true;
+            CompositionTarget.Rendering += RenderFrame;
+        }
+
+        private void RenderFrame(object? sender, EventArgs e)
+        {
+            CompositionTarget.Rendering -= RenderFrame;
+            _framePending = false;
+            if (_disposed) return;
+            if (_firstFrame)
+            {
+                _firstFrame=false;
+                PerformanceTimings.Record("capture.overlay.first-frame",System.Diagnostics.Stopwatch.GetElapsedTime(_openedAt).TotalMilliseconds);
+            }
+            bool draw = _drawQueued;
+            _drawQueued = false;
+            var p = _pointer;
+            if(_dragFrameAt is {} dragAt){
+                PerformanceTimings.Record("capture.drag.frame",System.Diagnostics.Stopwatch.GetElapsedTime(dragAt).TotalMilliseconds);
+                _dragFrameAt=null;
+            }
+            if(_modalFrameAt is {} modalAt){
+                PerformanceTimings.Record("capture.element.hover-frame",Environment.TickCount64-modalAt);
+                _modalFrameAt=null;
+            }
+            foreach (var w in Windows)
+            {
+                if (draw) w.Draw();
+                w.UpdateMagnifier(p);
+                w._crosshair.Update(w.PointFromScreen(new(p.X,p.Y)), CrosshairVisible&&!w.OverToolbar(p));
+            }
+        }
+
+        private static (WindowInfo Window, PixelRect Bounds)[] ReadWindows()
+        {
+            var result = new List<(WindowInfo, PixelRect)>();
+            foreach (var window in Native.Windows(true))
+                if (Native.GetWindowRect(window.Handle, out var rect)) result.Add((window, rect.Pixels));
+            return result.ToArray();
+        }
         public readonly TaskCompletionSource<PixelRect?> Done=new(TaskCreationOptions.RunContinuationsAsynchronously);
         public readonly ElementSuggestion Suggestion=new();
         private readonly ElementProbeClient _probe=new();
-        private ElementCandidate[] _hierarchy=[];private long _cacheUntil;private int _queryX=int.MinValue,_queryY=int.MinValue;private long _revision;private CancellationTokenSource? _pendingProbe;private int _requestX,_requestY;
+        private ElementCandidate[] _hierarchy=[];private long _cacheUntil;private int _queryX=int.MinValue,_queryY=int.MinValue;private long _revision;private CancellationTokenSource? _pendingProbe;
         private readonly CancellationTokenSource _cancel=new();
         private readonly DispatcherTimer _timer=new(){Interval=TimeSpan.FromMilliseconds(40)};
         public PixelRect Bounds {get;}
@@ -40,15 +90,15 @@ public sealed class RegionPicker : Window
         private bool _querying,_disposed;
         private int _x=int.MinValue,_y=int.MinValue;
         private long _stableSince,_lastQuery,_lastWindows;
-        private List<WindowInfo> _windows=[];
+        private (WindowInfo Window, PixelRect Bounds)[] _windows=[];
         private nint _target,_lockedTarget;
         private PixelRect _targetBounds,_lockedBounds;
         private string _status="Kéo chọn vùng · Esc hủy";
         public string Status=>Locked?$"Đã chọn · {Current.Width} × {Current.Height} px · {(RequireEnter?"Enter chụp":"Thả chuột chụp")}":Suggestion.Current is {} c?$"{c.Label.Split('·')[0].Trim()} · {c.Bounds.Width} × {c.Bounds.Height} · {Suggestion.Index+1}/{Suggestion.Candidates.Length}":_status;
         public Session(IReadOnlyList<DisplayInfo> displays,bool smart,FrozenDesktop? frozen):this(displays,smart,frozen,true){}
-        public Session(IReadOnlyList<DisplayInfo> displays,bool smart,FrozenDesktop? frozen,bool requireEnter){RequireEnter=requireEnter;Displays=displays;Frozen=frozen;Bounds=frozen?.Frame.Bounds??new PixelRect(displays.Min(d=>d.Bounds.X),displays.Min(d=>d.Bounds.Y),displays.Max(d=>d.Bounds.Right)-displays.Min(d=>d.Bounds.X),displays.Max(d=>d.Bounds.Bottom)-displays.Min(d=>d.Bounds.Y));Smart=smart;_status=smart?"Rê chọn khối · Kéo chọn vùng":"Kéo chọn vùng · Esc hủy";if(frozen!=null){_windows=Native.Windows(true);foreach(var w in _windows)if(Native.GetWindowRect(w.Handle,out var bounds))_frozenWindows[w.Handle]=bounds.Pixels;}_timer.Tick+=async(_,_)=>await Poll();}
+        public Session(IReadOnlyList<DisplayInfo> displays,bool smart,FrozenDesktop? frozen,bool requireEnter){RequireEnter=requireEnter;Displays=displays;Frozen=frozen;Bounds=frozen?.Frame.Bounds??new PixelRect(displays.Min(d=>d.Bounds.X),displays.Min(d=>d.Bounds.Y),displays.Max(d=>d.Bounds.Right)-displays.Min(d=>d.Bounds.X),displays.Max(d=>d.Bounds.Bottom)-displays.Min(d=>d.Bounds.Y));Smart=smart;_status=smart?"Rê chọn khối · Kéo chọn vùng":"Kéo chọn vùng · Esc hủy";if(frozen!=null)_frozenWindows=Task.Run(ReadWindows);_timer.Tick+=async(_,_)=>await Poll();}
         public void StartPolling()=>_timer.Start();
-        public void Draw(){foreach(var w in Windows)w.Draw();}
+        public void Draw()=>QueueFrame(true);
         public void Reset(){_pendingProbe?.Cancel();_revision++;_hierarchy=[];Locked=false;_lockedTarget=0;Current=default;Suggestion.Clear();_x=int.MinValue;Draw();}
         public void ToggleSmart(){Smart=!Smart;Reset();_status=Smart?"Rê chuột chọn khối · Kéo chọn vùng":"Kéo chọn vùng · Esc hủy";}
         public void Cycle(int wheel){if(Locked||Dragging||!Smart)return;Suggestion.Cycle(wheel);Current=Suggestion.Current?.Bounds??default;Draw();}
@@ -59,7 +109,20 @@ public sealed class RegionPicker : Window
             if(Windows.Any(w=>w.OverToolbar(p)))return;
             long now=Environment.TickCount64;
             if(Math.Abs((long)p.X-_x)>3||Math.Abs((long)p.Y-_y)>3){_x=p.X;_y=p.Y;_stableSince=now;}
-            if(_querying&&(Math.Abs((long)p.X-_requestX)>8||Math.Abs((long)p.Y-_requestY)>8))_pendingProbe?.Cancel();
+            // Let the single in-flight probe finish. Restarting its worker on
+            // every pointer movement delays the next stable hover.
+            var cachedWindow = _windows.FirstOrDefault(w=>ElementSelection.Contains(w.Bounds,p.X,p.Y));
+            if(cachedWindow.Window != null && cachedWindow.Window.Handle != _target)
+            {
+                _target=cachedWindow.Window.Handle;
+                _targetBounds=cachedWindow.Bounds;
+                _revision++;
+                _hierarchy=[];
+                Suggestion.Clear();
+                Current=_targetBounds;
+                Suggestion.Offer([new(Current,"Cửa sổ",true)],p.X,p.Y,16);
+                Draw();
+            }
             // Reuse the known hierarchy immediately while the pointer stays in its window.
             if(_target!=0&&ElementSelection.Contains(_targetBounds,p.X,p.Y)&&Suggestion.Candidates.Length>0){
                 var cached=(_hierarchy.Length>0?_hierarchy:Suggestion.Candidates).Where(c=>ElementSelection.Contains(c.Bounds,p.X,p.Y)).ToArray();
@@ -71,19 +134,23 @@ public sealed class RegionPicker : Window
             _lastQuery=now;
             _querying=true;
             try{
-                if(Frozen==null&&now-_lastWindows>300){_windows=Native.Windows(true);_lastWindows=now;}
-                var target=_windows.FirstOrDefault(w=>Frozen!=null?_frozenWindows.TryGetValue(w.Handle,out var stored)&&ElementSelection.Contains(stored,p.X,p.Y):Native.GetWindowRect(w.Handle,out var r)&&ElementSelection.Contains(r.Pixels,p.X,p.Y));
+                if (_frozenWindows != null) _windows = await _frozenWindows;
+                else if(now-_lastWindows>300){_windows=await Task.Run(ReadWindows,_cancel.Token);_lastWindows=Environment.TickCount64;}
+                if (_disposed || Locked || Dragging || !Smart || !Native.GetCursorPos(out var latest) ||
+                    Math.Abs(latest.X-p.X)>8 || Math.Abs(latest.Y-p.Y)>8 || Windows.Any(w=>w.OverToolbar(latest))) return;
+                var entry=_windows.FirstOrDefault(w=>ElementSelection.Contains(w.Bounds,p.X,p.Y));
+                var target=entry.Window;
                 if(target==null){Suggestion.Clear();Current=default;_status="Không có khối · Kéo chọn vùng";Draw();return;}
                 if(!Native.GetWindowRect(target.Handle,out var bounds))return;
-                if(Frozen!=null&&(!_frozenWindows.TryGetValue(target.Handle,out var storedBounds)||bounds.Pixels!=storedBounds)){_status="Khối đã thay đổi · Kéo chọn trên ảnh đã giữ";Suggestion.Clear();Current=default;Draw();return;}
+                if(Frozen!=null&&bounds.Pixels!=entry.Bounds){_status="Khối đã thay đổi · Kéo chọn trên ảnh đã giữ";Suggestion.Clear();Current=default;Draw();return;}
                 if(_target!=target.Handle||_targetBounds!=bounds.Pixels){Suggestion.Clear();_hierarchy=[];_revision++;_target=target.Handle;_targetBounds=bounds.Pixels;Current=bounds.Pixels;Suggestion.Offer([new(Current,"Cửa sổ",true)],p.X,p.Y,16);Draw();}
-                var revision=_revision;_requestX=p.X;_requestY=p.Y;using var pending=CancellationTokenSource.CreateLinkedTokenSource(_cancel.Token);_pendingProbe=pending;var list=await _probe.QueryAsync(new((long)target.Handle,p.X,p.Y,target.ProcessId==Environment.ProcessId?-1:Environment.ProcessId),pending.Token);
-                if(_disposed||revision!=_revision||Locked||Dragging||!Smart||!Native.GetCursorPos(out var fresh)||Math.Abs(fresh.X-p.X)>8||Math.Abs(fresh.Y-p.Y)>8)return;
+                var revision=_revision;using var pending=CancellationTokenSource.CreateLinkedTokenSource(_cancel.Token);_pendingProbe=pending;var list=await _probe.QueryAsync(new((long)target.Handle,p.X,p.Y,target.ProcessId==Environment.ProcessId?-1:Environment.ProcessId),pending.Token);
+                if(_disposed||revision!=_revision||Locked||Dragging||!Smart||!Native.GetCursorPos(out var fresh)||Math.Abs(fresh.X-p.X)>8||Math.Abs(fresh.Y-p.Y)>8||Windows.Any(w=>w.OverToolbar(fresh)))return;
                 if(!Native.GetWindowRect(target.Handle,out var check)||check.Pixels!=bounds.Pixels){Suggestion.Clear();Current=default;_x=int.MinValue;Draw();return;}
                 var normalized=ElementSelection.Normalize(list,p.X,p.Y,CaptureSelection.Clip(bounds.Pixels,Bounds));
                 _hierarchy=normalized;_queryX=p.X;_queryY=p.Y;_cacheUntil=Environment.TickCount64+700;
                 int tolerance=(int)Math.Round(16*(Displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,p.X,p.Y))?.DpiX??96)/96d);
-                if(Suggestion.Offer(normalized,p.X,p.Y,tolerance)){Current=Suggestion.Current?.Bounds??default;Draw();}
+                if(Suggestion.Offer(normalized,p.X,p.Y,tolerance)){Current=Suggestion.Current?.Bounds??default;if(PerformanceTimings.IsEnabled)_modalFrameAt=_stableSince;Draw();}
                 else if(!ElementSelection.Contains(Current,p.X,p.Y)){Current=default;Draw();}
             }catch(OperationCanceledException){}catch(Exception ex){if(!_disposed){App.Log(ex);_status="Kéo chọn vùng thủ công";}}
             finally{_pendingProbe=null;_querying=false;}
@@ -100,7 +167,7 @@ public sealed class RegionPicker : Window
         }
         public void Move(Native.POINT p,bool shift){
             if(!Dragging||_gesture==null)return;
-            Current=_gesture.Apply(p.X,p.Y,shift,Bounds);if(_gesture.Handle==CaptureHandle.New)_lockedTarget=0;Draw();
+            var next=_gesture.Apply(p.X,p.Y,shift,Bounds);if(_gesture.Handle==CaptureHandle.New)_lockedTarget=0;if(next!=Current){if(PerformanceTimings.IsEnabled)_dragFrameAt??=System.Diagnostics.Stopwatch.GetTimestamp();Current=next;Draw();}
         }
         public void End(){Dragging=false;Draw();}
         public void Finish(CaptureChoice choice=CaptureChoice.Photo)
@@ -113,7 +180,7 @@ public sealed class RegionPicker : Window
             Choice=choice;Close(Current);
         }
         public void Close(PixelRect? result){if(_disposed)return;Dispose();Done.TrySetResult(result);}
-        public void Dispose(){if(_disposed)return;_disposed=true;_timer.Stop();_cancel.Cancel();_probe.Dispose();foreach(var w in Windows){w._selection.BeginAnimation(Shape.StrokeDashOffsetProperty,null);w.Background=null;w.Content=null;w._canvas.Children.Clear();w.Close();}Windows.Clear();_cancel.Dispose();}
+        public void Dispose(){if(_disposed)return;_disposed=true;_timer.Stop();CompositionTarget.Rendering-=RenderFrame;_cancel.Cancel();_probe.Dispose();foreach(var w in Windows){w._selection.BeginAnimation(Shape.StrokeDashOffsetProperty,null);w.Background=null;w.Content=null;w._canvas.Children.Clear();w.Close();}Windows.Clear();_cancel.Dispose();}
     }
     private readonly Session _session;
     private readonly DisplayInfo _display;
@@ -135,6 +202,7 @@ public sealed class RegionPicker : Window
         Choice=CaptureChoice.Photo;using var session=new Session(displays,smart,frozen,requireEnter);
         foreach(var d in displays)session.Windows.Add(new(d,session,allowScroll,smart));
         foreach(var w in session.Windows)w.Show();
+        if(Native.GetCursorPos(out var pointer))session.Pointer(pointer);
         session.Draw();session.StartPolling();
         using var registration=cancellation.Register(()=>Application.Current.Dispatcher.BeginInvoke(()=>session.Close(null)));
         return await session.Done.Task;
@@ -145,7 +213,7 @@ public sealed class RegionPicker : Window
         WindowStyle=WindowStyle.None;ResizeMode=ResizeMode.NoResize;AllowsTransparency=true;Background=Brushes.Transparent;Topmost=true;ShowInTaskbar=false;Cursor=Cursors.Cross;
         if(session.Frozen!=null){Background=session.Frozen.Background(display.Bounds);RenderOptions.SetBitmapScalingMode(this,BitmapScalingMode.NearestNeighbor);_magnifier=new(session.Frozen){Visibility=Visibility.Collapsed};_canvas.Children.Add(_magnifier);Panel.SetZIndex(_magnifier,20);}
         Content=_canvas;_canvas.Children.Add(_shade);_canvas.Children.Add(_contrast);_canvas.Children.Add(_selection);_canvas.Children.Add(_crosshair);
-        _selection.StrokeDashArray=new DoubleCollection{4,3};_selection.BeginAnimation(Shape.StrokeDashOffsetProperty,new DoubleAnimation(0,-14,TimeSpan.FromSeconds(2.4)){RepeatBehavior=RepeatBehavior.Forever});
+        _selection.StrokeDashArray=new DoubleCollection{4,3};if(SystemParameters.ClientAreaAnimation)_selection.BeginAnimation(Shape.StrokeDashOffsetProperty,new DoubleAnimation(0,-14,TimeSpan.FromSeconds(2.4)){RepeatBehavior=RepeatBehavior.Forever});
         for(int i=0;i<8;i++){var handle=new Ellipse{Width=7,Height=7,Fill=Brushes.White,Stroke=Brushes.MediumPurple,StrokeThickness=1,IsHitTestVisible=false,Visibility=Visibility.Collapsed};_handles.Add(handle);_canvas.Children.Add(handle);}
         var actions=new WrapPanel{Orientation=Orientation.Horizontal};
         _toolbar=new Border{Background=new SolidColorBrush(Color.FromRgb(29,32,40)),BorderBrush=new SolidColorBrush(Color.FromRgb(87,78,110)),BorderThickness=new(1),CornerRadius=new(6),Padding=new(2),Child=actions,ToolTip="Kéo vùng / cạnh để chỉnh · Enter chụp · Esc hủy · M kính lúp · H tọa độ · Space đặt góc rồi phím mũi tên",ClipToBounds=true};Panel.SetZIndex(_toolbar,10);_canvas.Children.Add(_toolbar);
@@ -207,10 +275,10 @@ public sealed class RegionPicker : Window
         try{
             var s=_session;var r=s.Current.Intersect(_display.Bounds);var valid=CaptureSelection.Valid(s.Current);
             _contrast.Visibility=_selection.Visibility=r.IsEmpty?Visibility.Collapsed:Visibility.Visible;
-            foreach(var h in _handles)h.Visibility=Visibility.Collapsed;
+            if(s.Dragging||r.IsEmpty||!s.Locked||!valid)foreach(var h in _handles)h.Visibility=Visibility.Collapsed;
             if(r.IsEmpty)_shade.Reveal(null);else{
                 var a=PointFromScreen(new(r.X,r.Y));var b=PointFromScreen(new(r.Right,r.Bottom));_shade.Reveal(new Rect(a,b));Canvas.SetLeft(_selection,a.X);Canvas.SetTop(_selection,a.Y);_selection.Width=Math.Max(0,b.X-a.X);_selection.Height=Math.Max(0,b.Y-a.Y);Canvas.SetLeft(_contrast,a.X);Canvas.SetTop(_contrast,a.Y);_contrast.Width=_selection.Width;_contrast.Height=_selection.Height;
-                if(s.Locked&&valid){var c=s.Current;int[] xs=[c.X,c.X+c.Width/2,c.Right,c.Right,c.Right,c.X+c.Width/2,c.X,c.X];int[] ys=[c.Y,c.Y,c.Y,c.Y+c.Height/2,c.Bottom,c.Bottom,c.Bottom,c.Y+c.Height/2];for(int i=0;i<8;i++)if(ElementSelection.Contains(_display.Bounds,xs[i],ys[i])){var p=PointFromScreen(new(xs[i],ys[i]));Canvas.SetLeft(_handles[i],p.X-3.5);Canvas.SetTop(_handles[i],p.Y-3.5);_handles[i].Visibility=Visibility.Visible;}}
+                if(s.Locked&&valid&&!s.Dragging){var c=s.Current;int[] xs=[c.X,c.X+c.Width/2,c.Right,c.Right,c.Right,c.X+c.Width/2,c.X,c.X];int[] ys=[c.Y,c.Y,c.Y,c.Y+c.Height/2,c.Bottom,c.Bottom,c.Bottom,c.Y+c.Height/2];for(int i=0;i<8;i++)if(ElementSelection.Contains(_display.Bounds,xs[i],ys[i])){var p=PointFromScreen(new(xs[i],ys[i]));Canvas.SetLeft(_handles[i],p.X-3.5);Canvas.SetTop(_handles[i],p.Y-3.5);_handles[i].Visibility=Visibility.Visible;}else _handles[i].Visibility=Visibility.Collapsed;}
             }
             Native.GetCursorPos(out var cursor);var owner=valid?s.Displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,s.Current.X+s.Current.Width/2,s.Current.Y+s.Current.Height/2)):s.Displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,cursor.X,cursor.Y));owner??=s.Displays[0];
             _toolbar.Visibility=s.Dragging||owner!=_display?Visibility.Collapsed:Visibility.Visible;if(_toolbar.Visibility!=Visibility.Visible)return;

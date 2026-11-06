@@ -1,3 +1,37 @@
+# V1.50.0 — Stability & Release Quality
+
+- Xem trước màu trực tiếp. Bấm Lưu để giữ thiết lập. Hủy hoặc đóng Thiết lập trả về màu đã lưu.
+- Tách chế độ giao diện, màu nhấn, logo và hướng chuyển màu thành các nhóm có mẫu riêng.
+- Thanh tiêu đề dùng logo đang xem trước. Icon Windows và khay được tạo trực tiếp trong bộ nhớ. Shortcut ghim dùng tài nguyên riêng theo màu đã lưu.
+- Bỏ Báo cáo hiệu năng khỏi menu. Có thể bật đo theo phiên và ghi kết quả ra file cục bộ.
+- Trung tâm khôi phục chỉ báo thành công khi Editor hoàn tất khởi tạo, đã render và cửa sổ chính hiển thị.
+- Bổ sung quy trình nghiệm thu Windows và đối chiếu dữ liệu trước/sau cài đè, cập nhật và khôi phục.
+
+# V1.49.0 — Memory & Resource Efficiency
+
+- Lưu PNG trực tiếp và đối chiếu toàn bộ pixel theo từng dải dòng trước khi thay tệp đích. Ảnh chụp và ảnh PNG xuất giữ nguyên kích thước pixel. JPEG vẫn ở chất lượng 95.
+- Tái sử dụng bitmap nguồn khi xuất nguyên ảnh. Hạn chế bản sao khi crop, trộn lớp chú thích và chuẩn bị ảnh OCR. Giải phóng ảnh xem trước khi đóng OCR hoặc Mockup.
+- Giới hạn cache thumbnail, lớp ảnh và hiệu ứng. Undo/Redo dùng chung ngân sách, ưu tiên giữ các bước gần nhất.
+- Đồng bộ màu hình và màu nền logo với icon của cửa sổ đang chạy và cập nhật shortcut ghim do Captovix quản lý.
+- Có kịch bản ghi RAM lúc mở, trong tác vụ và sau khi đóng tác vụ. Mục tiêu giảm ít nhất 20% đỉnh RAM cần được xác nhận bằng A/B trên Windows.
+
+# V1.48.0 — Editor Responsiveness
+
+- Chuyển ảnh và Ctrl+S lưu ngoài luồng giao diện. Khi đổi ảnh liên tục, hủy lần đọc cũ và chỉ hiển thị tài liệu của lựa chọn mới nhất.
+- Xuất PNG/JPEG và sao chép video trên luồng nền. Ảnh xuất dùng bản chụp chỉnh sửa tại thời điểm bắt đầu, trong khi người dùng có thể cuộn, zoom hoặc kéo tiếp. Ghi ảnh và video qua tệp tạm rồi thay đích.
+- Dồn thao tác lăn zoom và kéo đối tượng theo khung hình. Xử lý bố cục chữ theo lượt nhập gần nhất, giữ thao tác kết thúc và Undo.
+- Đọc và giải mã thumbnail ở nền, đưa kết quả lên giao diện với ưu tiên thấp. Bỏ thumbnail cũ khi cache được dọn hoặc nguồn đã thay đổi.
+- Thêm lối mở báo cáo hiệu năng ở Trợ giúp. Giữ schema dự án, thư viện và KEY. Không cần chạy migration mới.
+
+# V1.47.0 — Capture, Editing & Recovery
+
+- Chuẩn bị ảnh màn hình ngoài luồng giao diện. Gom cập nhật khung kéo, đường tọa độ và kính lúp theo khung hình. Nhận diện cửa sổ chạy nền và loại kết quả đã cũ.
+- Copy một ảnh từ thư viện thêm dữ liệu PNG. Dán ở kích thước pixel gốc rồi chọn **Hợp nhất ảnh** để gộp vào nền. Một lần Ctrl+Z khôi phục lớp ảnh riêng.
+- Quét lại riêng nhãn ngắn hoặc bị bỏ sót bên trong nút. Khi có nội dung nhãn, Mockup tạo lớp thân nút và nhãn chữ riêng.
+- Trung tâm khôi phục dùng chung bảng màu Sáng/Tối/Theo hệ thống và font với Captovix, vẫn chạy bằng tệp thực thi độc lập.
+- Sửa nhấp nháy nền thư viện khi dùng Ctrl+C hoặc kéo ảnh bằng cách giữ nguyên trạng thái hiển thị danh sách.
+- Giữ nguyên định dạng dự án và dữ liệu hiện có. Không cần chạy migration mới.
+
 # V1.46.4 — Recovery Center & Startup Repair
 
 - Thêm **Captovix Recovery Center**, công cụ độc lập để thử mở lại Captovix và kiểm tra bản cập nhật khi ứng dụng gặp lỗi lúc khởi động.

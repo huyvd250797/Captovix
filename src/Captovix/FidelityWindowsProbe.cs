@@ -37,6 +37,16 @@ public static class FidelityWindowsProbe
             byte[] bytes=[17,29,89,0,9,47,81,1,39,77,121,67,101,29,199,128,12,31,67,255];var image=ImageTransfer.Bitmap(5,1,bytes);var doc=new EditorDocument{OriginalWidth=5,OriginalHeight=1};var output=EditorRenderer.Render(image,doc);
             var path=Path.Combine(folder,"alpha.png");ImageTransfer.Save(output,path);Require(ImageTransfer.Bgra(MediaStore.LoadImage(path)).SequenceEqual(bytes),"Transparent PNG pixels changed");
         });
+        Check("Multi-stripe PNG keeps final partial stripe and straight alpha",()=>{
+            const int width=1025,height=133;
+            var bytes=new byte[width*height*4];
+            new Random(1490).NextBytes(bytes);
+            var image=ImageTransfer.Bitmap(width,height,bytes);
+            var path=Path.Combine(folder,"stripe.png");
+            ImageTransfer.Save(image,path);
+            var decoded=MediaStore.LoadImage(path);
+            Require(decoded.PixelWidth==width&&decoded.PixelHeight==height&&ImageTransfer.Bgra(decoded).SequenceEqual(bytes),"PNG stripes changed pixels or dimensions");
+        });
         Check("Untouched pixels with a redaction overlay",()=>{
             var doc=new EditorDocument{OriginalWidth=17,OriginalHeight=11};doc.Annotations.Add(new(){Kind=AnnotationKind.Cover,X1=4,Y1=3,X2=10,Y2=8,Color="#123456"});var pixels=ImageTransfer.Bgra(EditorRenderer.Render(source,doc));
             foreach(var pos in new[]{0,(10*17+16)*4,(10*17)*4,16*4})Require(pixels.AsSpan(pos,4).SequenceEqual(originalBytes.AsSpan(pos,4)),"Unedited source corner was changed");int inside=(5*17+6)*4;Require(pixels[inside]==0x56&&pixels[inside+1]==0x34&&pixels[inside+2]==0x12&&pixels[inside+3]==255,"Solid cover not present in exported pixels");

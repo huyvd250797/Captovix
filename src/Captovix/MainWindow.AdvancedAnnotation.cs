@@ -9,7 +9,7 @@ public partial class MainWindow
 {
     private string? _inlineId;
     private bool _endingInline,_syncInline;
-    private bool _inlineRefreshQueued;
+    private DispatcherOperation? _inlineRefresh;
     private double _inlineWrapWidth;
     private string _inlineInitialText="";
     private void UpdateInlineValue(Annotation a,string value){if(a.Mockup!=null)EditorRenderer.SetMockupText(a,value,_inlineWrapWidth);else a.Text=value;}
@@ -50,6 +50,7 @@ public partial class MainWindow
         if(_endingInline||_inlineId==null)return;_endingInline=true;
         try{
             if(commit&&_imeComposing&&_activeComposition is {} composition)TextCompositionManager.CompleteComposition(composition);
+            _inlineRefresh?.Abort();_inlineRefresh=null;
             var id=_inlineId;var text=InlineText.Text;_inlineId=null;_imeComposing=false;_activeComposition=null;InlineText.Visibility=Visibility.Collapsed;Surface.InlineEditingId=null;
             if(_session is {} session){if(commit&&text!=_inlineInitialText&&session.Document.Annotations.FirstOrDefault(a=>a.Id==id) is {} target){UpdateInlineValue(target,text);if(target.Kind==AnnotationKind.Text&&string.IsNullOrWhiteSpace(text))session.Document.Annotations.Remove(target);else if(target.Mockup==null)EditorRenderer.FitText(target,Surface.EditingBounds,true);Surface.FitSelectionCanvas();session.Commit();}else session.Cancel();}
             if(Surface.Tool is EditorTool.Text or EditorTool.Callout){Surface.Cursor=Cursors.Cross;SetStatus("Sẵn sàng · Giữ công cụ "+(Surface.Tool==EditorTool.Callout?"Callout":"Chữ")+" để vẽ tiếp.");}Surface.InvalidateVisual();SyncProperties();SavedLabel.Text=_session?.Dirty==true?"Đang lưu…":"✓ Đã lưu";if(_session?.Dirty==true){_saveTimer.Stop();_saveTimer.Start();}
@@ -57,10 +58,21 @@ public partial class MainWindow
     }
     private void InlineText_Changed(object sender,TextChangedEventArgs e)
     {
-        if(_syncInline||_endingInline||_imeComposing||_inlineId==null||_session?.Document.Annotations.FirstOrDefault(a=>a.Id==_inlineId) is not {} a)return;
-        _session.Begin();UpdateInlineValue(a,InlineText.Text);SavedLabel.Text="Đang nhập…";
-        if(_inlineRefreshQueued)return;_inlineRefreshQueued=true;
-        Dispatcher.BeginInvoke(()=>{_inlineRefreshQueued=false;if(_inlineId==null||_imeComposing||_endingInline||_session?.Document.Annotations.FirstOrDefault(x=>x.Id==_inlineId) is not {} target)return;UpdateInlineValue(target,InlineText.Text);double width=target.Width,height=target.Height;if(target.Mockup==null)EditorRenderer.FitText(target,Surface.EditingBounds,true);if(target.Width!=width||target.Height!=height)Surface.FitSelectionCanvas();Surface.Refresh();},DispatcherPriority.Render);
+        if(_syncInline||_endingInline||_imeComposing||_inlineId is not {} id||_session is not {} session)return;
+        SavedLabel.Text="Đang nhập…";
+        if(_inlineRefresh!=null)return;
+        _inlineRefresh=Dispatcher.BeginInvoke(()=>
+        {
+            _inlineRefresh=null;
+            if(_inlineId!=id||!ReferenceEquals(_session,session)||_imeComposing||_endingInline||
+                session.Document.Annotations.FirstOrDefault(a=>a.Id==id) is not {} target)return;
+            session.Begin();
+            double width=target.Width,height=target.Height;
+            UpdateInlineValue(target,InlineText.Text);
+            if(target.Mockup==null)EditorRenderer.FitText(target,Surface.EditingBounds,true);
+            if(target.Width!=width||target.Height!=height)Surface.FitSelectionCanvas();
+            Surface.Refresh();
+        },DispatcherPriority.Background);
     }
     private void InlineText_KeyDown(object sender,KeyEventArgs e)
     {

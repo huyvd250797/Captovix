@@ -1,4 +1,3 @@
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,14 +12,36 @@ public partial class MainWindow
     {
         SourceInitialized+=(_,_)=>{
             WindowTheme.Apply(this);
-            var file=Path.Combine(AppContext.BaseDirectory,"Assets","Captovix-brand-v117.ico");
-            var hwnd=new WindowInteropHelper(this).Handle;
-            _brandSmall=BrandLoadImage(0,file,1,16,16,0x10);
-            _brandLarge=BrandLoadImage(0,file,1,32,32,0x10);
-            if(_brandSmall!=0)BrandSendMessage(hwnd,0x80,0,_brandSmall);
-            if(_brandLarge!=0)BrandSendMessage(hwnd,0x80,1,_brandLarge);
+            AppearanceManager.Applied+=RefreshTaskbarBrand;
+            RefreshTaskbarBrand();
         };
-        Closed+=(_,_)=>{if(_brandSmall!=0)BrandDestroyIcon(_brandSmall);if(_brandLarge!=0)BrandDestroyIcon(_brandLarge);};
+        Loaded+=(_,_)=>Dispatcher.BeginInvoke(RefreshTaskbarBrand,System.Windows.Threading.DispatcherPriority.Loaded);
+        DpiChanged+=(_,_)=>Dispatcher.BeginInvoke(RefreshTaskbarBrand,System.Windows.Threading.DispatcherPriority.Loaded);
+        Closed+=(_,_)=>{
+            AppearanceManager.Applied-=RefreshTaskbarBrand;
+            if(_brandSmall!=0)BrandDestroyIcon(_brandSmall);
+            if(_brandLarge!=0)BrandDestroyIcon(_brandLarge);
+        };
+    }
+    private void RefreshTaskbarBrand()
+    {
+        try{
+            if(Application.Current.Resources["BrandMark"] is not BitmapSource bitmap)return;
+            var hwnd=new WindowInteropHelper(this).Handle;
+            if(hwnd==0)return;
+            var dpi=System.Windows.Media.VisualTreeHelper.GetDpi(this);
+            SetIcon(ref _brandSmall,0,16);
+            SetIcon(ref _brandLarge,1,32);
+
+            void SetIcon(ref nint owned,int slot,int size)
+            {
+                var next=ShellBrandIcon.Create(bitmap,(int)Math.Round(size*dpi.DpiScaleX),(int)Math.Round(size*dpi.DpiScaleY));
+                if(next==0)return;
+                BrandSendMessage(hwnd,0x80,slot,next); // WM_SETICON
+                if(owned!=0)BrandDestroyIcon(owned);
+                owned=next;
+            }
+        }catch(Exception ex){App.Log(ex);}
     }
     private void About_Click(object sender,RoutedEventArgs e)
     {
@@ -33,7 +54,6 @@ public partial class MainWindow
         panel.Children.Add(new TextBlock{Text="Ý tưởng, định hướng sản phẩm và thiết kế trải nghiệm: Võ Đức Huy (HuyVo).\n© 2026 HuyVo. All rights reserved.",TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,16),FontSize=12});
         var close=new Button{Content="Đóng",HorizontalAlignment=HorizontalAlignment.Right,IsCancel=true};close.Click+=(_,_)=>dialog.Close();panel.Children.Add(close);dialog.ShowDialog();
     }
-    [DllImport("user32.dll",EntryPoint="LoadImageW",CharSet=CharSet.Unicode)]private static extern nint BrandLoadImage(nint instance,string file,uint type,int width,int height,uint flags);
     [DllImport("user32.dll",EntryPoint="SendMessageW")]private static extern nint BrandSendMessage(nint hwnd,uint message,nint w,nint l);
     [DllImport("user32.dll",EntryPoint="DestroyIcon")]private static extern bool BrandDestroyIcon(nint icon);
 }

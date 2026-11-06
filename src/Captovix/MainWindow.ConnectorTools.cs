@@ -21,7 +21,8 @@ public partial class MainWindow
             MenuItem Add(ItemsControl owner,string title,Action action,bool enabled=true){var item=new MenuItem{Header=title,IsEnabled=enabled};item.Click+=(_,_)=>action();owner.Items.Add(item);return item;}
             Add(menu,"Sửa Mockup chữ / nút…",()=>EditMockup_Click(this,new()),Surface.Selected?.Mockup!=null&&active);
             Add(menu,"Hoàn tác",()=>Undo_Click(this,new()),_session.CanUndo);Add(menu,"Làm lại",()=>Redo_Click(this,new()),_session.CanRedo);menu.Items.Add(new Separator());
-            Add(menu,"Copy đối tượng · Ctrl+C",CopyObjects,Surface.SelectedIds.Count>0);Add(menu,"Dán đối tượng · Ctrl+V",PasteObjects,HasObjectClipboard());
+            Add(menu,"Copy đối tượng · Ctrl+C",CopyObjects,Surface.SelectedIds.Count>0);Add(menu,"Dán · Ctrl+V",PasteObjects);
+            Add(menu,"Hợp nhất ảnh",async ()=>await FlattenSelectedImageAsync(),active&&SelectedImage()!=null);
             Add(menu,"Nhân bản · Ctrl+D",()=>ObjectCommand("Duplicate"),active);
             Add(menu,"Nhóm · Ctrl+G",()=>ObjectCommand("Group"),active&&units.Length>1);
             Add(menu,"Bỏ nhóm · Ctrl+Shift+G",()=>ObjectCommand("Ungroup"),active&&units.Any(u=>u.Any(a=>a.GroupId!=null)));

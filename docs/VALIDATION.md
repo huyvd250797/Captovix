@@ -1,6 +1,3 @@
-# V1.46.4 — Kiểm tra Trung tâm khôi phục
+# V1.50.0 — Kiểm tra bản phát hành
 
-- Biên dịch bản chính và chương trình khôi phục độc lập cho Windows x64.
-- StartupResourceChecks kiểm luồng khởi động và điều kiện công nhận phục hồi. UpdateChecks kiểm đọc gói mới, tải và từ chối gói sai hash. ReleaseQualityChecks kiểm sao lưu và nhật ký.
-- Verify-Packages.py đối chiếu nội dung bộ cài, gói cập nhật, bộ source và tệp thực thi của Recovery Center.
-- Cài mới, cài đè, xác nhận màn hình Recovery Center và áp dụng cập nhật thực tế trên Windows cần nghiệm thu theo WINDOWS-ACCEPTANCE-V1464.md.
+Bản build Windows x64 được tạo từ máy Linux. Các bộ kiểm tra logic và kiểm gói có thể chạy trên máy build. Kết quả WPF tương tác, cài đặt thực tế, phiên dài, DPI và số đo độ trễ cần ghi riêng theo WINDOWS-ACCEPTANCE-V1500.md.

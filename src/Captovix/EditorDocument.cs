@@ -198,19 +198,26 @@ public sealed class EditorSession
     public Action<HistorySnapshot,EditorDocument>? BeforeCommitSnapshot {get;set;}
     public event Action? Changed;
     public EditorSession(EditorDocument document,int historyCharBudget=8_000_000){Document=document;_historyCharBudget=Math.Max(1024,historyCharBudget);}
-    private void TrimHistory(List<HistorySnapshot> entries){while(entries.Count>1&&(entries.Count>100||HistorySnapshot.RetainedBytes(_undo.Concat(_redo))>2L*_historyCharBudget))entries.RemoveAt(0);}
+    private void TrimHistory(List<HistorySnapshot> added, List<HistorySnapshot> other)
+    {
+        while(_undo.Count+_redo.Count>100||HistorySnapshot.RetainedBytes(_undo.Concat(_redo))>2L*_historyCharBudget){
+            // Evict distant history first while retaining the adjacent steps.
+            var oldest=added.Count>1||other.Count==0?added:other;
+            oldest.RemoveAt(0);
+        }
+    }
     public void Begin(){CheckAuthorization();if(_before!=null)return;ConnectorStudio.Resolve(Document);_before=HistorySnapshot.Capture(Document);}
     public void Commit()
     {
         if(_before==null)return;ConnectorStudio.Resolve(Document);var before=_before;
         if(before.Same(HistorySnapshot.Capture(Document))){_before=null;return;}
         try{BeforeCommitSnapshot?.Invoke(before,Document);BeforeCommit?.Invoke(before.ExpandJson(),Document);}catch{Document=before.Restore();_before=null;throw;}_before=null;
-        _undo.Add(before);TrimHistory(_undo);_redo.Clear();Dirty=true;Revision++;Changed?.Invoke();
+        _redo.Clear();_undo.Add(before);TrimHistory(_undo,_redo);Dirty=true;Revision++;Changed?.Invoke();
     }
     public void Cancel(){if(_before==null)return;Document=_before.Restore();_before=null;}
     public void Change(Action<EditorDocument> change){Begin();try{change(Document);Commit();}catch{Cancel();throw;}}
-    public void Undo(){CheckAuthorization();Commit();if(!CanUndo)return;_redo.Add(HistorySnapshot.Capture(Document));TrimHistory(_redo);Document=_undo[^1].Restore();_undo.RemoveAt(_undo.Count-1);Dirty=true;Revision++;Changed?.Invoke();}
-    public void Redo(){CheckAuthorization();Commit();if(!CanRedo)return;_undo.Add(HistorySnapshot.Capture(Document));TrimHistory(_undo);Document=_redo[^1].Restore();_redo.RemoveAt(_redo.Count-1);Dirty=true;Revision++;Changed?.Invoke();}
+    public void Undo(){CheckAuthorization();Commit();if(!CanUndo)return;var next=_undo[^1].Restore();_redo.Add(HistorySnapshot.Capture(Document));_undo.RemoveAt(_undo.Count-1);Document=next;TrimHistory(_redo,_undo);Dirty=true;Revision++;Changed?.Invoke();}
+    public void Redo(){CheckAuthorization();Commit();if(!CanRedo)return;var next=_redo[^1].Restore();_undo.Add(HistorySnapshot.Capture(Document));_redo.RemoveAt(_redo.Count-1);Document=next;TrimHistory(_undo,_redo);Dirty=true;Revision++;Changed?.Invoke();}
     public void RequireSave(){Dirty=true;Revision++;}
     public void MarkSaved()=>Dirty=false;
     public bool MarkSaved(long revision){if(Revision!=revision)return false;Dirty=false;return true;}

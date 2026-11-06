@@ -59,4 +59,18 @@ try{
 
 var snapshotDoc=New();snapshotDoc.Annotations.Add(new(){Kind=AnnotationKind.Callout,Text="Tiếng Việt",Points=[new(1,2)],Shadow=new(){Enabled=true}});var snapshot=snapshotDoc.Snapshot();Check(snapshot.Serialize()==snapshotDoc.Serialize(),"Fast save snapshot preserves serialized document");snapshot.Annotations[0].Text="new";snapshot.Annotations[0].Points.Clear();snapshot.Appearance.BackgroundColor="#FFFFFF";snapshot.Annotations[0].Shadow.Enabled=false;Check(snapshotDoc.Annotations[0].Text=="Tiếng Việt"&&snapshotDoc.Annotations[0].Points.Count==1&&snapshotDoc.Annotations[0].Shadow.Enabled,"Background snapshot isolates mutable objects");
 var saving=new EditorSession(New());saving.Change(d=>d.Annotations.Add(new(){Text="first"}));long ticket=saving.Revision;saving.Change(d=>d.Annotations[0].Text="second");Check(!saving.MarkSaved(ticket)&&saving.Dirty,"Stale save completion cannot mark newer edits saved");Check(saving.MarkSaved(saving.Revision)&&!saving.Dirty,"Matching save ticket clears dirty flag");
+
+var hugePng=new string('A',2048);
+var huge=new EditorDocument{OriginalWidth=128,OriginalHeight=128,PixelBasePng=new string('A',2048)};
+var bounded=new EditorSession(huge,historyCharBudget:1024);
+bounded.Begin();
+bounded.Document.PixelBasePng=null;
+bounded.Cancel();
+Check(bounded.Document.PixelBasePng==hugePng,"Active transaction can roll back an oversized snapshot");
+bounded.Change(d=>d.PixelBasePng=null);
+Check(!bounded.CanUndo&&bounded.Document.PixelBasePng==null,"An oversized history entry never exceeds the combined budget");
+var boundedRedo=new EditorSession(new(){OriginalWidth=128,OriginalHeight=128},historyCharBudget:1024);
+boundedRedo.Change(d=>d.PixelBasePng=new string('A',2048));
+boundedRedo.Undo();
+Check(boundedRedo.Document.PixelBasePng==null&&!boundedRedo.CanRedo,"Undo still restores an eligible snapshot while dropping oversized redo");
 Console.WriteLine($"{count} editor/history/migration checks passed.");

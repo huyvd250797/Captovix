@@ -16,8 +16,8 @@ internal static class OcrService
         try{
             // Only the rendered, visible snapshot is supplied. Never read hidden original pixels.
             await Task.Run(()=>{
-                cancellation.ThrowIfCancellationRequested();var crop=new CroppedBitmap(source,new(region.X,region.Y,region.Width,region.Height));
-                var rgb=ImageFidelity.WhiteRgb(ImageTransfer.Bgra(crop));var opaque=BitmapSource.Create(region.Width,region.Height,96,96,PixelFormats.Bgr24,null,rgb,checked(region.Width*3));opaque.Freeze();
+                deadline.Token.ThrowIfCancellationRequested();var crop=new CroppedBitmap(source,new(region.X,region.Y,region.Width,region.Height));
+                var rgb=ImageTransfer.WhiteBgr(crop);var opaque=BitmapSource.Create(region.Width,region.Height,96,96,PixelFormats.Bgr24,null,rgb,checked(region.Width*3));opaque.Freeze();
                 ImageTransfer.Save(opaque,Path.Combine(folder,"input.png"));
             },deadline.Token);
             deadline.Token.ThrowIfCancellationRequested();

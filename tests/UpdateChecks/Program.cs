@@ -157,7 +157,7 @@ try
         var backend1410=new VelopackUpdateBackend(new(){SourceKind="Https",SourceUrl="https://example.com/feed"},installed1410,"1.41.0",source);
         var update1410=await backend1410.CheckAsync();Check(update1410?.Version==actualVersion.ToString()&&actualVersion>SemanticVersion.Parse("1.41.0"),"Installed1.41.0 discovers actual startup recovery patch");
         await backend1410.DownloadAsync(update1410!,_=>{},default);Check(File.Exists(Path.Combine(from1410,Path.GetFileName(package))),"Installed1.41.0 downloads and verifies full recovery package");
-        foreach (var previousVersion in new[] { "1.46.1", "1.46.2", "1.46.3" }.Select(SemanticVersion.Parse).Where(v => actualVersion > v))
+        foreach (var previousVersion in new[] { "1.46.1", "1.46.2", "1.46.3", "1.46.4", "1.47.0", "1.48.0", "1.49.0" }.Select(SemanticVersion.Parse).Where(v => actualVersion > v))
         {
             var previousPackages = Directory.CreateDirectory(Path.Combine(root, "patch-from-" + previousVersion)).FullName;
             var previousLocator = new TestVelopackLocator(VersionInfo.AppId, previousVersion.ToString(), previousPackages);

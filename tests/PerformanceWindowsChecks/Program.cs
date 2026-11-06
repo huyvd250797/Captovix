@@ -10,6 +10,15 @@ internal static class Program
  [STAThread]static int Main(){try{
  var samples=new List<object>();
  StaImageWorker.Run(()=>{if(System.Threading.Thread.CurrentThread.GetApartmentState()!=System.Threading.ApartmentState.STA)throw new Exception("Offscreen worker must be STA");var drawing=new DrawingVisual();using(var dc=drawing.RenderOpen())dc.DrawRectangle(Brushes.White,null,new Rect(0,0,16,16));var raster=new RenderTargetBitmap(16,16,96,96,PixelFormats.Pbgra32);raster.Render(drawing);}).GetAwaiter().GetResult();Check(true,"Offscreen WPF render completes on background STA without waiting for UI");
+ using(var entered=new System.Threading.ManualResetEventSlim())
+ using(var release=new System.Threading.ManualResetEventSlim()){
+  var enqueueExport=typeof(StaImageWorker).GetMethod("RunExport",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic)!;
+  var exporting=(Task)enqueueExport.Invoke(null,new object[]{(Action)(()=>{entered.Set();release.Wait(TimeSpan.FromSeconds(10));})})!;
+  try{
+   Check(entered.Wait(TimeSpan.FromSeconds(4)),"Export work has a dedicated STA lane");
+   Check(StaImageWorker.Run(()=>{}).Wait(TimeSpan.FromSeconds(4)),"Save lane can progress while export is occupied");
+  }finally{release.Set();exporting.GetAwaiter().GetResult();}
+ }
  var image=ImageTransfer.Bitmap(800,600,Enumerable.Repeat((byte)255,800*600*4).ToArray());
  var surface=new EditorSurface();var doc=new EditorDocument{OriginalWidth=800,OriginalHeight=600};var session=new EditorSession(doc);surface.Load(image,session);surface.Tool=EditorTool.Callout;
  surface.PointerDown(new(40,300));surface.PointerMove(new(180,200));var a=surface.Selected!;Check(a.TailX==40&&a.TailY==300&&a.Width==122&&a.Height==82,"Callout starts at fixed tail and resizes during creation");surface.PointerMove(new(230,160));Check(a.Width==172&&a.Height==122&&a.TailX==40&&a.TailY==300,"Diagonal drag resizes both axes without moving tail");surface.PointerUp(new(230,160));Check(a.Width==172&&a.Height==122,"Release keeps empty drawn dimensions");Check(surface.Tool==EditorTool.Callout,"Drawing retains callout tool");

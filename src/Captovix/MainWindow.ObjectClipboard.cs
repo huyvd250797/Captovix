@@ -16,10 +16,15 @@ public partial class MainWindow
             _lastObjectClipboard=null;_pasteCount=0;SetStatus($"Đã copy {Surface.SelectedIds.Count} đối tượng · Ctrl+V để dán · Ctrl+Shift+C copy ảnh đã chỉnh.");
         }catch(Exception e){SetStatus("Chưa copy được đối tượng: "+e.Message);}
     }
-    private void PasteObjects()
+    private async void PasteObjects()
     {if(!RequireLicense())return;
-        if(_session==null||Surface.Tool==EditorTool.Crop||_busy)return;
+        if(_session is not {} target||Surface.Tool==EditorTool.Crop||_busy)return;
         try{
+            var pendingCopy=_libraryCopy;
+            if(!pendingCopy.IsCompleted)
+            {
+                if(!await pendingCopy||!ReferenceEquals(target,_session)||Surface.Tool==EditorTool.Crop||_busy)return;
+            }
             var raw=Clipboard.GetDataObject()?.GetData(AnnotationClipboard.Format,false);string? json=raw switch{MemoryStream stream when stream.Length<=AnnotationClipboard.MaxChars*4L=>Encoding.UTF8.GetString(stream.ToArray()),byte[] bytes when bytes.Length<=AnnotationClipboard.MaxChars*4L=>Encoding.UTF8.GetString(bytes),string value when value.Length<=AnnotationClipboard.MaxChars=>value,_=>null};
             if(json==null){PastePixelImage();return;}
             EndInlineText(true);Surface.CancelInteraction();_session.Commit();if(_lastObjectClipboard!=json||_lastPasteItem!=_activeItem?.Id)_pasteCount=0;
