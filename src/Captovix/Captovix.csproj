@@ -13,8 +13,8 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
-    <Version>1.46.0</Version>
-    <ReleaseTitle>Mockup Fidelity &amp; Editing Reliability</ReleaseTitle>
+    <Version>1.46.4</Version>
+    <ReleaseTitle>Recovery Center &amp; Startup Repair</ReleaseTitle>
     <StartupObject>Captovix.Program</StartupObject>
     <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
     <PublishTrimmed>false</PublishTrimmed>
@@ -25,7 +25,7 @@
     <Resource Include="Assets/Captovix-brand-v117.ico" />
     <Content Include="Assets/Captovix-brand-v117.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets/Captovix-mark.png" />
-    <Resource Include="Assets/Captovix-mark-light.png" />
+    <Resource Include="Assets/Captovix-app.png" />
     <Content Include="tessdata/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="Tesseract" Version="5.2.0" GeneratePathProperty="true" />
     <PackageReference Include="ScreenRecorderLib" Version="7.0.1" />

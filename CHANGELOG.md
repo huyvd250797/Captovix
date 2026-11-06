@@ -1,3 +1,31 @@
+# V1.46.4 — Recovery Center & Startup Repair
+
+- Thêm **Captovix Recovery Center**, công cụ độc lập để thử mở lại Captovix và kiểm tra bản cập nhật khi ứng dụng gặp lỗi lúc khởi động.
+- Khi có bản mới, hiển thị phiên bản và ghi chú. Nút **Cập nhật & mở lại** tải gói ổn định, kiểm SHA-256, sao lưu thiết lập và bản chỉnh sửa rồi cài vào thư mục hiện tại.
+- Chỉ báo **Đã khôi phục** sau khi màn hình chính mở và gửi tín hiệu sẵn sàng. Có đường dẫn tới báo cáo lỗi để xử lý nếu thử lại chưa thành công.
+- Mở công cụ từ Start Menu, mục Trợ giúp hoặc Recovery.cmd trong thư mục ứng dụng. Ảnh gốc và KEY giữ nguyên. Không cần chạy migration mới.
+
+# V1.46.3 — Startup Recovery
+
+- Sửa lỗi bản chính V1.46.2 dừng khi khởi động do đường dẫn logo trỏ đến assembly `Captovix.Preview`. Logo mặc định và logo đổi màu nay được nạp từ assembly đang chạy.
+- Sửa lời nhắc trong Thiết lập để phản ánh việc lưu màu trên bản chính.
+- Giữ ảnh, thư viện, bản quyền và thiết lập hiện có. Không cần chạy migration mới.
+
+# V1.46.2 — Original Logo & Settings
+
+- Khôi phục logo Captovix gốc, với hình trắng và nền tím mặc định. Áp dụng hình gốc cho app, cửa sổ, khay, shortcut và bộ cài.
+- Nút bánh răng ở góc trên bên phải mở Thiết lập. Mục **Giao diện · màu sắc** có màu hình logo và màu nền logo độc lập, cùng bản xem trước.
+- Hình logo có thể dùng màu nhấn hoặc màu/gradient riêng. Nền logo có màu riêng ngay cả khi hình logo dùng màu nhấn.
+- Giữ bố cục Fluent và dữ liệu cài đặt hiện có. Không cần chạy migration mới.
+
+# V1.46.1 — Fluent Style & Icons
+
+- Giao diện WPF lấy tham chiếu từ WinUI Gallery. Màu nền sáng và tối, typography, viền, bo góc, trạng thái hover và nhấn áp dụng qua bộ style dùng chung.
+- Bộ glyph dùng Microsoft Fluent System Icons 1.1.345 (MIT), dựng vector từ các path chính thức và dùng lại geometry.
+- Icon Captovix là khung chụp trắng với góc gập tím. Logo, cửa sổ, tray, EXE, shortcut và bộ cài dùng cùng hình dáng. Cấu hình màu icon thay màu ở góc gập.
+- Bố cục, các lệnh và vị trí nút đối chiếu với source V1.46.0. Nút Quay có nền đỏ và chữ trắng.
+- Không cần migration. Nghiệm thu trực tiếp trên Windows đang chờ.
+
 # V1.46.0 — Mockup Fidelity & Editing Reliability
 
 - Thuộc tính Mockup có mẫu màu, bảng màu nhanh, font mẫu, B/I/U dạng nút và bản xem trước. Áp dụng cho cả rà soát trước quét và inspector sau áp dụng.

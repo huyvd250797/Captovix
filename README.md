@@ -1,6 +1,13 @@
-# Captovix V1.46.0 — Mockup Fidelity & Editing Reliability
+# Captovix V1.46.4 — Recovery Center & Startup Repair
 
-Nâng cấp từ đúng source ZIP V1.45.0 Boss gửi. Bản này tập trung vào thao tác sửa Mockup, tách nút và nhãn, mẫu màu trực quan và giao diện cá nhân. Bộ cài Windows x64 tự chứa runtime .NET 10.0.13; không nâng dependencies hoặc thay cấu hình bản quyền/backend.
+Trung tâm khôi phục chạy riêng với ứng dụng chính, dành cho tình huống app không vào được.
+
+## Trung tâm khôi phục
+
+- Khi lỗi khởi động trong app, Captovix mở Trung tâm khôi phục. Nếu Windows không tải được app, mở **Captovix Recovery Center** trong Start Menu hoặc chạy `Recovery.cmd` trong thư mục `current` của bản cài.
+- Bấm **Thử lại**. Công cụ tìm bản mới ở kênh ổn định hiện có. Nếu chưa tìm được bản mới hoặc mạng không truy cập được, công cụ thử mở bản hiện tại. Khi có bản mới, xem ghi chú rồi chọn **Cập nhật & mở lại** hoặc **Mở bản hiện tại**.
+- Công cụ kiểm gói và tạo bản sao lưu trước cập nhật. Gói được áp dụng qua trình cập nhật đi kèm bản cài. Nếu cài thất bại hoặc màn hình chính không xác nhận khởi động, xem **Mở báo cáo lỗi** và dùng lại **Thử lại** hoặc Full Setup.
+- Cần cài bản V1.46.4 một lần để có công cụ. Khi bản cũ không mở, dùng Full Setup cài đè vào đúng thư mục.
 
 ## Sử dụng Mockup
 
@@ -14,17 +21,17 @@ Nâng cấp từ đúng source ZIP V1.45.0 Boss gửi. Bản này tập trung v�
 
 ## Màu giao diện và icon
 
-Bấm biểu tượng ống hút màu ở góc phải thanh menu, hoặc Hiển thị → Giao diện & màu sắc. Chọn Sáng/Tối/Theo hệ thống; đổi màu nhấn dạng màu đơn hoặc gradient hai màu và hướng gradient. Bật **Icon dùng cùng màu nhấn** để đồng bộ, hoặc bỏ chọn và đặt màu/gradient riêng cho icon.
+Bấm nút bánh răng ở góc trên bên phải rồi chọn **Giao diện · màu sắc**. Chọn Sáng/Tối/Theo hệ thống và màu nhấn dạng màu đơn hoặc gradient.
 
-Bản xem trước và giao diện cập nhật theo lựa chọn; hình dáng logo đã duyệt giữ nguyên. Màu cá nhân áp dụng cho logo trong app, icon cửa sổ và khay hệ thống. Biểu tượng tĩnh của bộ cài/tệp EXE/shortcut vẫn là nhận diện Captovix gốc. Nút Quay dùng nền đỏ tươi #EF3F51 và chữ trắng ở cả hai chế độ sáng/tối.
+Đổi riêng **Màu nền logo** và **Màu hình logo**. Bỏ chọn **Màu hình logo theo màu nhấn** để chọn màu hình hoặc gradient riêng. Nút **Khôi phục giao diện Captovix** trả logo về hình trắng trên nền tím. Giao diện, icon cửa sổ và khay hệ thống cập nhật theo lựa chọn. Bộ cài, tệp EXE và shortcut dùng hình và màu logo gốc. Nút Quay dùng nền đỏ #D82038 và chữ trắng trong cả hai chế độ.
 
 Theo yêu cầu hiện tại, bỏ mục **Cập nhật & khôi phục dữ liệu** khỏi menu. Sao lưu trước cập nhật, kiểm hash/gói, Recovery.cmd và dữ liệu backup cũ vẫn giữ để bảo toàn an toàn nâng cấp. Mục bản quyền/khôi phục KEY không thay đổi.
 
 ## Nâng cấp và kiểm tra
 
-Đóng app cả khay rồi chạy Captovix-v1.46.0-Full-Setup.exe vào đường dẫn đang cài. Không cần chạy migration mới, không reset database/Supabase. Document schema vẫn tối đa 23, không nâng schema mới; appearance schema 1 có thêm trường tùy chọn tương thích với tệp V1.45. Giữ backup và ảnh gốc trước khi thử bản mới.
+Đóng app cả khay rồi chạy Captovix-v1.46.4-Full-Setup.exe vào đường dẫn đang cài. Không cần chạy migration mới, không reset database/Supabase. Document schema vẫn tối đa 23, không nâng schema mới; appearance schema 1 có thêm trường tùy chọn tương thích với tệp V1.45. Bộ cài hỗ trợ cài mới và cài đè. Gói Update-Packages.zip chứa tài sản để đưa lên kênh cập nhật hiện có. Xem scripts/README-PUBLISH.txt trước khi phát hành.
 
-Kiểm thử logic/cross-build và kiểm gói được ghi trong docs/VALIDATION.md và docs/WINDOWS-ACCEPTANCE-V146.md. Host hiện tại là Linux: chưa chạy app, bộ cài, phím vật lý hoặc đo RAM trên Windows thật; không coi biên dịch WPF là nghiệm thu Windows. Publish stable vẫn cần báo cáo Windows thật.
+Kết quả kiểm thử logic, biên dịch chéo và kiểm gói được ghi trong docs/VALIDATION.md và docs/WINDOWS-ACCEPTANCE-V1464.md. Host hiện tại là Linux: chưa chạy app, bộ cài, phím vật lý hoặc đo RAM trên Windows thật; không coi biên dịch WPF là nghiệm thu Windows. Publish stable vẫn cần báo cáo Windows thật.
 
 Phiên bản tiếp theo đề xuất: **V1.47.0 — Mockup Review & Workflow Consistency**: rà soát hàng loạt các phần chưa chắc, đồng bộ thao tác giữa lớp/nhóm và cải thiện trải nghiệm dự án nhiều vùng quét. Chưa tự bắt đầu bản này.
 
@@ -64,6 +71,6 @@ Lỗi restore: kiểm mạng/proxy/NuGet, cài SDK10; không đổi xuống runt
 
 Bản bàn giao chưa push hoặc tạo GitHub Release. Với repo mới: tạo repo GitHub rồi `git init`, `git add .`, `git commit`, `git branch -M main`, thêm remote đúngrepo và push. Với repo có source: clone/fetch/pull nhánh trước, tích hợp source bản này, xem `git diff`, commit/push; không force-push để bỏ lỗi fetchfirst. Kiểm tra .gitignore và không push prerequisites/artifacts/privateconfig.
 
-Captovix là app desktopWPF, không deploy binaries lên Vercel/Netlify để chạy như web. Backend Supabase/licensing đang dùng giữ nguyên. Sau nghiệm thu Windows, xem `scripts/README-PUBLISH.txt`, upload đúng5assets từ Update-Packages lên GitHub Releases tag v1.46.0. Không chỉ upload ZIP. Kiểm tra source/update/feed URL và thử update máy test trước stableLatest.
+Captovix là app desktopWPF, không deploy binaries lên Vercel/Netlify để chạy như web. Backend Supabase/licensing đang dùng giữ nguyên. Sau nghiệm thu Windows, xem `scripts/README-PUBLISH.txt`, upload đúng5assets từ Update-Packages lên GitHub Releases tag v1.46.4. Không chỉ upload ZIP. Kiểm tra source/update/feed URL và thử update máy test trước stableLatest.
 
 Không cần chạy migration mới từ V1.45.0. Giữ bản sao thư mục dữ liệu/dự án khi nâng cấp; schema 23 có backup trước ghi mới. Nếu quay lại bản cũ, dùng bản sao/backup tương thích, không ép đọc hoặc ghi đè schema 23. Gửi lại chính sourceZIP mới này để tiếp tục V1.47.0.

@@ -5,7 +5,7 @@ Unicode true
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
 !ifndef APPVERSION
- !define APPVERSION "1.46.0"
+ !define APPVERSION "1.46.4"
 !endif
 !ifndef CORESETUP
  !define CORESETUP "..\artifacts\CoreSetup.exe"
@@ -223,6 +223,7 @@ Section "Captovix"
  ${EndIf}
  IfFileExists "$NewPath\Update.exe" 0 invalid_install
  IfFileExists "$NewPath\current\Captovix.exe" 0 invalid_install
+ IfFileExists "$NewPath\current\Captovix.Recovery.exe" 0 invalid_install
  DetailPrint "Buoc 3/3: Hoan tat chuyen doi va tao shortcut."
  ; Only the known registered NSIS V1.0 copy is eligible for migration.
  ${If} $LegacyVersion == "1.0.0"
@@ -250,6 +251,7 @@ Section "Captovix"
  ; Old uninstall may remove the new Desktop shortcut. Recreate stable launchers.
  CreateShortcut "$DESKTOP\Captovix.lnk" "$NewPath\Update.exe" "start Captovix.exe" "$NewPath\current\Assets\Captovix-brand-v117.ico"
  CreateShortcut "$SMPROGRAMS\Captovix.lnk" "$NewPath\Update.exe" "start Captovix.exe" "$NewPath\current\Assets\Captovix-brand-v117.ico"
+ CreateShortcut "$SMPROGRAMS\Captovix Recovery Center.lnk" "$NewPath\current\Captovix.Recovery.exe" "" "$NewPath\current\Assets\Captovix-brand-v117.ico"
  Goto done
  invalid_install:
   MessageBox MB_ICONSTOP "Chua tim thay file da cai. Ban cu chua bi go. Log: $CoreLog"

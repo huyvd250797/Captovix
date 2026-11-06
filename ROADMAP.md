@@ -1,10 +1,14 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.46.0
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.46.4
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/thứ tự |
 | --- | --- | --- | --- | --- | --- |
 | V1.46.0 — Mockup Fidelity & Editing Reliability | Sửa Mockup trực quan, giữ nội dung | Mẫu màu/B-I-U/preview, nút-nhãn riêng, font gần giống, mở/đóng không đổi, icon/accent gradient, nút Quay đỏ | Không đổi schema 23; giữ runtime/backend; alpha glyph cache và no-op transaction | Logic và build; cần nghiệm thu Windows theo checklist V146 | Đã triển khai; kiểm Windows còn chờ |
+| V1.46.1 — Fluent Style & Icons | Làm mới diện mạo | Style Dark/Light, Fluent System Icons và icon nhận diện | Giữ bố cục V1.46.0 | So cấu trúc, build, kiểm gói và nghiệm thu Windows | Đã triển khai, nghiệm thu Windows đang chờ |
+| V1.46.2 — Original Logo & Settings | Khôi phục nhận diện và dễ mở Thiết lập | Logo gốc, nút bánh răng và hai màu logo độc lập | Giữ schema và kênh cập nhật cũ | Kiểm logo, Thiết lập, màu, cài đè và update | Đã duyệt giao diện trên Preview. Bản chính đã đóng gói, chờ kiểm cài đặt và cập nhật trên Windows |
+| V1.46.3 — Startup Recovery | Mở lại app sau khi cập nhật | Sửa đường dẫn logo còn trỏ Preview | Giữ schema và kênh cập nhật | Kiểm tài nguyên logo, cài đè và mở app | Bản vá V1.46.2, kiểm cài đè Windows còn chờ |
+| V1.46.4 — Recovery Center & Startup Repair | Khôi phục khi app lỗi khởi động | Công cụ riêng, thử lại, cài bản mới, xác nhận mở app | Dùng kênh stable và sao lưu hiện có | Nghiệm thu cài và cập nhật trên Windows | Đã triển khai, chờ nghiệm thu Windows |
 | V1.47.0 — Mockup Review & Workflow Consistency | Rà soát và thao tác nhiều vùng nhất quán | Rà soát hàng loạt khung chưa chắc, đồng bộ lớp/nhóm và dự án nhiều vùng | Đề xuất sau V1.46, chưa triển khai | Bộ ảnh thực tế và kết quả kiểm Windows làm căn cứ | Đề xuất |
 
 | V1.37.0 — Performance & Responsiveness | Phản hồi nhanh hơn | Startup, mở/chuyển, kéo/resize/chữ dài/zoom, cache, lưu nền; giữ tool,30ảnh,Callout kéo để tạo/tâm giữ đuôi | Worker/generation, snapshot/revision, drawing/lifecycle | Logic/build/package đạt; số đo Windows/native/RAM còn chờ | Đã triển khai; chưa nghiệm thu Windows toàn app |

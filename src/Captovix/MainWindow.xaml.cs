@@ -29,7 +29,7 @@ public partial class MainWindow : Window
     private MediaItem? Selected => MediaList.SelectedItem as MediaItem;
     public MainWindow()
     {
-        var startupClock=Stopwatch.StartNew();using var measurement=PerformanceTimings.Measure("window.construct");bool firstPaint=true;ContentRendered+=(_,_)=>{if(!firstPaint)return;firstPaint=false;PerformanceTimings.Record("window.first-paint",startupClock.Elapsed.TotalMilliseconds);ReleaseRecoveryState.Healthy(App.DataRoot,VersionInfo.Current);};
+        var startupClock=Stopwatch.StartNew();using var measurement=PerformanceTimings.Measure("window.construct");bool firstPaint=true;ContentRendered+=(_,_)=>{if(!firstPaint)return;firstPaint=false;PerformanceTimings.Record("window.first-paint",startupClock.Elapsed.TotalMilliseconds);(Application.Current as App)?.ConfirmStartup();};
         WindowPlacement.Attach(this);InitializeComponent();Activated+=(_,_)=>QueueUpdateNotice();InitializeBrand();InitializeEditor();_store=new();RebuildRecent();MediaList.ItemsSource=_recentItems;
         CollectionViewSource.GetDefaultView(_recentItems).Filter=o=>{var i=(MediaItem)o;return LibraryMatch(i);};
         _store.Items.CollectionChanged+=(_,_)=>{if(_libraryRefreshHold==0)RebuildRecent();};CountLabel.Text=$"{_recentItems.Count}/{_store.Items.Count}";

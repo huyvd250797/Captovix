@@ -47,7 +47,7 @@ public partial class MainWindow
     private void SaveLibraryLayout(){ApplyLibraryLayout();try{MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"editor-layout.json"),JsonSerializer.Serialize(new{LayoutVersion=125,LibraryBottom=_libraryBottom,LibraryWidth=_libraryWidth,FilmstripHeight=_filmstripHeight,InspectorWidth=_inspectorWidth}));}catch(Exception ex){App.Log(ex);SetStatus("Chưa lưu được bố cục thư viện: "+ex.Message);}}
     private void ToggleInspector_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;bool hide=InspectorPane.Visibility==Visibility.Visible;InspectorPane.Visibility=hide?Visibility.Collapsed:Visibility.Visible;InspectorColumn.MinWidth=hide?0:210;InspectorColumn.Width=new(hide?0:_inspectorWidth);if(_fitMode)FitImage();}
     private void ExitMenu_Click(object sender,RoutedEventArgs e)=>RequestExit();
-    private void SettingsMenu_Click(object sender,RoutedEventArgs e)=>OpenSettings((sender as MenuItem)?.Tag?.ToString()??"Capture");
+    private void SettingsMenu_Click(object sender,RoutedEventArgs e)=>OpenSettings((sender as FrameworkElement)?.Tag?.ToString()??"Capture");
     private void OpenSettings(string selected)
     {
         if(!LicenseRuntime.Full&&selected!="Updates"){RequireLicense();return;}

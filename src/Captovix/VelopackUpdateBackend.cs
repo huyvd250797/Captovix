@@ -76,12 +76,22 @@ public sealed class VelopackUpdateBackend : IUpdateBackend, IUpdateDiagnostics
         await Task.Run(()=>ReleasePackageAudit.Validate(path,VersionInfo.AppId,asset.Version.ToString()),token);
     }
 
-    public void Apply(UpdateRelease release)
+    internal string VerifyReadyPackage(UpdateRelease release)
     {
         if (!CanApply || release.Payload is not UpdateInfo info) throw new InvalidOperationException("Không có gói sẵn sàng.");
         Validate(info.TargetFullRelease);
-        var asset=info.TargetFullRelease;var path=Path.Combine(_locator.PackagesDir!,asset.FileName);using(var stream=File.OpenRead(path))if(stream.Length!=asset.Size||!Convert.ToHexString(SHA256.HashData(stream)).Equals(asset.SHA256,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("Gói cache đã đổi sau khi tải; tải lại trước khi áp dụng.");
-        ReleasePackageAudit.Validate(path,VersionInfo.AppId,asset.Version.ToString());
-        _manager.ApplyUpdatesAndRestart(info.TargetFullRelease);
+        var asset = info.TargetFullRelease;
+        var path = Path.Combine(_locator.PackagesDir!, asset.FileName);
+        using (var stream = File.OpenRead(path))
+            if (stream.Length != asset.Size || !Convert.ToHexString(SHA256.HashData(stream)).Equals(asset.SHA256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Gói cache đã đổi sau khi tải; tải lại trước khi áp dụng.");
+        ReleasePackageAudit.Validate(path, VersionInfo.AppId, asset.Version.ToString());
+        return path;
+    }
+
+    public void Apply(UpdateRelease release)
+    {
+        VerifyReadyPackage(release);
+        _manager.ApplyUpdatesAndRestart(((UpdateInfo)release.Payload).TargetFullRelease);
     }
 }

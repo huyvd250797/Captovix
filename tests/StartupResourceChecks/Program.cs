@@ -18,4 +18,8 @@ var entry=File.ReadAllText(Path.Combine(root,"src/Captovix/Program.cs"));Check(e
 Check(entry.Contains("App.Log(new InvalidOperationException")&&entry.Contains("System.Windows.MessageBox.Show")&&entry.Contains("Environment.ExitCode=1"),"Fatal startup errors log and show native fallback without loading broken theme");
 Check(popup.Contains("child is ContextMenu or ToolTip"),"Automatic context menu and tooltip popup roots are excluded from reparenting");
 Check(entry.IndexOf("--hybrid-ui-probe",StringComparison.Ordinal)<entry.IndexOf("var app = new App();",StringComparison.Ordinal),"Hybrid UI probe runs before WPF and single-instance startup");
+var recovery=File.ReadAllText(Path.Combine(root,"src/Captovix.Recovery/RecoveryWindow.cs"));
+Check(entry.Contains("StartupHealthSignal.Probe != null || StartupRecoveryLauncher.Open"),"Probe failure does not reopen the Recovery Center");
+Check(recovery.IndexOf("if (ready.WaitOne(0))",StringComparison.Ordinal)<recovery.IndexOf("Đã khôi phục.",StringComparison.Ordinal)&&recovery.Contains("if (app.HasExited)"),"Recovery requires a startup acknowledgement from a live process");
+Check(recovery.IndexOf("UpdateBackup.Create",StringComparison.Ordinal)<recovery.IndexOf("backend.VerifyReadyPackage",StringComparison.Ordinal)&&recovery.Contains("updater.ExitCode != 0"),"Recovery backs up, re-verifies package, and checks updater exit");
 Console.WriteLine(count+" startup/resource regression checks passed. Native WPF loading requires Windows.");

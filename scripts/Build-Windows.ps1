@@ -37,6 +37,10 @@ foreach ($check in (Get-ChildItem (Join-Path $projectRoot 'tests') -Filter *.csp
 }
 dotnet publish src/Captovix/Captovix.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64 -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o $payload
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
+$recoveryPayload = Join-Path $artifactRoot 'recovery-publish'
+dotnet publish src/Captovix.Recovery/Captovix.Recovery.csproj -c Release -r win-x64 --self-contained true "-p:Version=$version" -p:DebugType=None -p:DebugSymbols=false -o $recoveryPayload
+if ($LASTEXITCODE -ne 0) { throw 'Recovery Center publish failed.' }
+Copy-Item (Join-Path $recoveryPayload 'Captovix.Recovery.exe') $payload -Force
 Copy-Item docs,licenses -Destination $payload -Recurse -Force
 Copy-Item README.md,CHANGELOG.md,ROADMAP.md,THIRD-PARTY-NOTICES.txt -Destination $payload -Force
 Copy-Item scripts/Recovery.cmd,scripts/Recovery.ps1,scripts/Install-Local.ps1,scripts/Install.cmd,scripts/Launch.cmd,scripts/Summarize-Fidelity.ps1 -Destination $payload -Force

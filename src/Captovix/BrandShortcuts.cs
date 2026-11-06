@@ -14,6 +14,7 @@ internal static class BrandShortcuts
             if(!File.Exists(icon)||!File.ReadAllBytes(icon).SequenceEqual(bytes))File.WriteAllBytes(icon,bytes);
             string? root=VelopackLocator.Current.RootAppDir;int changed=0;
             if(root!=null&&File.Exists(Path.Combine(root,"Update.exe"))){
+                StartupRecoveryLauncher.EnsureShortcut(root,icon);
                 var dirs=new[]{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),Environment.GetFolderPath(Environment.SpecialFolder.Programs),Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),@"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar")};
                 foreach(string directory in dirs.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase))foreach(string file in Directory.EnumerateFiles(directory,"Captovix*.lnk",SearchOption.TopDirectoryOnly)){
                     try{using var link=new ShellLink(file);if(!BrandOwnership.IsOwned(root,link.Target))continue;bool oldDirect=Path.GetFileName(link.Target).Equals("Captovix.exe",StringComparison.OrdinalIgnoreCase)&&string.IsNullOrWhiteSpace(link.Arguments);if(link.IconPath==icon&&link.IconIndex==0&&!oldDirect)continue;if(oldDirect){link.Target=Path.Combine(root,"Update.exe");link.Arguments="start Captovix.exe";link.WorkingDirectory=root;}link.IconPath=icon;link.IconIndex=0;link.SetAppUserModelId("velopack."+VersionInfo.AppId);link.Save(file);SHChangeNotify(0x2000,0x5,file,0);changed++;}catch(Exception ex){App.Log(ex);}

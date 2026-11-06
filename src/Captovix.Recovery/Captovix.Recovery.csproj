@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <ApplicationIcon>../Captovix/Assets/Captovix.ico</ApplicationIcon>
+    <Product>Captovix Recovery Center</Product>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.161" />
+    <Compile Include="../Captovix/VersionInfo.cs;../Captovix/UpdateSettings.cs;../Captovix/UpdateSession.cs;../Captovix/UpdateBackup.cs;../Captovix/ReliableUpdateSource.cs;../Captovix/ReleasePackageAudit.cs;../Captovix/ReleaseRecoveryState.cs;../Captovix/VelopackUpdateBackend.cs;../Captovix/StartupHealthSignal.cs" />
+  </ItemGroup>
+</Project>

@@ -12,6 +12,11 @@ internal static class Program
   app=new App();app.InitializeComponent();app.ShutdownMode=ShutdownMode.OnExplicitShutdown;
   var themes=app.Resources.MergedDictionaries.Single();Check(themes[typeof(TreeViewItem)] is Style,"Compiled application BAML loads with TreeViewItem style");
   foreach(var key in themes.Keys.Cast<object>().ToArray())_=themes[key];Check(true,"All compiled theme resources materialize");
+  AppearanceManager.Apply();
+  Check(app.Resources["BrandMark"] is System.Windows.Media.Imaging.BitmapSource { PixelWidth:128, PixelHeight:128 },"Default brand artwork loads on startup");
+  var brandImage=typeof(AppearanceManager).GetMethod("BrandImage",BindingFlags.Static|BindingFlags.NonPublic)!;
+  var custom=(System.Windows.Media.Imaging.BitmapSource)brandImage.Invoke(null,[new AppearanceSettings(IconBackground:"#244A69")])!;
+  Check(custom.PixelWidth==128&&custom.PixelHeight==128,"Custom palette loads the mark resource from the app assembly");
   var chrome=typeof(MainWindow).Assembly.GetType("Captovix.WindowTheme",true)!;chrome.GetMethod("Initialize",BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(null,null);
   owner=new Window{Title="Startup regression fixture",Width=420,Height=300,Content=new TextBlock{Text="Owner"},ShowInTaskbar=false};owner.Show();Check(owner.Content is Border,"Normal window gets a frame without double-parent exception");
   foreach(bool dark in new[]{false,true}){

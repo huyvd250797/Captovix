@@ -11,7 +11,7 @@ internal static class Program
     Directory.CreateDirectory(root);var app=new App();app.InitializeComponent();var current=typeof(AppearanceManager).GetProperty("Current",BindingFlags.Public|BindingFlags.Static)!;
     foreach(var mode in new[]{AppearanceMode.Light,AppearanceMode.Dark}){
         current.SetValue(null,new AppearanceSettings(mode,"#7C3AED"));AppearanceManager.Apply();
-        Check(((SolidColorBrush)app.Resources["Surface"]).Color.ToString()==(mode==AppearanceMode.Dark?"#FF23262E":"#FFFFFFFF"),mode+" surface resources");
+        Check(((SolidColorBrush)app.Resources["Surface"]).Color.ToString()==(mode==AppearanceMode.Dark?"#FF27282D":"#FFFFFFFF"),mode+" surface resources");
         var combo=new ComboBox{ItemsSource=new[]{"Sáng","Tối"},SelectedIndex=1};combo.Measure(new(250,100));combo.Arrange(new(0,0,250,40));combo.ApplyTemplate();Check(combo.Template.FindName("PART_Popup",combo)!=null,mode+" combo template loads");
         var button=new Button{Content="Test",Style=(Style)app.FindResource("Primary")};button.Measure(new(200,50));button.ApplyTemplate();Check(button.Foreground is SolidColorBrush b&&b.Color==Colors.White,mode+" primary text has contrast");
         double L(Color c){double C(byte v){double x=v/255d;return x<=.04045?x/12.92:Math.Pow((x+.055)/1.055,2.4);}return .2126*C(c.R)+.7152*C(c.G)+.0722*C(c.B);}

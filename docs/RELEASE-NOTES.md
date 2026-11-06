@@ -1,9 +1,6 @@
-# V1.46.0 — Mockup Fidelity & Editing Reliability
+# V1.46.4 — Recovery Center & Startup Repair
 
-- Thuộc tính Mockup có mẫu màu, bảng màu nhanh, font mẫu, B/I/U dạng nút và bản xem trước. Áp dụng cho cả rà soát trước quét và inspector sau áp dụng.
-- Ctrl+B/Ctrl+I/Ctrl+U nhận chữ Mockup. Mở/đóng inline không đổi nội dung sẽ hủy giao dịch; giữ số thực font đầy đủ trong inspector để không tự ghi vì làm tròn.
-- Nút có label luôn tách thành lớp thân nút và lớp nhãn phía trên, kể cả UI Automation chỉ trả tên nút. Có nút chọn từng lớp; thay thân không cập nhật thuộc tính chữ.
-- Đổi nền control phẳng giữ glyph raster của caption chưa sửa qua alpha mask, có cache; không thay font khi chỉ đổi màu thân. Font OCR dùng thêm đối chiếu nét ảnh và khung; font UI đã xác nhận vẫn được ưu tiên.
-- Biểu tượng chỉnh màu ở góc phải menu. Màu nhấn và icon có màu đơn/gradient hai điểm/hướng; đồng bộ hoặc chọn màu icon riêng. Logo header/cửa sổ/tray theo cấu hình; EXE/installer/shortcut giữ logo tĩnh gốc.
-- Bỏ mục Cập nhật & khôi phục dữ liệu khỏi menu, giữ backup/kiểm gói/cứu hộ nội bộ. Nút Quay đỏ tươi/chữ trắng.
-- Không có SQL/migration mới; schema tài liệu tối đa 23 và appearance schema 1 giữ tương thích. Chưa nghiệm thu Windows native; không tuyên bố nhận diện chính xác mọi font hoặc phục hồi mọi nền phức tạp.
+- Thêm **Captovix Recovery Center**, công cụ độc lập để thử mở lại Captovix và kiểm tra bản cập nhật khi ứng dụng gặp lỗi lúc khởi động.
+- Khi có bản mới, hiển thị phiên bản và ghi chú. Nút **Cập nhật & mở lại** tải gói ổn định, kiểm SHA-256, sao lưu thiết lập và bản chỉnh sửa rồi cài vào thư mục hiện tại.
+- Chỉ báo **Đã khôi phục** sau khi màn hình chính mở và gửi tín hiệu sẵn sàng. Có đường dẫn tới báo cáo lỗi để xử lý nếu thử lại chưa thành công.
+- Mở công cụ từ Start Menu, mục Trợ giúp hoặc Recovery.cmd trong thư mục ứng dụng. Ảnh gốc và KEY giữ nguyên. Không cần chạy migration mới.
