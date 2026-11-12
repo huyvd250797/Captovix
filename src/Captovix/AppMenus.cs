@@ -15,6 +15,7 @@ internal static class AppMenus
     }
     private static string Icon(string title)=>title switch{
         "Trái" or "Giữa ngang" or "Phải" or "Trên" or "Giữa dọc" or "Dưới" or "Vùng ảnh đang thấy" or "Toàn canvas"=>"Align",
+        "Toàn màn hình"=>"Camera",
         var s when s.StartsWith("Hoàn")=>"Undo",var s when s.StartsWith("Làm lại")=>"Redo",var s when s.StartsWith("Copy")=>"Copy",var s when s.StartsWith("Dán")=>"Paste",
         var s when s.StartsWith("Nhân")=>"Duplicate",var s when s.StartsWith("Bỏ nhóm")=>"Ungroup",var s when s.StartsWith("Nhóm")=>"Group",
         var s when s.Contains("khóa")=>s.StartsWith("Mở")?"Unlock":"Lock",var s when s.StartsWith("Ẩn")=>"EyeOff",var s when s.StartsWith("Xóa")=>"Delete",var s when s.StartsWith("Xuất")=>"Export",

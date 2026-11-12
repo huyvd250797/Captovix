@@ -12,17 +12,17 @@ public static partial class EditorRenderer
     }
     private static void DrawSpotlights(DrawingContext dc,EditorDocument doc)
     {
-        var lights=doc.Annotations.Where(a=>a.Visible&&a.Kind==AnnotationKind.Spotlight&&a.Width>0&&a.Height>0).ToArray();if(lights.Length==0)return;
+        var lights=doc.Annotations.Where(a=>a.Visible&&a.ObjectOpacity>0&&a.Kind==AnnotationKind.Spotlight&&a.Width>0&&a.Height>0).ToArray();if(lights.Length==0)return;
         // All visible holes remain bright. The topmost spotlight supplies the shared shade.
         var holes=new GeometryGroup{FillRule=FillRule.Nonzero};foreach(var a in lights)holes.Children.Add(RegionGeometry(a,true));
         var v=doc.Viewport;var outside=new CombinedGeometry(GeometryCombineMode.Exclude,new RectangleGeometry(new(v.X,v.Y,v.Width,v.Height)),holes);
-        var style=lights[^1];dc.DrawGeometry(ShapeInk(style.Color,style.FocusOpacity),null,outside);
+        var style=lights[^1];dc.DrawGeometry(ShapeInk(style.Color,style.FocusOpacity*style.ObjectOpacity/100),null,outside);
     }
     private static DrawingGroup ProtectedSource(BitmapSource source,EditorDocument doc,IReadOnlySet<string>? drafts,PrivacySampling sampling)
     {
         var group=new DrawingGroup();using(var dc=group.Open()){
             var v=doc.Viewport;dc.PushClip(new RectangleGeometry(new(v.X,v.Y,v.Width,v.Height)));dc.DrawImage(source,new(0,0,doc.OriginalWidth,doc.OriginalHeight));
-            foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))RedactionRenderer.Draw(dc,source,a,drafts?.Contains(a.Id)==true,sampling);
+            foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover)){dc.PushOpacity(a.ObjectOpacity/100);RedactionRenderer.Draw(dc,source,a,drafts?.Contains(a.Id)==true,sampling);dc.Pop();}
             dc.Pop();
         }group.Freeze();return group;
     }

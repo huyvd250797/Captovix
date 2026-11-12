@@ -1,4 +1,4 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.50.0
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.60.0
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
@@ -13,6 +13,16 @@ Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Ph�
 | V1.48.0 — Editor Responsiveness | Giảm thời gian phản hồi khi chỉnh ảnh | Mở/chuyển ảnh, cuộn, kéo, lưu và xuất | Hủy lần đọc cũ; lưu và xuất ở nền | So độ trễ trên cùng máy và bộ ảnh | Đã triển khai, chờ đo Windows |
 | V1.49.0 — Memory & Resource Efficiency | Giảm RAM đỉnh và giữ RAM ổn định | Bitmap, cache, Undo, vòng đời tác vụ và icon taskbar | Đo mốc trước/sau, giữ chất lượng ảnh | Mục tiêu giảm ít nhất 20% RAM đỉnh trong kịch bản ảnh lớn | Đã triển khai, chờ đo Windows |
 | V1.50.0 — Stability & Release Quality | Ổn định toàn app | Đo hồi quy, đa màn hình, update và cứu hộ | Nghiệm thu Windows thật | Cài mới, cài đè, cập nhật, giữ thư viện và KEY | Đã triển khai mã và kịch bản, chờ nghiệm thu Windows |
+| V1.51.0 — Recording Foundation | Quay MP4 dùng hằng ngày | Nguồn, đếm ngược, điều khiển, xác minh MP4 và mở thư viện | Giữ tọa độ vật lý, kiểm MP4 trước khi ghi nhận | Thử nguồn bị đóng và nhiều màn hình DPI khác nhau trên Windows | Đã triển khai, chờ nghiệm thu Windows |
+| V1.52.0 — Audio Capture & Sync | Kiểm soát tiếng thu | Chọn mic/thiết bị phát, mức âm và hai nguồn riêng | Đo đồng bộ timestamp | So đầu/cuối bản quay 30 phút | Đã triển khai, chờ nghiệm thu Windows |
+| V1.53.0 + V1.54.0 — Recording Presets & Presenter Recording | Chọn chất lượng nhanh và quay hướng dẫn | Preset, FPS, dung lượng, marker, nổi click, hai mức âm, chọn modal, sửa Bước tại chỗ | Ghi sự kiện theo đồng hồ quay. Đọc kích thước và FPS MP4. Hỗ trợ sao lưu có sự kiện chuột | Kiểm preset, pause/resume, nhiều DPI, điều khiển và chú thích trên Windows | Mã nguồn gộp ở V1.54.0, chờ build và nghiệm thu Windows |
+| V1.55.0 — Recording Recovery | Giảm mất dữ liệu khi quay dài | Cảnh báo gần đầy ổ, tìm phiên dang dở và khôi phục phần hợp lệ | Đánh giá lưu theo đoạn hoặc container phục hồi, lưu nhật ký phiên | Thử gián đoạn tiến trình, thiếu ổ đĩa và quay tối thiểu 60 phút | Backlog, chưa triển khai |
+| V1.56.0 — Quick Trim & Export | Cắt nhanh bản quay hoặc MP4 nhập | Trim, Split, xem trước và xuất có tiến độ. Số Bước nguyên/thập phân | Mã hóa MP4 bằng Windows, giữ nguồn, lịch sử Bước trong tệp chỉnh sửa | So nội dung và thời lượng, thử hủy xuất và mở lại ảnh | Đã triển khai, chờ nghiệm thu Windows |
+| V1.57.0 — Video Projects | Tiếp tục phiên chỉnh sau khi thoát | Timeline trực tiếp, Split, xóa, Undo, xuất đoạn, mở/lưu, tự lưu và liên kết nguồn | Tệp dự án có phiên bản và tham chiếu MP4 | Mở lại đúng vị trí, mốc cắt, tìm lại nguồn và xuất đoạn | Đã triển khai, chờ nghiệm thu Windows |
+| V1.58.0 — Timeline Editing | Xóa đoạn thừa và ghép nhiều clip | Split, kéo thả, xóa khép khoảng trống, zoom, Undo/Redo, chú thích, toàn màn hình, xuất timeline | Xem trước và xuất từ cùng thứ tự clip | Kiểm tra nguồn VFR, thứ tự, thời lượng và âm thanh trên Windows | Đã triển khai, chờ nghiệm thu Windows |
+| V1.59.0 — Canvas & Layout | Xuất ngang, dọc hoặc vuông | Crop, xoay, Fit/Fill, nền, số đoạn cố định và track chú thích | Hình học dùng chung cho preview/render, dự án V3 | So ba kích thước MP4, pixel nền, vị trí khung hình và mốc chú thích | Đã triển khai, chờ nghiệm thu Windows |
+| V1.60.0 — Audio Editing | Chỉnh lời nói, tiếng máy và nhạc | Studio, waveform, Mute/Solo, âm lượng, fade, khoảng cắt và nhạc nền, opacity ảnh | PCM phối chung cho preview/export, track theo dự án schema 4 | So mốc cắt, hạ tiếng máy, giữ micro và nhạc sau nhiều điểm cắt | Đã triển khai, chờ nghiệm thu Windows |
+| V1.61.0 — Audio Keyframes & Export Presets | Chỉnh âm lượng theo thời gian và lưu cấu hình xuất | Keyframe âm lượng, preset xuất theo tỷ lệ/FPS | Dùng chung timeline cho preview và render | Kiểm nội suy âm lượng và thông số MP4 | Đề xuất |
 | V1.50.1 — Windows Acceptance Fixes | Sửa hồi quy thực tế nếu có | Xử lý theo log và kết quả đo | Đối chiếu cùng máy | Chạy lại kịch bản lỗi | Đề xuất sau V1.50.0 |
 
 | V1.37.0 — Performance & Responsiveness | Phản hồi nhanh hơn | Startup, mở/chuyển, kéo/resize/chữ dài/zoom, cache, lưu nền; giữ tool,30ảnh,Callout kéo để tạo/tâm giữ đuôi | Worker/generation, snapshot/revision, drawing/lifecycle | Logic/build/package đạt; số đo Windows/native/RAM còn chờ | Đã triển khai; chưa nghiệm thu Windows toàn app |

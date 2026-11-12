@@ -67,7 +67,7 @@ public static partial class EditorRenderer
     }
     public static double StepRadius(Annotation a)
     {
-        var text=TextLayout(a,a.Number.ToString(CultureInfo.InvariantCulture));return Math.Max(a.FontSize*.8,Math.Max(text.WidthIncludingTrailingWhitespace,text.Height)/2+TextStudio.Padding(a));
+        var text=TextLayout(a,TextStudio.StepLabel(a));return Math.Max(a.FontSize*.8,Math.Max(text.WidthIncludingTrailingWhitespace,text.Height)/2+TextStudio.Padding(a));
     }
     public static Geometry StepGeometry(Annotation a)
     {

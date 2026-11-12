@@ -33,6 +33,7 @@ public static class Native
     [DllImport("user32.dll",CharSet=CharSet.Unicode)] private static extern int GetWindowText(nint hwnd,StringBuilder title,int size);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(nint hwnd,out RECT rect);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint hwnd,out uint processId);
+    public static bool IsSameWindow(WindowInfo window)=>GetWindowThreadProcessId(window.Handle,out var processId)!=0&&processId==window.ProcessId;
     [DllImport("user32.dll")] public static extern bool SetWindowPos(nint hwnd,nint after,int x,int y,int width,int height,uint flags);
     [DllImport("user32.dll")] public static extern bool SetWindowDisplayAffinity(nint hwnd,uint affinity);
     [DllImport("user32.dll",SetLastError=true)] public static extern bool RegisterHotKey(nint hwnd,int id,uint modifiers,uint key);

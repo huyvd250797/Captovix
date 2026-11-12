@@ -1,8 +1,6 @@
-# V1.50.0 — Stability & Release Quality
+# V1.60.0 — Audio Editing
 
-- Xem trước màu trực tiếp. Bấm Lưu để giữ thiết lập. Hủy hoặc đóng Thiết lập trả về màu đã lưu.
-- Tách chế độ giao diện, màu nhấn, logo và hướng chuyển màu thành các nhóm có mẫu riêng.
-- Thanh tiêu đề dùng logo đang xem trước. Icon Windows và khay được tạo trực tiếp trong bộ nhớ. Shortcut ghim dùng tài nguyên riêng theo màu đã lưu.
-- Bỏ Báo cáo hiệu năng khỏi menu. Có thể bật đo theo phiên và ghi kết quả ra file cục bộ.
-- Trung tâm khôi phục chỉ báo thành công khi Editor hoàn tất khởi tạo, đã render và cửa sổ chính hiển thị.
-- Bổ sung quy trình nghiệm thu Windows và đối chiếu dữ liệu trước/sau cài đè, cập nhật và khôi phục.
+- Video Studio toàn màn hình, màn xem gọn và điều khiển cắt bằng Split.
+- Các track gốc, micro, tiếng máy và nhạc nền có waveform, Mute/Solo, volume, fade và khoảng cắt.
+- Công cụ chú thích Studio dùng renderer của chỉnh ảnh. Opacity ảnh có thanh kéo và ô số đồng bộ.
+- Xuất và xem trước bản phối cần FFmpeg. Dự án V1–V3 mở được, không cần migration DB.

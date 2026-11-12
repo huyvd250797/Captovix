@@ -33,11 +33,11 @@ public static partial class EditorRenderer
         dc.PushClip(sourceClip);DrawSpotlights(dc,doc);dc.Pop();
         DrawingGroup? protectedSource=doc.Annotations.Any(a=>a.Visible&&a.Kind==AnnotationKind.Magnifier)?ProtectedSource(source,doc,draftIds,sampling):null;
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&!a.IsRedaction&&a.Kind!=AnnotationKind.Spotlight)){
-            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);DrawMagnifier(dc,protectedSource!,a);dc.Pop();}else if(a.Mockup is {RasterBacking:true} or {PreserveRaster:true}&&a.Id!=editingTextId){DrawRasterMockup(dc,a,doc);}else{DrawMockupPatch(dc,a);DrawAnnotation(dc,CaptionPaint(a,doc),a.Id==editingTextId);}
+            if(a.Kind==AnnotationKind.Magnifier){dc.PushClip(sourceClip);dc.PushOpacity(a.ObjectOpacity/100);DrawMagnifier(dc,protectedSource!,a);dc.Pop();dc.Pop();}else if(a.Mockup is {RasterBacking:true} or {PreserveRaster:true}&&a.Id!=editingTextId){dc.PushOpacity(a.ObjectOpacity/100);DrawRasterMockup(dc,a,doc);dc.Pop();}else{dc.PushOpacity(a.ObjectOpacity/100);DrawMockupPatch(dc,a);dc.Pop();DrawAnnotation(dc,CaptionPaint(a,doc),a.Id==editingTextId);}
         }
         // Masks cover all annotations. Solid covers always dominate overlapping filters.
         foreach(var a in doc.Annotations.Where(a=>a.Visible&&a.IsRedaction).OrderBy(a=>a.Kind==AnnotationKind.Cover))
-            {dc.PushClip(sourceClip);RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true,sampling);dc.Pop();}
+            {dc.PushClip(sourceClip);dc.PushOpacity(a.ObjectOpacity/100);RedactionRenderer.Draw(dc,source,a,draftIds?.Contains(a.Id)==true,sampling);dc.Pop();dc.Pop();}
     }
     private static void DrawLocalAnnotation(DrawingContext dc,Annotation a,bool suppressText=false)
     {
@@ -60,7 +60,7 @@ public static partial class EditorRenderer
             case AnnotationKind.Step:
                 bool customStep=a.StepStrokeColor!=null||a.StepFillVisible!=null;
                 dc.DrawGeometry(!customStep?brush:a.StepFillVisible==false?null:ShapeInk(a.Color,a.FillOpacity),!customStep?new Pen(Brushes.White,Math.Max(1,a.Stroke/2)):a.StrokeEnabled?new Pen(a.StepStrokeColor==null?Brushes.White:ShapeInk(a.StepStrokeColor,a.StrokeOpacity),Math.Max(1,a.Stroke/2)):null,StepGeometry(a));
-                var number=TextLayout(a,a.Number.ToString(CultureInfo.InvariantCulture));dc.DrawText(number,new(p1.X-number.WidthIncludingTrailingWhitespace/2,p1.Y-number.Height/2));break;
+                if(!suppressText){var number=TextLayout(a,TextStudio.StepLabel(a));dc.DrawText(number,new(p1.X-number.WidthIncludingTrailingWhitespace/2,p1.Y-number.Height/2));}break;
         }
     }
     [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,CalloutGeometryEntry>? _calloutGeometries;

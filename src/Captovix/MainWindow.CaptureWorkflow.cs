@@ -44,7 +44,6 @@ public partial class MainWindow
     private void RenderWorkflow()
     {
         AfterPhotoPicker.SelectedIndex=_workflow.Background?1:0;AutoCopyPhoto.IsChecked=_workflow.AutoCopy;CloseToTrayToggle.IsChecked=_workflow.CloseToTray;StartWindowsToggle.IsChecked=_workflow.StartWithWindows;StartTrayToggle.IsChecked=_workflow.StartInTray;
-        CapturePresetPicker.ItemsSource=_workflow.Presets;CapturePresetPicker.SelectedIndex=_workflow.Presets.Count>0?0:-1;
         HotkeyRows.Children.Clear();_keyEditors.Clear();
         foreach(var h in _workflow.Hotkeys.Where(h=>h.Action is PhotoAction.Region or PhotoAction.Display or PhotoAction.Repeat)){
             var row=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(0,4,0,4)};if(h.Action==PhotoAction.Element)row.Visibility=Visibility.Collapsed;var enabled=new CheckBox{Content=ActionName(h.Action),IsChecked=h.Enabled,Width=150};
@@ -98,19 +97,6 @@ public partial class MainWindow
     {if(!RequireLicense())return;
         if(_busy)return;try{var path=Path.Combine(App.DataRoot,CaptureWorkflowStore.FileName);if(File.Exists(path))File.Copy(path,path+".backup-"+Guid.NewGuid().ToString("N"));var wasReadOnly=_workflowReadOnly;_workflowReadOnly=false;try{SaveWorkflow(new(),true);}catch{_workflowReadOnly=wasReadOnly;throw;}RenderWorkflow();WorkflowStatus.Text="Đã sao lưu cấu hình trước đó và khôi phục mặc định.";}catch(Exception ex){App.Log(ex);WorkflowStatus.Text=ex.Message;}
     }
-    private void ApplyPreset(CapturePreset preset)
-    {
-        if(_busy)return;RefreshSources();var display=_displays.FirstOrDefault(d=>d.Device==preset.Display);
-        if(preset.Mode==2&&preset.Display!=""&&display==null)throw new InvalidOperationException("Màn hình trong preset không còn kết nối. Chọn màn hình mới rồi lưu preset khác.");
-        SourceMode.SelectedIndex=preset.Mode==3?0:preset.Mode;DelayPicker.SelectedIndex=preset.Delay==5?2:preset.Delay==3?1:0;CursorToggle.IsChecked=preset.Cursor;if(display!=null)DisplayPicker.SelectedItem=display;AfterPhotoPicker.SelectedIndex=preset.Background?1:0;AutoCopyPhoto.IsChecked=preset.AutoCopy;
-        WorkflowStatus.Text="Đã áp dụng preset: "+preset.Name+". Cửa sổ sẽ được chọn lại khi chụp.";
-    }
-    private void ApplyCapturePreset_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;try{if(CapturePresetPicker.SelectedItem is CapturePreset p)ApplyPreset(p);}catch(Exception ex){WorkflowStatus.Text=ex.Message;}}
-    private void SaveCapturePreset_Click(object sender,RoutedEventArgs e)
-    {if(!RequireLicense())return;
-        try{var s=Settings();var candidate=_workflow.Clone();candidate.Presets.Add(new(Guid.NewGuid().ToString("N"),CapturePresetName.Text.Trim(),s.SourceMode,s.Display,s.Delay,s.Cursor,AfterPhotoPicker.SelectedIndex==1,AutoCopyPhoto.IsChecked==true));SaveWorkflow(candidate);CapturePresetPicker.ItemsSource=_workflow.Presets;CapturePresetPicker.SelectedIndex=_workflow.Presets.Count-1;CapturePresetName.Clear();WorkflowStatus.Text="Đã lưu preset mới.";}catch(Exception ex){WorkflowStatus.Text=ex.Message;}
-    }
-    private void DeleteCapturePreset_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;try{if(CapturePresetPicker.SelectedItem is not CapturePreset p)return;var candidate=_workflow.Clone();candidate.Presets.RemoveAll(x=>x.Id==p.Id);SaveWorkflow(candidate);CapturePresetPicker.ItemsSource=_workflow.Presets;CapturePresetPicker.SelectedIndex=0;WorkflowStatus.Text="Đã xóa preset.";}catch(Exception ex){WorkflowStatus.Text=ex.Message;}}
     private void ShowEditor(string? id=null)
     {
         if(_busy){_tray?.Notify("Đang chụp/quay. Hãy hoàn tất hoặc hủy phiên trước khi mở Editor.");return;}
@@ -123,13 +109,28 @@ public partial class MainWindow
     private void ReleaseCaptureEscape(){if(_escapeRegistered)Native.UnregisterHotKey(new WindowInteropHelper(this).Handle,990);_escapeRegistered=false;}
     private void CancelCapture_Click(object sender,RoutedEventArgs e)=>CancelCapture();
     private void ElementCapture_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;_=CaptureAsync(false,PhotoAction.Element);}
-    private void RepeatCapture_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;_=CaptureAsync(false,PhotoAction.Repeat);}
+    private void DefaultPhoto_Click(object sender,RoutedEventArgs e)=>QueueCapture(false,PhotoAction.Region);
+    private void FullScreenPhoto_Click(object sender,RoutedEventArgs e)=>QueueCapture(false,PhotoAction.Display);
+    private void RepeatCapture_Click(object sender,RoutedEventArgs e)=>QueueCapture(false,PhotoAction.Repeat);
+
+    private void QueueCapture(bool video,PhotoAction action=PhotoAction.Current)
+    {
+        // Leave WPF input/menu routing before creating or hiding any HWNDs.
+        Dispatcher.BeginInvoke(()=>_=CaptureAsync(video,action),DispatcherPriority.Background);
+    }
+
+    private void CloseCaptureMenus()
+    {
+        _trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);
+        foreach(var menu in MainMenu.Items.OfType<MenuItem>().Where(item=>item.IsSubmenuOpen))
+            menu.SetCurrentValue(MenuItem.IsSubmenuOpenProperty,false);
+    }
     private bool HandleWorkflowMessage(int msg,nint w,nint l)
     {
         if(msg==(int)CaptureTray.ShowEditorMessage){Dispatcher.BeginInvoke(()=>ShowEditor());return true;}
         if(msg==(int)CaptureTray.TaskbarCreated&&!_workflowSuspended){if(_tray?.Add()!=true)Dispatcher.BeginInvoke(()=>ShowEditor());return false;}
         if(msg==CaptureTray.Callback){var code=(int)((long)l&0xffff);if(code==0x7B||code==0x205)Dispatcher.BeginInvoke(OpenTrayMenu);else if(code is 0x400 or 0x401 or 0x203)Dispatcher.BeginInvoke(()=>ShowEditor());else if(code==0x405)Dispatcher.BeginInvoke(()=>ShowEditor(_notificationItem));return true;}
-        if(msg==0x312){if(_editingCaptureKeys)return true;var id=(int)w;if(id==990){CancelCapture();return true;}if(Enum.IsDefined(typeof(PhotoAction),id)){if(!_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))_=CaptureAsync(false,(PhotoAction)id);return true;}}
+        if(msg==0x312){if(_editingCaptureKeys)return true;var id=(int)w;if(id==990){CancelCapture();return true;}if(Enum.IsDefined(typeof(PhotoAction),id)){if(!_keyEditors.Values.Any(v=>v.Key.IsKeyboardFocusWithin))QueueCapture(false,(PhotoAction)id);return true;}}
         return false;
     }
     private void OpenTrayMenu()
@@ -137,8 +138,8 @@ public partial class MainWindow
         if(_workflowSuspended)return;_trayMenu?.SetCurrentValue(ContextMenu.IsOpenProperty,false);var menu=new ContextMenu();_trayMenu=menu;
         void Add(string title,Action action,bool enabled=true){var item=new MenuItem{Header=title,IsEnabled=enabled};item.Click+=(_,_)=>{menu.IsOpen=false;Dispatcher.BeginInvoke(action);};menu.Items.Add(item);}
         Add("Mở Editor",()=>ShowEditor(),!_busy);
-        foreach(var action in Enum.GetValues<PhotoAction>().Where(a=>a!=PhotoAction.Element))Add(ActionName(action),()=>_=CaptureAsync(false,action),!_busy&&!_updateApplying);
-        var presets=new MenuItem{Header="Preset chụp",IsEnabled=!_busy&&!_updateApplying};foreach(var preset in _workflow.Presets){var item=new MenuItem{Header=preset.Name};item.Click+=(_,_)=>{menu.IsOpen=false;Dispatcher.BeginInvoke(()=>{try{ApplyPreset(preset);_=CaptureAsync(false);}catch(Exception e){_tray?.Notify(e.Message);}});};presets.Items.Add(item);}menu.Items.Add(presets);
+        foreach(var action in new[]{PhotoAction.Region,PhotoAction.Display,PhotoAction.Repeat})
+            Add(ActionName(action),()=>QueueCapture(false,action),!_busy&&!_updateApplying);
         if(_busy)Add(_fidelityProcess!=null?"Hủy kiểm chứng SDR":_recordingActive?"Dừng và lưu video":"Hủy phiên chụp",CancelCapture);
         menu.Items.Add(new Separator());Add("Bản quyền & khôi phục",()=>{ShowEditor();License_Click(this,new());});Add("Thoát Captovix",RequestExit);AppMenus.Decorate(menu);_tray?.Foreground();menu.IsOpen=true;
     }

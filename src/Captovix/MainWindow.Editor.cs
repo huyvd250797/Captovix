@@ -144,7 +144,7 @@ public partial class MainWindow
             EditorTool.Text=>"Kéo tạo khung chữ có xem trước • Thả để nhập • Kéo tay nắm để resize/reflow • Double-click sửa • Ctrl+Enter hoàn tất.",
             EditorTool.Callout=>"Nhấn điểm đuôi rồi kéo giãn rộng/cao tự do, kể cả đường chéo • Thả để nhập chữ • Chỉ kéo mới tạo • Kéo tâm để dời thân, giữ đuôi • Kéo ngoài tâm dời cả Callout • Công cụ giữ nguyên để vẽ tiếp.",
             EditorTool.Freehand=>"Giữ chuột trái để vẽ tự do • Thả chuột kết thúc nét • Esc hủy nét đang vẽ.",
-            EditorTool.Step=>"Click để đặt số bước tự tăng. Có thể sửa số ở bảng thuộc tính.",
+            EditorTool.Step=>"Click để đặt số bước tự tăng. Nhấp đúp vào bước để sửa số.",
             EditorTool.Crop=>"Kéo vùng hoặc tay nắm rồi thả chuột để crop ngay • Nhập kích thước dùng Áp dụng • Esc hủy • Space kéo khung nhìn.",
             EditorTool.Magnifier=>"Kéo vùng đặt kính tại chỗ • Chỉnh 1.25–8× và hình vùng bên phải • Alt+kéo để đặt kính lên đối tượng có sẵn.",
             EditorTool.Spotlight=>"Kéo vùng giữ sáng • Chỉnh độ tối bên phải • Nhiều vùng sáng được hợp lại; màu/độ tối theo Spotlight trên cùng.",
@@ -157,6 +157,7 @@ public partial class MainWindow
     {
         if(!_editorReady||_syncProperties||_autoApplying)return;_syncProperties=true;
         try{
+            SyncImageObjectOpacity();
             ExtendCanvasButton.IsEnabled=_session!=null&&!_busy;var a=Surface.Selected;DeleteAnnotationButton.IsEnabled=a!=null;PropertyTitle.Text=a==null?"Thuộc tính chú thích":a.Kind switch{AnnotationKind.Arrow=>"Mũi tên",AnnotationKind.Rectangle=>"Khung chữ nhật",AnnotationKind.Ellipse=>"Hình ellipse",AnnotationKind.Text=>"Chữ",AnnotationKind.Highlight=>"Highlight",AnnotationKind.Magnifier=>"Kính phóng đại",AnnotationKind.Spotlight=>"Spotlight",AnnotationKind.Blur=>"Làm mờ",AnnotationKind.Pixelate=>"Pixel hóa · dữ liệu cũ",AnnotationKind.ImageLayer=>"Lớp ảnh",AnnotationKind.Cover=>"Che kín",AnnotationKind.Callout=>"Hộp chú thích",AnnotationKind.Freehand=>"Nét vẽ tự do",_=>ShapeStudio.IsClosed(a.Kind)||a.Kind==AnnotationKind.Line?ShapeStudio.Label(a.Kind):"Số bước"};
             if(Surface.SelectedIds.Count>1)PropertyTitle.Text=$"Đã chọn {Surface.SelectedIds.Count} đối tượng";
             if(a!=null){Surface.InkColor=a.Color;Surface.StrokeSize=a.Stroke;Surface.TextSize=a.FontSize;Surface.EffectSize=a.EffectSize;}
@@ -166,7 +167,7 @@ public partial class MainWindow
             TextProperties.Visibility=a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             StepProperties.Visibility=a?.Kind==AnnotationKind.Step&&Surface.SelectedIds.Count==1?Visibility.Visible:Visibility.Collapsed;
             if(a?.Kind is AnnotationKind.Text or AnnotationKind.Callout&&AnnotationText.Text!=a.Text)AnnotationText.Text=a.Text;
-            if(a?.Kind==AnnotationKind.Step)StepNumber.Text=a.Number.ToString(CultureInfo.InvariantCulture);
+            if(a?.Kind==AnnotationKind.Step)StepNumber.Text=TextStudio.StepLabel(a);
             RestoreCropButton.IsEnabled=_session?.Document.Crop!=null||_session?.Document.Appearance.OutputCrop!=null;
         }finally{_syncProperties=false;}
     }
@@ -202,7 +203,7 @@ public partial class MainWindow
     }
     private void StepNumber_Commit(object sender,KeyboardFocusChangedEventArgs e)=>CommitStep();
     private void StepNumber_KeyDown(object sender,KeyEventArgs e){if(e.Key==Key.Enter){CommitStep();Surface.Focus();e.Handled=true;}}
-    private void CommitStep(){if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Step} a)return;if(int.TryParse(StepNumber.Text,out var n)&&n>=1&&n<=9999){var id=a.Id;_session.Change(d=>d.Annotations.First(x=>x.Id==id).Number=n);}SyncProperties();}
+    private void CommitStep(){if(_syncProperties||_session==null||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds)||Surface.Selected is not {Kind:AnnotationKind.Step} a)return;if(StepNumber.Text!=TextStudio.StepLabel(a)&&TextStudio.TryStepNumber(StepNumber.Text,out var number,out var tenths)){var id=a.Id;_session.Change(d=>d.SetStepNumber(d.Annotations.First(x=>x.Id==id),number,tenths));}SyncProperties();}
     private void DeleteAnnotation_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;Surface.DeleteSelected();}
     private void RestoreCrop_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;if(_session==null)return;SelectTool(EditorTool.Select);try{_=new ImageLayout(new PixelRect(0,0,_session.Document.OriginalWidth,_session.Document.OriginalHeight),_session.Document.Appearance);_session.Change(d=>{d.Crop=null;d.Appearance.OutputCrop=null;});Surface.Refresh();if(_fitMode)FitImage();}catch(Exception ex){SetStatus("Chưa khôi phục crop: "+ex.Message);}}
     private void Undo_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;FlushAutoProperties();Surface.CancelInteraction();if(Surface.Tool==EditorTool.Crop){Surface.ClearCropDraft();return;}_session?.Undo();Surface.Refresh();SyncProperties();if(_fitMode)FitImage();}
@@ -231,6 +232,7 @@ public partial class MainWindow
         if(e.Key==Key.C&&MediaList.IsKeyboardFocusWithin&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){CopyLibrarySelection();e.Handled=true;return;}
         if(e.Key==Key.A&&MediaList.IsKeyboardFocusWithin&&Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){MediaList.SelectAll();e.Handled=true;return;}
         if(e.Key==Key.Delete&&MediaList.IsKeyboardFocusWithin){Delete_Click(sender,e);e.Handled=true;return;}
+        if(HandleVideoKeys(e))return;
         if(e.Key==Key.Escape&&Surface.Tool==EditorTool.Stamp){Surface.CancelInteraction();e.Handled=true;return;}
         var ctrl=Keyboard.Modifiers.HasFlag(ModifierKeys.Control);var typing=Keyboard.FocusedElement is TextBoxBase;
         if(TryTextShortcut(e))return;

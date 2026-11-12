@@ -1,3 +1,68 @@
+# Captovix — Lịch sử cập nhật
+
+## V1.60.0 — Audio Editing
+
+- Tách màn xem video và Studio toàn màn hình, gỡ Đặt đầu / Đặt cuối.
+- Waveform, Mute/Solo, âm lượng, cắt âm, fade và một track nhạc nền. Xem trước và xuất dùng cùng bản phối theo timeline.
+- Dùng renderer chú thích ảnh trong Video Studio và bổ sung thuộc tính theo loại. Opacity trên ảnh có thanh kéo và ô nhập đồng bộ.
+- Dự án video dùng schema 4, đọc được V1–V3.
+
+## V1.59.0 — Canvas & Layout
+
+- Canvas ngang, dọc, vuông, Fit/Fill và màu nền. Crop trực tiếp và xoay theo clip.
+- Số đoạn cố định qua sắp xếp, tự lưu, Undo/Redo và xuất. Menu chuột phải dùng nhãn Split.
+- Sáu công cụ chú thích trên thanh trên cùng, thao tác trực tiếp trong canvas, một hàng timeline cho mỗi chú thích, chỉnh vị trí và thời lượng.
+- Dự án V3 mở được V1/V2 và chuyển chú thích cũ thành track theo thời gian. Xuất đoạn cắt và dịch mốc track về đầu đoạn.
+
+## V1.58.0 — Timeline Editing
+
+- Ghép nhiều MP4, kéo thả đổi thứ tự, Split tại vạch phát, xóa khép khoảng trống, zoom, Ctrl+Z và Ctrl+Y.
+- Xem toàn màn hình và điều khiển phát/tạm dừng bằng một nút biểu tượng.
+- Thêm Khung, Callout, Mũi tên, Chữ, Bước và Làm mờ cho clip. Xuất vùng làm mờ dùng FFmpeg có libx264.
+- Xuất toàn timeline hoặc đoạn chọn. Dự án V2 lưu thứ tự, chú thích và nguồn tham chiếu, đồng thời mở được dự án V1.
+
+## V1.57.0 — Video Projects
+
+- Thêm timeline dưới trình xem. Split, đặt đầu/cuối, xóa, hoàn tác và xuất đoạn ngay trong màn hình chính.
+- Tự lưu phiên chỉnh với mốc cắt, đoạn chọn và vị trí phát. Mở, lưu tệp dự án và liên kết lại MP4 đã di chuyển.
+- Sao lưu cập nhật gồm dữ liệu dự án video và phiên đang mở.
+
+
+
+## V1.56.0 — Quick Trim & Export
+
+- Cắt đầu/cuối và tách đoạn của bản quay hoặc MP4 nhập. Xem trước và xuất đoạn đang chọn với tiến độ và khả năng hủy.
+- Dùng tệp tạm, kiểm MP4 và thời lượng trước khi ghi tệp đích. Giữ nguyên video gốc trong thư viện.
+- Số Bước nhận một chữ số thập phân và tự tăng theo kiểu của Bước vừa tạo hoặc chỉnh trên ảnh hiện tại. Undo/Redo và mở lại ảnh giữ thứ tự thao tác.
+
+
+
+## V1.54.0 — Recording Presets & Presenter Recording
+
+- Gộp V1.53.0 và V1.54.0. Thêm preset, giới hạn độ phân giải, FPS, ước tính dung lượng, cảnh báo ổ đĩa/encoder và đối chiếu file đã ghi.
+- Thêm marker, lưu sự kiện click theo trục thời gian bỏ khoảng tạm dừng, tùy chọn làm nổi click và phím nhanh đặt mốc.
+- Quay modal bằng một click, hiển thị tên thiết bị và hai mức âm độc lập, gộp nút phát/tạm dừng.
+- Nhấp đúp chú thích Bước để sửa số tại chỗ. Không cần migration cơ sở dữ liệu. Bản sao lưu có dữ liệu click dùng định dạng thư viện 3. Vẫn đọc được định dạng 1 và 2.
+
+
+
+- Chọn micro, thiết bị phát và bật/tắt từng nguồn ngay trong hộp nguồn quay. Xem mức âm riêng trước khi tiếp tục.
+- MP4 chứa bản trộn. Mỗi nguồn được bật lưu một WAV riêng. Nghe từng nguồn từ thư viện.
+- Ánh xạ timestamp gói WASAPI theo trạng thái bộ quay, bỏ phần tạm dừng và giữ khoảng lặng theo timeline.
+- Báo tên nguồn gặp lỗi hoặc bị ngắt. Thử vô hiệu hóa riêng nguồn đó để bộ quay tiếp tục khi hỗ trợ.
+- Lớp tối đếm 3–2–1 bằng số trắng tại nguồn quay. Thanh quay có biểu tượng Pause, Tiếp tục và Dừng nền đỏ. Chọn vùng hỗ trợ nhận diện modal.
+- Tệp WAV đi cùng video khi chuyển thùng rác, khôi phục hoặc sao lưu và nhập thư viện.
+
+# V1.51.0 — Recording Foundation
+
+- Chọn vùng, cửa sổ hoặc màn hình trước khi quay. Đếm ngược có Hủy và Esc.
+- Thanh quay hiển thị nguồn, thời lượng, trạng thái Đang quay, Tạm dừng hoặc Đang lưu.
+- Kiểm cấu trúc MP4, khả năng mở bằng Windows, kích thước và thời lượng trước khi thêm vào thư viện. Dừng khi nguồn cửa sổ đóng và chỉ lưu bản ghi hợp lệ.
+- Căn kích thước canvas video riêng với tọa độ vật lý của vùng chọn. Kiểm thử native nhiều màn hình theo checklist.
+- Đồng bộ menu chụp ảnh và menu khay với ba hành động. Bỏ preset khỏi giao diện và giữ đường khôi phục chụp cuộn.
+- Đợi xử lý menu WPF trước khi mở lớp chọn. Giữ ảnh menu nhiều cấp khi dùng phím tắt chụp.
+- Thêm gradient nền logo độc lập với gradient hình logo.
+
 # V1.50.0 — Stability & Release Quality
 
 - Xem trước màu trực tiếp. Bấm Lưu để giữ thiết lập. Hủy hoặc đóng Thiết lập trả về màu đã lưu.

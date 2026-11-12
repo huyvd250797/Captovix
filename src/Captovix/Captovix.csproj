@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Nullable>enable</Nullable>
@@ -13,10 +14,10 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
-    <Version>1.50.0</Version>
-    <ReleaseTitle>Stability &amp; Release Quality</ReleaseTitle>
+    <Version>1.60.0</Version>
+    <ReleaseTitle>Audio Editing</ReleaseTitle>
     <StartupObject>Captovix.Program</StartupObject>
-    <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
+    
     <PublishTrimmed>false</PublishTrimmed>
     <Company>HuyVo</Company>
     <Copyright>© 2026 HuyVo. All rights reserved.</Copyright>
@@ -29,6 +30,7 @@
     <Content Include="tessdata/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="Tesseract" Version="5.2.0" GeneratePathProperty="true" />
     <PackageReference Include="ScreenRecorderLib" Version="7.0.1" />
+    <PackageReference Include="NAudio.Wasapi" Version="3.2.0" />
     <PackageReference Include="Velopack" Version="1.2.161" />
     <ProjectReference Include="../Licensing.Shared/Licensing.Shared.csproj" />
     <EmbeddedResource Include="license-config.json" LogicalName="Captovix.license-config.json" />
@@ -38,4 +40,4 @@
     <Copy SourceFiles="$(PkgTesseract)/x64/tesseract50.dll;$(PkgTesseract)/x64/leptonica-1.82.0.dll" DestinationFolder="$(PublishDir)x64" />
     <RemoveDir Directories="$(PublishDir)x86" />
   </Target>
-</Project>
+<ItemGroup><FrameworkReference Update="Microsoft.NETCore.App" RuntimeFrameworkVersion="10.0.13"/><FrameworkReference Update="Microsoft.WindowsDesktop.App.WPF" RuntimeFrameworkVersion="10.0.13"/></ItemGroup></Project>

@@ -44,7 +44,7 @@ public static class AppearanceManager
         var foreground = settings.IconUsesAccent ? settings.Accent : settings.IconColor;
         var foregroundEnd = settings.IconUsesAccent ? settings.AccentEnd : settings.IconEnd;
         var gradient = settings.IconUsesAccent ? settings.AccentGradient : settings.IconGradient;
-        var originalPalette = !gradient && foreground.Equals("#FFFFFF", StringComparison.OrdinalIgnoreCase)
+        var originalPalette = !gradient && !settings.IconBackgroundGradient && foreground.Equals("#FFFFFF", StringComparison.OrdinalIgnoreCase)
             && settings.IconBackground.Equals("#7C3AED", StringComparison.OrdinalIgnoreCase);
         var asset = originalPalette ? "Captovix-app.png" : "Captovix-mark.png";
         var assemblyName = typeof(AppearanceManager).Assembly.GetName().Name;
@@ -60,7 +60,7 @@ public static class AppearanceManager
             }
             else
             {
-                var background = Paint(settings.IconBackground, settings.IconBackground, false, 0);
+                var background = Paint(settings.IconBackground, settings.IconBackgroundEnd, settings.IconBackgroundGradient, settings.GradientAngle);
                 dc.DrawRoundedRectangle(background, null, bounds, 48 * scale, 48 * scale);
                 // Placement from the original Captovix-app.svg.
                 var logo = new Rect(47 * scale, 47 * scale, size * .633, size * .633);

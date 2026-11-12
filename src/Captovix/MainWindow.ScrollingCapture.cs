@@ -15,7 +15,7 @@ public partial class MainWindow
         if(_busy||_updateApplying||!_captureGate.TryEnter())return;
         var previous=WindowState;ScrollSession? session=null;SetBusy(true);_settingsDialog?.Close();
         try{
-            Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();_playing=false;
+            Surface.CancelInteraction();if(!FlushEdits())return;VideoPreview.Pause();SetVideoPlaying(false);
             _captureCancellation=new();var cancellation=_captureCancellation.Token;RegisterCaptureEscape();RefreshSources();var topology=CaptureWorkflowStore.Topology(WorkflowDisplays());
             Hide();await Task.Delay(220,cancellation);var region=presetRegion??await RegionPicker.PickAsync(_displays,cancellation);if(region==null)return;
             ScrollStitching.OutputHeight(region.Value.Width,region.Value.Height,Array.Empty<int>());

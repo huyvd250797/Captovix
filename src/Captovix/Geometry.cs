@@ -13,6 +13,13 @@ public readonly record struct PixelRect(int X, int Y, int Width, int Height)
 public record SourcePlacement(string Device, PixelRect Crop, int X, int Y);
 public static class CaptureGeometry
 {
+    // Align the canvas independently of monitor crops. Truncating the selected
+    // region would drop the right or bottom pixel on odd-sized selections.
+    public static PixelRect RecordingFrame(PixelRect region)
+    {
+        if(region.IsEmpty)throw new ArgumentException("Vùng quay không hợp lệ.",nameof(region));
+        return region with{Width=checked(region.Width+(region.Width&1)),Height=checked(region.Height+(region.Height&1))};
+    }
     // Input/output positions are always physical pixels, including negative monitor origins.
     public static List<SourcePlacement> Split(PixelRect region, IEnumerable<(string Device, PixelRect Bounds)> screens)
     {

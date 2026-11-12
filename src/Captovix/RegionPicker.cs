@@ -60,7 +60,9 @@ public sealed class RegionPicker : Window
             }
             foreach (var w in Windows)
             {
+                if (!w.IsVisible || PresentationSource.FromVisual(w)==null) continue;
                 if (draw) w.Draw();
+                if (!w.IsVisible || PresentationSource.FromVisual(w)==null) continue;
                 w.UpdateMagnifier(p);
                 w._crosshair.Update(w.PointFromScreen(new(p.X,p.Y)), CrosshairVisible&&!w.OverToolbar(p));
             }
@@ -169,7 +171,12 @@ public sealed class RegionPicker : Window
             if(!Dragging||_gesture==null)return;
             var next=_gesture.Apply(p.X,p.Y,shift,Bounds);if(_gesture.Handle==CaptureHandle.New)_lockedTarget=0;if(next!=Current){if(PerformanceTimings.IsEnabled)_dragFrameAt??=System.Diagnostics.Stopwatch.GetTimestamp();Current=next;Draw();}
         }
-        public void End(){Dragging=false;Draw();}
+        public bool End()
+        {
+            bool acceptedSuggestion=_gesture is {IsSuggestionClick:true}&&_lockedTarget!=0;
+            Dragging=false;Draw();
+            return acceptedSuggestion;
+        }
         public void Finish(CaptureChoice choice=CaptureChoice.Photo)
         {
             if(!Locked||Dragging||!CaptureSelection.Valid(Current))return;
@@ -180,10 +187,11 @@ public sealed class RegionPicker : Window
             Choice=choice;Close(Current);
         }
         public void Close(PixelRect? result){if(_disposed)return;Dispose();Done.TrySetResult(result);}
-        public void Dispose(){if(_disposed)return;_disposed=true;_timer.Stop();CompositionTarget.Rendering-=RenderFrame;_cancel.Cancel();_probe.Dispose();foreach(var w in Windows){w._selection.BeginAnimation(Shape.StrokeDashOffsetProperty,null);w.Background=null;w.Content=null;w._canvas.Children.Clear();w.Close();}Windows.Clear();_cancel.Dispose();}
+        public void Dispose(){if(_disposed)return;_disposed=true;_timer.Stop();CompositionTarget.Rendering-=RenderFrame;_cancel.Cancel();_probe.Dispose();foreach(var w in Windows){w._selection.BeginAnimation(Shape.StrokeDashOffsetProperty,null);w.Close();w.Background=null;}Windows.Clear();_cancel.Dispose();}
     }
     private readonly Session _session;
     private readonly DisplayInfo _display;
+    private readonly bool _recording;
     private readonly Canvas _canvas=new();
     private readonly CaptureShade _shade=new();
     private readonly CaptureCrosshair _crosshair=new();
@@ -196,20 +204,20 @@ public sealed class RegionPicker : Window
     private readonly CaptureMagnifier? _magnifier;
     private PixelRect _toolbarBounds;
     private bool _placing;
-    public static async Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation=default,bool allowScroll=false,bool smart=false,FrozenDesktop? frozen=null,bool requireEnter=true)
+    public static async Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation=default,bool allowScroll=false,bool smart=false,FrozenDesktop? frozen=null,bool requireEnter=true,bool recording=false)
     {
         cancellation.ThrowIfCancellationRequested();if(displays.Count==0)throw new InvalidOperationException("Không tìm thấy màn hình.");
         Choice=CaptureChoice.Photo;using var session=new Session(displays,smart,frozen,requireEnter);
-        foreach(var d in displays)session.Windows.Add(new(d,session,allowScroll,smart));
+        foreach(var d in displays)session.Windows.Add(new(d,session,allowScroll,smart,recording));
         foreach(var w in session.Windows)w.Show();
         if(Native.GetCursorPos(out var pointer))session.Pointer(pointer);
         session.Draw();session.StartPolling();
         using var registration=cancellation.Register(()=>Application.Current.Dispatcher.BeginInvoke(()=>session.Close(null)));
         return await session.Done.Task;
     }
-    private RegionPicker(DisplayInfo display,Session session,bool allowScroll,bool smartAvailable)
+    private RegionPicker(DisplayInfo display,Session session,bool allowScroll,bool smartAvailable,bool recording)
     {
-        _display=display;_session=session;_contrast.StrokeThickness=2/(display.DpiX/96d);_selection.StrokeThickness=1/(display.DpiX/96d);
+        _display=display;_session=session;_recording=recording;_contrast.StrokeThickness=2/(display.DpiX/96d);_selection.StrokeThickness=1/(display.DpiX/96d);
         WindowStyle=WindowStyle.None;ResizeMode=ResizeMode.NoResize;AllowsTransparency=true;Background=Brushes.Transparent;Topmost=true;ShowInTaskbar=false;Cursor=Cursors.Cross;
         if(session.Frozen!=null){Background=session.Frozen.Background(display.Bounds);RenderOptions.SetBitmapScalingMode(this,BitmapScalingMode.NearestNeighbor);_magnifier=new(session.Frozen){Visibility=Visibility.Collapsed};_canvas.Children.Add(_magnifier);Panel.SetZIndex(_magnifier,20);}
         Content=_canvas;_canvas.Children.Add(_shade);_canvas.Children.Add(_contrast);_canvas.Children.Add(_selection);_canvas.Children.Add(_crosshair);
@@ -224,7 +232,7 @@ public sealed class RegionPicker : Window
         _smart=Add("Element","","Nhận diện phần tử · S bật/tắt\nRê để gợi ý · ↑/↓: cha/con\nClick khóa · Kéo cạnh chỉnh · Tab: chọn lại",()=>{session.ToggleSmart();session.Draw();});_smart.Visibility=smartAvailable?Visibility.Visible:Visibility.Collapsed;
         if(allowScroll){Add("ScrollDown","","Chụp cuộn dọc",()=>session.Finish(CaptureChoice.Vertical));Add("ScrollRight","","Chụp cuộn ngang",()=>session.Finish(CaptureChoice.Horizontal));}
         Add("Close","","Hủy · Esc",()=>session.Close(null));
-        _shoot=Add("Camera",session.RequireEnter?"Enter":"Chụp",session.RequireEnter?"Chụp ảnh · Enter":"Thả chuột chụp ngay",()=>session.Finish());_shoot.Background=new SolidColorBrush(Color.FromRgb(111,55,220));
+        _shoot=Add(recording?"Record":"Camera",recording?"Quay":session.RequireEnter?"Enter":"Chụp",recording?"Xác nhận vùng quay · Enter":session.RequireEnter?"Chụp ảnh · Enter":"Thả chuột chụp ngay",()=>session.Finish());_shoot.Background=new SolidColorBrush(Color.FromRgb(111,55,220));
         _toolbar.SizeChanged+=(_,_)=>Draw();
         SizeChanged+=(_,_)=>{_shade.Width=_crosshair.Width=ActualWidth;_shade.Height=_crosshair.Height=ActualHeight;Draw();};
         void Position(){var h=new WindowInteropHelper(this).Handle;Native.SetWindowPos(h,-1,display.Bounds.X,display.Bounds.Y,display.Bounds.Width,display.Bounds.Height,0x40);Native.SetWindowDisplayAffinity(h,0x11);}
@@ -232,7 +240,7 @@ public sealed class RegionPicker : Window
         PreviewKeyDown+=KeyDownOverlay;
         MouseLeftButtonDown+=(_,e)=>{if(IsToolbarSource(e.OriginalSource as DependencyObject))return;if(session.KeyboardSelecting){session.KeyboardSelecting=false;session.End();session.Reset();}Native.GetCursorPos(out var p);session.Begin(p,Tolerance);CaptureMouse();e.Handled=true;};
         MouseMove+=(_,_)=>{Native.GetCursorPos(out var p);session.Pointer(p);if(session.Dragging){session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);return;}Cursor=CursorAt(p);};
-        MouseLeftButtonUp+=(_,e)=>{if(!session.Dragging)return;Native.GetCursorPos(out var p);session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);ReleaseMouseCapture();session.End();if(!session.RequireEnter)session.Finish();e.Handled=true;};
+        MouseLeftButtonUp+=(_,e)=>{if(!session.Dragging)return;Native.GetCursorPos(out var p);session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);ReleaseMouseCapture();bool suggestedClick=session.End();if(!session.RequireEnter||recording&&suggestedClick)session.Finish();e.Handled=true;};
         MouseWheel+=(_,e)=>{e.Handled=true;};MouseRightButtonDown+=(_,_)=>session.Close(null);
     }
     private void UpdateMagnifier(Native.POINT p)
@@ -271,7 +279,7 @@ public sealed class RegionPicker : Window
     private bool OverToolbar(Native.POINT p)=>_toolbar.Visibility==Visibility.Visible&&ElementSelection.Contains(_toolbarBounds,p.X,p.Y);
     private void Draw()
     {
-        if(_placing||!IsLoaded)return;_placing=true;
+        if(_placing||!IsLoaded||!IsVisible||PresentationSource.FromVisual(this)==null)return;_placing=true;
         try{
             var s=_session;var r=s.Current.Intersect(_display.Bounds);var valid=CaptureSelection.Valid(s.Current);
             _contrast.Visibility=_selection.Visibility=r.IsEmpty?Visibility.Collapsed:Visibility.Visible;
@@ -282,7 +290,7 @@ public sealed class RegionPicker : Window
             }
             Native.GetCursorPos(out var cursor);var owner=valid?s.Displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,s.Current.X+s.Current.Width/2,s.Current.Y+s.Current.Height/2)):s.Displays.FirstOrDefault(d=>ElementSelection.Contains(d.Bounds,cursor.X,cursor.Y));owner??=s.Displays[0];
             _toolbar.Visibility=s.Dragging||owner!=_display?Visibility.Collapsed:Visibility.Visible;if(_toolbar.Visibility!=Visibility.Visible)return;
-            _label.Text=s.Status;_shoot.IsEnabled=valid&&s.Locked;_smart.Opacity=s.Smart?1:.45;
+            _label.Text=_recording&&s.Locked?$"Vùng quay · {s.Current.Width} × {s.Current.Height} px":s.Status;_shoot.IsEnabled=valid&&s.Locked;_smart.Opacity=s.Smart?1:.45;
             _toolbar.MaxWidth=Math.Max(80,ActualWidth-8);_label.MaxWidth=Math.Max(60,Math.Min(125,ActualWidth-230));_toolbar.Measure(new Size(double.PositiveInfinity,double.PositiveInfinity));var size=_toolbar.DesiredSize;double scale=VisualTreeHelper.GetDpi(this).DpiScaleX;
             var screen=_display.Bounds;var anchor=valid?s.Current:new PixelRect(screen.X+screen.Width/2,screen.Bottom,1,1);
             _toolbarBounds=QuickCaptureLayout.Toolbar(screen,anchor,(int)Math.Ceiling(size.Width*scale),(int)Math.Ceiling(size.Height*scale),cursor.X,cursor.Y);var point=PointFromScreen(new(_toolbarBounds.X,_toolbarBounds.Y));Canvas.SetLeft(_toolbar,point.X);Canvas.SetTop(_toolbar,point.Y);

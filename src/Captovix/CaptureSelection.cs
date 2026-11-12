@@ -69,6 +69,7 @@ public sealed class CaptureGesture(PixelRect before,CaptureHandle handle,int sta
 {
     public CaptureHandle Handle {get;private set;}=handle;
     private bool _click=liveSuggestion;
+    public bool IsSuggestionClick=>_click;
     public PixelRect Apply(int x,int y,bool ratio,PixelRect bounds)
     {
         var requested=Apply(x,y,ratio);

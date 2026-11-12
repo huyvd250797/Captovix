@@ -3,9 +3,9 @@ $ErrorActionPreference = 'Stop'
 $nativeEvidence=Join-Path (Split-Path $PSScriptRoot -Parent) 'artifacts/windows-acceptance.json'
 if(!(Test-Path $nativeEvidence)){throw 'Native Windows acceptance evidence missing. Review packages may be built locally; stable publication is blocked.'}
 $native=Get-Content $nativeEvidence -Raw | ConvertFrom-Json
-if($native.version -ne '1.50.0' -or $native.platform -ne 'Windows' -or !$native.windowVisible -or $native.manualAcceptance -ne 'PASS'){throw 'Windows native acceptance has not passed for this release.'}
+if($native.version -ne '1.60.0' -or $native.platform -ne 'Windows' -or !$native.windowVisible -or $native.manualAcceptance -ne 'PASS'){throw 'Windows native acceptance has not passed for this release.'}
 
-$requiredChecks = @('FreshInstall','OverwriteInstall','InAppUpdate','DataIntegrity','StartupRecovery','MixedDpiCapture','LongSession','Latency','Appearance')
+$requiredChecks = @('FreshInstall','OverwriteInstall','InAppUpdate','DataIntegrity','StartupRecovery','MixedDpiCapture','LongSession','Latency','Appearance','RecordingSources','RecordingControls','RecordingIntegrity','RecordingMixedDpi','CaptureMenus','AudioSources','AudioTrackPlayback','AudioSync','AudioDeviceLoss','RecordingCountdown','RecordingPresets','RecordingPresenter','RecordingModalClick','LiveAudioMeters','VideoPlaybackToggle','InlineStepEditing','VideoTrimExport','DecimalStepNumbering','VideoProjectRecovery','VideoTimelineEditing')
 foreach($name in $requiredChecks){
     if(!$native.checks -or $native.checks.$name -cne 'PASS'){throw "Windows acceptance is missing or failed: $name"}
 }

@@ -172,7 +172,7 @@ public sealed partial class EditorSurface : FrameworkElement
                 if(!additive&&!_selected.Contains(hit.Id))_selected.Clear();_selected.UnionWith(hitIds);_primary=hit.Id;
                 SelectionChanged?.Invoke();
                 if(clickCount==2&&!enteredGroup&&hit.Mockup!=null){MockupEditRequested?.Invoke();return;}
-                if(clickCount==2&&!enteredGroup&&hit.Kind is AnnotationKind.Text or AnnotationKind.Callout){TextRequested?.Invoke();return;}
+                if(clickCount==2&&!enteredGroup&&hit.Kind is AnnotationKind.Text or AnnotationKind.Callout or AnnotationKind.Step){TextRequested?.Invoke();return;}
                 Session.Begin();
                 _originals=Session.Document.Annotations.Where(a=>_selected.Contains(a.Id)).Select(a=>a.Copy()).ToArray();_dragBounds=SelectionBox();PrepareObjectGesture();
                 if(_handle<0||_handle==9||_selected.Count>1)foreach(var original in _originals){if(original.StartAnchor is {} start&&!_selected.Contains(start.TargetId))original.StartAnchor=null;if(original.EndAnchor is {} end&&!_selected.Contains(end.TargetId))original.EndAnchor=null;}
@@ -189,7 +189,7 @@ public sealed partial class EditorSurface : FrameworkElement
             if(Session.Document.Annotations.Count>=10000||Tool==EditorTool.Freehand&&_pointBudget<1){return;}
             Session.Begin();if(AllowsOutside)Session.Document.Appearance.DrawOutsideImage=true;var a=new Annotation{Kind=Tool==EditorTool.Shape?ShapeKind:Enum.Parse<AnnotationKind>(Tool.ToString()),X1=_start.X,Y1=_start.Y,X2=_start.X,Y2=_start.Y,Color=InkColor,Stroke=StrokeSize,FontSize=TextSize,EffectSize=EffectSize};
             ShapeStudio.CopyStyle(ShapeDefaults,a);InitializeTextObject(a);InitializeFocusObject(a);BeginConnector(a);if(a.Kind==AnnotationKind.Callout){a.TailX=_start.X;a.TailY=_start.Y;}
-            if(Tool==EditorTool.Step)a.Number=Session.Document.NextStep();if(Tool is EditorTool.Text or EditorTool.Callout)a.Text=Tool==EditorTool.Text?"Text":"";if(Tool==EditorTool.Text){a.TextFrame=true;a.AutoFitText=false;a.TextWidth=0;}
+            if(Tool==EditorTool.Step)Session.Document.NumberNewStep(a);if(Tool is EditorTool.Text or EditorTool.Callout)a.Text=Tool==EditorTool.Text?"Text":"";if(Tool==EditorTool.Text){a.TextFrame=true;a.AutoFitText=false;a.TextWidth=0;}
             if(Tool==EditorTool.Freehand)a.AddPoint(_start.X,_start.Y);
             Session.Document.Annotations.Add(a);_selected.Clear();_selected.Add(a.Id);_primary=_createdId=a.Id;SelectionChanged?.Invoke();
             if(Tool==EditorTool.Step){EditorRenderer.FitText(a,EditingBounds);FitSelectionCanvas();Session.Commit();Refresh();if(Tool==EditorTool.Text)TextRequested?.Invoke();return;}

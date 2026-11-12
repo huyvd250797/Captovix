@@ -39,6 +39,8 @@ public partial class MainWindow
         var icon = new TextBox { Text = saved.IconColor };
         var iconEnd = new TextBox { Text = saved.IconEnd };
         var iconBackground = new TextBox { Text = saved.IconBackground };
+        var iconBackgroundEnd = new TextBox { Text = saved.IconBackgroundEnd };
+        var backgroundGradient = new CheckBox { Content = "Gradient nền logo", IsChecked = saved.IconBackgroundGradient, Margin = new Thickness(3, 8, 0, 3) };
         var gradient = new CheckBox { Content = "Gradient màu nhấn", IsChecked = saved.AccentGradient, Margin = new Thickness(3, 8, 0, 3) };
         var follow = new CheckBox { Content = "Màu hình logo theo màu nhấn", IsChecked = saved.IconUsesAccent, Margin = new Thickness(3, 8, 0, 3) };
         var iconGradient = new CheckBox { Content = "Gradient cho hình logo", IsChecked = saved.IconGradient, Margin = new Thickness(3, 8, 0, 3) };
@@ -60,6 +62,9 @@ public partial class MainWindow
         var endField = PropertyVisuals.ColorField("Màu kết thúc", accentEnd, Pick);
         accentGroup.Children.Add(endField);
         logoGroup.Children.Add(PropertyVisuals.ColorField("Màu nền logo", iconBackground, Pick));
+        logoGroup.Children.Add(backgroundGradient);
+        var backgroundEndField = PropertyVisuals.ColorField("Màu kết thúc nền logo", iconBackgroundEnd, Pick);
+        logoGroup.Children.Add(backgroundEndField);
         logoGroup.Children.Add(follow);
         var iconFields = new StackPanel();
         iconFields.Children.Add(PropertyVisuals.ColorField("Màu hình logo", icon, Pick));
@@ -90,7 +95,8 @@ public partial class MainWindow
             iconFields.IsEnabled = follow.IsChecked != true;
             endField.Visibility = gradient.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
             iconEndField.Visibility = iconGradient.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-            direction.Visibility = gradient.IsChecked == true || (follow.IsChecked != true && iconGradient.IsChecked == true)
+            backgroundEndField.Visibility = backgroundGradient.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            direction.Visibility = gradient.IsChecked == true || backgroundGradient.IsChecked == true || (follow.IsChecked != true && iconGradient.IsChecked == true)
                 ? Visibility.Visible : Visibility.Collapsed;
             angleText.Text = $"{angle.Value:0}°";
         }
@@ -108,7 +114,8 @@ public partial class MainWindow
                     AccentGradient: gradient.IsChecked == true, AccentEnd: accentEnd.Text.Trim(),
                     IconUsesAccent: follow.IsChecked == true, IconColor: icon.Text.Trim(),
                     IconGradient: iconGradient.IsChecked == true, IconEnd: iconEnd.Text.Trim(),
-                    GradientAngle: angle.Value, IconBackground: iconBackground.Text.Trim());
+                    GradientAngle: angle.Value, IconBackground: iconBackground.Text.Trim(),
+                    IconBackgroundGradient: backgroundGradient.IsChecked == true, IconBackgroundEnd: iconBackgroundEnd.Text.Trim());
                 AppearanceManager.Preview(value);
                 draft = value;
                 save.IsEnabled = value != saved;
@@ -135,9 +142,9 @@ public partial class MainWindow
             catch (Exception ex) { status.Text = ex.Message; }
         };
 
-        foreach (var field in new[] { accent, accentEnd, icon, iconEnd, iconBackground })
+        foreach (var field in new[] { accent, accentEnd, icon, iconEnd, iconBackground, iconBackgroundEnd })
             field.TextChanged += (_, _) => Apply();
-        foreach (var field in new[] { gradient, follow, iconGradient })
+        foreach (var field in new[] { gradient, follow, iconGradient, backgroundGradient })
             field.Click += (_, _) => Apply();
         modes.SelectionChanged += (_, _) => Apply();
         angle.ValueChanged += (_, _) => Apply();
@@ -151,6 +158,8 @@ public partial class MainWindow
             icon.Text = defaults.IconColor;
             iconEnd.Text = defaults.IconEnd;
             iconBackground.Text = defaults.IconBackground;
+            iconBackgroundEnd.Text = defaults.IconBackgroundEnd;
+            backgroundGradient.IsChecked = defaults.IconBackgroundGradient;
             gradient.IsChecked = defaults.AccentGradient;
             follow.IsChecked = defaults.IconUsesAccent;
             iconGradient.IsChecked = defaults.IconGradient;

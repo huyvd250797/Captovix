@@ -90,6 +90,7 @@ public sealed class Annotation
     public string FillColor {get;set;}="#FFFFFF";
     public bool FillEnabled {get;set;}
     public bool StrokeEnabled {get;set;}=true;
+    public double ObjectOpacity {get;set;}=100;
     public double StrokeOpacity {get;set;}=100;
     public double FillOpacity {get;set;}=100;
     public StrokePattern Dash {get;set;}=StrokePattern.Solid;
@@ -102,6 +103,10 @@ public sealed class Annotation
     public double FontSize {get;set;}=28;
     public string Text {get;set;}="";
     public int Number {get;set;}=1;
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public decimal? StepDecimal {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public long StepSequence {get;set;}
     public int EffectSize {get;set;}=24;
     public string? GroupId {get;set;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public List<string>? GroupPath {get;set;}
@@ -114,7 +119,7 @@ public sealed class Annotation
     [JsonIgnore] public double Top=>Math.Min(Y1,Y2);
     [JsonIgnore] public double Width=>Math.Abs(X2-X1);
     [JsonIgnore] public double Height=>Math.Abs(Y2-Y1);
-    public Annotation Copy()=>new(){Mockup=Mockup?.Copy(),TextFrame=TextFrame,ImagePlaceholder=ImagePlaceholder,ImageStyle=ImageStyle?.Copy(),CalloutBodyPivot=CalloutBodyPivot,PixelPng=PixelPng,Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,StepStrokeColor=StepStrokeColor,StepFillVisible=StepFillVisible,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,EffectSize=EffectSize,GroupPath=GroupPath?.ToList(),GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
+    public Annotation Copy()=>new(){Mockup=Mockup?.Copy(),TextFrame=TextFrame,ImagePlaceholder=ImagePlaceholder,ImageStyle=ImageStyle?.Copy(),CalloutBodyPivot=CalloutBodyPivot,PixelPng=PixelPng,Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,StepStrokeColor=StepStrokeColor,StepFillVisible=StepFillVisible,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,ObjectOpacity=ObjectOpacity,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,StepDecimal=StepDecimal,StepSequence=StepSequence,EffectSize=EffectSize,GroupPath=GroupPath?.ToList(),GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
     public void Translate(double dx,double dy){X1+=dx;X2+=dx;Y1+=dy;Y2+=dy;if(Control is {} c)Control=new(c.X+dx,c.Y+dy);if(Kind==AnnotationKind.Callout){TailX+=dx;TailY+=dy;}for(int i=0;i<Points.Count;i++)Points[i]=new(Points[i].X+dx,Points[i].Y+dy);}
     public void AddPoint(double x,double y){if(Points.Count>=MaxPoints)return;Points.Add(new(x,y));if(Points.Count==1){X1=X2=x;Y1=Y2=y;}else{X1=Math.Min(X1,x);Y1=Math.Min(Y1,y);X2=Math.Max(X2,x);Y2=Math.Max(Y2,y);}}
 }
@@ -150,12 +155,13 @@ public sealed class EditorDocument
         if(Recoveries==null||Recoveries.Any(p=>p==null||p.Mask==null)||Recoveries.Count>500||Recoveries.Sum(p=>(long)p.Bounds.Width*p.Bounds.Height)>20_000_000||Recoveries.Select(p=>p.Id).Distinct().Count()!=Recoveries.Count||Recoveries.Sum(p=>(long)p.Mask.Length)>40_000_000)throw new InvalidDataException("Mặt nạ nền vượt giới hạn.");foreach(var patch in Recoveries)patch.Validate(width,height);
         var ids=new HashSet<string>();var totalPoints=0;
         foreach(var a in Annotations){
-            if(a==null||string.IsNullOrEmpty(a.Id)||!ids.Add(a.Id)||!Enum.IsDefined(a.Kind)||!double.IsFinite(a.X1)||!double.IsFinite(a.X2)||!double.IsFinite(a.Y1)||!double.IsFinite(a.Y2)||Math.Abs(a.X1)>1000000||Math.Abs(a.X2)>1000000||Math.Abs(a.Y1)>1000000||Math.Abs(a.Y2)>1000000||!double.IsFinite(a.Stroke)||!double.IsFinite(a.FontSize)||a.Stroke<1||a.Stroke>40||a.FontSize<8||a.FontSize>240||a.EffectSize<4||a.EffectSize>64||a.Text==null||a.Text.Length>20000||a.Number<1||a.Number>9999||!ValidColor(a.Color))
+            if(a==null||string.IsNullOrEmpty(a.Id)||!ids.Add(a.Id)||!Enum.IsDefined(a.Kind)||!double.IsFinite(a.X1)||!double.IsFinite(a.X2)||!double.IsFinite(a.Y1)||!double.IsFinite(a.Y2)||Math.Abs(a.X1)>1000000||Math.Abs(a.X2)>1000000||Math.Abs(a.Y1)>1000000||Math.Abs(a.Y2)>1000000||!double.IsFinite(a.Stroke)||!double.IsFinite(a.FontSize)||a.Stroke<1||a.Stroke>40||a.FontSize<8||a.FontSize>240||a.EffectSize<4||a.EffectSize>64||a.Text==null||a.Text.Length>20000||a.Number<1||a.Number>9999||a.StepSequence is <0 or >int.MaxValue||a.StepDecimal is {} step&&(step<1||step>9999||step!=decimal.Round(step,1)||decimal.Truncate(step)!=a.Number)||!ValidColor(a.Color))
                 throw new InvalidDataException("Dữ liệu đối tượng chú thích không hợp lệ.");
             if(a.Name==null||a.Name.Length>80||a.Name.Any(char.IsControl)||!double.IsFinite(a.Rotation)||Math.Abs(a.Rotation)>360)throw new InvalidDataException("Tên layer hoặc góc xoay không hợp lệ.");
             a.Mockup?.Validate(a,width,height);if(a.Mockup?.RecoveryId is {} recovery&&!Recoveries.Any(p=>p.Id==recovery))throw new InvalidDataException("Thiếu mặt nạ phục hồi nền.");
             ShapeStudio.ValidateStyle(a);if(Version<8)TextStudio.MigrateLegacy(a);
             if(a.TextFrame&&(a.Kind!=AnnotationKind.Text||a.Width<2||a.Height<2))throw new InvalidDataException("Khung chữ phải rộng/cao ít nhất 2 px.");
+            if(a.ObjectOpacity is not (>=0 and <=100))throw new InvalidDataException("Opacity của đối tượng không hợp lệ.");
             TextStudio.Validate(a);FocusStudio.Validate(a);StudioStyle.Validate(a);
             if(a.GroupId!=null&&!Guid.TryParseExact(a.GroupId,"N",out _))throw new InvalidDataException("Mã nhóm chú thích không hợp lệ.");
             if(!double.IsFinite(a.TailX)||!double.IsFinite(a.TailY)||Math.Abs(a.TailX)>1000000||Math.Abs(a.TailY)>1000000)throw new InvalidDataException("Đuôi callout không hợp lệ.");
@@ -176,7 +182,25 @@ public sealed class EditorDocument
         try{_=new ImageLayout(clipped,Appearance);}catch(InvalidDataException){return false;}
         Crop=clipped==new PixelRect(0,0,OriginalWidth,OriginalHeight)?null:clipped;return true;
     }
-    public int NextStep()=>Math.Min(9999,Annotations.Where(a=>a.Kind==AnnotationKind.Step).Select(a=>a.Number).DefaultIfEmpty(0).Max()+1);
+    private Annotation? LatestStep()
+    {
+        Annotation? latest=null;
+        foreach(var step in Annotations)
+            if(step.Kind==AnnotationKind.Step&&(latest==null||step.StepSequence>=latest.StepSequence))latest=step;
+        return latest;
+    }
+    public decimal NextStep()
+    {
+        var latest=LatestStep();
+        return latest?.StepDecimal is {} fractional?Math.Min(9999m,fractional+0.1m):Math.Min(9999,(latest?.Number??0)+1);
+    }
+    public void NumberNewStep(Annotation step)=>SetStepNumber(step,NextStep(),LatestStep()?.StepDecimal!=null);
+    public void SetStepNumber(Annotation step,decimal value,bool tenths)
+    {
+        step.StepSequence=(LatestStep()?.StepSequence??0)+1;
+        step.Number=decimal.ToInt32(decimal.Truncate(value));
+        step.StepDecimal=tenths?value:null;
+    }
 }
 
 public sealed class EditorSession

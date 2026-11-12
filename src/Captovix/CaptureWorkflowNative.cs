@@ -56,26 +56,94 @@ public sealed class CaptureTray : IDisposable
 public static class CapturePrompts
 {
     // Temporary selectors are capture overlays; all persistent configuration remains in the Editor.
-    public static async Task<WindowInfo?> PickWindowAsync(CancellationToken cancellation)
+    public static async Task<WindowInfo?> PickWindowAsync(CancellationToken cancellation,bool recording=false,WindowInfo? preferred=null)
     {
         cancellation.ThrowIfCancellationRequested();var done=new TaskCompletionSource<WindowInfo?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var picker=new Window{Title="Captovix · Chọn cửa sổ để chụp",Width=640,Height=460,WindowStartupLocation=WindowStartupLocation.CenterScreen,Topmost=true,ShowInTaskbar=false};
+        var picker=new Window{Title=recording?"Captovix · Chọn cửa sổ để quay":"Captovix · Chọn cửa sổ để chụp",Width=640,Height=460,WindowStartupLocation=WindowStartupLocation.CenterScreen,Topmost=true,ShowInTaskbar=false};
         var panel=new DockPanel{Margin=new Thickness(16)};var hint=new TextBlock{Text="Chọn cửa sổ đang mở · Enter / nhấp đúp để xác nhận · Esc hủy",Margin=new Thickness(0,0,0,12)};DockPanel.SetDock(hint,Dock.Top);panel.Children.Add(hint);
         var footer=new StackPanel{Orientation=Orientation.Horizontal};DockPanel.SetDock(footer,Dock.Bottom);panel.Children.Add(footer);
-        var list=new ListBox{DisplayMemberPath="Title"};void Refresh(){list.ItemsSource=Native.Windows(true);list.SelectedIndex=0;}
+        var list=new ListBox{DisplayMemberPath="Title"};void Refresh(){var windows=Native.Windows(true);list.ItemsSource=windows;list.SelectedItem=windows.FirstOrDefault(w=>preferred!=null&&w.Handle==preferred.Handle&&w.ProcessId==preferred.ProcessId)??windows.FirstOrDefault();}
         void Finish(){if(list.SelectedItem is WindowInfo item){done.TrySetResult(item);picker.Close();}}
-        var refresh=new Button{Content="Làm mới"};refresh.Click+=(_,_)=>Refresh();footer.Children.Add(refresh);var accept=new Button{Content="Chụp cửa sổ này"};accept.Click+=(_,_)=>Finish();footer.Children.Add(accept);
-        var cancel=new Button{Content="Hủy"};cancel.Click+=(_,_)=>picker.Close();footer.Children.Add(cancel);panel.Children.Add(list);picker.Content=panel;
+        var refresh=new Button{Content="Làm mới"};refresh.Click+=(_,_)=>Refresh();footer.Children.Add(refresh);var accept=new Button{Content=recording?"Quay cửa sổ này":"Chụp cửa sổ này"};accept.Click+=(_,_)=>Finish();
+        var cancel=new Button{Content="Hủy"};cancel.Click+=(_,_)=>picker.Close();footer.Children.Add(cancel);footer.Children.Add(accept);panel.Children.Add(list);picker.Content=panel;
         picker.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Escape)picker.Close();else if(e.Key==System.Windows.Input.Key.Enter)Finish();};list.MouseDoubleClick+=(_,_)=>Finish();picker.Closed+=(_,_)=>done.TrySetResult(null);
-        using var registration=cancellation.Register(()=>picker.Dispatcher.BeginInvoke(()=>picker.Close()));Refresh();picker.Show();list.Focus();return await done.Task;
+        using var registration=cancellation.Register(()=>picker.Dispatcher.BeginInvoke(()=>{if(picker.IsVisible)picker.Close();}));Refresh();picker.Show();list.Focus();return await done.Task;
     }
+    internal static async Task<(int Mode,DisplayInfo Display,RecordingAudioSettings Audio,RecordingProfile Profile,bool HighlightClicks,bool Hardware)?> PickRecordingSourceAsync(
+        Window owner,IReadOnlyList<DisplayInfo> displays,int initialMode,DisplayInfo initialDisplay,AppSettings preferences,CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        var dialog=new Window{Title="Captovix · Nguồn quay",Width=480,SizeToContent=SizeToContent.Height,
+            WindowStartupLocation=WindowStartupLocation.CenterScreen,ResizeMode=ResizeMode.NoResize,ShowInTaskbar=false,Topmost=true};
+        if(owner.IsVisible){dialog.Owner=owner;dialog.WindowStartupLocation=WindowStartupLocation.CenterOwner;}
+        var panel=new StackPanel{Margin=new Thickness(20)};
+        dialog.Content=new ScrollViewer{Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
+        dialog.MaxHeight=SystemParameters.WorkArea.Height-16;
+        panel.Children.Add(new TextBlock{Text="Chọn nguồn quay",FontSize=20,FontWeight=FontWeights.SemiBold});
+        var mode=new ComboBox{ItemsSource=new[]{"Vùng chọn","Cửa sổ","Toàn màn hình"},SelectedIndex=Math.Clamp(initialMode,0,2)};
+        var screen=new ComboBox{ItemsSource=displays,DisplayMemberPath="Label",SelectedItem=initialDisplay};
+        var info=new TextBlock{Margin=new Thickness(4,6,4,8),TextWrapping=TextWrapping.Wrap};
+        panel.Children.Add(mode);
+        panel.Children.Add(screen);
+        panel.Children.Add(info);
+        void Update(){
+            screen.Visibility=mode.SelectedIndex==2?Visibility.Visible:Visibility.Collapsed;
+            info.Text=mode.SelectedIndex switch{0=>"Click vào khung tự nhận diện để quay hoặc kéo chọn vùng thủ công.",1=>"Chọn cửa sổ đang mở ở bước tiếp theo.",_=>"Chọn màn hình cần quay và kiểm tra độ phân giải."};
+        }
+        mode.SelectionChanged+=(_,_)=>Update();
+        Update();
+        using var audio=new RecordingAudioPanel(preferences);
+        panel.Children.Add(audio);
+        var profile=new RecordingProfilePanel(preferences.VideoProfile??new RecordingProfile(3,0,preferences.Fps));
+        panel.Children.Add(profile);
+        var highlight=new CheckBox{Content="Làm nổi vị trí click chuột",IsChecked=preferences.HighlightRecordingClicks,Margin=new(4,6,4,6)};
+        panel.Children.Add(highlight);
+        var hardware=new CheckBox{Content="Ưu tiên mã hóa phần cứng (H.264)",IsChecked=preferences.Hardware,Margin=new(4,4,4,6)};
+        panel.Children.Add(hardware);
+        void UpdateEstimate()=>profile.Update((screen.SelectedItem as DisplayInfo??initialDisplay).Bounds,
+            mode.SelectedIndex==2,audio.MicrophoneEnabled,audio.SystemEnabled);
+        profile.Changed+=UpdateEstimate;
+        audio.SourcesChanged+=UpdateEstimate;
+        mode.SelectionChanged+=(_,_)=>UpdateEstimate();
+        screen.SelectionChanged+=(_,_)=>UpdateEstimate();
+        UpdateEstimate();
+        var warning=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new Thickness(4,4,4,0)};
+        panel.Children.Add(warning);
+        var row=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right};
+        var cancel=new Button{Content="Hủy"};
+        var next=new Button{Content="Tiếp tục"};
+        row.Children.Add(cancel);
+        row.Children.Add(next);
+        panel.Children.Add(row);
+        var result=new TaskCompletionSource<(int Mode,DisplayInfo Display,RecordingAudioSettings Audio,RecordingProfile Profile,bool HighlightClicks,bool Hardware)?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Confirm(){
+            if(screen.SelectedItem is not DisplayInfo selected)return;
+            try{
+                result.TrySetResult((mode.SelectedIndex,selected,audio.Read(),profile.Read(),highlight.IsChecked==true,hardware.IsChecked==true));
+                dialog.Close();
+            }catch(InvalidOperationException error){warning.Text=error.Message;}
+        }
+        cancel.Click+=(_,_)=>dialog.Close();
+        next.Click+=(_,_)=>Confirm();
+        dialog.PreviewKeyDown+=(_,e)=>{
+            if(e.Key==System.Windows.Input.Key.Escape){e.Handled=true;dialog.Close();}
+            else if(e.Key==System.Windows.Input.Key.Enter&&!mode.IsDropDownOpen&&!screen.IsDropDownOpen&&!audio.IsKeyboardFocusWithin){e.Handled=true;Confirm();}
+        };
+        dialog.Closed+=(_,_)=>result.TrySetResult(null);
+        using var registration=cancellation.Register(()=>dialog.Dispatcher.BeginInvoke(()=>{if(dialog.IsVisible)dialog.Close();}));
+        dialog.Show();
+        mode.Focus();
+        return await result.Task;
+    }
+
     public static async Task CountdownAsync(int seconds,CancellationToken cancellation)
     {
         if(seconds<=0)return;cancellation.ThrowIfCancellationRequested();
         var label=new TextBlock{FontSize=24,Foreground=System.Windows.Media.Brushes.White,Margin=new Thickness(24)};
         var window=new Window{Title="Captovix · Đếm ngược",Content=label,SizeToContent=SizeToContent.WidthAndHeight,WindowStyle=WindowStyle.None,ResizeMode=ResizeMode.NoResize,Topmost=true,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.CenterScreen,Background=System.Windows.Media.Brushes.DarkSlateGray};
         using var linked=CancellationTokenSource.CreateLinkedTokenSource(cancellation);window.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Escape)linked.Cancel();};
-        window.Show();try{for(var n=seconds;n>0;n--){label.Text=$"Chụp sau {n} giây · Esc hủy";await Task.Delay(1000,linked.Token);}}finally{window.Close();}
+        window.Closed+=(_,_)=>linked.Cancel();
+        window.Show();try{for(var n=seconds;n>0;n--){label.Text=$"Chụp sau {n} giây · Esc hủy";await Task.Delay(1000,linked.Token);}}finally{if(window.IsVisible)window.Close();}
         await Task.Delay(220,cancellation);
     }
 }

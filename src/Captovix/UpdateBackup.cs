@@ -7,13 +7,21 @@ public sealed record BackupFile(string Path,long Bytes,string Sha256);
 public sealed record BackupManifest(int Format,string From,string To,DateTimeOffset Created,List<BackupFile> Files);
 public static class UpdateBackup
 {
-    static readonly HashSet<string> Settings=new(StringComparer.OrdinalIgnoreCase){"library.json","settings.json","update-settings.json","editor-resume.json","annotation-presets.json","capture-workflow.json","style-favorites.json","tool-stars.json","tool-order.json","tool-order-v133.json","batch-export.json","editor-layout.json","media-location.json","recent-capture-regions.json","appearance-settings.json","ui-model.json"};
-    public static bool Allowed(string name)=>Settings.Contains(name)||name.StartsWith("Edits/",StringComparison.Ordinal)&&!name[6..].Contains('/')&&(name.EndsWith(".json")||name.EndsWith(".bak"))||name is "licensing/device.bin" or "licensing/certificate.bin";
+    static readonly HashSet<string> Settings=new(StringComparer.OrdinalIgnoreCase){"library.json","settings.json","update-settings.json","editor-resume.json","video-resume.json","annotation-presets.json","capture-workflow.json","style-favorites.json","tool-stars.json","tool-order.json","tool-order-v133.json","batch-export.json","editor-layout.json","media-location.json","recent-capture-regions.json","appearance-settings.json","ui-model.json"};
+    public static bool Allowed(string name)=>Settings.Contains(name)||name.StartsWith("Edits/",StringComparison.Ordinal)&&!name[6..].Contains('/')&&(name.EndsWith(".json")||name.EndsWith(".bak"))||AllowedVideoProject(name)||name is "licensing/device.bin" or "licensing/certificate.bin";
+    private static bool AllowedVideoProject(string name)
+    {
+        const string prefix="VideoProjects/",extension=".cvxvideo";
+        if(!name.StartsWith(prefix,StringComparison.Ordinal))return false;
+        var filename=name[prefix.Length..];
+        if(filename.EndsWith(".bak",StringComparison.Ordinal))filename=filename[..^4];
+        return filename.EndsWith(extension,StringComparison.Ordinal)&&Guid.TryParseExact(filename[..^extension.Length],"N",out _);
+    }
     static bool Plain(string p){for(string? v=Path.GetFullPath(p);v!=null;v=Path.GetDirectoryName(v))if((File.Exists(v)||Directory.Exists(v))&&(File.GetAttributes(v)&FileAttributes.ReparsePoint)!=0)return false;return true;}
     public static string Create(string root,string currentVersion,string nextVersion,CancellationToken token=default){
         if(!Plain(root))throw new IOException("Không sao lưu qua liên kết thư mục.");string folder=Path.Combine(root,"Backups");Directory.CreateDirectory(folder);string path=Path.Combine(folder,"before-update-"+DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff")+"-"+Guid.NewGuid().ToString("N")[..6]+".zip"),temp=path+".tmp";var files=new List<BackupFile>();
         try{using(var zip=ZipFile.Open(temp,ZipArchiveMode.Create)){
-            var names=Settings.ToList();if(Directory.Exists(Path.Combine(root,"Edits")))names.AddRange(Directory.EnumerateFiles(Path.Combine(root,"Edits")).Select(p=>"Edits/"+Path.GetFileName(p)).Where(Allowed));names.AddRange(new[]{"licensing/device.bin","licensing/certificate.bin"});long total=0;
+            var names=Settings.ToList();if(Directory.Exists(Path.Combine(root,"Edits")))names.AddRange(Directory.EnumerateFiles(Path.Combine(root,"Edits")).Select(p=>"Edits/"+Path.GetFileName(p)).Where(Allowed));if(Directory.Exists(Path.Combine(root,"VideoProjects")))names.AddRange(Directory.EnumerateFiles(Path.Combine(root,"VideoProjects")).Select(p=>"VideoProjects/"+Path.GetFileName(p)).Where(Allowed));names.AddRange(new[]{"licensing/device.bin","licensing/certificate.bin"});long total=0;
             foreach(string name in names){token.ThrowIfCancellationRequested();string source=Path.Combine(root,name);if(!File.Exists(source))continue;if(!Plain(source))throw new IOException("Không sao lưu liên kết ngoài thư mục dữ liệu.");var info=new FileInfo(source);if(info.Length>140_000_000||(total+=info.Length)>512_000_000||files.Count>=10000)throw new IOException("Sao lưu vượt512MB/10000tệp; xuất dự án riêng trước khi cập nhật.");string hash;using(var input=File.OpenRead(source)){hash=Convert.ToHexString(SHA256.HashData(input));input.Position=0;using var output=zip.CreateEntry(name,CompressionLevel.Fastest).Open();input.CopyTo(output);}files.Add(new(name,info.Length,hash));}
             using(var writer=new StreamWriter(zip.CreateEntry("backup-manifest.json").Open()))writer.Write(JsonSerializer.Serialize(new BackupManifest(1,currentVersion,nextVersion,DateTimeOffset.UtcNow,files)));
             using var note=new StreamWriter(zip.CreateEntry("backup-info.txt").Open());note.Write($"Captovix {currentVersion} -> {nextVersion}\nMetadata, edits and same-machine encrypted license only. Original media excluded.");

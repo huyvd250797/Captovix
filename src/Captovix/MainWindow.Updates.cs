@@ -144,14 +144,14 @@ public partial class MainWindow
         if (_updates == null) return;
         if(_exportInProgress){SetStatus("Hãy chờ xuất xong trước khi cập nhật.");return;}
         if(_busy||_updateApplying||_updates.Stage!=UpdateStage.Ready)return;
-        try{Surface.CancelInteraction();if(!FlushEdits())return;_store.Save();_store.SaveSettings(Settings());UpdateSettingsStore.Save(App.DataRoot,_updateSettings);MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"editor-resume.json"),System.Text.Json.JsonSerializer.Serialize(Selected?.Id));
+        try{Surface.CancelInteraction();if(!FlushEdits()||!FlushVideoProject())return;_store.Save();_store.SaveSettings(Settings());UpdateSettingsStore.Save(App.DataRoot,_updateSettings);MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"editor-resume.json"),System.Text.Json.JsonSerializer.Serialize(Selected?.Id));
             _updateApplying=true;SuspendWorkflow();_busy=true;RenderUpdateUi();SetStatus("Đang sao lưu và kiểm tra dữ liệu trước cập nhật…");
             string next=_updates.Release!.Version;using var preparation=new CancellationTokenSource();_updatePreparationCancel=preparation;var backup=await Task.Run(()=>UpdateBackup.Create(App.DataRoot,VersionInfo.Current,next,preparation.Token));preparation.Token.ThrowIfCancellationRequested();
             ReleaseRecoveryState.Write(App.DataRoot,new(VersionInfo.Current,next,backup,"Applying",DateTimeOffset.UtcNow));_busy=false;
             _updates.Apply(false,()=>{VideoPreview.Close();_videoTimer.Stop();return true;});
         }catch(Exception ex){App.Log(ex);SetStatus("Chưa cập nhật: "+ex.Message);}finally{_busy=false;_updatePreparationCancel=null;}
         // ApplyUpdatesAndRestart normally exits the process. A failure leaves the Editor usable.
-        _updateApplying = false; if(_workflowSuspended)ResumeWorkflow(); _videoTimer.Start(); RenderUpdateUi();if(_exitRequested)RequestExit();
+        _updateApplying = false; if(_workflowSuspended)ResumeWorkflow(); if(_videoItem!=null)_videoTimer.Start(); RenderUpdateUi();if(_exitRequested)RequestExit();
     }
 
     private void RestoreEditorAfterUpdate()

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Globalization;
 namespace Captovix;
 public enum TextAlign { Left, Center, Right }
 public enum TextVertical { Top, Center, Bottom }
@@ -25,12 +26,26 @@ public static class TextStudio
     {
         if(a.Kind==AnnotationKind.Callout){a.FillEnabled=true;a.FillColor="#FFFFFF";a.FillOpacity=100;a.StrokeEnabled=true;a.StrokeOpacity=100;a.Dash=StrokePattern.Solid;}
     }
+    public static string StepLabel(Annotation step)=>step.StepDecimal?.ToString("0.0",CultureInfo.InvariantCulture)
+        ??step.Number.ToString(CultureInfo.InvariantCulture);
+
+    public static bool TryStepNumber(string text,out decimal number,out bool tenths)
+    {
+        number=0;
+        string normalized=text.Trim().Replace(',','.');
+        int separator=normalized.IndexOf('.');
+        tenths=separator>=0;
+        if(tenths&&(separator==0||separator!=normalized.Length-2))return false;
+        return decimal.TryParse(normalized,NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out number)
+            &&number is >=1 and <=9999;
+    }
+
     public static int Renumber(EditorDocument doc,IEnumerable<string> selection,int start)
     {
         var selected=selection.ToHashSet();var steps=doc.Annotations.Where(a=>a.Kind==AnnotationKind.Step&&(selected.Count==0?a.Visible&&!a.Locked:selected.Contains(a.Id))).ToArray();
         if(start<1||start>9999||start+steps.Length-1>9999)throw new ArgumentException("Số bước cần nằm trong 1–9999.");
         if(steps.Length>0&&!ObjectControl.CanEdit(doc,steps.Select(a=>a.Id)))throw new InvalidOperationException("Mở khóa và hiện các bước trước khi đánh lại số.");
-        foreach(var a in steps)a.Number=start++;return steps.Length;
+        foreach(var a in steps)doc.SetStepNumber(a,start++,false);return steps.Length;
     }
 }
 public sealed record TypographyPreset(string FontFamily,bool Bold,bool Italic,bool Underline,string? TextColor,TextAlign Alignment,TextVertical Vertical,double? Padding,double Width,double LineSpacing,bool AutoFit,CalloutStyle Callout,StepStyle Step)

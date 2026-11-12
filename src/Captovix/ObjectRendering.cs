@@ -11,9 +11,14 @@ public static partial class EditorRenderer
     public static Point LocalPoint(Annotation a,Point p){var b=LocalBox(a);var q=ObjectControl.RotatePoint(new(p.X,p.Y),new(b.CenterX,b.CenterY),-a.Rotation);return new(q.X,q.Y);}
     public static void DrawAnnotation(DrawingContext dc,Annotation a,bool suppressText=false)
     {
-        if(!a.Visible)return;DrawObjectShadow(dc,a);
-        if(Math.Abs(a.Rotation)<1e-9){DrawLocalAnnotation(dc,a,suppressText);return;}
-        dc.PushTransform(ObjectTransform(a));try{DrawLocalAnnotation(dc,a,suppressText);}finally{dc.Pop();}
+        if(!a.Visible||a.ObjectOpacity<=0)return;
+        dc.PushOpacity(a.ObjectOpacity/100);
+        try{
+            DrawObjectShadow(dc,a);
+            if(Math.Abs(a.Rotation)<1e-9){DrawLocalAnnotation(dc,a,suppressText);return;}
+            dc.PushTransform(ObjectTransform(a));
+            try{DrawLocalAnnotation(dc,a,suppressText);}finally{dc.Pop();}
+        }finally{dc.Pop();}
     }
     public static Rect ContentBounds(Annotation a)
     {

@@ -16,6 +16,8 @@ public sealed class MediaItem : INotifyPropertyChanged
     public string FilePath {get;set;}="";
     public DateTimeOffset Created {get;set;}=DateTimeOffset.Now;
     public bool IsVideo {get;set;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IsLinkedVideo {get;set;}
     public CapturePixelEvidence? Capture {get;set;}
     public string[] Tags {get;set;}=[];
     public string Collection {get;set;}="";
@@ -27,7 +29,10 @@ public sealed class MediaItem : INotifyPropertyChanged
     public string Source {get;set;}="";
     public bool Microphone {get;set;}
     public bool SystemAudio {get;set;}
+    public string? MicrophoneName {get;set;}
+    public string? SystemAudioName {get;set;}
     public int Fps {get;set;}
+    public RecordingCue[]? RecordingCues {get;set;}
     public double Seconds {get;set;}
     [JsonIgnore] public BitmapSource? Thumbnail {get=>_thumbnail;set{_thumbnail=value;PropertyChanged?.Invoke(this,new(nameof(Thumbnail)));}}
     public void RefreshDetails()=>PropertyChanged?.Invoke(this,new(nameof(Detail)));
@@ -49,7 +54,11 @@ public sealed class AppSettings
     public bool Cursor {get;set;}=true;
     public bool Mic {get;set;}=false;
     public bool SystemAudio {get;set;}=true;
+    public string? MicDevice {get;set;}
+    public string? SystemAudioDevice {get;set;}
     public bool Hardware {get;set;}=true;
+    public RecordingProfile? VideoProfile {get;set;}
+    public bool HighlightRecordingClicks {get;set;}=true;
     public string Display {get;set;}="";
 }
 public sealed partial class MediaStore
@@ -86,6 +95,30 @@ public sealed partial class MediaStore
     public void TryThumbnail(MediaItem i)=>RequestThumbnail(i);
     public string NewPath(bool video) {if(_locationError!=null)throw new IOException(_locationError);Directory.CreateDirectory(Root);return Path.Combine(Root,$"{DateTime.Now:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid().ToString("N")[..6]}{(video?".mp4":".png")}");}
     public void Add(MediaItem item){TryThumbnail(item);Items.Insert(0,item);Save();}
+    public void CommitRecording(string pending,MediaItem item)
+    {
+        var moves=new List<(string Pending,string Final)>();
+        try{
+            foreach(bool system in new[]{false,true}){
+                string source=RecordingAudioFiles.PathFor(pending,system);
+                if(File.Exists(source))Move(source,RecordingAudioFiles.PathFor(item.FilePath,system));
+            }
+            string cues=RecordingPresenter.PathFor(pending);
+            if(File.Exists(cues))Move(cues,RecordingPresenter.PathFor(item.FilePath));
+            Move(pending,item.FilePath);
+            Items.Insert(0,item);
+            Save();
+        }catch{
+            Items.Remove(item);
+            foreach(var move in moves.AsEnumerable().Reverse())File.Move(move.Final,move.Pending);
+            throw;
+        }
+        void Move(string source,string destination){
+            File.Move(source,destination);
+            moves.Add((source,destination));
+        }
+        TryThumbnail(item);
+    }
     public void Save()=>AtomicWrite(Metadata,JsonSerializer.Serialize(Items,Json));
     public AppSettings LoadSettings(){try{return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(SettingsPath))??new();}catch{return new();}}
     public void SaveSettings(AppSettings s)=>AtomicWrite(SettingsPath,JsonSerializer.Serialize(s,Json));
