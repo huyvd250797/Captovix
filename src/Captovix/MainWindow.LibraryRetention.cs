@@ -11,16 +11,43 @@ public partial class MainWindow
     private DateTime _retentionDue;
     private bool _retentionRunning;
     private void InitializeRetention(){
-        try{_retention=LibraryRetentionSettings.Load(App.DataRoot);}catch(Exception error){App.Log(error);SetStatus("Tự dọn thư viện đã tắt: "+error.Message);}
-        _retentionTimer.Tick+=async(_,_)=>await RunRetentionAsync();
-        ScheduleRetention();
+        try{
+            _retentionTimer.Tick+=async(_,_)=>{
+                try{await RunRetentionAsync();}
+                catch(Exception error){
+                    _retentionTimer.Stop();
+                    App.Log(new InvalidOperationException("Retention tick failed; timer stopped for this session.",error));
+                    SetStatus("Tạm dừng tự dọn thư viện; mở lại Captovix hoặc lưu lại lịch để thử lại.");
+                }
+            };
+            _retention=LibraryRetentionSettings.Load(App.DataRoot);
+            ScheduleRetention();
+        }catch(Exception error){
+            _retentionTimer.Stop();
+            App.Log(new InvalidOperationException("Retention initialization failed; startup continues.",error));
+            SetStatus("Tạm dừng tự dọn thư viện: "+error.Message);
+        }
     }
-    private void ScheduleRetention(){
-        _retentionTimer.Stop();if(!_retention.Enabled)return;
-        _retentionDue=_retention.ScheduledRun(DateTime.Now);
-        _retentionTimer.Interval=_retentionDue-DateTime.Now;
-        if(_retentionTimer.Interval<=TimeSpan.Zero)_retentionTimer.Interval=TimeSpan.FromSeconds(15);
-        _retentionTimer.Start();
+    private bool ScheduleRetention(){
+        DateTime now=DateTime.Now;
+        DateTime? due=null;
+        TimeSpan? delay=null;
+        try{
+            _retentionTimer.Stop();if(!_retention.Enabled)return true;
+            // Use one clock snapshot. A missed deadline remains the expiry cutoff,
+            // but the dispatcher must never receive a negative or zero interval.
+            due=_retention.ScheduledRun(now);
+            delay=LibraryRetentionSettings.TimerDelay(due.Value,now);
+            _retentionDue=due.Value;
+            _retentionTimer.Interval=delay.Value;
+            _retentionTimer.Start();
+            return true;
+        }catch(Exception error){
+            _retentionTimer.Stop();
+            App.Log(new InvalidOperationException($"Retention scheduling failed; now={now:O}; due={due:O}; delay={delay}; timer stopped.",error));
+            SetStatus("Tạm dừng tự dọn thư viện; lưu lại lịch hoặc mở lại Captovix để thử lại.");
+            return false;
+        }
     }
     private FrameworkElement BuildRetentionSettings(){
         var panel=new StackPanel{Margin=new(0,20,0,8)};
@@ -35,7 +62,8 @@ public partial class MainWindow
             if(_retentionRunning){status.Text="Đang hoàn tất phiên tự dọn. Vui lòng chờ.";return;}
             if(!int.TryParse(days.Text,out int count)||count is <1 or >36500){status.Text="Nhập số ngày nguyên từ 1 đến 36500.";return;}
             try{
-                var value=_retention with{Enabled=enabled.IsChecked==true,Days=count,EnabledAt=enabled.IsChecked==true&&!_retention.Enabled?DateTime.Now:_retention.EnabledAt};value.Save(App.DataRoot);_retention=value;ScheduleRetention();
+                var value=_retention with{Enabled=enabled.IsChecked==true,Days=count,EnabledAt=enabled.IsChecked==true&&!_retention.Enabled?DateTime.Now:_retention.EnabledAt};value.Save(App.DataRoot);_retention=value;
+                if(!ScheduleRetention()){status.Text="Đã lưu cấu hình nhưng chưa chạy được lịch tự dọn. Vui lòng thử lại.";return;}
                 status.Text=value.Enabled?$"Đã lưu · chạy lúc {_retentionDue:dd/MM/yyyy HH:mm}. Nội dung đủ {count} ngày sẽ được chuyển vào Thùng rác Windows.":"Đã tắt tự dọn thư viện.";
             }catch(Exception error){App.Log(error);status.Text="Chưa lưu được: "+error.Message;}
         };

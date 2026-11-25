@@ -17,6 +17,22 @@ try{
     Check((settings with{LastRunDate=new(2026,11,19)}).ScheduledRun(new(2026,11,20,9,0,0))==new DateTime(2026,11,20,23,59,0),"Completed catch-up does not run again");
     Check((settings with{EnabledAt=new(2026,11,20,8,0,0)}).ScheduledRun(new(2026,11,20,9,0,0))==new DateTime(2026,11,20,23,59,0),"First enable waits for first deadline");
     Check(settings.IsDue(Created(5,1),new DateTime(2026,11,19))&&!settings.IsDue(Created(11,1),new DateTime(2026,11,19)),"Catch-up includes expired items only");
+    // Regression for V1.68.1 startup crash on 25 Nov 2026 at 08:19.
+    var startup=new DateTime(2026,11,25,8,19,56);
+    var missed=settings.ScheduledRun(startup);
+    Check(missed==new DateTime(2026,11,24,23,59,0),"Keep missed deadline as expiry cutoff");
+    Check(LibraryRetentionSettings.TimerDelay(missed,startup)==TimeSpan.FromSeconds(15),"Missed deadline yields safe startup delay");
+    Check(LibraryRetentionSettings.TimerDelay(startup,startup)==TimeSpan.FromSeconds(15),"Exact deadline yields safe delay");
+    Check(LibraryRetentionSettings.TimerDelay(startup.AddTicks(-1),startup)==TimeSpan.FromSeconds(15),"Past one tick never reaches DispatcherTimer");
+    Check(LibraryRetentionSettings.TimerDelay(startup.AddTicks(1),startup)==TimeSpan.FromTicks(1),"Future one tick stays positive");
+    var afterCatchup=settings with{LastRunDate=missed.Date};
+    var next=afterCatchup.ScheduledRun(startup);
+    Check(next==new DateTime(2026,11,25,23,59,0)&&LibraryRetentionSettings.TimerDelay(next,startup)==next-startup,"After catch-up schedule next daily run");
+    var atDeadline=new DateTime(2026,11,25,23,59,0);
+    Check(settings.ScheduledRun(atDeadline)==atDeadline&&LibraryRetentionSettings.TimerDelay(atDeadline,atDeadline)==TimeSpan.FromSeconds(15),"Exactly 23:59 catches up without zero interval");
+    Check(!settings.IsDue(Created(9,26),missed)&&settings.IsDue(Created(9,25),missed),"Catch-up cutoff does not delete today's newly expired content early");
+    Check(LibraryRetentionSettings.TimerDelay(next,startup.AddHours(-2))==next-startup.AddHours(-2),"Clock moved back keeps future wait positive");
+    Check(LibraryRetentionSettings.TimerDelay(next,next.AddHours(2))==TimeSpan.FromSeconds(15),"Clock moved forward gives safe catch-up delay");
     settings.Save(App.DataRoot);Check(LibraryRetentionSettings.Load(App.DataRoot)==settings,"Configuration survives restart");
     string file=Path.Combine(App.DataRoot,"original.png");File.WriteAllText(file,"pixel bytes");
     var item=new MediaItem{Id="one",FilePath=file};var store=new MediaStore();store.Items.Add(item);store.Save();

@@ -18,6 +18,12 @@ internal sealed record LibraryRetentionSettings
         bool pending=Enabled&&(LastRunDate==null||LastRunDate.Value.Date<missed.Date)&&(EnabledAt==null||EnabledAt.Value<=missed);
         return pending?missed:NextRun(now);
     }
+    // A missed deadline is intentionally in the past; preserve it for eligibility.
+    // Only the waiting interval is clamped, before the WPF timer sees it.
+    internal static TimeSpan TimerDelay(DateTime due,DateTime now){
+        var delay=due-now;
+        return delay<=TimeSpan.Zero?TimeSpan.FromSeconds(15):delay;
+    }
     internal bool IsDue(DateTimeOffset created,DateTime today)=>Enabled&&Valid&&DueDate(created,Days)<=today.Date;
     internal static LibraryRetentionSettings Load(string root){
         string path=Path.Combine(root,"library-retention.json");

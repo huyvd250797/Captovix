@@ -1,4 +1,4 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.68.1
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.68.3
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
@@ -417,3 +417,5 @@ Nghiên cứu tiếp ngoài phạm vi1.17: inpainting nền phức tạp, tự �
 | V1.68.0 — SDR Color & Video Controls | Nhất quán màu SDR và thao tác xem | Nhãn màu, con trỏ quay riêng, HUD icon/click ngoài, nút xuất đồng nhất | Remux không đổi mẫu ảnh; giữ transfer khi render | Test màu/media và build; chờ Windows SDR/HDR/ICC | Đã triển khai |
 
 | V1.68.1 — 1080p Recording Sharpness Fix | Giữ chi tiết1080p | Trả Quality mode, bỏ retag quay, preview gốc, copy không tái nén, CRF14 | Test media/byte/geometry | So Windows cùng preset | Đã triển khai; chờ Windows |
+| V1.68.2 — Retention Startup Stability Fix | Khởi động ổn định | Kiểm delay trước khi gán timer, giữ dọn bù, cô lập lỗi | Không migration; giữ license/dữ liệu | Retention checks và cài đè Windows | Đã sửa source; chờ build và nghiệm thu Windows |
+| V1.68.3 — GitHub Actions Build & Packaging Fix | CI/CD Windows | Tách kiểm thử desktop và CI, kiểm gói, báo cáo | Giữ runtime/license/dữ liệu | CI thành công và nghiệm thu Desktop | Đã sửa source; chờ chạy Windows Runner |

@@ -15,6 +15,7 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <ApplicationIcon>../Captovix/Assets/Captovix.ico</ApplicationIcon>
     <Product>Captovix Recovery Center</Product>
+    <Version>1.68.3</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Velopack" Version="1.2.161" />

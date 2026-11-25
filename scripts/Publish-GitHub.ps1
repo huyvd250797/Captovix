@@ -3,9 +3,11 @@ $ErrorActionPreference = 'Stop'
 $nativeEvidence=Join-Path (Split-Path $PSScriptRoot -Parent) 'artifacts/windows-acceptance.json'
 if(!(Test-Path $nativeEvidence)){throw 'Native Windows acceptance evidence missing. Review packages may be built locally; stable publication is blocked.'}
 $native=Get-Content $nativeEvidence -Raw | ConvertFrom-Json
-if($native.version -ne '1.65.0' -or $native.platform -ne 'Windows' -or !$native.windowVisible -or $native.manualAcceptance -ne 'PASS'){throw 'Windows native acceptance has not passed for this release.'}
+[xml]$project = Get-Content (Join-Path (Split-Path $PSScriptRoot -Parent) 'src/Captovix/Captovix.csproj')
+$version = [string]$project.Project.PropertyGroup.Version
+if($native.version -ne $version -or $native.platform -ne 'Windows' -or !$native.windowVisible -or $native.manualAcceptance -ne 'PASS'){throw 'Windows native acceptance has not passed for this release.'}
 
-$requiredChecks = @('FreshInstall','OverwriteInstall','InAppUpdate','DataIntegrity','StartupRecovery','MixedDpiCapture','LongSession','Latency','Appearance','RecordingSources','RecordingControls','RecordingIntegrity','RecordingMixedDpi','CaptureMenus','AudioSources','AudioTrackPlayback','AudioSync','AudioDeviceLoss','RecordingCountdown','RecordingPresets','RecordingPresenter','RecordingModalClick','LiveAudioMeters','VideoPlaybackToggle','InlineStepEditing','VideoTrimExport','DecimalStepNumbering','VideoProjectRecovery','VideoTimelineEditing')
+$requiredChecks = @('FreshInstall','OverwriteInstall','InAppUpdate','DataIntegrity','StartupRecovery','MixedDpiCapture','LongSession','Latency','Appearance','RecordingSources','RecordingControls','RecordingIntegrity','RecordingMixedDpi','CaptureMenus','AudioSources','AudioTrackPlayback','AudioSync','AudioDeviceLoss','RecordingCountdown','RecordingPresets','RecordingPresenter','RecordingModalClick','LiveAudioMeters','VideoPlaybackToggle','InlineStepEditing','VideoTrimExport','DecimalStepNumbering','VideoProjectRecovery','VideoTimelineEditing','RetentionStartup','PhysicalSelfCapture','LiveUIAutomation','InteractiveClipboard')
 foreach($name in $requiredChecks){
     if(!$native.checks -or $native.checks.$name -cne 'PASS'){throw "Windows acceptance is missing or failed: $name"}
 }
