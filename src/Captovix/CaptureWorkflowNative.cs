@@ -70,25 +70,35 @@ public static class CapturePrompts
         picker.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Escape)picker.Close();else if(e.Key==System.Windows.Input.Key.Enter)Finish();};list.MouseDoubleClick+=(_,_)=>Finish();picker.Closed+=(_,_)=>done.TrySetResult(null);
         using var registration=cancellation.Register(()=>picker.Dispatcher.BeginInvoke(()=>{if(picker.IsVisible)picker.Close();}));Refresh();picker.Show();list.Focus();return await done.Task;
     }
-    private sealed record CameraOption(string? Id,string Name);
+    private sealed record CameraOption(string? Id,string Name){public override string ToString()=>Name;}
 
     internal static async Task<(int Mode,DisplayInfo Display,RecordingAudioSettings Audio,RecordingProfile Profile,bool HighlightClicks,bool Hardware,string? Camera,bool Cursor)?> PickRecordingSourceAsync(
         Window owner,IReadOnlyList<DisplayInfo> displays,int initialMode,DisplayInfo initialDisplay,AppSettings preferences,CancellationToken cancellation)
     {
         cancellation.ThrowIfCancellationRequested();
-        var dialog=new Window{Title="Captovix · Nguồn quay",Width=480,SizeToContent=SizeToContent.Height,
-            WindowStartupLocation=WindowStartupLocation.CenterScreen,ResizeMode=ResizeMode.NoResize,ShowInTaskbar=false,Topmost=true};
+        var dialog=new Window{Title="Captovix · Nguồn quay",Width=Math.Min(840,SystemParameters.WorkArea.Width-24),Height=Math.Min(650,SystemParameters.WorkArea.Height-24),
+            WindowStartupLocation=WindowStartupLocation.CenterScreen,ResizeMode=ResizeMode.CanResizeWithGrip,ShowInTaskbar=false,Topmost=true};
         if(owner.IsVisible){dialog.Owner=owner;dialog.WindowStartupLocation=WindowStartupLocation.CenterOwner;}
-        var panel=new StackPanel{Margin=new Thickness(20)};
-        dialog.Content=new ScrollViewer{Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
-        dialog.MaxHeight=SystemParameters.WorkArea.Height-16;
-        panel.Children.Add(new TextBlock{Text="Chọn nguồn quay",FontSize=20,FontWeight=FontWeights.SemiBold});
+        dialog.MaxHeight=Math.Max(240,SystemParameters.WorkArea.Height-16);
+        dialog.MaxWidth=Math.Max(300,SystemParameters.WorkArea.Width-16);
+        dialog.MinHeight=Math.Min(320,dialog.Height);dialog.MinWidth=Math.Min(420,dialog.Width);
+        var root=new Grid();root.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});root.RowDefinitions.Add(new RowDefinition{Height=new GridLength(1,GridUnitType.Star)});root.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});dialog.Content=root;
+        var header=new TextBlock{Text="Chọn nguồn quay",FontSize=20,FontWeight=FontWeights.SemiBold,Margin=new Thickness(20,14,20,10)};root.Children.Add(header);
+        var body=new Grid{Margin=new Thickness(16,0,16,8)};
+        var left=new StackPanel();var right=new StackPanel();
+        body.Children.Add(left);body.Children.Add(right);
+        var scroll=new ScrollViewer{Content=body,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};Grid.SetRow(scroll,1);root.Children.Add(scroll);
+        bool? lastWide=null;
+        void ArrangeColumns(){bool wide=dialog.ActualWidth>=690||(dialog.ActualWidth==0&&dialog.Width>=690);if(lastWide==wide)return;lastWide=wide;body.RowDefinitions.Clear();body.ColumnDefinitions.Clear();
+            if(wide){body.ColumnDefinitions.Add(new ColumnDefinition());body.ColumnDefinitions.Add(new ColumnDefinition());Grid.SetRow(left,0);Grid.SetRow(right,0);Grid.SetColumn(left,0);Grid.SetColumn(right,1);left.Margin=new Thickness(4,0,12,0);right.Margin=new Thickness(12,0,4,0);}
+            else{body.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});body.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});Grid.SetColumn(left,0);Grid.SetColumn(right,0);Grid.SetRow(left,0);Grid.SetRow(right,1);left.Margin=right.Margin=new Thickness(4,0,4,0);}}
+        ArrangeColumns();dialog.SizeChanged+=(_,_)=>ArrangeColumns();
         var mode=new ComboBox{ItemsSource=new[]{"Vùng chọn","Cửa sổ","Toàn màn hình"},SelectedIndex=Math.Clamp(initialMode,0,2)};
         var screen=new ComboBox{ItemsSource=displays,DisplayMemberPath="Label",SelectedItem=initialDisplay};
         var info=new TextBlock{Margin=new Thickness(4,6,4,8),TextWrapping=TextWrapping.Wrap};
-        panel.Children.Add(mode);
-        panel.Children.Add(screen);
-        panel.Children.Add(info);
+        left.Children.Add(mode);
+        left.Children.Add(screen);
+        left.Children.Add(info);
         void Update(){
             screen.Visibility=mode.SelectedIndex==2?Visibility.Visible:Visibility.Collapsed;
             info.Text=mode.SelectedIndex switch{0=>"Click chọn khung tự nhận diện hoặc kéo chọn vùng, rồi bấm Quay. Vị trí vùng quay được cố định trên màn hình.",1=>"Chọn cửa sổ đang mở ở bước tiếp theo.",_=>"Chọn màn hình cần quay và kiểm tra độ phân giải."};
@@ -96,13 +106,13 @@ public static class CapturePrompts
         mode.SelectionChanged+=(_,_)=>Update();
         Update();
         using var audio=new RecordingAudioPanel(preferences);
-        panel.Children.Add(audio);
+        left.Children.Add(audio);
         var profile=new RecordingProfilePanel(preferences.VideoProfile??new RecordingProfile(3,0,preferences.Fps));
-        panel.Children.Add(profile);
+        right.Children.Add(profile);
         var highlight=new CheckBox{Content="Làm nổi vị trí click chuột",IsChecked=preferences.HighlightRecordingClicks,Margin=new(4,6,4,6)};
-        panel.Children.Add(highlight);
+        right.Children.Add(highlight);
         var hardware=new CheckBox{Content="Ưu tiên mã hóa phần cứng (H.264)",IsChecked=preferences.Hardware,Margin=new(4,4,4,6)};
-        panel.Children.Add(hardware);
+        right.Children.Add(hardware);
         void UpdateEstimate()=>profile.Update((screen.SelectedItem as DisplayInfo??initialDisplay).Bounds,
             mode.SelectedIndex==2,audio.MicrophoneEnabled,audio.SystemEnabled);
         profile.Changed+=UpdateEstimate;
@@ -110,10 +120,10 @@ public static class CapturePrompts
         mode.SelectionChanged+=(_,_)=>UpdateEstimate();
         screen.SelectionChanged+=(_,_)=>UpdateEstimate();
         UpdateEstimate();
-        var camera=new ComboBox{DisplayMemberPath="Name",SelectedValuePath="Id"};
+        var camera=new ComboBox{DisplayMemberPath=nameof(CameraOption.Name),SelectedValuePath=nameof(CameraOption.Id)};
         var cameraLabel=new TextBlock{Text="Webcam · ghi thành nguồn riêng",Margin=new Thickness(4,6,4,1)};
-        panel.Children.Add(cameraLabel);
-        panel.Children.Add(camera);
+        right.Children.Add(cameraLabel);
+        right.Children.Add(camera);
         camera.Items.Add(new CameraOption(null,"Không quay webcam"));
         camera.SelectedIndex=0;
         async void LoadCameras(object? sender,EventArgs e){
@@ -125,18 +135,18 @@ public static class CapturePrompts
         }
         dialog.Loaded+=LoadCameras;
         var cursor=new CheckBox{Content="Hiển thị con trỏ chuột trong video",IsChecked=preferences.RecordingCursor,Margin=new Thickness(4,10,4,8)};
-        panel.Children.Add(cursor);
+        right.Children.Add(cursor);
         var warning=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new Thickness(4,4,4,0)};
-        panel.Children.Add(warning);
+        var footer=new StackPanel{Margin=new Thickness(20,5,20,12)};Grid.SetRow(footer,2);root.Children.Add(footer);footer.Children.Add(warning);
         var row=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right};
         var cancel=new Button{Content="Hủy"};
         var next=new Button{Content="Tiếp tục"};
         row.Children.Add(cancel);
         row.Children.Add(next);
-        panel.Children.Add(row);
+        footer.Children.Add(row);
         var result=new TaskCompletionSource<(int Mode,DisplayInfo Display,RecordingAudioSettings Audio,RecordingProfile Profile,bool HighlightClicks,bool Hardware,string? Camera,bool Cursor)?>(TaskCreationOptions.RunContinuationsAsynchronously);
         void Confirm(){
-            if(screen.SelectedItem is not DisplayInfo selected)return;
+            var selected=screen.SelectedItem as DisplayInfo??initialDisplay;
             try{
                 result.TrySetResult((mode.SelectedIndex,selected,audio.Read(),profile.Read(),highlight.IsChecked==true,hardware.IsChecked==true,camera.SelectedValue as string,cursor.IsChecked==true));
                 dialog.Close();
@@ -146,7 +156,7 @@ public static class CapturePrompts
         next.Click+=(_,_)=>Confirm();
         dialog.PreviewKeyDown+=(_,e)=>{
             if(e.Key==System.Windows.Input.Key.Escape){e.Handled=true;dialog.Close();}
-            else if(e.Key==System.Windows.Input.Key.Enter&&!mode.IsDropDownOpen&&!screen.IsDropDownOpen&&!audio.IsKeyboardFocusWithin){e.Handled=true;Confirm();}
+            else if(e.Key==System.Windows.Input.Key.Enter&&!mode.IsDropDownOpen&&!screen.IsDropDownOpen&&!camera.IsDropDownOpen&&!audio.IsKeyboardFocusWithin){e.Handled=true;Confirm();}
         };
         dialog.Closed+=(_,_)=>result.TrySetResult(null);
         using var registration=cancellation.Register(()=>dialog.Dispatcher.BeginInvoke(()=>{if(dialog.IsVisible)dialog.Close();}));

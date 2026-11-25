@@ -1,3 +1,12 @@
+# Captovix V1.70.0 — Smart Callout Pointer & Recording UX
+
+- Callout ảnh: rê chuột tới viền thân để hiện nút tím (+), kéo ra ngoài để thêm một mũi chỉ liền thân. Thả lại trong thân hoặc hủy thao tác không tăng số mũi. Giữ nguyên tối đa 8; các điểm resize, xoay, đầu mũi cam được ưu tiên. Một thao tác tạo là một Undo/Redo; số mũi đồng bộ sau khi xác nhận.
+- Nguồn quay: header và footer cố định; bố cục hai cột khi đủ rộng, vùng nội dung cuộn riêng; Hủy/Tiếp tục luôn ngoài vùng cuộn. Cho phép đổi kích thước cửa sổ.
+- Vùng quay: thêm lớp nhận click gần như trong suốt cho overlay live, khóa hình chữ nhật đang gợi ý bằng một click; bấm Quay/Enter mới xác nhận và chuyển sang đếm ngược. Vùng kéo thủ công và các nút chỉnh vùng được giữ lại.
+- Giữ Retention startup fix, version động, 1080p, license và update feed. Không migration. Chưa chạy build WPF trên Linux thiếu SDK; cần nghiệm thu desktop và full regression trước khi phát hành.
+
+Xem docs/V1.70.0-VALIDATION.md.
+
 # Captovix V1.69.0 — Multi-Pointer Callout & Dynamic Version
 
 - Tiêu đề MainWindow lấy VersionInfo.Current từ assembly, không gán cứng.

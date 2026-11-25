@@ -32,8 +32,8 @@ foreach ($folder in @($payload,$releases)) {
 if ($PreviousReleases) { Copy-Item (Join-Path (Resolve-Path $PreviousReleases).Path '*.nupkg') $releases -Force }
 dotnet run --project tests/InstallerContractChecks/InstallerContractChecks.csproj -c Release -- $projectRoot
 if ($LASTEXITCODE -ne 0) { throw 'Installer argument regression checks failed.' }
-# Focused feature candidate: retention, startup, callout, installer and updater checks are mandatory; full suite separately.
-$selectedChecks = @('LibraryRetentionChecks','StartupResourceChecks','CalloutGestureChecks','CalloutInteractionWindowsChecks','CompositionWindowsChecks','MultiPointerCalloutWindowsChecks','UpdateChecks')
+# Focused feature candidate: retention, startup, callout, recording region, installer and updater checks are mandatory; full suite separately.
+$selectedChecks = @('LibraryRetentionChecks','StartupResourceChecks','CalloutGestureChecks','CalloutInteractionWindowsChecks','CompositionWindowsChecks','MultiPointerCalloutWindowsChecks','CaptureBoundsChecks','CaptureBoundsWindowsChecks','UpdateChecks')
 $allChecks = @(Get-ChildItem (Join-Path $projectRoot 'tests') -Filter *.csproj -Recurse | ForEach-Object { $_.BaseName } | Sort-Object -Unique)
 $deferredChecks = @($allChecks | Where-Object { $_ -notin ($selectedChecks + @('InstallerContractChecks')) })
 Write-Host 'UPDATE CANDIDATE: full regression has not been run.' -ForegroundColor Yellow
@@ -126,6 +126,6 @@ $releaseAssets += (Join-Path $projectRoot 'scripts/README-PUBLISH.txt')
 Compress-Archive -Path $releaseAssets -DestinationPath $releaseZip -CompressionLevel Optimal
 # Full source archive supplied separately. Do not publish before desktop acceptance and outstanding regressions are reviewed.
 Get-ChildItem $artifactRoot -File | Where-Object Name -ne 'CoreSetup.exe' | ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 } | Format-Table
-Write-Host 'Build complete. Windows desktop install/update/callout validation is required before broad rollout.'
+Write-Host 'Build complete. Windows desktop install/update/callout/recording validation is required before broad rollout.'
 
 @("Version: $version",'Status: UPDATE CANDIDATE - full regression NOT run',('Required suites passed: InstallerContractChecks, '+($selectedChecks -join ', ')+', NSIS path harness, real package integration.'),('Deferred suites: '+($deferredChecks -join ', ')),'Known baseline Editor/Blur and Connector regressions require review. Physical Windows acceptance and upgrade tests required before public release. Packages may be unsigned.') | Set-Content (Join-Path $artifactRoot 'UPDATE-QA-STATUS.txt') -Encoding UTF8

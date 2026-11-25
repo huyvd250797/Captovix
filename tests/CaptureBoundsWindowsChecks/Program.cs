@@ -15,6 +15,16 @@ internal static class Program
  Set(new(-180,-20,200,100));suggestion.Clear();locked.SetValue(session,true);type.GetMethod("Begin")!.Invoke(session,[new Native.POINT{X=-100,Y=0},8]);type.GetMethod("Move")!.Invoke(session,[new Native.POINT{X=900,Y=800},false]);type.GetMethod("End")!.Invoke(session,null);if(Get()!=new PixelRect(140,260,200,100))throw new Exception("Session move shrinks/escapes at edge");
  var finish=type.GetMethod("Finish")!;finish.Invoke(session,[finish.GetParameters()[0].DefaultValue]);var done=(TaskCompletionSource<PixelRect?>)type.GetField("Done")!.GetValue(session)!;if(done.Task.Result!=Get())throw new Exception("Confirmation returns different rectangle than displayed");
  Console.WriteLine("Actual selector session clamps suggestions/movement and confirms identical bounded rectangle. Physical Windows/DPI checks remain separate.");
+ var recording=Activator.CreateInstance(type,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[displays,true,null],null)!;
+ try{
+ type.GetField("Recording")!.SetValue(recording,true);var shown=new PixelRect(-200,-30,180,120);current.SetValue(recording,shown);
+ // A displayed recording suggestion must be lockable even if its UIA metadata has been cleared.
+ var click=new Native.POINT{X=-130,Y=20};type.GetMethod("Begin")!.Invoke(recording,[click,8]);type.GetMethod("Move")!.Invoke(recording,[click,false]);type.GetMethod("End")!.Invoke(recording,null);
+ if(!(bool)locked.GetValue(recording)!||(PixelRect)current.GetValue(recording)!=shown)throw new Exception("Recording click failed to lock shown region");
+ var rd=(TaskCompletionSource<PixelRect?>)type.GetField("Done")!.GetValue(recording)!;if(rd.Task.IsCompleted)throw new Exception("Recording selection started before Quay");
+ finish.Invoke(recording,[finish.GetParameters()[0].DefaultValue]);if(rd.Task.Result!=shown)throw new Exception("Recording confirmation changed locked region");
+ Console.WriteLine("PASS Recording single click locks displayed rectangle; explicit confirmation returns identical bounds");
+ }finally{((IDisposable)recording).Dispose();}
  }finally{((IDisposable)session).Dispose();}return 0;
  }catch(Exception e){Console.Error.WriteLine(e);return 1;}}
 }

@@ -32,6 +32,21 @@ internal static class Program
  session.Undo();Check(session.Document.Annotations[0].CalloutPointers().SequenceEqual(before),"Undo restores all tips");session.Redo();Check(Near(World(session.Document.Annotations[0],session.Document.Annotations[0].CalloutPointers().ElementAt(1)),destination),"Redo restores edited tip");surface.Refresh();
  var exported=ImageTransfer.Bgra(surface.Flatten());surface.SelectIds([]);Check(exported.SequenceEqual(ImageTransfer.Bgra(surface.Flatten())),"Selection handles absent from export");
  var plain=a.Copy();plain.CalloutStyle=CalloutStyle.Pill;Check(!plain.HasCalloutPointers&&EditorRenderer.CalloutGeometry(plain).Bounds.Right<=plain.Left+plain.Width+.01,"Plain styles suppress tips");
+ // New perimeter gesture uses the same native input path and history as ordinary edits.
+ var fresh=new Annotation{Kind=AnnotationKind.Callout,CalloutBodyPivot=true,CalloutStyle=CalloutStyle.RoundedSpeech,X1=200,Y1=180,X2=440,Y2=300,TailX=130,TailY=350,FillEnabled=true,AutoFitText=false};
+ var gestureSession=new EditorSession(new(){OriginalWidth=800,OriginalHeight=600,Annotations=[fresh]});surface.Load(image,gestureSession);surface.Tool=EditorTool.Select;surface.SelectIds([fresh.Id]);
+ var start=new Point(260,180);var end=new Point(290,95);var first=new AnnotationPoint(fresh.TailX,fresh.TailY);
+ int notifications=0;surface.SelectionChanged+=()=>notifications++;
+ surface.PointerMove(start);surface.PointerDown(start);surface.PointerUp(start);
+ Check(gestureSession.Document.Annotations[0].CalloutPointerCount==1&&!gestureSession.CanUndo,"Border click creates no pointer or undo entry");
+ surface.PointerDown(start);surface.PointerMove(end);Check(gestureSession.Document.Annotations[0].CalloutPointerCount==2,"Live perimeter drag previews exactly one new pointer");
+ surface.PointerMove(new Point(260,220));surface.PointerUp(new Point(260,220));Check(gestureSession.Document.Annotations[0].CalloutPointerCount==1&&!gestureSession.CanUndo,"Returning inside cancels preview");
+ surface.PointerDown(start);surface.PointerMove(end);surface.CancelInteraction();Check(gestureSession.Document.Annotations[0].CalloutPointerCount==1&&!gestureSession.CanUndo,"Cancel restores original pointers");
+ int notified=notifications;surface.PointerDown(start);surface.PointerMove(end);surface.PointerUp(end);var result=gestureSession.Document.Annotations[0];
+ Check(result.CalloutPointerCount==2&&result.CalloutPointers().First()==first&&Near(World(result,result.CalloutPointers().Last()),end),"Drag commits one joined pointer at release point, preserving original");
+ Check(notifications>notified,"Selection notification updates property count");gestureSession.Undo();surface.Refresh();Check(gestureSession.Document.Annotations[0].CalloutPointerCount==1,"Single Undo removes newly added pointer");gestureSession.Redo();surface.Refresh();Check(gestureSession.Document.Annotations[0].CalloutPointerCount==2,"Redo restores newly added pointer");
+ var atLimit=gestureSession.Document.Annotations[0].Copy();atLimit.SetCalloutPointerCount(8);var limitSession=new EditorSession(new(){OriginalWidth=800,OriginalHeight=600,Annotations=[atLimit]});surface.Load(image,limitSession);surface.SelectIds([atLimit.Id]);surface.PointerDown(start);surface.PointerMove(end);surface.PointerUp(end);Check(limitSession.Document.Annotations[0].CalloutPointerCount==8,"Perimeter drag respects eight pointer limit");
+ var rotated=fresh.Copy();rotated.SetCalloutPointerCount(1);rotated.Rotation=30;var rotatedSession=new EditorSession(new(){OriginalWidth=800,OriginalHeight=600,Annotations=[rotated]});surface.Load(image,rotatedSession);surface.SelectIds([rotated.Id]);surface.SetZoom(.75);var rs=EditorRenderer.WorldPoint(rotated,start);var re=EditorRenderer.WorldPoint(rotated,end);var originalWorld=World(rotated,rotated.CalloutPointers().First());surface.PointerDown(rs);surface.PointerMove(re);surface.PointerUp(re);var rr=rotatedSession.Document.Annotations[0];Check(rr.CalloutPointerCount==2&&Near(World(rr,rr.CalloutPointers().First()),originalWorld)&&Near(World(rr,rr.CalloutPointers().Last()),re),"Rotated zoomed callout creates world-aligned pointer");
  Console.WriteLine($"{n} multi-pointer checks passed. Physical mouse/DPI and deployment acceptance remain required.");return 0;
  }catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }

@@ -97,12 +97,17 @@ public static partial class EditorRenderer
         }
         dc.PushTransform(new TranslateTransform(a.Left,a.Top));dc.DrawDrawing(entry.Drawing);dc.Pop();
     }
-    private static Geometry StyledCalloutGeometry(Annotation a)
+    internal static Geometry CalloutBodyGeometry(Annotation a)
     {
         var b=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));double radius=Math.Min(a.CornerRadius,Math.Min(b.Width,b.Height)/2);
         if(a.CalloutStyle is CalloutStyle.Pill or CalloutStyle.PillSpeech)radius=Math.Min(b.Width,b.Height)/2;
         Geometry body=a.CalloutStyle is CalloutStyle.EllipseSpeech or CalloutStyle.Ellipse?new EllipseGeometry(b):a.CalloutStyle is CalloutStyle.RoundedSpeech or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.PillSpeech?new RectangleGeometry(b,radius,radius):new RectangleGeometry(b);
         if(a.CalloutStyle is CalloutStyle.DiamondSpeech or CalloutStyle.HexagonSpeech){var shape=a.Copy();shape.Kind=a.CalloutStyle==CalloutStyle.DiamondSpeech?AnnotationKind.Diamond:AnnotationKind.Hexagon;body=ShapeGeometry(shape);}
+        return body;
+    }
+    private static Geometry StyledCalloutGeometry(Annotation a)
+    {
+        var b=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));var body=CalloutBodyGeometry(a);
         var tail=new Point(a.TailX,a.TailY);if(a.CalloutStyle is CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse||b.Contains(tail))return body;
         Point first,last;
         if(a.CalloutStyle==CalloutStyle.EllipseSpeech){double angle=Math.Atan2((tail.Y-(b.Top+b.Height/2))/(b.Height/2),(tail.X-(b.Left+b.Width/2))/(b.Width/2));first=new(b.Left+b.Width/2+b.Width/2*Math.Cos(angle-.16),b.Top+b.Height/2+b.Height/2*Math.Sin(angle-.16));last=new(b.Left+b.Width/2+b.Width/2*Math.Cos(angle+.16),b.Top+b.Height/2+b.Height/2*Math.Sin(angle+.16));}

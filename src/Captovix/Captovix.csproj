@@ -14,8 +14,8 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
-    <Version>1.69.0</Version>
-    <ReleaseTitle>Multi-Pointer Callout &amp; Dynamic Version</ReleaseTitle>
+    <Version>1.70.0</Version>
+    <ReleaseTitle>Smart Callout Pointer &amp; Recording UX</ReleaseTitle>
     <StartupObject>Captovix.Program</StartupObject>
     
     <PublishTrimmed>false</PublishTrimmed>
