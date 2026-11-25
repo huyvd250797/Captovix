@@ -112,6 +112,24 @@ public sealed class Annotation
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public List<string>? GroupPath {get;set;}
     public double TailX {get;set;}
     public double TailY {get;set;}
+    // Keep the original pointer fields for legacy documents and video annotations.
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public List<AnnotationPoint>? ExtraCalloutPointers {get;set;}
+    public const int MaxCalloutPointers=8;
+    [JsonIgnore] public int CalloutPointerCount=>1+(ExtraCalloutPointers?.Count??0);
+    [JsonIgnore] public bool HasCalloutPointers=>Kind==AnnotationKind.Callout&&CalloutStyle is not (CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse);
+    public IEnumerable<AnnotationPoint> CalloutPointers(){yield return new(TailX,TailY);if(ExtraCalloutPointers!=null)foreach(var point in ExtraCalloutPointers)yield return point;}
+    public void SetCalloutPointer(int index,AnnotationPoint point){if(index==0){TailX=point.X;TailY=point.Y;}else ExtraCalloutPointers![index-1]=point;}
+    public void MapExtraCalloutPointers(Func<AnnotationPoint,AnnotationPoint> map){if(ExtraCalloutPointers!=null)ExtraCalloutPointers=ExtraCalloutPointers.Select(map).ToList();}
+    public void SetCalloutPointerCount(int count){
+        count=Math.Clamp(count,1,MaxCalloutPointers);
+        if(count==1){ExtraCalloutPointers=null;return;}
+        ExtraCalloutPointers??=[];
+        if(ExtraCalloutPointers.Count>count-1)ExtraCalloutPointers.RemoveRange(count-1,ExtraCalloutPointers.Count-(count-1));
+        // Choose a free direction far from existing pointers, so newly added handles are easy to grab.
+        double cx=Left+Width/2,cy=Top+Height/2,rx=Math.Max(18,Width/2),ry=Math.Max(18,Height/2);
+        var candidates=Enumerable.Range(0,16).Select(i=>{double angle=i*Math.PI/8;double x=Math.Cos(angle),y=Math.Sin(angle);return new AnnotationPoint(cx+(rx+Math.Max(24,rx*.3))*x,cy+(ry+Math.Max(24,ry*.3))*y);}).ToArray();
+        while(ExtraCalloutPointers.Count<count-1){var existing=CalloutPointers().ToArray();var next=candidates.OrderByDescending(c=>existing.Min(e=>Math.Pow((e.X-c.X)/rx,2)+Math.Pow((e.Y-c.Y)/ry,2))).First();ExtraCalloutPointers.Add(next);}
+    }
     public List<AnnotationPoint> Points {get;set;}=[];
     public const int MaxPoints=4096;
     [JsonIgnore] public bool IsRedaction=>Kind is AnnotationKind.Blur or AnnotationKind.Pixelate or AnnotationKind.Cover;
@@ -119,8 +137,8 @@ public sealed class Annotation
     [JsonIgnore] public double Top=>Math.Min(Y1,Y2);
     [JsonIgnore] public double Width=>Math.Abs(X2-X1);
     [JsonIgnore] public double Height=>Math.Abs(Y2-Y1);
-    public Annotation Copy()=>new(){Mockup=Mockup?.Copy(),TextFrame=TextFrame,ImagePlaceholder=ImagePlaceholder,ImageStyle=ImageStyle?.Copy(),CalloutBodyPivot=CalloutBodyPivot,PixelPng=PixelPng,Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,StepStrokeColor=StepStrokeColor,StepFillVisible=StepFillVisible,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,ObjectOpacity=ObjectOpacity,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,StepDecimal=StepDecimal,StepSequence=StepSequence,EffectSize=EffectSize,GroupPath=GroupPath?.ToList(),GroupId=GroupId,TailX=TailX,TailY=TailY,Points=[..Points]};
-    public void Translate(double dx,double dy){X1+=dx;X2+=dx;Y1+=dy;Y2+=dy;if(Control is {} c)Control=new(c.X+dx,c.Y+dy);if(Kind==AnnotationKind.Callout){TailX+=dx;TailY+=dy;}for(int i=0;i<Points.Count;i++)Points[i]=new(Points[i].X+dx,Points[i].Y+dy);}
+    public Annotation Copy()=>new(){Mockup=Mockup?.Copy(),TextFrame=TextFrame,ImagePlaceholder=ImagePlaceholder,ImageStyle=ImageStyle?.Copy(),CalloutBodyPivot=CalloutBodyPivot,PixelPng=PixelPng,Shadow=Shadow.Copy(),RegionShape=RegionShape,Magnification=Magnification,FocusOpacity=FocusOpacity,FontFamily=FontFamily,Bold=Bold,Italic=Italic,Underline=Underline,TextColor=TextColor,TextAlignment=TextAlignment,VerticalAlignment=VerticalAlignment,TextPadding=TextPadding,TextWidth=TextWidth,LineSpacing=LineSpacing,AutoFitText=AutoFitText,CalloutStyle=CalloutStyle,StepStyle=StepStyle,StepStrokeColor=StepStrokeColor,StepFillVisible=StepFillVisible,Route=Route,Control=Control,StartAnchor=StartAnchor,EndAnchor=EndAnchor,Name=Name,Locked=Locked,Visible=Visible,Rotation=Rotation,Id=Id,Kind=Kind,X1=X1,Y1=Y1,X2=X2,Y2=Y2,Color=Color,Stroke=Stroke,FillColor=FillColor,FillEnabled=FillEnabled,StrokeEnabled=StrokeEnabled,ObjectOpacity=ObjectOpacity,StrokeOpacity=StrokeOpacity,FillOpacity=FillOpacity,Dash=Dash,CornerRadius=CornerRadius,StarPoints=StarPoints,StarInset=StarInset,Tip=Tip,DoubleArrow=DoubleArrow,ArrowHeadSize=ArrowHeadSize,FontSize=FontSize,Text=Text,Number=Number,StepDecimal=StepDecimal,StepSequence=StepSequence,EffectSize=EffectSize,GroupPath=GroupPath?.ToList(),GroupId=GroupId,TailX=TailX,TailY=TailY,ExtraCalloutPointers=ExtraCalloutPointers?.ToList(),Points=[..Points]};
+    public void Translate(double dx,double dy){X1+=dx;X2+=dx;Y1+=dy;Y2+=dy;if(Control is {} c)Control=new(c.X+dx,c.Y+dy);if(Kind==AnnotationKind.Callout){TailX+=dx;TailY+=dy;MapExtraCalloutPointers(p=>new(p.X+dx,p.Y+dy));}for(int i=0;i<Points.Count;i++)Points[i]=new(Points[i].X+dx,Points[i].Y+dy);}
     public void AddPoint(double x,double y){if(Points.Count>=MaxPoints)return;Points.Add(new(x,y));if(Points.Count==1){X1=X2=x;Y1=Y2=y;}else{X1=Math.Min(X1,x);Y1=Math.Min(Y1,y);X2=Math.Max(X2,x);Y2=Math.Max(Y2,y);}}
 }
 
@@ -165,6 +183,7 @@ public sealed class EditorDocument
             TextStudio.Validate(a);FocusStudio.Validate(a);StudioStyle.Validate(a);
             if(a.GroupId!=null&&!Guid.TryParseExact(a.GroupId,"N",out _))throw new InvalidDataException("Mã nhóm chú thích không hợp lệ.");
             if(!double.IsFinite(a.TailX)||!double.IsFinite(a.TailY)||Math.Abs(a.TailX)>1000000||Math.Abs(a.TailY)>1000000)throw new InvalidDataException("Đuôi callout không hợp lệ.");
+            if(a.ExtraCalloutPointers is {} pointers&&(a.Kind!=AnnotationKind.Callout||pointers.Count>=Annotation.MaxCalloutPointers||pointers.Any(p=>!double.IsFinite(p.X)||!double.IsFinite(p.Y)||Math.Abs(p.X)>1000000||Math.Abs(p.Y)>1000000)))throw new InvalidDataException("Mũi chỉ callout không hợp lệ.");
             if(a.Points==null||a.Points.Count>Annotation.MaxPoints||(totalPoints+=a.Points.Count)>100000||a.Points.Any(p=>!double.IsFinite(p.X)||!double.IsFinite(p.Y)||Math.Abs(p.X)>1000000||Math.Abs(p.Y)>1000000))throw new InvalidDataException("Nét vẽ vượt giới hạn hoặc không hợp lệ.");
             if(a.Kind==AnnotationKind.Freehand&&a.Points.Count==0||a.Kind!=AnnotationKind.Freehand&&a.Points.Count!=0)throw new InvalidDataException("Dữ liệu điểm không phù hợp công cụ.");
             if(a.Kind==AnnotationKind.Callout&&(a.Width<36||a.Height<36))throw new InvalidDataException("Hộp callout quá nhỏ.");

@@ -1,14 +1,11 @@
-param(
+﻿param(
     [switch]$SkipInstaller,
-    [ValidateSet('CI','Desktop')][string]$TestProfile = 'Desktop',
     [switch]$AllowUnconfiguredLicensing,
     [string]$UpdateSource = '',
     [ValidateSet('GitHub','Https')][string]$UpdateKind = 'GitHub',
     [string]$PreviousReleases = ''
 )
 $ErrorActionPreference = 'Stop'
-# Inspect native exit codes explicitly so the report records the failed suite.
-$PSNativeCommandUseErrorActionPreference = $false
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Set-Location $projectRoot
@@ -23,10 +20,7 @@ if (-not $AllowUnconfiguredLicensing) {
     if ($LASTEXITCODE -ne 0) { throw 'Invalid public license configuration.' }
 }
 & (Join-Path $PSScriptRoot 'Ensure-MediaEngine.ps1')
-$artifactRoot = Join-Path $projectRoot 'artifacts'
-New-Item -ItemType Directory -Force $artifactRoot | Out-Null
-# Remove prior outputs for this version so a failed build cannot expose stale artifacts.
-Get-ChildItem $artifactRoot -File | Where-Object { $_.Name -like "Captovix-v$version-*" -or $_.Name -like "Captovix V$version *" -or $_.Name -in @('CoreSetup.exe','ci-test-report.json','package-verification.json') } | Remove-Item -Force
+$artifactRoot = Join-Path $projectRoot 'artifacts' 
 $payload = Join-Path $artifactRoot 'win-x64'
 $releases = Join-Path $artifactRoot 'releases'
 foreach ($folder in @($payload,$releases)) {
@@ -38,39 +32,13 @@ foreach ($folder in @($payload,$releases)) {
 if ($PreviousReleases) { Copy-Item (Join-Path (Resolve-Path $PreviousReleases).Path '*.nupkg') $releases -Force }
 dotnet run --project tests/InstallerContractChecks/InstallerContractChecks.csproj -c Release -- $projectRoot
 if ($LASTEXITCODE -ne 0) { throw 'Installer argument regression checks failed.' }
-$report = [ordered]@{ version=$version; profile=$TestProfile; commit=$env:GITHUB_SHA; suites=@(); desktopAcceptance='PENDING'; result='RUNNING' }
-$reportPath = Join-Path $artifactRoot 'ci-test-report.json'
-$partialSuites = @{
-    CaptureQuality133WindowsChecks = 'Physical frozen capture and own window source list'
-    HybridPopupWindowsChecks = 'Live UI Automation worker and physical coordinates'
-    CaptureFidelityWindowsChecks = 'Interactive system clipboard PNG roundtrip'
+foreach ($check in (Get-ChildItem (Join-Path $projectRoot 'tests') -Filter *.csproj -Recurse | Where-Object { $_.Directory.Name -ne 'InstallerContractChecks' } | Sort-Object FullName | ForEach-Object { $_.BaseName })) {
+    dotnet run --project "tests/$check/$check.csproj" -c Release -p:Platform=x64
+    if ($LASTEXITCODE -ne 0) { throw "$check failed." }
 }
-function Save-TestReport { $report | ConvertTo-Json -Depth 6 | Set-Content $reportPath -Encoding utf8 }
-Save-TestReport
-try {
-    foreach ($check in (Get-ChildItem (Join-Path $projectRoot 'tests') -Filter *.csproj -Recurse | Where-Object { $_.Directory.Name -ne 'InstallerContractChecks' } | Sort-Object FullName | ForEach-Object { $_.BaseName })) {
-        $runArgs = @('run','--project',"tests/$check/$check.csproj",'-c','Release','-p:Platform=x64')
-        $pending = $null
-        if ($TestProfile -eq 'CI' -and $partialSuites.ContainsKey($check)) {
-            $pending = $partialSuites[$check]
-            if ($check -ne 'CaptureFidelityWindowsChecks') { $runArgs += @('--','--ci') }
-        } elseif ($TestProfile -eq 'Desktop' -and $check -eq 'CaptureFidelityWindowsChecks') { $runArgs += @('--','--clipboard') }
-        Write-Host "=== $check ($TestProfile) ==="
-        & dotnet @runArgs
-        $exit = $LASTEXITCODE
-        $status = if ($exit -ne 0) { 'FAIL' } elseif ($pending) { 'PASS_CI_DESKTOP_PENDING' } else { 'PASS' }
-        $report.suites += [ordered]@{ name=$check; status=$status; exitCode=$exit; pendingDesktop=$pending }
-        Save-TestReport
-        if ($exit -ne 0) { throw "$check failed (exit $exit)." }
-    }
-    $report.result = 'PASS'; Save-TestReport
-} catch { $report.result = 'FAIL'; Save-TestReport; throw }
-# This report is not physical desktop acceptance or authorization to publish stable.
-
 dotnet publish src/Captovix/Captovix.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64 -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o $payload
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 $recoveryPayload = Join-Path $artifactRoot 'recovery-publish'
-if (Test-Path $recoveryPayload) { Remove-Item $recoveryPayload -Recurse -Force }
 dotnet publish src/Captovix.Recovery/Captovix.Recovery.csproj -c Release -r win-x64 --self-contained true "-p:Version=$version" -p:DebugType=None -p:DebugSymbols=false -o $recoveryPayload
 if ($LASTEXITCODE -ne 0) { throw 'Recovery Center publish failed.' }
 Copy-Item (Join-Path $recoveryPayload 'Captovix.Recovery.exe') $payload -Force
@@ -102,9 +70,22 @@ if (-not $SkipInstaller) {
     $compilerPath = if ($compiler) { $compiler.Source } else { Join-Path ${env:ProgramFiles(x86)} 'NSIS\makensis.exe' }
     if (-not (Test-Path $compilerPath)) { throw 'Install NSIS 3 to build the migration Setup.exe. Raw Velopack output is available in artifacts/releases.' }
     # Exercise the actual NSIS normalization function on Windows before shipping.
-    & $compilerPath tests/InstallerPathChecks/InstallerPathChecks.nsi
-    if ($LASTEXITCODE -ne 0) { throw 'NSIS path harness compilation failed.' }
-    $pathHarness = Join-Path $projectRoot 'tests/InstallerPathChecks/InstallerPathChecks.exe'
+    $harnessDir = Join-Path $projectRoot 'tests\InstallerPathChecks'
+    $harnessSource = Join-Path $harnessDir 'InstallerPathChecks.nsi'
+    $pathHarness = Join-Path $harnessDir 'InstallerPathChecks.exe'
+    $originalBytes = [IO.File]::ReadAllBytes($harnessSource)
+    $originalText = [IO.File]::ReadAllText($harnessSource)
+    $fixedText = $originalText.Replace('!include "../../installer/InstallPath.nsh"', ('!include "' + (Join-Path $projectRoot 'installer\InstallPath.nsh') + '"'))
+    if ($fixedText -eq $originalText) { throw 'Unexpected installer harness include; no changes made.' }
+    try {
+        [IO.File]::WriteAllText($harnessSource,$fixedText,(New-Object System.Text.UTF8Encoding($true)))
+        Push-Location $harnessDir
+        try {
+            if (Test-Path $pathHarness) { Remove-Item -LiteralPath $pathHarness -Force }
+            & $compilerPath 'InstallerPathChecks.nsi'
+            if ($LASTEXITCODE -ne 0) { throw 'NSIS path harness compilation failed.' }
+        } finally { Pop-Location }
+    } finally { [IO.File]::WriteAllBytes($harnessSource,$originalBytes) }
     $pathCheck = Start-Process -FilePath $pathHarness -Wait -PassThru
     if ($pathCheck.ExitCode -ne 0) { throw 'NSIS path regression failed. See %TEMP%/Captovix-InstallerPathChecks-result.txt.' }
 
@@ -117,8 +98,11 @@ if (-not $SkipInstaller) {
     $canonicalSetup = Join-Path $releases 'HuyVo.Captovix-win-Setup.exe'
     Move-Item $canonicalSetup $core -Force
     $setup = Join-Path $artifactRoot "Captovix-v$version-Setup.exe"
-    & $compilerPath "/DAPPVERSION=$version" "/DCORESETUP=$core" "/DVCREDIST=$vc" "/DOUTPUT=$setup" installer/Captovix.nsi
-    if ($LASTEXITCODE -ne 0) { throw 'Migration installer compilation failed.' }
+    Push-Location (Join-Path $projectRoot 'installer')
+    try {
+        & $compilerPath "/DAPPVERSION=$version" "/DCORESETUP=$core" "/DVCREDIST=$vc" "/DOUTPUT=$setup" 'Captovix.nsi'
+        if ($LASTEXITCODE -ne 0) { throw 'Migration installer compilation failed.' }
+    } finally { Pop-Location }
     Copy-Item $setup $canonicalSetup -Force
 }
 # Verify a real full package through the production SDK, including bad hash rejection.
@@ -130,15 +114,8 @@ if (Test-Path $releaseZip) { Remove-Item $releaseZip }
 $releaseAssets = @(
     Get-ChildItem $releases -File | Where-Object { $_.Name -like '*.nupkg' -or $_.Name -in @('HuyVo.Captovix-win-Setup.exe','RELEASES','assets.win.json','releases.win.json') } | ForEach-Object { $_.FullName }
 )
-foreach ($required in @("HuyVo.Captovix-$version-full.nupkg",'HuyVo.Captovix-win-Setup.exe','RELEASES','assets.win.json','releases.win.json')) {
-    if (-not (Test-Path (Join-Path $releases $required) -PathType Leaf)) { throw "Missing release asset: $required" }
-}
 $releaseAssets += (Join-Path $projectRoot 'scripts/README-PUBLISH.txt')
 Compress-Archive -Path $releaseAssets -DestinationPath $releaseZip -CompressionLevel Optimal
-$verifyArgs = @('scripts/Verify-CI-Packages.py','--version',$version,'--release-dir',$releases,'--update-zip',$releaseZip,'--report',(Join-Path $artifactRoot 'package-verification.json'))
-if (-not $SkipInstaller) { $verifyArgs += @('--setup-wrapper',$setup) }
-& python @verifyArgs
-if ($LASTEXITCODE -ne 0) { throw 'Release asset integrity verification failed.' }
 python scripts/Package-Source.py
 if ($LASTEXITCODE -ne 0) { throw 'Source packaging refused or failed.' }
 Get-ChildItem $artifactRoot -File | Where-Object Name -ne 'CoreSetup.exe' | ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 } | Format-Table

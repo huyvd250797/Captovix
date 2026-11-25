@@ -41,7 +41,7 @@ public partial class MainWindow : Window
         };
         IsVisibleChanged+=(_,_)=>QueueStartupConfirmation();
         StateChanged+=(_,_)=>QueueStartupConfirmation();
-        WindowPlacement.Attach(this);InitializeComponent();InitializeOpacityControls();Activated+=(_,_)=>QueueUpdateNotice();InitializeBrand();InitializeEditor();_store=new();RebuildRecent();MediaList.ItemsSource=_recentItems;
+        WindowPlacement.Attach(this);InitializeComponent();Title=$"Captovix · V{VersionInfo.Current}";InitializeOpacityControls();Activated+=(_,_)=>QueueUpdateNotice();InitializeBrand();InitializeEditor();_store=new();RebuildRecent();MediaList.ItemsSource=_recentItems;
         CollectionViewSource.GetDefaultView(_recentItems).Filter=o=>{var i=(MediaItem)o;return LibraryMatch(i);};
         _store.Items.CollectionChanged+=(_,_)=>{if(_libraryRefreshHold==0)RebuildRecent();};CountLabel.Text=$"{_recentItems.Count}/{_store.Items.Count}";
         InitializeShell();InitializeLibraryProjects();InitializeComposition();InitializeToolOrder();InitializeIcons();InitializeVideoTools();InitializeVideoAudio();InitializeStudioAccess();InitializeViewerControls();IsVisibleChanged+=(_,_)=>{if(IsVisible&&_fitMode&&_session!=null)Dispatcher.BeginInvoke(FitImage,DispatcherPriority.Loaded);};Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;

@@ -89,7 +89,7 @@ public static partial class EditorRenderer
     private static void DrawCachedCallout(DrawingContext dc,Annotation a,bool suppressText)
     {
         var entry=(_calloutDrawings??=new()).GetOrCreateValue(a);
-        object key=(LayoutKey(a),a.VerticalAlignment,a.TextPadding,CacheCoordinate(a.Width),CacheCoordinate(a.Height),CacheCoordinate(a.TailX-a.Left),CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius,a.FillEnabled,a.FillColor,a.FillOpacity,a.StrokeEnabled,a.Color,a.Stroke,a.StrokeOpacity,a.Dash,suppressText);
+        object key=(LayoutKey(a),a.VerticalAlignment,a.TextPadding,CacheCoordinate(a.Width),CacheCoordinate(a.Height),CacheCoordinate(a.TailX-a.Left),CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius,ExtraPointerKey(a),a.FillEnabled,a.FillColor,a.FillOpacity,a.StrokeEnabled,a.Color,a.Stroke,a.StrokeOpacity,a.Dash,suppressText);
         if(!Equals(entry.Key,key)||entry.Drawing==null){
             var local=a.Copy();local.Translate(-a.Left,-a.Top);var drawing=new DrawingGroup();
             using(var context=drawing.Open()){context.DrawGeometry(local.FillEnabled?ShapeInk(local.FillColor,local.FillOpacity):null,local.StrokeEnabled?ShapePen(local):null,CachedCalloutGeometry(a).Local!);if(!suppressText)DrawStyledText(context,local);}
@@ -119,10 +119,10 @@ public static partial class EditorRenderer
         if(!TextStudio.IsText(a.Kind)||a.Kind==AnnotationKind.Step||!a.AutoFitText)return;
         if(a.Kind==AnnotationKind.Callout){
             if(a.Text.Length==0)return; // Keep an empty drawn frame exactly as placed; grow only when typing.
-            bool pin=preserveTail&&a.CalloutBodyPivot&&a.CalloutStyle is not(CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse);var old=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));var tail=WorldPoint(a,new(a.TailX,a.TailY));bool below=pin&&a.TailY>old.Bottom,right=pin&&a.TailX>old.Right;
+            bool pin=preserveTail&&a.CalloutBodyPivot&&a.CalloutStyle is not(CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse);var old=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));var tail=WorldPoint(a,new(a.TailX,a.TailY));var extraWorld=a.ExtraCalloutPointers?.Select(p=>WorldPoint(a,new(p.X,p.Y))).ToArray();bool below=pin&&a.TailY>old.Bottom,right=pin&&a.TailX>old.Right;
             double width=Math.Min(100000,Math.Max(Math.Max(36,a.Width),TextStudio.MinimumBodyWidth(a)));double left=right?old.Right-width:old.Left,top=old.Top;a.X1=left;a.Y1=top;a.X2=left+width;
             var text=TextLayout(a);double height=Math.Max(old.Height,TextStudio.FittedBodyHeight(a,text.Height,text.OverhangAfter));if(below)top=old.Bottom-height;a.Y1=top;a.Y2=top+height;
-            if(pin){var local=LocalPoint(a,tail);a.TailX=local.X;a.TailY=local.Y;}
+            if(pin){var local=LocalPoint(a,tail);a.TailX=local.X;a.TailY=local.Y;if(extraWorld!=null)a.ExtraCalloutPointers=extraWorld.Select(p=>LocalPoint(a,p)).Select(p=>new AnnotationPoint(p.X,p.Y)).ToList();}
 
         }
     }

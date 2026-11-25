@@ -1,0 +1,131 @@
+﻿param(
+    [switch]$SkipInstaller,
+    [switch]$AllowUnconfiguredLicensing,
+    [string]$UpdateSource = '',
+    [ValidateSet('GitHub','Https')][string]$UpdateKind = 'GitHub',
+    [string]$PreviousReleases = ''
+)
+$ErrorActionPreference = 'Stop'
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+$projectRoot = Split-Path $PSScriptRoot -Parent
+Set-Location $projectRoot
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) { throw 'Install .NET 10 SDK: https://dotnet.microsoft.com/download/dotnet/10.0' }
+[xml]$project = Get-Content src/Captovix/Captovix.csproj
+$version = [string]$project.Project.PropertyGroup.Version
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Use stable three-component version in Captovix.csproj.' }
+$licenseConfig = Get-Content src/Captovix/license-config.json -Raw | ConvertFrom-Json
+if (-not $AllowUnconfiguredLicensing -and (-not $licenseConfig.apiUrl -or -not $licenseConfig.publicKeyPem)) { throw 'Configure src/Captovix/license-config.json before a production release. -AllowUnconfiguredLicensing is for foundation/review builds; only manual region capture will work.' }
+if (-not $AllowUnconfiguredLicensing) {
+    dotnet run --project tools/LicenseBootstrap -- --validate src/Captovix/license-config.json
+    if ($LASTEXITCODE -ne 0) { throw 'Invalid public license configuration.' }
+}
+& (Join-Path $PSScriptRoot 'Ensure-MediaEngine.ps1')
+$artifactRoot = Join-Path $projectRoot 'artifacts' 
+$payload = Join-Path $artifactRoot 'win-x64'
+$releases = Join-Path $artifactRoot 'releases'
+foreach ($folder in @($payload,$releases)) {
+    if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $folder | Out-Null
+}
+# Supply the previous release's nupkg files to enable delta generation. Never
+# put unreleased/test packages in this directory.
+if ($PreviousReleases) { Copy-Item (Join-Path (Resolve-Path $PreviousReleases).Path '*.nupkg') $releases -Force }
+dotnet run --project tests/InstallerContractChecks/InstallerContractChecks.csproj -c Release -- $projectRoot
+if ($LASTEXITCODE -ne 0) { throw 'Installer argument regression checks failed.' }
+# Focused feature candidate: retention, startup, callout, installer and updater checks are mandatory; full suite separately.
+$selectedChecks = @('LibraryRetentionChecks','StartupResourceChecks','CalloutGestureChecks','CalloutInteractionWindowsChecks','CompositionWindowsChecks','MultiPointerCalloutWindowsChecks','UpdateChecks')
+$allChecks = @(Get-ChildItem (Join-Path $projectRoot 'tests') -Filter *.csproj -Recurse | ForEach-Object { $_.BaseName } | Sort-Object -Unique)
+$deferredChecks = @($allChecks | Where-Object { $_ -notin ($selectedChecks + @('InstallerContractChecks')) })
+Write-Host 'UPDATE CANDIDATE: full regression has not been run.' -ForegroundColor Yellow
+Write-Host ('Deferred suites: ' + ($deferredChecks -join ', '))
+foreach ($check in $selectedChecks) {
+    if (-not (Test-Path "tests/$check/$check.csproj" -PathType Leaf)) { throw "Required hotfix test missing: $check" }
+    Write-Host "Running required check: $check"
+    dotnet run --project "tests/$check/$check.csproj" -c Release -p:Platform=x64
+    if ($LASTEXITCODE -ne 0) { throw "$check failed." }
+}
+dotnet publish src/Captovix/Captovix.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64 -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o $payload
+if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
+$recoveryPayload = Join-Path $artifactRoot 'recovery-publish'
+dotnet publish src/Captovix.Recovery/Captovix.Recovery.csproj -c Release -r win-x64 --self-contained true "-p:Version=$version" -p:DebugType=None -p:DebugSymbols=false -o $recoveryPayload
+if ($LASTEXITCODE -ne 0) { throw 'Recovery Center publish failed.' }
+Copy-Item (Join-Path $recoveryPayload 'Captovix.Recovery.exe') $payload -Force
+Copy-Item docs,licenses -Destination $payload -Recurse -Force
+Copy-Item media-engine/FFmpeg-LICENSE.txt,media-engine/FFmpeg-build.txt -Destination $payload -Force
+Copy-Item README.md,CHANGELOG.md,ROADMAP.md,THIRD-PARTY-NOTICES.txt -Destination $payload -Force
+Copy-Item scripts/Recovery.cmd,scripts/Recovery.ps1,scripts/Install-Local.ps1,scripts/Install.cmd,scripts/Launch.cmd,scripts/Summarize-Fidelity.ps1,scripts/Measure-Memory.ps1,scripts/Test-UpgradeData.ps1 -Destination $payload -Force
+if ($UpdateSource) {
+    $uri = [uri]$UpdateSource
+    if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https' -or $uri.UserInfo -or $uri.Query -or $uri.Fragment) { throw 'UpdateSource must be HTTPS without credentials/query/fragment.' }
+    if ($UpdateKind -eq 'GitHub' -and ($uri.Host -ne 'github.com' -or -not $uri.IsDefaultPort -or $uri.AbsolutePath.Trim('/').Split('/').Count -ne 2)) { throw 'Use https://github.com/OWNER/REPO for GitHub updates.' }
+    @{SourceKind=$UpdateKind;SourceUrl=$UpdateSource.TrimEnd('/');AutoCheck=$true} | ConvertTo-Json | Set-Content (Join-Path $payload 'update-source.json') -Encoding utf8
+}
+python scripts/Prepare-Payload.py $payload --report (Join-Path $artifactRoot "payload-cleanup.json")
+if ($LASTEXITCODE -ne 0) { throw 'Payload cleanup failed.' }
+dotnet tool restore
+if ($LASTEXITCODE -ne 0) { throw 'Unable to restore the pinned Velopack CLI.' }
+python scripts/Stamp-Release.py $payload
+if ($LASTEXITCODE -ne 0) { throw 'Release stamp failed.' }
+$vpkArgs = @('--skip-updates','pack','--packId','HuyVo.Captovix','--packVersion',$version,'--packDir',$payload,'--mainExe','Captovix.exe','--packTitle','Captovix','--packAuthors','HuyVo','--runtime','win-x64','--channel','win','--icon','src/Captovix/Assets/Captovix.ico','--releaseNotes','docs/RELEASE-NOTES.md','--framework','vcredist143-x64','--noPortable','--outputDir',$releases)
+dotnet tool run vpk -- @vpkArgs
+if ($LASTEXITCODE -ne 0) { throw 'Velopack packaging failed.' }
+# A deliberately plain portable bundle: in-app checks and manual downloads only.
+$portable = Join-Path $artifactRoot "Captovix-v$version-Portable-Windows-x64.zip"
+if (Test-Path $portable) { Remove-Item $portable }
+Compress-Archive -Path "$payload\*" -DestinationPath $portable -CompressionLevel Optimal
+if (-not $SkipInstaller) {
+    $compiler = Get-Command makensis.exe -ErrorAction SilentlyContinue
+    $compilerPath = if ($compiler) { $compiler.Source } else { Join-Path ${env:ProgramFiles(x86)} 'NSIS\makensis.exe' }
+    if (-not (Test-Path $compilerPath)) { throw 'Install NSIS 3 to build the migration Setup.exe. Raw Velopack output is available in artifacts/releases.' }
+    # Exercise the actual NSIS normalization function on Windows before shipping.
+    $harnessDir = Join-Path $projectRoot 'tests\InstallerPathChecks'
+    $harnessSource = Join-Path $harnessDir 'InstallerPathChecks.nsi'
+    $pathHarness = Join-Path $harnessDir 'InstallerPathChecks.exe'
+    $originalBytes = [IO.File]::ReadAllBytes($harnessSource)
+    $originalText = [IO.File]::ReadAllText($harnessSource)
+    $fixedText = $originalText.Replace('!include "../../installer/InstallPath.nsh"', ('!include "' + (Join-Path $projectRoot 'installer\InstallPath.nsh') + '"'))
+    if ($fixedText -eq $originalText) { throw 'Unexpected installer harness include; no changes made.' }
+    try {
+        [IO.File]::WriteAllText($harnessSource,$fixedText,(New-Object System.Text.UTF8Encoding($true)))
+        Push-Location $harnessDir
+        try {
+            if (Test-Path $pathHarness) { Remove-Item -LiteralPath $pathHarness -Force }
+            & $compilerPath 'InstallerPathChecks.nsi'
+            if ($LASTEXITCODE -ne 0) { throw 'NSIS path harness compilation failed.' }
+        } finally { Pop-Location }
+    } finally { [IO.File]::WriteAllBytes($harnessSource,$originalBytes) }
+    $pathCheck = Start-Process -FilePath $pathHarness -Wait -PassThru
+    if ($pathCheck.ExitCode -ne 0) { throw 'NSIS path regression failed. See %TEMP%/Captovix-InstallerPathChecks-result.txt.' }
+
+    $prereqRoot = Join-Path $projectRoot 'prerequisites'; New-Item -ItemType Directory -Force $prereqRoot | Out-Null
+    $vc = Join-Path $prereqRoot 'vc_redist.x64.exe'
+    if (-not (Test-Path $vc)) { Invoke-WebRequest 'https://aka.ms/vs/17/release/vc_redist.x64.exe' -OutFile $vc }
+    $sig = Get-AuthenticodeSignature $vc
+    if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'Microsoft Corporation') { throw 'Visual C++ Runtime signature is not valid.' }
+    $core = Join-Path $artifactRoot 'CoreSetup.exe'
+    $canonicalSetup = Join-Path $releases 'HuyVo.Captovix-win-Setup.exe'
+    Move-Item $canonicalSetup $core -Force
+    $setup = Join-Path $artifactRoot "Captovix-v$version-Setup.exe"
+    Push-Location (Join-Path $projectRoot 'installer')
+    try {
+        & $compilerPath "/DAPPVERSION=$version" "/DCORESETUP=$core" "/DVCREDIST=$vc" "/DOUTPUT=$setup" 'Captovix.nsi'
+        if ($LASTEXITCODE -ne 0) { throw 'Migration installer compilation failed.' }
+    } finally { Pop-Location }
+    Copy-Item $setup $canonicalSetup -Force
+}
+# Verify a real full package through the production SDK, including bad hash rejection.
+$full = Get-Item (Join-Path $releases "HuyVo.Captovix-$version-full.nupkg")
+dotnet run --project tests/UpdateChecks/UpdateChecks.csproj -c Release -p:Platform=x64 -- $full.FullName
+if ($LASTEXITCODE -ne 0) { throw 'Real package integration checks failed.' }
+$releaseZip = Join-Path $artifactRoot "Captovix-v$version-Update-Packages.zip"
+if (Test-Path $releaseZip) { Remove-Item $releaseZip }
+$releaseAssets = @(
+    Get-ChildItem $releases -File | Where-Object { $_.Name -like '*.nupkg' -or $_.Name -in @('HuyVo.Captovix-win-Setup.exe','RELEASES','assets.win.json','releases.win.json') } | ForEach-Object { $_.FullName }
+)
+$releaseAssets += (Join-Path $projectRoot 'scripts/README-PUBLISH.txt')
+Compress-Archive -Path $releaseAssets -DestinationPath $releaseZip -CompressionLevel Optimal
+# Full source archive supplied separately. Do not publish before desktop acceptance and outstanding regressions are reviewed.
+Get-ChildItem $artifactRoot -File | Where-Object Name -ne 'CoreSetup.exe' | ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 } | Format-Table
+Write-Host 'Build complete. Windows desktop install/update/callout validation is required before broad rollout.'
+
+@("Version: $version",'Status: UPDATE CANDIDATE - full regression NOT run',('Required suites passed: InstallerContractChecks, '+($selectedChecks -join ', ')+', NSIS path harness, real package integration.'),('Deferred suites: '+($deferredChecks -join ', ')),'Known baseline Editor/Blur and Connector regressions require review. Physical Windows acceptance and upgrade tests required before public release. Packages may be unsigned.') | Set-Content (Join-Path $artifactRoot 'UPDATE-QA-STATUS.txt') -Encoding UTF8

@@ -17,7 +17,7 @@ public sealed partial class EditorSurface
             if(ConnectorStudio.IsPath(single)){var start=new Point(single.X1,single.Y1);var end=new Point(single.X2,single.Y2);var c=ConnectorStudio.Control(single);return single.Kind==AnnotationKind.Arrow||single.Route==ConnectorRoute.Straight?[start,end]:[start,end,new(c.X,c.Y)];}
             if(ShapeStudio.IsLine(single.Kind))return [EditorRenderer.WorldPoint(single,new(single.X1,single.Y1)),EditorRenderer.WorldPoint(single,new(single.X2,single.Y2))];
             var b=EditorRenderer.LocalBox(single);var points=BoxHandles(b).Select(p=>EditorRenderer.WorldPoint(single,p)).ToArray();
-            return single.Kind==AnnotationKind.Callout&&single.CalloutStyle is not (CalloutStyle.Rectangle or CalloutStyle.RoundedRectangle or CalloutStyle.Pill or CalloutStyle.Ellipse)?[..points,EditorRenderer.WorldPoint(single,new(single.TailX,single.TailY))]:points;
+            return single.HasCalloutPointers?[..points,..single.CalloutPointers().Select(p=>EditorRenderer.WorldPoint(single,new(p.X,p.Y)))]:points;
         }
         return BoxHandles(SelectionBox());
     }
@@ -55,7 +55,8 @@ public sealed partial class EditorSurface
     {
         var center=_originals.Length==1?EditorRenderer.LocalBox(_originals[0]):_dragBounds;_rotationPivot=new(center.CenterX,center.CenterY);
         _rotationStart=Math.Atan2(_start.Y-_rotationPivot.Y,_start.X-_rotationPivot.X)*180/Math.PI;
-        _resizePointerOffset=_handle>=0&&_handle<Handles().Length?_start-Handles()[_handle]:new Vector();
+        int handleIndex=_handle>=11?_handle-2:_handle;
+        _resizePointerOffset=handleIndex>=0&&handleIndex<Handles().Length?_start-Handles()[handleIndex]:new Vector();
         _snapPeers=Session!.Document.Annotations.Where(a=>a.Visible&&!_selected.Contains(a.Id)).Select(EditorRenderer.Box).ToArray();var layout=Layout!;_snapOutputPeers=_snapPeers.Select(b=>ObjectPrecision.Map(b,layout)).Concat(ObjectPrecision.VisibleImage(Session.Document) is {} image?new[]{image}:Array.Empty<AnnotationBox>()).ToArray();_guideX=_guideY=null;
     }
     private void RotateObjectSelection(Point p,bool shift)
@@ -71,9 +72,9 @@ public sealed partial class EditorSurface
             var original=_originals[0];var a=Session!.Document.Annotations.First(x=>x.Id==original.Id);var local=EditorRenderer.LocalPoint(original,p);var box=EditorRenderer.LocalBox(original);
             ObjectControl.RestoreGeometry(a,original);
             if(ConnectorStudio.IsPath(original)){ResizeConnector(a,original,p,_handle);}
-            else if(original.Kind==AnnotationKind.Callout&&_handle==8){
+            else if(original.Kind==AnnotationKind.Callout&&(_handle==8||_handle>=11)){
                 // Move a world-space pointer while retaining a stable rotation pivot.
-                a.TailX=local.X;a.TailY=local.Y;var updated=EditorRenderer.LocalBox(a);var center=ObjectControl.RotatePoint(new(updated.CenterX,updated.CenterY),new(box.CenterX,box.CenterY),original.Rotation);a.Translate(center.X-updated.CenterX,center.Y-updated.CenterY);
+                a.SetCalloutPointer(_handle==8?0:_handle-10,new(local.X,local.Y));var updated=EditorRenderer.LocalBox(a);var center=ObjectControl.RotatePoint(new(updated.CenterX,updated.CenterY),new(box.CenterX,box.CenterY),original.Rotation);a.Translate(center.X-updated.CenterX,center.Y-updated.CenterY);
             }else if(ShapeStudio.IsLine(original.Kind)){
                 var fixedPoint=_handle==0?new Point(original.X2,original.Y2):new Point(original.X1,original.Y1);var end=shift?ToConstrainedLocal(fixedPoint,local):local;
                 var world=EditorRenderer.WorldPoint(original,end);var found=ConnectToShapes?ConnectorStudio.FindAnchor(Session!.Document,new(world.X,world.Y),12/InteractionScale,a.Id):(null,new AnnotationPoint(world.X,world.Y));

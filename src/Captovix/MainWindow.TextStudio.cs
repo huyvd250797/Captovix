@@ -24,11 +24,30 @@ public partial class MainWindow
         TextForeground.Text=TextStudio.Foreground(a);PaintButton(TextColorPaint,"Chữ",TextStudio.Foreground(a));TextAlignmentPicker.SelectedIndex=(int)a.TextAlignment;TextVerticalPicker.SelectedIndex=(int)a.VerticalAlignment;TextPaddingField.Text=ShapeNumber(TextStudio.Padding(a));TextWrapWidth.Text=ShapeNumber(a.TextWidth);TextSpacing.Text=ShapeNumber(a.LineSpacing);TextAutoFit.IsChecked=a.AutoFitText;TextAutoFit.IsEnabled=!a.TextFrame;
         TextBackgroundToggle.IsChecked=a.FillEnabled;TextBackgroundHex.Text=a.FillColor;TextFillPercent.Value=a.FillOpacity;TextStrokePercent.Value=a.StrokeOpacity;TextStrokePercent.Visibility=kind==AnnotationKind.Text?Visibility.Collapsed:Visibility.Visible;TextBorderToggle.IsChecked=a.StrokeEnabled;
         TextWrapPanel.Visibility=kind==AnnotationKind.Callout?Visibility.Collapsed:Visibility.Visible;TextBodyOptions.Visibility=kind==AnnotationKind.Step?Visibility.Collapsed:Visibility.Visible;CalloutOptions.Visibility=kind==AnnotationKind.Callout?Visibility.Visible:Visibility.Collapsed;StepStyleOptions.Visibility=kind==AnnotationKind.Step?Visibility.Visible:Visibility.Collapsed;
+        CalloutPointerOptions.Visibility=a.HasCalloutPointers?Visibility.Visible:Visibility.Collapsed;
+        CalloutPointerCountPicker.IsEnabled=selected==null||(_session!=null&&Surface.SelectedIds.Count==1&&ObjectControl.CanEdit(_session.Document,Surface.SelectedIds));
+        CalloutPointerCountPicker.SelectedIndex=(selected?.Kind==AnnotationKind.Callout?selected.CalloutPointerCount:Surface.NewCalloutPointerCount)-1;
         CalloutKindPicker.SelectedIndex=(int)a.CalloutStyle;StepKindPicker.SelectedIndex=(int)a.StepStyle;
         TextStudioMessage.Text=selected==null?"Kiểu cho đối tượng mới. Chọn đối tượng đã vẽ để sửa.":$"Đang chỉnh {ShapeStudio.Label(kind)} · kéo vùng trống để vẽ bằng công cụ đang chọn.";
         if(!EditorRenderer.HasTextFont(a))TextStudioMessage.Text+=" Máy này chưa có font đã lưu; xem/xuất dùng Segoe UI.";
         if(selected!=null&&_session!=null){var b=EditorRenderer.Bounds(a);var v=Surface.EditingBounds;if(b.Left<v.X||b.Top<v.Y||b.Right>v.Right||b.Bottom>v.Bottom)TextStudioMessage.Text+=" Nội dung vượt vùng ảnh/crop; hãy di chuyển, giảm cỡ chữ hoặc tăng khung trước khi xuất.";if(kind==AnnotationKind.Callout&&EditorRenderer.TextLayout(a).Height>EditorRenderer.TextContent(a).Height+1)TextStudioMessage.Text+=" Chữ cao hơn hộp; bật giãn hộp hoặc tăng chiều cao.";}
         TextStudioError.Text="";
+    }
+    private void CalloutPointerCount_Changed(object sender,SelectionChangedEventArgs e)
+    {
+        if(!_editorReady||_syncProperties||CalloutPointerCountPicker.SelectedIndex<0)return;
+        int count=CalloutPointerCountPicker.SelectedIndex+1;
+        FlushAutoProperties();
+        if(Surface.Selected is { } selected){
+            if(!selected.HasCalloutPointers||_session==null||Surface.SelectedIds.Count!=1||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds))return;
+            EndInlineText(true);Surface.CancelInteraction();
+            ChangeSelected(a=>{
+                if(!a.HasCalloutPointers)return;
+                if(count>1&&!a.CalloutBodyPivot){var center=new Point(a.Left+a.Width/2,a.Top+a.Height/2);var world=EditorRenderer.WorldPoint(a,center);a.CalloutBodyPivot=true;a.Translate(world.X-center.X,world.Y-center.Y);}
+                a.SetCalloutPointerCount(count);
+            });
+        }else if(Surface.Tool==EditorTool.Callout)Surface.NewCalloutPointerCount=count;
+        Surface.Refresh();SyncProperties();
     }
     private bool ApplyTextStudio()
     {

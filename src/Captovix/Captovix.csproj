@@ -14,8 +14,8 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
-    <Version>1.68.3</Version>
-    <ReleaseTitle>GitHub Actions Build &amp; Packaging Fix</ReleaseTitle>
+    <Version>1.69.0</Version>
+    <ReleaseTitle>Multi-Pointer Callout &amp; Dynamic Version</ReleaseTitle>
     <StartupObject>Captovix.Program</StartupObject>
     
     <PublishTrimmed>false</PublishTrimmed>

@@ -1,21 +1,13 @@
-# Captovix V1.68.3 — GitHub Actions Build & Packaging Fix
+# Captovix V1.69.0 — Multi-Pointer Callout & Dynamic Version
 
-- Sửa lỗi CI đã xác nhận trong GitHub Actions build #38 (`CaptureQuality133WindowsChecks`: cửa sổ fixture không xuất hiện trong frozen capture). Không thay đổi Capture Engine để che lỗi môi trường.
-- `Build-Windows.ps1 -TestProfile CI`: chỉ hoãn chụp pixel màn hình thật, live UIA và clipboard hệ thống; kiểm tra License (trial), popup/canvas, ảnh tổng hợp, Retention, recording, update và toàn bộ các suite khác vẫn bắt buộc. Mọi mã thoát khác 0 đều chặn đóng gói.
-- Chế độ mặc định `Desktop` vẫn chạy nghiệm thu tự động trên Windows tương tác. CI ghi `PASS_CI_DESKTOP_PENDING`, không coi kiểm tra bị hoãn là PASS nghiệm thu.
-- Workflow Windows x64 tự cài .NET 10 SDK, Python 3.12, NSIS, giữ Velopack và media engine đã pin; xuất Setup, Update ZIP, Source ZIP và báo cáo. Không tự phát hành Release.
-- Kiểm tra gói hiện hành: checksum SHA256/SHA1, manifest, phiên bản, runtime files, CRC và đối chiếu byte ZIP; chặn gói thiếu file hoặc sai hash. Giữ bước UpdateChecks sử dụng SDK thật.
-- Kế thừa bản vá V1.68.2 và chất lượng video V1.68.1. Không đổi dữ liệu, schema, giao diện, license, kênh cập nhật. Không migration.
+- Tiêu đề MainWindow lấy VersionInfo.Current từ assembly, không gán cứng.
+- Callout ảnh: Số mũi chỉ từ 1 (mặc định) đến 8, mỗi mũi là hình nhô liền thân, có điểm điều khiển cam riêng.
+- Bảo toàn mũi chỉ khi Undo/Redo, sao chép, kéo thân, xoay, chỉnh kích thước, lưu/mở lại và xuất ảnh. Kiểu không mũi chỉ không hiển thị các mũi.
+- Giữ bản vá Retention V1.68.2, chất lượng ghi 1080p, license, kênh update và dữ liệu. Không migration backend.
+- Callout video giữ một mũi như cũ; không sửa video. Mũi mới có thể chồng/nhập nét khi cùng hướng. Tài liệu mới mở trên bản cũ chỉ còn mũi đầu; sao lưu trước rollback.
+- Build Update Candidate có kiểm thử tập trung, sửa NSIS include/working directory. Full regression vẫn giữ riêng. Chưa biên dịch hoặc chạy WPF trong môi trường này.
 
-## Build và nghiệm thu
-
-Push ZIP source đã giải nén lên repo `huyvd250797/Captovix`, branch `main`, giữ `.github/workflows` ở root. Vào Actions > Captovix Windows build, chọn lần chạy đúng commit V1.68.3. Không cần Run workflow nếu push đã tự kích hoạt.
-
-Sau khi job thành công, tải artifact `Captovix-Windows-x64` (hoặc `Captovix-Windows-configured` khi chạy workflow cấu hình license). Gói chứa Setup.exe, Update-Packages.zip, Source ZIP, `ci-test-report.json`, `package-verification.json`. Nếu lỗi, tải `Captovix-build-diagnostics` nếu có và xem bước lỗi trong Actions.
-
-Chỉ publish stable sau khi nghiệm thu Windows thật; xem `docs/V1.68.3-VALIDATION.md`. Source đã kiểm tra tĩnh và bộ xác minh gói đã thử bằng fixture; chưa build/chạy các suite C# tại môi trường bàn giao.
-
-## Lịch sử V1.68.2
+Xem docs/V1.69.0-VALIDATION.md.
 
 # Captovix V1.68.2 — Retention Startup Stability Fix
 

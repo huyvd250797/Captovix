@@ -3,6 +3,7 @@ using System.Windows.Media;
 namespace Captovix;
 public sealed partial class EditorSurface
 {
+    public int NewCalloutPointerCount {get;set;}=1;
     private bool BeginCalloutDrag()
     {
         if(Session==null||Tool!=EditorTool.Callout||Session.Document.Annotations.Count>=10000)return false;

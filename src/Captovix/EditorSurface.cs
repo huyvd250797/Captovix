@@ -104,7 +104,7 @@ public sealed partial class EditorSurface : FrameworkElement
     private AnnotationBox SelectionBox()=>_selected.Count==1&&Selected is {} single?EditorRenderer.Box(single):AnnotationEditing.Union(Session!.Document.Annotations.Where(a=>_selected.Contains(a.Id)).Select(EditorRenderer.Box));
     private Point[] Handles()=>ObjectHandles();
     private bool ShowHandle(int i){if(i>=8||_selected.Count==1&&Selected is {} path&&ShapeStudio.IsLine(path.Kind))return true;if(_selected.Count==1&&Selected?.Kind==AnnotationKind.Step)return i%2==0;var b=ObjectPrecision.Map(SelectionBox(),Layout!);return b.Width*Zoom<36||b.Height*Zoom<36?i%2==0:true;}
-    private int HitHandle(Point p){if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return -1;if(CalloutBodyCenter() is {} center&&ScreenDistance(center,p)<=8)return 10;var handles=Handles();int best=-1;double distance=9;for(int i=0;i<handles.Length;i++)if(ShowHandle(i)){double d=ScreenDistance(handles[i],p);if(d<=distance){distance=d;best=i;}}if(best>=0)return best;return ScreenDistance(RotationHandle(),p)<=9?9:-1;}
+    private int HitHandle(Point p){if(Session==null||!ObjectControl.CanEdit(Session.Document,_selected))return -1;if(CalloutBodyCenter() is {} center&&ScreenDistance(center,p)<=8)return 10;var handles=Handles();int best=-1;double distance=9;for(int i=0;i<handles.Length;i++)if(ShowHandle(i)){double d=ScreenDistance(handles[i],p);if(d<=distance){distance=d;best=i;}}if(best>=0)return Selected?.Kind==AnnotationKind.Callout&&best>=9?best+2:best;return ScreenDistance(RotationHandle(),p)<=9?9:-1;}
     protected override void OnRender(DrawingContext dc)
     {
         using var measurement=PerformanceTimings.Measure("editor.frame");
@@ -119,7 +119,7 @@ public sealed partial class EditorSurface : FrameworkElement
             DrawObjectFrame(dc);
             var inverse=EditorRenderer.LayoutMatrix(layout);inverse.Invert();dc.PushTransform(new MatrixTransform(inverse));var handles=Handles();for(int i=0;i<handles.Length;i++)if(ShowHandle(i)){
                 var output=layout.ToOutput(handles[i].X,handles[i].Y);var point=new Point(output.X,output.Y);var size=8/Zoom;
-                if(i==8&&Selected?.Kind==AnnotationKind.Callout)dc.DrawEllipse(Brushes.Orange,new Pen(Brushes.DarkOrange,1/Zoom),point,size*.65,size*.65);else dc.DrawEllipse(Brushes.White,new Pen(Brushes.DodgerBlue,1/Zoom),point,size/2,size/2);
+                if(i>=8&&Selected?.HasCalloutPointers==true&&_selected.Count==1)dc.DrawEllipse(Brushes.Orange,new Pen(Brushes.DarkOrange,1/Zoom),point,size*.65,size*.65);else dc.DrawEllipse(Brushes.White,new Pen(Brushes.DodgerBlue,1/Zoom),point,size/2,size/2);
             }DrawCalloutBodyCenter(dc,layout);dc.Pop();
         }
         DrawSnapGuides(dc,view);DrawPixelRegion(dc);
@@ -263,7 +263,7 @@ public sealed partial class EditorSurface : FrameworkElement
             if(shift&&ShapeStudio.IsLine(created.Kind))end=ConstrainArrow(_start,p);
             else if(shift&&created.Kind!=AnnotationKind.Callout){double side=Math.Min(Math.Abs(p.X-_start.X),Math.Abs(p.Y-_start.Y));end=new(_start.X+Math.Sign(p.X-_start.X)*side,_start.Y+Math.Sign(p.Y-_start.Y)*side);}
             created.X2=end.X;created.Y2=end.Y;if(created.Kind==AnnotationKind.Text){created.X1=Math.Min(_start.X,end.X);created.Y1=Math.Min(_start.Y,end.Y);created.X2=Math.Max(_start.X,end.X);created.Y2=Math.Max(_start.Y,end.Y);created.TextWidth=Math.Max(1,created.Width-2*TextStudio.Padding(created));}if(ShapeStudio.IsLine(created.Kind))EndConnector(created,end);
-            if(created.Kind==AnnotationKind.Callout)CalloutGesture.Place(created,_start.X,_start.Y,end.X,end.Y);
+            if(created.Kind==AnnotationKind.Callout){CalloutGesture.Place(created,_start.X,_start.Y,end.X,end.Y);created.ExtraCalloutPointers=null;if(created.HasCalloutPointers)created.SetCalloutPointerCount(NewCalloutPointerCount);}
         }else if(_action==DragAction.Move){
             double dx=p.X-_start.X,dy=p.Y-_start.Y;
             SnapObjectMove(dx,dy,shift,SnapEnabled&&!modifiers.HasFlag(ModifierKeys.Control));

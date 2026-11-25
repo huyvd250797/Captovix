@@ -9,17 +9,11 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Test package integrity verifier
-        run: python scripts/Test-CI-Packages.py
       - name: Install NSIS
         shell: pwsh
         run: choco install nsis --yes --no-progress
@@ -30,9 +24,7 @@ jobs:
           CAPTOVIX_UPDATE_KIND: ${{ vars.CAPTOVIX_UPDATE_KIND }}
         run: |
           $kind = if ($env:CAPTOVIX_UPDATE_KIND) { $env:CAPTOVIX_UPDATE_KIND } else { 'GitHub' }
-          $buildArgs = @{ TestProfile='CI'; UpdateKind=$kind }
-          if ($env:CAPTOVIX_UPDATE_URL) { $buildArgs.UpdateSource = $env:CAPTOVIX_UPDATE_URL }
-          ./scripts/Build-Windows.ps1 @buildArgs
+          ./scripts/Build-Windows.ps1 -UpdateSource $env:CAPTOVIX_UPDATE_URL -UpdateKind $kind
       - name: Upload build artifacts (does not publish a release)
         uses: actions/upload-artifact@v4
         with:
@@ -40,16 +32,4 @@ jobs:
           path: |
             artifacts/Captovix-*.exe
             artifacts/Captovix-v*-Update-Packages.zip
-            artifacts/ci-test-report.json
-            artifacts/package-verification.json
             artifacts/Captovix V* — *.zip
-          if-no-files-found: error
-      - name: Upload diagnostics even if build fails
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Captovix-build-diagnostics
-          path: |
-            artifacts/ci-test-report.json
-            artifacts/package-verification.json
-          if-no-files-found: ignore

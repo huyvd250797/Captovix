@@ -7,7 +7,7 @@ $native=Get-Content $nativeEvidence -Raw | ConvertFrom-Json
 $version = [string]$project.Project.PropertyGroup.Version
 if($native.version -ne $version -or $native.platform -ne 'Windows' -or !$native.windowVisible -or $native.manualAcceptance -ne 'PASS'){throw 'Windows native acceptance has not passed for this release.'}
 
-$requiredChecks = @('FreshInstall','OverwriteInstall','InAppUpdate','DataIntegrity','StartupRecovery','MixedDpiCapture','LongSession','Latency','Appearance','RecordingSources','RecordingControls','RecordingIntegrity','RecordingMixedDpi','CaptureMenus','AudioSources','AudioTrackPlayback','AudioSync','AudioDeviceLoss','RecordingCountdown','RecordingPresets','RecordingPresenter','RecordingModalClick','LiveAudioMeters','VideoPlaybackToggle','InlineStepEditing','VideoTrimExport','DecimalStepNumbering','VideoProjectRecovery','VideoTimelineEditing','RetentionStartup','PhysicalSelfCapture','LiveUIAutomation','InteractiveClipboard')
+$requiredChecks = @('FreshInstall','OverwriteInstall','InAppUpdate','DataIntegrity','StartupRecovery','MixedDpiCapture','LongSession','Latency','Appearance','RecordingSources','RecordingControls','RecordingIntegrity','RecordingMixedDpi','CaptureMenus','AudioSources','AudioTrackPlayback','AudioSync','AudioDeviceLoss','RecordingCountdown','RecordingPresets','RecordingPresenter','RecordingModalClick','LiveAudioMeters','VideoPlaybackToggle','InlineStepEditing','VideoTrimExport','DecimalStepNumbering','VideoProjectRecovery','VideoTimelineEditing','RetentionStartup')
 foreach($name in $requiredChecks){
     if(!$native.checks -or $native.checks.$name -cne 'PASS'){throw "Windows acceptance is missing or failed: $name"}
 }

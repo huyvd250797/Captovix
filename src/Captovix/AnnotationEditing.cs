@@ -138,7 +138,7 @@ public static class AnnotationEditing
         var sx=to.Width/Math.Max(1,from.Width);var sy=to.Height/Math.Max(1,from.Height);
         target.X1=to.X+(original.X1-from.X)*sx;target.X2=to.X+(original.X2-from.X)*sx;
         target.Y1=to.Y+(original.Y1-from.Y)*sy;target.Y2=to.Y+(original.Y2-from.Y)*sy;
-        if(original.Kind==AnnotationKind.Callout){if(target.Width<36)target.X2=target.X1+Math.Sign(original.X2-original.X1)*36;if(target.Height<36)target.Y2=target.Y1+Math.Sign(original.Y2-original.Y1)*36;target.TailX=to.X+(original.TailX-from.X)*sx;target.TailY=to.Y+(original.TailY-from.Y)*sy;}
+        if(original.Kind==AnnotationKind.Callout){if(target.Width<36)target.X2=target.X1+Math.Sign(original.X2-original.X1)*36;if(target.Height<36)target.Y2=target.Y1+Math.Sign(original.Y2-original.Y1)*36;target.TailX=to.X+(original.TailX-from.X)*sx;target.TailY=to.Y+(original.TailY-from.Y)*sy;target.ExtraCalloutPointers=original.ExtraCalloutPointers?.Select(p=>new AnnotationPoint(to.X+(p.X-from.X)*sx,to.Y+(p.Y-from.Y)*sy)).ToList();}
         target.Points=original.Points.Select(p=>new AnnotationPoint(to.X+(p.X-from.X)*sx,to.Y+(p.Y-from.Y)*sy)).ToList();
         if(original.Kind==AnnotationKind.Step||original.Kind==AnnotationKind.Text&&!original.TextFrame)target.FontSize=Math.Clamp(original.FontSize*Math.Min(sx,sy),8,240);
     }

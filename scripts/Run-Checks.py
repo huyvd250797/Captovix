@@ -4,7 +4,7 @@ import os, subprocess, sys, argparse
 from pathlib import Path
 root=Path(__file__).resolve().parent.parent
 dotnet=os.environ.get('DOTNET_EXE','dotnet')
-parser=argparse.ArgumentParser();parser.add_argument('--from-suite',default='');parser.add_argument('--ci',action='store_true');options=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--from-suite',default='');options=parser.parse_args()
 for project in sorted((root/'tests').glob('*/*.csproj')):
     if options.from_suite and project.parent.name<options.from_suite:continue
     windows='UseWPF>true' in project.read_text()
@@ -15,7 +15,5 @@ for project in sorted((root/'tests').glob('*/*.csproj')):
         continue
     args=[dotnet,'run','--no-build','--project',str(project),'-c','Release','-p:Platform=x64']
     if project.parent.name=='InstallerContractChecks':args+=['--',str(root)]
-    if options.ci and project.parent.name in {'CaptureQuality133WindowsChecks','HybridPopupWindowsChecks'}:args+=['--','--ci']
-    if not options.ci and project.parent.name=='CaptureFidelityWindowsChecks':args+=['--','--clipboard']
     subprocess.run(args,cwd=root,check=True)
 print('ALL_CHECKS_OK · Windows-only suites are compile-only on non-Windows hosts.',flush=True)

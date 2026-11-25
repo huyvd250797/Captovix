@@ -66,7 +66,7 @@ public static partial class EditorRenderer
     [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,CalloutGeometryEntry>? _calloutGeometries;
     private sealed class CalloutGeometryEntry
     {
-        public (double Width,double Height,double TailX,double TailY,CalloutStyle Style,double Radius) Key;
+        public (double Width,double Height,double TailX,double TailY,CalloutStyle Style,double Radius,string Extra) Key;
         public Geometry? Local,World;
         public Point Origin;
     }
@@ -74,7 +74,7 @@ public static partial class EditorRenderer
     {
         var entry=(_calloutGeometries??=new()).GetOrCreateValue(a);
         var key=(CacheCoordinate(a.Width),CacheCoordinate(a.Height),CacheCoordinate(a.TailX-a.Left),
-            CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius);
+            CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius,ExtraPointerKey(a));
         if(entry.Local==null||entry.Key!=key){
             var local=a.Copy();
             local.Translate(-a.Left,-a.Top);
@@ -98,7 +98,16 @@ public static partial class EditorRenderer
         }
         return entry.World;
     }
+    private static string ExtraPointerKey(Annotation a)=>a.ExtraCalloutPointers==null?string.Empty:string.Join(";",a.ExtraCalloutPointers.Select(p=>FormattableString.Invariant($"{CacheCoordinate(p.X-a.Left):R},{CacheCoordinate(p.Y-a.Top):R}")));
     private static Geometry BuildCalloutGeometry(Annotation a)
+    {
+        var shape=BuildSingleCalloutGeometry(a);
+        if(!a.HasCalloutPointers||a.ExtraCalloutPointers==null)return shape;
+        var pointer=a.Copy();pointer.ExtraCalloutPointers=null;
+        foreach(var tip in a.ExtraCalloutPointers){pointer.TailX=tip.X;pointer.TailY=tip.Y;shape=Geometry.Combine(shape,BuildSingleCalloutGeometry(pointer),GeometryCombineMode.Union,null);}
+        return shape;
+    }
+    private static Geometry BuildSingleCalloutGeometry(Annotation a)
     {
         if(a.CalloutStyle!=CalloutStyle.Speech)return StyledCalloutGeometry(a);
         var b=new Rect(a.Left,a.Top,Math.Max(36,a.Width),Math.Max(36,a.Height));var tail=new Point(a.TailX,a.TailY);

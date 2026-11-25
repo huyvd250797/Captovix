@@ -33,7 +33,7 @@ public static class ObjectControl
     public static void Rename(Annotation a,string name){name=name.Trim();if(name.Length>80||name.Any(char.IsControl))throw new ArgumentException("Tên layer tối đa 80 ký tự, không có ký tự điều khiển.");a.Name=name;}
     public static void RestoreGeometry(Annotation target,Annotation original)
     {
-        target.TextPadding=original.TextPadding;target.TextWidth=original.TextWidth;target.Control=original.Control;target.Route=original.Route;target.StartAnchor=original.StartAnchor;target.EndAnchor=original.EndAnchor;target.X1=original.X1;target.X2=original.X2;target.Y1=original.Y1;target.Y2=original.Y2;target.TailX=original.TailX;target.TailY=original.TailY;target.Points=[..original.Points];target.FontSize=original.FontSize;target.Rotation=original.Rotation;
+        target.TextPadding=original.TextPadding;target.TextWidth=original.TextWidth;target.Control=original.Control;target.Route=original.Route;target.StartAnchor=original.StartAnchor;target.EndAnchor=original.EndAnchor;target.X1=original.X1;target.X2=original.X2;target.Y1=original.Y1;target.Y2=original.Y2;target.TailX=original.TailX;target.TailY=original.TailY;target.ExtraCalloutPointers=original.ExtraCalloutPointers?.ToList();target.Points=[..original.Points];target.FontSize=original.FontSize;target.Rotation=original.Rotation;
     }
     public static void Rotate(Annotation target,Annotation original,double delta,AnnotationPoint pivot,Func<Annotation,AnnotationBox> localBounds)
     {
@@ -45,6 +45,7 @@ public static class ObjectControl
         if(original.Kind!=AnnotationKind.Callout||!original.CalloutBodyPivot)return;
         var old=bounds(original);var next=bounds(target);var world=RotatePoint(new(original.TailX,original.TailY),new(old.CenterX,old.CenterY),original.Rotation);
         var local=RotatePoint(new(world.X+dx,world.Y+dy),new(next.CenterX,next.CenterY),-target.Rotation);target.TailX=local.X;target.TailY=local.Y;
+        target.ExtraCalloutPointers=original.ExtraCalloutPointers?.Select(p=>{var w=RotatePoint(p,new(old.CenterX,old.CenterY),original.Rotation);return RotatePoint(new(w.X+dx,w.Y+dy),new(next.CenterX,next.CenterY),-target.Rotation);}).ToList();
     }
     public static void MoveCalloutBody(Annotation target,Annotation original,double dx,double dy,Func<Annotation,AnnotationBox> bounds)
     {
@@ -57,6 +58,7 @@ public static class ObjectControl
         var next=new AnnotationPoint(worldCenter.X+dx,worldCenter.Y+dy);
         target.Translate(next.X-center.X,next.Y-center.Y);
         var tail=RotatePoint(worldTail,next,-original.Rotation);target.TailX=tail.X;target.TailY=tail.Y;
+        target.ExtraCalloutPointers=original.ExtraCalloutPointers?.Select(p=>RotatePoint(RotatePoint(p,pivotPoint,original.Rotation),next,-original.Rotation)).ToList();
     }
     public static void ResizeSingle(Annotation target,Annotation original,AnnotationBox localBox,AnnotationBox newBox,Func<Annotation,AnnotationBox>? actualBounds=null)
     {

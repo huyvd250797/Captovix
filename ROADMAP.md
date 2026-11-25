@@ -1,9 +1,10 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.68.3
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.69.0
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
 | Phiên bản | Mục tiêu | Chức năng chính | Kỹ thuật/dữ liệu | Điều kiện hoàn thành | Trạng thái/thứ tự |
 | --- | --- | --- | --- | --- | --- |
+| V1.69.0 — Multi-Pointer Callout & Dynamic Version | Callout nhiều mũi chỉ, phiên bản động | 1–8 mũi chỉ độc lập | Tương thích sidecar cũ | Build và nghiệm thu Windows | Source đã triển khai; chưa build |
 | V1.46.0 — Mockup Fidelity & Editing Reliability | Sửa Mockup trực quan, giữ nội dung | Mẫu màu/B-I-U/preview, nút-nhãn riêng, font gần giống, mở/đóng không đổi, icon/accent gradient, nút Quay đỏ | Không đổi schema 23; giữ runtime/backend; alpha glyph cache và no-op transaction | Logic và build; cần nghiệm thu Windows theo checklist V146 | Đã triển khai; kiểm Windows còn chờ |
 | V1.46.1 — Fluent Style & Icons | Làm mới diện mạo | Style Dark/Light, Fluent System Icons và icon nhận diện | Giữ bố cục V1.46.0 | So cấu trúc, build, kiểm gói và nghiệm thu Windows | Đã triển khai, nghiệm thu Windows đang chờ |
 | V1.46.2 — Original Logo & Settings | Khôi phục nhận diện và dễ mở Thiết lập | Logo gốc, nút bánh răng và hai màu logo độc lập | Giữ schema và kênh cập nhật cũ | Kiểm logo, Thiết lập, màu, cài đè và update | Đã duyệt giao diện trên Preview. Bản chính đã đóng gói, chờ kiểm cài đặt và cập nhật trên Windows |
@@ -418,4 +419,3 @@ Nghiên cứu tiếp ngoài phạm vi1.17: inpainting nền phức tạp, tự �
 
 | V1.68.1 — 1080p Recording Sharpness Fix | Giữ chi tiết1080p | Trả Quality mode, bỏ retag quay, preview gốc, copy không tái nén, CRF14 | Test media/byte/geometry | So Windows cùng preset | Đã triển khai; chờ Windows |
 | V1.68.2 — Retention Startup Stability Fix | Khởi động ổn định | Kiểm delay trước khi gán timer, giữ dọn bù, cô lập lỗi | Không migration; giữ license/dữ liệu | Retention checks và cài đè Windows | Đã sửa source; chờ build và nghiệm thu Windows |
-| V1.68.3 — GitHub Actions Build & Packaging Fix | CI/CD Windows | Tách kiểm thử desktop và CI, kiểm gói, báo cáo | Giữ runtime/license/dữ liệu | CI thành công và nghiệm thu Desktop | Đã sửa source; chờ chạy Windows Runner |
