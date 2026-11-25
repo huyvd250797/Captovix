@@ -9,6 +9,8 @@ namespace Captovix;
 public sealed class VideoTimelineStrip : FrameworkElement
 {
     private VideoProject? _project;
+    private IReadOnlyList<List<VideoMarkTrack>> _lanes=[];
+    private VideoMarkTrack[]? _laneSource;
     private int _dragClip=-1,_insertion=-1;
     private const double MainHeight=57,TrackHeight=25;
     private const int AudioLanes=4;
@@ -30,9 +32,14 @@ public sealed class VideoTimelineStrip : FrameworkElement
     internal event Action<int,int>? MoveRequested;
     internal void Show(VideoProject? project,Guid? selection)
     {
+        if(!ReferenceEquals(_laneSource,project?.Tracks)){
+            _laneSource=project?.Tracks;
+            _lanes=VideoAnnotationLanes.Pack(_laneSource??[]);
+        }
+        if(ReferenceEquals(_project,project)&&_selectedTrack==selection)return;
         _project=project;
         _selectedTrack=selection;
-        var height=MarkTop+TrackHeight*(project?.Tracks.Length??0);
+        var height=MarkTop+TrackHeight*_lanes.Count;
         if(Height!=height)Height=height;
         InvalidateVisual();
     }
@@ -102,25 +109,24 @@ public sealed class VideoTimelineStrip : FrameworkElement
             }
             dc.Pop();
         }
-        if(project.Tracks.Length>0&&bottom>top+MainHeight){
+        if(_lanes.Count>0&&bottom>top+MainHeight){
             dc.PushClip(new RectangleGeometry(new Rect(0,top+MainHeight,ActualWidth,bottom-top-MainHeight)));
-            int first=Math.Clamp((int)((top+MainHeight-MarkTop)/TrackHeight),0,project.Tracks.Length);
-            int last=Math.Clamp((int)Math.Ceiling((bottom-MarkTop)/TrackHeight)+1,first,project.Tracks.Length);
+            int first=Math.Clamp((int)((top+MainHeight-MarkTop)/TrackHeight),0,_lanes.Count);
+            int last=Math.Clamp((int)Math.Ceiling((bottom-MarkTop)/TrackHeight)+1,first,_lanes.Count);
             for(int i=first;i<last;i++){
-                var track=project.Tracks[i];
-                if(_trackDraft is {} draft&&draft.Id==track.Id)track=draft;
                 var y=MarkTop+i*TrackHeight;
+                dc.DrawRectangle(Resource("Workspace"),null,new Rect(0,y,ActualWidth,TrackHeight));
+                dc.DrawLine(new Pen(Resource("Line"),1),new(0,y),new(ActualWidth,y));
+                foreach(var item in _lanes[i]){
+                var track=_trackDraft?.Id==item.Id?_trackDraft:item;
                 var from=1+width*track.Start.TotalSeconds/duration;
                 var to=1+width*track.End.TotalSeconds/duration;
-                var row=new Rect(0,y,ActualWidth,TrackHeight);
-                dc.DrawRectangle(Resource("Workspace"),null,row);
-                dc.DrawLine(new Pen(Resource("Line"),1),new(0,y),new(ActualWidth,y));
                 var bar=new Rect(from,y+3,Math.Max(1,to-from),TrackHeight-5);
                 bool selected=track.Id==_selectedTrack||track.Id==_trackDraft?.Id;
                 var stroke=Resource(selected?"AccentText":"Line");
                 dc.DrawRoundedRectangle(Resource(selected?"Soft":"Surface"),new Pen(stroke,1),bar,4,4);
                 var label=track.Mark.Label;
-                if(track.Mark.Kind is VideoMarkKind.Text or VideoMarkKind.Callout&&!string.IsNullOrWhiteSpace(track.Mark.Text))
+                if(track.Mark.Kind is VideoMarkKind.Text or VideoMarkKind.Title or VideoMarkKind.Callout&&!string.IsNullOrWhiteSpace(track.Mark.Text))
                     label+=" · "+track.Mark.Text.Replace('\n',' ').Replace('\r',' ');
                 if(bar.Width>18){
                     dc.PushClip(new RectangleGeometry(bar));
@@ -131,7 +137,7 @@ public sealed class VideoTimelineStrip : FrameworkElement
                     }
                     dc.Pop();
                 }
-                if(from>80)dc.DrawText(Label(track.Mark.Label,type,foreground,10),new(5,y+6));
+                }
             }
             dc.Pop();
         }
@@ -241,9 +247,9 @@ public sealed class VideoTimelineStrip : FrameworkElement
     {
         if(_project is not {} project||point.Y<Math.Max(MarkTop,(FindScroll()?.VerticalOffset??0)+MainHeight))return null;
         int row=(int)((point.Y-MarkTop)/TrackHeight);
-        if(row>=project.Tracks.Length)return null;
-        var track=project.Tracks[row];
-        return point.X>=XAt(track.Start)-3&&point.X<=XAt(track.End)+3?track:null;
+        if(row>=_lanes.Count)return null;
+        return _lanes[row].FirstOrDefault(track=>point.X>=XAt(track.Start)&&point.X<XAt(track.End))
+            ??_lanes[row].FirstOrDefault(track=>point.X>=XAt(track.Start)-3&&point.X<=XAt(track.End)+3);
     }
 
     private int TrackEdge(VideoMarkTrack? track,double x)

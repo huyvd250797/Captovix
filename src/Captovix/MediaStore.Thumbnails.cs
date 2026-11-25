@@ -25,7 +25,7 @@ public sealed partial class MediaStore
 
     public async void RequestThumbnail(MediaItem item)
     {
-        if(item.IsVideo)return;
+        if(item.IsVideo&&!File.Exists(DocumentStore.ThumbnailPath(item.Id)))return;
         var dispatcher=Application.Current.Dispatcher;
         if(dispatcher.HasShutdownStarted)return;
         if(!dispatcher.CheckAccess()){_=dispatcher.BeginInvoke(()=>RequestThumbnail(item),DispatcherPriority.Background);return;}
@@ -35,7 +35,7 @@ public sealed partial class MediaStore
             return;
         }
         var generation=_thumbnailGeneration;
-        var source=new MediaItem{Id=item.Id,FilePath=item.FilePath};
+        var source=new MediaItem{Id=item.Id,FilePath=item.FilePath,IsVideo=item.IsVideo};
         bool retry=false;
         try
         {
@@ -58,6 +58,7 @@ public sealed partial class MediaStore
                 });
                 retry=changed;
                 await Dispatcher.Yield(DispatcherPriority.Background);
+                if(source.IsVideo&&!File.Exists(DocumentStore.ThumbnailPath(source.Id)))return;
                 if(retry||generation!=_thumbnailGeneration||_retryThumbnails.ContainsKey(item.Id)||
                     !string.Equals(source.FilePath,item.FilePath,StringComparison.OrdinalIgnoreCase))return;
                 var evicted=_thumbCache.Add(key,new(item,image),(long)image.PixelWidth*image.PixelHeight*Math.Max(4,(image.Format.BitsPerPixel+7)/8));

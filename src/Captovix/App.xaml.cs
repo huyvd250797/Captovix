@@ -9,11 +9,13 @@ public partial class App : Application
     private readonly ExceptionDialogGate _errorDialogs=new();
     internal Exception? StartupFailure { get; private set; }
     private bool _startupHealthy;
+    private StartupSplash? _splash;
 
     internal void ConfirmStartup()
     {
         if (_startupHealthy || StartupFailure != null) return;
         _startupHealthy = true;
+        CloseStartupSplash();
         ReleaseRecoveryState.Healthy(DataRoot, VersionInfo.Current);
         try { StartupHealthSignal.Signal(); }
         catch (Exception error) { Log(error); }
@@ -49,7 +51,23 @@ public partial class App : Application
         };
         AppScrolling.Initialize();Dispatcher.BeginInvoke(()=>{AppearanceManager.SaveShortcutBrand();BrandShortcuts.Repair();},System.Windows.Threading.DispatcherPriority.ApplicationIdle);WindowTheme.Initialize();AppearanceManager.Initialize();
         base.OnStartup(e);
+        if(StartupHealthSignal.Probe==null){
+            _splash=new StartupSplash();
+            _splash.Show();
+        }
+        Dispatcher.BeginInvoke(() => {
+            var main=new MainWindow();
+            MainWindow=main;
+            ShutdownMode=ShutdownMode.OnMainWindowClose;
+            main.Show();
+        },System.Windows.Threading.DispatcherPriority.Background);
     }
+    internal void CloseStartupSplash()
+    {
+        _splash?.Close();
+        _splash=null;
+    }
+
     public static string DataRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HuyVo", "Captovix");
     public static void Log(Exception e) { try { Directory.CreateDirectory(DataRoot); File.AppendAllText(Path.Combine(DataRoot, "errors.log"), $"{DateTimeOffset.Now:O} {e}\n"); } catch { } }
     protected override void OnExit(ExitEventArgs e) { if(_startupHealthy)PerformanceTimings.WriteReport();StaImageWorker.Stop();AppearanceManager.Stop(); _singleInstance?.Dispose(); base.OnExit(e); }

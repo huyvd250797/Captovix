@@ -31,7 +31,20 @@ public static class StudioStyle
         var a=style.Copy();a.Mockup=null;a.CalloutBodyPivot=true;a.Id="style";a.Name="";a.GroupId=null;a.GroupPath=null;a.Locked=false;a.Visible=true;a.Rotation=0;a.X1=10;a.Y1=15;a.X2=90;a.Y2=60;a.Text="Aa";a.Number=1;a.StepDecimal=null;a.StepSequence=0;a.StartAnchor=a.EndAnchor=null;a.Control=null;a.TailX=30;a.TailY=75;a.Points=a.Kind==AnnotationKind.Freehand?[new(10,50),new(35,25),new(65,55),new(90,20)]:[];
         return a;
     }
-    public static string LegacySignature(Annotation style){var node=System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Sample(style),EditorDocument.JsonOptions))!.AsObject();node.Remove("PixelPng");node.Remove("CalloutBodyPivot");return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(node.ToJsonString(EditorDocument.JsonOptions))));}
+    private static string PreviousSignature(Annotation style,bool legacy,bool omitOpacity)
+    {
+        var node=System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Sample(style),EditorDocument.JsonOptions))!.AsObject();
+        if(omitOpacity)node.Remove(nameof(Annotation.ObjectOpacity));
+        if(legacy){node.Remove("PixelPng");node.Remove("CalloutBodyPivot");}
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(node.ToJsonString(EditorDocument.JsonOptions))));
+    }
+
+    public static string LegacySignature(Annotation style)=>PreviousSignature(style,true,true);
+    public static string BeforeOpacitySignature(Annotation style)=>PreviousSignature(style,false,true);
+    internal static bool MatchesPreviousSignature(string id,Annotation style)=>
+        id==PreviousSignature(style,true,false)||style.ObjectOpacity==100&&
+        (id==BeforeOpacitySignature(style)||id==LegacySignature(style));
+
     public static string Signature(Annotation style)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(Sample(style),EditorDocument.JsonOptions))));
 }
 public sealed record StyleFavorite(string Id,string Label,Annotation Style);
@@ -41,7 +54,7 @@ public static class StyleFavoriteStore
     public static List<StyleFavorite> Load(string root,out string? warning)
     {
         warning=null;if(!File.Exists(PathFor(root)))return [];
-        try{var values=JsonSerializer.Deserialize<List<StyleFavorite>>(File.ReadAllText(PathFor(root)),EditorDocument.JsonOptions)??throw new InvalidDataException();for(int i=0;i<values.Count;i++){var v=values[i];if(v==null||v.Style==null)throw new InvalidDataException();if(v.Id==StudioStyle.LegacySignature(v.Style))values[i]=v with{Id=StudioStyle.Signature(v.Style)};}Validate(values);return values;}catch{warning="Chưa đọc được mẫu sao. File cũ được giữ; không ghi đè mẫu lỗi.";return [];}
+        try{var values=JsonSerializer.Deserialize<List<StyleFavorite>>(File.ReadAllText(PathFor(root)),EditorDocument.JsonOptions)??throw new InvalidDataException();for(int i=0;i<values.Count;i++){var v=values[i];if(v==null||v.Style==null)throw new InvalidDataException();if(v.Id!=StudioStyle.Signature(v.Style)&&StudioStyle.MatchesPreviousSignature(v.Id,v.Style))values[i]=v with{Id=StudioStyle.Signature(v.Style)};}values=values.DistinctBy(value=>value.Id).ToList();Validate(values);return values;}catch{warning="Chưa đọc được mẫu sao. File cũ được giữ; không ghi đè mẫu lỗi.";return [];}
     }
     public static void Validate(IReadOnlyCollection<StyleFavorite> values)
     {
@@ -52,6 +65,13 @@ public static class StyleFavoriteStore
     public static void Save(string root,List<StyleFavorite> values)
     {
         Validate(values);Directory.CreateDirectory(root);var path=PathFor(root);if(File.Exists(path)&&!File.Exists(path+".pre-v1.12.bak"))File.Copy(path,path+".pre-v1.12.bak");
-        var temp=path+".tmp";File.WriteAllText(temp,JsonSerializer.Serialize(values,EditorDocument.JsonOptions));File.Move(temp,path,true);
+        var temp=path+"."+Guid.NewGuid().ToString("N")+".tmp";
+        try{
+            using(var file=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){
+                JsonSerializer.Serialize(file,values,EditorDocument.JsonOptions);
+                file.Flush(flushToDisk:true);
+            }
+            File.Move(temp,path,true);
+        }finally{File.Delete(temp);}
     }
 }

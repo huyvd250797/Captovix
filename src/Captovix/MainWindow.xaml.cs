@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private PixelRect? _lastRegion;
     private CancellationTokenSource? _captureCancellation;
     private MediaItem? Selected => MediaList.SelectedItem as MediaItem;
+    private bool _recordingCursor=true;
     private bool _firstFrameRendered,_startupInitialized;
     public MainWindow()
     {
@@ -40,10 +41,10 @@ public partial class MainWindow : Window
         };
         IsVisibleChanged+=(_,_)=>QueueStartupConfirmation();
         StateChanged+=(_,_)=>QueueStartupConfirmation();
-        WindowPlacement.Attach(this);InitializeComponent();Activated+=(_,_)=>QueueUpdateNotice();InitializeBrand();InitializeEditor();_store=new();RebuildRecent();MediaList.ItemsSource=_recentItems;
+        WindowPlacement.Attach(this);InitializeComponent();InitializeOpacityControls();Activated+=(_,_)=>QueueUpdateNotice();InitializeBrand();InitializeEditor();_store=new();RebuildRecent();MediaList.ItemsSource=_recentItems;
         CollectionViewSource.GetDefaultView(_recentItems).Filter=o=>{var i=(MediaItem)o;return LibraryMatch(i);};
         _store.Items.CollectionChanged+=(_,_)=>{if(_libraryRefreshHold==0)RebuildRecent();};CountLabel.Text=$"{_recentItems.Count}/{_store.Items.Count}";
-        InitializeShell();InitializeLibraryProjects();InitializeComposition();InitializeToolOrder();InitializeIcons();InitializeVideoTools();InitializeOpacityControls();InitializeVideoAudio();InitializeStudioAccess();IsVisibleChanged+=(_,_)=>{if(IsVisible&&_fitMode&&_session!=null)Dispatcher.BeginInvoke(FitImage,DispatcherPriority.Loaded);};Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;
+        InitializeShell();InitializeLibraryProjects();InitializeComposition();InitializeToolOrder();InitializeIcons();InitializeVideoTools();InitializeVideoAudio();InitializeStudioAccess();InitializeViewerControls();IsVisibleChanged+=(_,_)=>{if(IsVisible&&_fitMode&&_session!=null)Dispatcher.BeginInvoke(FitImage,DispatcherPriority.Loaded);};Loaded+=(_,_)=>Initialize();Closing+=Window_Closing;
         VideoStrip.SeekRequested+=SeekVideoProject;
         VideoStrip.ClipSelected+=SelectVideoClip;
         VideoStrip.MoveRequested+=MoveVideoClip;
@@ -60,12 +61,12 @@ public partial class MainWindow : Window
         Surface.KeepAspectRatio=false;_alignmentReference=(AlignmentReference)Math.Clamp(s.ObjectAlignmentReference,0,2);Surface.SnapEnabled=s.ObjectSnap;ObjectSnapToggle.IsChecked=s.ObjectSnap;
         _micDevice=s.MicDevice;_systemAudioDevice=s.SystemAudioDevice;
         _videoProfile=s.VideoProfile;_highlightRecordingClicks=s.HighlightRecordingClicks;
-        CursorToggle.IsChecked=s.Cursor;MicToggle.IsChecked=s.Mic;SystemToggle.IsChecked=s.SystemAudio;HardwareToggle.IsChecked=s.Hardware;
+        _recordingCursor=s.RecordingCursor;CursorToggle.IsChecked=s.Cursor;MicToggle.IsChecked=s.Mic;SystemToggle.IsChecked=s.SystemAudio;HardwareToggle.IsChecked=s.Hardware;
         DisplayPicker.SelectedItem=_displays.FirstOrDefault(d=>d.Device==s.Display)??_displays.FirstOrDefault();
         _loaded=true;var hwnd=new WindowInteropHelper(this).Handle;HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);
-        InitializeCaptureWorkflow();
+        InitializeCaptureWorkflow();InitializeRetention();
         if(ReleaseRecoveryState.Startup(App.DataRoot,VersionInfo.Current))SetStatus("Lần cập nhật/khởi động trước chưa hoàn tất. Trợ giúp → Cập nhật & khôi phục dữ liệu để kiểm tra bản sao lưu.");InitializeUpdates();InitializeLicensing();
-        if(_store.StartupWarning!=null)AppDialog.Show(this,_store.StartupWarning,"Kiểm tra dữ liệu cũ",MessageBoxButton.OK,MessageBoxImage.Warning);
+        if(_store.StartupWarning!=null){(Application.Current as App)?.CloseStartupSplash();AppDialog.Show(this,_store.StartupWarning,"Kiểm tra dữ liệu cũ",MessageBoxButton.OK,MessageBoxImage.Warning);}
         _startupInitialized=true;
         RestoreVideoSession();
         QueueStartupConfirmation();
@@ -98,7 +99,7 @@ public partial class MainWindow : Window
     private string? _micDevice,_systemAudioDevice;
     private RecordingProfile? _videoProfile;
     private bool _highlightRecordingClicks=true;
-    private AppSettings Settings()=>new(){VideoProfile=_videoProfile,HighlightRecordingClicks=_highlightRecordingClicks,MicDevice=_micDevice,SystemAudioDevice=_systemAudioDevice,ObjectKeepRatio=Surface.KeepAspectRatio,ObjectAlignmentReference=(int)_alignmentReference,ObjectSnap=Surface.SnapEnabled,SourceMode=SourceMode.SelectedIndex,Delay=int.Parse(((ComboBoxItem)DelayPicker.SelectedItem).Tag.ToString()!),Fps=int.Parse(((ComboBoxItem)FpsPicker.SelectedItem).Tag.ToString()!),Cursor=CursorToggle.IsChecked==true,Mic=MicToggle.IsChecked==true,SystemAudio=SystemToggle.IsChecked==true,Hardware=HardwareToggle.IsChecked==true,Display=(DisplayPicker.SelectedItem as DisplayInfo)?.Device??""};
+    private AppSettings Settings()=>new(){RecordingCursor=_recordingCursor,VideoProfile=_videoProfile,HighlightRecordingClicks=_highlightRecordingClicks,MicDevice=_micDevice,SystemAudioDevice=_systemAudioDevice,ObjectKeepRatio=Surface.KeepAspectRatio,ObjectAlignmentReference=(int)_alignmentReference,ObjectSnap=Surface.SnapEnabled,SourceMode=SourceMode.SelectedIndex,Delay=int.Parse(((ComboBoxItem)DelayPicker.SelectedItem).Tag.ToString()!),Fps=int.Parse(((ComboBoxItem)FpsPicker.SelectedItem).Tag.ToString()!),Cursor=CursorToggle.IsChecked==true,Mic=MicToggle.IsChecked==true,SystemAudio=SystemToggle.IsChecked==true,Hardware=HardwareToggle.IsChecked==true,Display=(DisplayPicker.SelectedItem as DisplayInfo)?.Device??""};
     private bool _recordingActive;
     private const int MarkerHotkeyId=105;
     private async Task CaptureAsync(bool video,PhotoAction action=PhotoAction.Current)
@@ -112,6 +113,8 @@ public partial class MainWindow : Window
         RecordingAudioSettings? audioSettings=null;
         RecordingAudio? audio=null;
         RecordingPresenter? presenter=null;
+        RecordingCamera? camera=null;
+        string? cameraDevice=null,cameraWarning=null;
         DispatcherTimer? diskWatch=null;
         bool markerHotkey=false;
         try {
@@ -158,8 +161,9 @@ public partial class MainWindow : Window
             if(video){
                 var choice=await CapturePrompts.PickRecordingSourceAsync(this,_displays,s.SourceMode,display,s,cancellation);
                 if(choice is not {} selected){finalStatus="Đã hủy quay.";return;}
-                s.SourceMode=selected.Mode;
+                s.SourceMode=selected.Mode;_recordingCursor=s.RecordingCursor=selected.Cursor;
                 audioSettings=selected.Audio;
+                cameraDevice=selected.Camera;
                 _videoProfile=selected.Profile;_highlightRecordingClicks=selected.HighlightClicks;
                 s.Fps=selected.Profile.Fps;s.Hardware=selected.Hardware;HardwareToggle.IsChecked=s.Hardware;
                 s.Mic=audioSettings.Microphone!=null;MicToggle.IsChecked=s.Mic;
@@ -215,9 +219,18 @@ public partial class MainWindow : Window
                     });
                     audio.Start(selectedAudio,working);
                 }
+                if(video&&cameraDevice!=null){
+                    camera=new RecordingCamera(RecordingCamera.PathFor(working));
+                    camera.Lost+=message=>Dispatcher.BeginInvoke(()=>{cameraWarning=message;_bar?.ShowAudioWarning(message);});
+                    try{await camera.StartAsync(cameraDevice,cancellation);}
+                    catch(Exception error) when(error is not OperationCanceledException){
+                        App.Log(error);cameraWarning="Chưa mở được webcam. Captovix tiếp tục quay màn hình.";
+                        camera.Dispose();camera=null;
+                    }
+                }
                 _engine=new(){AudioClock=audio?.Clock,AudioDevices=audioSettings};
                 if(!video)_engine.Status+=status=>Dispatcher.BeginInvoke(()=>SetStatus("Capture engine · "+status));
-                var req=new CaptureRequest(video,region,window,_displays,s.Cursor,s.Mic,s.SystemAudio,s.Fps,s.Hardware);
+                var req=new CaptureRequest(video,region,window,_displays,video?s.RecordingCursor:s.Cursor,s.Mic,s.SystemAudio,s.Fps,s.Hardware);
                 req=req with{Profile=profile,HighlightClicks=video&&_highlightRecordingClicks};
                 try{await _engine.StartAsync(req,working).WaitAsync(cancellation);}
                 catch(Exception error) when(video&&error is not OperationCanceledException){
@@ -239,6 +252,7 @@ public partial class MainWindow : Window
                     };
                     diskWatch.Start();
                     _bar.Show();
+                    if(cameraWarning!=null)_bar.ShowAudioWarning(cameraWarning);
                     if(audio!=null){
                         foreach(var warning in audio.Warnings)_bar.ShowAudioWarning(warning);
                         foreach(var lostSource in audio.LostSources)
@@ -272,6 +286,15 @@ public partial class MainWindow : Window
                 _bar?.BeginSaving();
                 SetStatus("Đang kiểm tra file MP4…");
                 recording=await RecordingMedia.VerifyAsync(actual,cancellation);
+                if(camera!=null&&audio!=null){
+                    try{
+                        var savedCamera=await camera.FinishAsync(audio.Clock,recording.Duration);
+                        if(savedCamera!=null)
+                            MediaStore.AtomicWrite(RecordingCamera.MetadataFor(actual),System.Text.Json.JsonSerializer.Serialize(savedCamera));
+                        else cameraWarning??="Camera chưa có đoạn hình đồng bộ để đưa vào dự án.";
+                    }catch(Exception error){App.Log(error);cameraWarning="Chưa đọc được tệp webcam. Bản quay màn hình và mic vẫn được lưu.";}
+                    finally{camera.Dispose();camera=null;}
+                }
                 if(audio!=null)await Task.Run(()=>audio.Complete(recording.Duration));
                 double actualFps=await Task.Run(()=>RecordingFrameRate.Read(actual),cancellation);
                 if(Math.Abs(actualFps-s.Fps)>0.6)
@@ -298,6 +321,7 @@ public partial class MainWindow : Window
             if(!video)PerformanceTimings.Record("capture.photo.saved",Stopwatch.GetElapsedTime(photoStarted).TotalMilliseconds);finalStatus=frozen!=null?$"Đã giữ lúc {frozen.CapturedAt.ToLocalTime():HH:mm:ss.fff} · PNG gốc {item.Width} × {item.Height} px":"● Đã lưu nội dung trên máy.";
             if(!video)finalStatus+=" · "+(liveHybrid?.Status??"Ảnh/OCR");
             else finalStatus=(_recordingInterruption==null?"":_recordingInterruption+" ")+$"Đã lưu video · {item.Width} × {item.Height} px · {recording!.Duration:hh\\:mm\\:ss}";
+            if(video&&cameraWarning!=null)finalStatus+=" · "+cameraWarning;
             if(video&&audio is {} savedAudio&&savedAudio.Warnings.Count>0)finalStatus+=" · "+string.Join(" ",savedAudio.Warnings);
             if(!video&&s.SourceMode==0){_lastRegion=region;var updated=_workflow.Clone();updated.LastRegion=new(region,topology);if(!_workflowReadOnly)try{SaveWorkflow(updated);}catch(Exception ex){App.Log(ex);finalStatus+=" Chưa lưu được vùng chụp lại.";}}
             if(LicenseRuntime.Full&&!video&&options.AutoCopy)try{var original=capturedImage!;var edits=DocumentStore.Load(item,original,out _);try{ImageTransfer.Copy(EditorRenderer.Render(original,edits.Document));}finally{EditorRenderer.ReleaseImageCaches(original,clearSharedRaster:false);}finalStatus+=" Đã copy ảnh.";}catch(Exception ex){App.Log(ex);finalStatus+=" Clipboard đang bận; ảnh đã được lưu, có thể copy trong Editor.";}
@@ -307,6 +331,7 @@ public partial class MainWindow : Window
         catch(Exception e){failed=true;App.Log(e);if(audio is {} failedAudio&&failedAudio.Warnings.Count>0)_recordingInterruption=string.Join(" ",failedAudio.Warnings);if(video&&window is {} target&&!Native.IsSameWindow(target))_recordingInterruption??="Cửa sổ nguồn đã đóng.";_bar?.Finish();_bar=null;Show();Activate();var hint=e is DllNotFoundException or BadImageFormatException?"\n\nKhông nạp được thư viện native. Chạy Install.cmd để kiểm tra Visual C++ Runtime.":"\n\nChi tiết được lưu tại %LOCALAPPDATA%\\HuyVo\\Captovix\\errors.log.";AppDialog.Show(this,$"Không thể {(video?"quay màn hình":"chụp ảnh")}.\n\n{(video&&_recordingInterruption!=null?_recordingInterruption+" ":"")}{e.Message}{hint}","Captovix",MessageBoxButton.OK,MessageBoxImage.Warning);}
         finally {
             frozen?.Dispose();
+            try{camera?.Dispose();}catch(Exception error){App.Log(error);}
             sourceWatch?.Stop();diskWatch?.Stop();presenter?.Dispose();
             if(markerHotkey)Native.UnregisterHotKey(new WindowInteropHelper(this).Handle,MarkerHotkeyId);
             try{audio?.Dispose();}catch(Exception error){App.Log(error);}
@@ -486,6 +511,6 @@ public partial class MainWindow : Window
         catch(Exception ex){App.Log(ex);e.Cancel=true;AppDialog.Show(this,"Chưa lưu được cấu hình/thư viện. Hãy kiểm tra thư mục dữ liệu trước khi đóng.\n"+ex.Message,"Captovix");return;}
         if(!_exitRequested&&!_updateApplying&&_workflow.CloseToTray&&_tray?.Ready==true){e.Cancel=true;Hide();_tray.Notify("Captovix đang chạy nền. Nhấp biểu tượng để mở Editor; chọn Thoát để đóng hoàn toàn.");return;}
         _selectionRequest++;_imageLoadGeneration++;_imageLoadCancellation?.Cancel();UnloadEditor();SuspendWorkflow();
-        _updateUiClosed=true;_updateCheckTimer.Stop();_updateCancellation?.Cancel();_saveTimer.Stop();_videoTimer.Stop();ClearVideoAudio();VideoPreview.Close();var hwnd=new WindowInteropHelper(this).Handle;foreach(var i in _hotkeys)Native.UnregisterHotKey(hwnd,i);
+        _viewerIdle.Stop();_retentionTimer.Stop();_updateUiClosed=true;_updateCheckTimer.Stop();_updateCancellation?.Cancel();_saveTimer.Stop();_videoTimer.Stop();CancelVideoPoster();ReleaseCameraPreview();ClearVideoVisuals();ClearVideoAudio();VideoPreview.Close();var hwnd=new WindowInteropHelper(this).Handle;foreach(var i in _hotkeys)Native.UnregisterHotKey(hwnd,i);
     }
 }

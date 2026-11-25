@@ -87,7 +87,7 @@ public sealed class RegionPicker : Window
         public PixelRect Before;
         public CaptureHandle Handle;
         public Native.POINT Start;
-        public bool Locked,Dragging,Smart;public readonly bool RequireEnter;
+        public bool Locked,Dragging,Smart;public readonly bool RequireEnter;public bool Recording;
         private CaptureGesture? _gesture;
         private bool _querying,_disposed;
         private int _x=int.MinValue,_y=int.MinValue;
@@ -180,7 +180,7 @@ public sealed class RegionPicker : Window
         public void Finish(CaptureChoice choice=CaptureChoice.Photo)
         {
             if(!Locked||Dragging||!CaptureSelection.Valid(Current))return;
-            if(Frozen==null&&_lockedTarget!=0&&(!Native.GetWindowRect(_lockedTarget,out var fresh)||fresh.Pixels!=_lockedBounds)){
+            if(!Recording&&Frozen==null&&_lockedTarget!=0&&(!Native.GetWindowRect(_lockedTarget,out var fresh)||fresh.Pixels!=_lockedBounds)){
                 Reset();_status="Cửa sổ đã di chuyển · Chọn lại";Draw();return;
             }
             if(Frozen==null&&!Locked&&Smart&&(_target==0||!Native.GetWindowRect(_target,out var live)||live.Pixels!=_targetBounds)){Reset();return;}
@@ -207,7 +207,7 @@ public sealed class RegionPicker : Window
     public static async Task<PixelRect?> PickAsync(IReadOnlyList<DisplayInfo> displays,CancellationToken cancellation=default,bool allowScroll=false,bool smart=false,FrozenDesktop? frozen=null,bool requireEnter=true,bool recording=false)
     {
         cancellation.ThrowIfCancellationRequested();if(displays.Count==0)throw new InvalidOperationException("Không tìm thấy màn hình.");
-        Choice=CaptureChoice.Photo;using var session=new Session(displays,smart,frozen,requireEnter);
+        Choice=CaptureChoice.Photo;using var session=new Session(displays,smart,frozen,requireEnter){Recording=recording};
         foreach(var d in displays)session.Windows.Add(new(d,session,allowScroll,smart,recording));
         foreach(var w in session.Windows)w.Show();
         if(Native.GetCursorPos(out var pointer))session.Pointer(pointer);
@@ -240,7 +240,7 @@ public sealed class RegionPicker : Window
         PreviewKeyDown+=KeyDownOverlay;
         MouseLeftButtonDown+=(_,e)=>{if(IsToolbarSource(e.OriginalSource as DependencyObject))return;if(session.KeyboardSelecting){session.KeyboardSelecting=false;session.End();session.Reset();}Native.GetCursorPos(out var p);session.Begin(p,Tolerance);CaptureMouse();e.Handled=true;};
         MouseMove+=(_,_)=>{Native.GetCursorPos(out var p);session.Pointer(p);if(session.Dragging){session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);return;}Cursor=CursorAt(p);};
-        MouseLeftButtonUp+=(_,e)=>{if(!session.Dragging)return;Native.GetCursorPos(out var p);session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);ReleaseMouseCapture();bool suggestedClick=session.End();if(!session.RequireEnter||recording&&suggestedClick)session.Finish();e.Handled=true;};
+        MouseLeftButtonUp+=(_,e)=>{if(!session.Dragging)return;Native.GetCursorPos(out var p);session.Move(p,(Keyboard.Modifiers&ModifierKeys.Shift)!=0);session.End();ReleaseMouseCapture();if(!recording&&!session.RequireEnter)session.Finish();e.Handled=true;};
         MouseWheel+=(_,e)=>{e.Handled=true;};MouseRightButtonDown+=(_,_)=>session.Close(null);
     }
     private void UpdateMagnifier(Native.POINT p)

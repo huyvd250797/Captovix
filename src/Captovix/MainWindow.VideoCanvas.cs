@@ -15,6 +15,8 @@ public partial class MainWindow
     private VideoMarkTrack? SelectedVideoTrack=>_timeline?.Project.Tracks.FirstOrDefault(track=>track.Id==_selectedVideoTrack);
     private (VideoCanvasLayout Canvas,VideoClipLayout Layout,int Clip)? _videoInspectorLayout;
     private VideoMarkTrack? _videoInspectorTrack;
+    private VideoMark? _videoInspectorDefault;
+    private Image? _videoCalloutDraft;
     private bool _syncVideoInspector;
     private string? _videoTool;
     private Point? _videoDragStart;
@@ -24,6 +26,10 @@ public partial class MainWindow
     private Rect _videoBounds=Rect.Empty;
     private Matrix _videoImageTransform;
     private object? _videoCanvasKey;
+    private Matrix _videoLayoutMatrix;
+    private (int Width,int Height) _videoDecodedSize;
+    private VideoMark? _videoMovedDraft;
+    private System.Windows.Threading.DispatcherOperation? _videoDragPaint;
     private VideoMarkTrack[]? _previousVideoTracks;
     private TimeSpan _activeTrackBoundary;
     private TimeSpan _lastTrackPosition;
@@ -48,12 +54,14 @@ public partial class MainWindow
     private void SetVideoTool(string? tool)
     {
         CancelVideoInlineText();
+        _pickVideoCue=false;
         _videoTool=tool;
         ClearVideoDrag();
         if(VideoOverlay==null)return;
         VideoOverlay.Cursor=tool==null?Cursors.Arrow:Cursors.Cross;
         foreach(var button in VideoMarkTools.Children.OfType<Button>())
             button.SetResourceReference(Control.BackgroundProperty,(string?)button.Tag==(tool??"Select")?"Soft":"Surface");
+        if(_videoStudio)RefreshVideoInspector(force:true);
     }
 
     private void VideoTool_Click(object sender,RoutedEventArgs e)
@@ -68,12 +76,13 @@ public partial class MainWindow
 
     private Rect UpdateVideoCanvas()
     {
-        if(!_videoReady||_timeline is not {} timeline||VideoOverlay.ActualWidth<=0||VideoOverlay.ActualHeight<=0)
+        if((!_videoReady&&!_videoDecoderSuspended)||_timeline is not {} timeline||VideoOverlay.ActualWidth<=0||VideoOverlay.ActualHeight<=0)
         {
             VideoCanvasSurface.Visibility=Visibility.Hidden;
             return Rect.Empty;
         }
-        int sourceWidth=VideoPreview.NaturalVideoWidth,sourceHeight=VideoPreview.NaturalVideoHeight;
+        if(_videoReady)_videoDecodedSize=(VideoPreview.NaturalVideoWidth,VideoPreview.NaturalVideoHeight);
+        var (sourceWidth,sourceHeight)=_videoDecodedSize;
         if(sourceWidth<=0||sourceHeight<=0)return Rect.Empty;
         var canvas=timeline.Project.Canvas;
         var layout=timeline.Selected.Layout??VideoClipLayout.Default;
@@ -83,7 +92,7 @@ public partial class MainWindow
         var bounds=new Rect((VideoOverlay.ActualWidth-width*scale)/2,(VideoOverlay.ActualHeight-height*scale)/2,width*scale,height*scale);
         var key=(canvas,layout,sourceWidth,sourceHeight,width,height,bounds);
         VideoCanvasSurface.Visibility=Visibility.Visible;
-        if(Equals(_videoCanvasKey,key))return bounds;
+        if(Equals(_videoCanvasKey,key)){ApplyVideoMotion(bounds);return bounds;}
         _videoCanvasKey=key;
         var geometry=VideoCanvasGeometry.Create(canvas,layout,sourceWidth,sourceHeight,width,height);
         var (crop,rotation,image)=geometry;
@@ -95,7 +104,7 @@ public partial class MainWindow
         bool sideways=rotation is 90 or 270;
         matrix.Scale(image.Width*scale/(sideways?crop.Height:crop.Width),image.Height*scale/(sideways?crop.Width:crop.Height));
         matrix.Translate(image.X*scale,image.Y*scale);
-        _videoImageTransform=matrix;
+        _videoLayoutMatrix=matrix;
         VideoCanvasSurface.Width=bounds.Width;
         VideoCanvasSurface.Height=bounds.Height;
         VideoCanvasSurface.Background=new SolidColorBrush(ParseVideoColor(canvas.Background));
@@ -104,8 +113,47 @@ public partial class MainWindow
         VideoCropSurface.Width=VideoPreview.Width=sourceWidth;
         VideoCropSurface.Height=VideoPreview.Height=sourceHeight;
         VideoCropSurface.Clip=new RectangleGeometry(new Rect(crop.X,crop.Y,crop.Width,crop.Height));
-        VideoCropSurface.RenderTransform=new MatrixTransform(matrix);
+        ApplyVideoMotion(bounds);
         return bounds;
+    }
+
+    private void ApplyVideoMotion(Rect bounds)
+    {
+        if(_timeline is not {} timeline)return;
+        var clip=timeline.Selected;
+        var local=timeline.Project.Position-timeline.Offset(timeline.Project.SelectedClip);
+        var timing=clip.Timing;
+        var key=timing.At(clip.Fraction(local));
+        var origin=VideoMotion.Origin(key.Zoom,key.X,key.Y);
+        var matrix=_videoLayoutMatrix;
+        matrix.Scale(key.Zoom,key.Zoom);
+        matrix.Translate(-origin.X*bounds.Width*key.Zoom,-origin.Y*bounds.Height*key.Zoom);
+        if(VideoCropSurface.RenderTransform is not MatrixTransform existing||existing.Matrix!=matrix)
+            VideoCropSurface.RenderTransform=new MatrixTransform(matrix);
+        _videoImageTransform=matrix;
+        VideoFadeCurtain.Width=bounds.Width;
+        VideoFadeCurtain.Height=bounds.Height;
+        VideoFadeCurtain.Opacity=timing.Black(local.TotalSeconds,clip.Duration.TotalSeconds);
+    }
+
+    private static void DisconnectVideoEffect(System.Windows.Shapes.Shape shape)
+    {
+        if(shape.Fill is VisualBrush visual){visual.Visual=null;shape.Fill=null;}
+        if(shape.Effect!=null)shape.Effect=null;
+        if(shape.CacheMode!=null)shape.CacheMode=null;
+    }
+
+    private void ClearVideoVisuals(bool keepEditor=false)
+    {
+        for(int i=VideoOverlay.Children.Count-1;i>=0;i--){
+            var element=VideoOverlay.Children[i];
+            if(element==_cueLayer||keepEditor&&element==_inlineVideoText)continue;
+            if(element is Canvas layer)
+                foreach(var shape in layer.Children.OfType<System.Windows.Shapes.Shape>())DisconnectVideoEffect(shape);
+            else if(element is System.Windows.Shapes.Shape shape)DisconnectVideoEffect(shape);
+            VideoOverlay.Children.RemoveAt(i);
+        }
+        if(!keepEditor){_cueLayer.Children.Clear();_previousVideoTracks=null;}
     }
 
     private void UpdateVideoMarks()
@@ -113,6 +161,8 @@ public partial class MainWindow
         if(VideoOverlay==null)return;
         var bounds=UpdateVideoCanvas();
         _videoBounds=bounds;
+        UpdateVideoCues(bounds);
+        UpdateCameraPreview(bounds);
         var project=_timeline?.Project;
         var tracks=project?.Tracks;
         var position=project?.Position??TimeSpan.Zero;
@@ -125,13 +175,13 @@ public partial class MainWindow
         _previousTrackSelection=_selectedVideoTrack;
         _previousPlaying=_playing;
         _activeTrackBoundary=TimeSpan.MaxValue;
-        for(int i=VideoOverlay.Children.Count-1;i>=0;i--)
-            if(VideoOverlay.Children[i]!=_inlineVideoText)VideoOverlay.Children.RemoveAt(i);
+        ClearVideoVisuals(keepEditor:true);
         _videoGuide=null;
+        _videoCalloutDraft=null;
         if(bounds.IsEmpty||tracks==null)return;
         var marks=new List<VideoMark>();
         foreach(var track in tracks){
-            if(track.IsActive(position))marks.Add(track.Mark);
+            if(track.IsActive(position))marks.Add(_videoDragTrack?.Id==track.Id&&_videoMovedDraft!=null?_videoMovedDraft:track.Mark);
             if(track.Start>position&&track.Start<_activeTrackBoundary)_activeTrackBoundary=track.Start;
             if(track.End>position&&track.End<_activeTrackBoundary)_activeTrackBoundary=track.End;
         }
@@ -167,27 +217,33 @@ public partial class MainWindow
             layer.Children.Add(pixels);
             VideoOverlay.Children.Add(layer);
         }
-        var image=VideoMarkRendering.Draw([..marks],bounds.Width,bounds.Height);
+        var editing=tracks.FirstOrDefault(item=>item.Id==_inlineVideoTrack)?.Mark;
+        var image=VideoMarkRendering.Draw([..marks],bounds.Width,bounds.Height,editing);
         if(image!=null){
             var ink=new Image{Source=image,Width=bounds.Width,Height=bounds.Height,Stretch=Stretch.Fill,IsHitTestVisible=false};
             Canvas.SetLeft(ink,bounds.X);Canvas.SetTop(ink,bounds.Y);
             VideoOverlay.Children.Add(ink);
         }
         if(_videoStudio&&!_playing&&_videoFullscreen==null&&SelectedVideoTrack is {} selected&&selected.IsActive(position)){
-            var box=VideoMarkHitBox(selected.Mark);
+            var mark=_videoDragTrack?.Id==selected.Id?_videoMovedDraft??selected.Mark:selected.Mark;
+            var box=VideoMarkHitBox(mark);
             AddVideoOutline(box);
-            if(HasVideoHandles(selected.Mark.Kind)){
-                DrawVideoHandle(VideoPoint(selected.Mark.X1,selected.Mark.Y1));
-                DrawVideoHandle(VideoPoint(selected.Mark.X2,selected.Mark.Y2));
+            if(mark.Kind==VideoMarkKind.Callout){
+                var anchors=VideoCalloutHandles(mark);
+                foreach(var (handle,point) in anchors)
+                    DrawVideoHandle(point,handle==3?Brushes.Orange:handle==4?Brushes.DeepSkyBlue:Brushes.White);
+            }else if(HasVideoHandles(mark.Kind)||mark.TextFrame){
+                DrawVideoHandle(VideoPoint(mark.X1,mark.Y1));
+                DrawVideoHandle(VideoPoint(mark.X2,mark.Y2));
             }
         }
     }
 
     private static bool HasVideoHandles(VideoMarkKind kind)=>kind is VideoMarkKind.Frame or VideoMarkKind.Blur or VideoMarkKind.Arrow or VideoMarkKind.Callout or VideoMarkKind.Highlight or VideoMarkKind.Spotlight or VideoMarkKind.Magnifier;
 
-    private void DrawVideoHandle(Point point)
+    private void DrawVideoHandle(Point point,Brush? fill=null)
     {
-        var handle=new Rectangle{Width=7,Height=7,Fill=Brushes.White,Stroke=Brushes.DeepSkyBlue,IsHitTestVisible=false};
+        var handle=new Rectangle{Width=7,Height=7,Fill=fill??Brushes.White,Stroke=Brushes.DeepSkyBlue,IsHitTestVisible=false};
         Canvas.SetLeft(handle,point.X-3.5);Canvas.SetTop(handle,point.Y-3.5);
         VideoOverlay.Children.Add(handle);
     }
@@ -206,6 +262,15 @@ public partial class MainWindow
         var first=VideoPoint(mark.X1,mark.Y1);
         var second=VideoPoint(mark.X2,mark.Y2);
         double scale=_videoBounds.Height/540;
+        if(mark.Kind==VideoMarkKind.Callout||mark.TextFrame){
+            var annotation=VideoMarkRendering.AnnotationFor(mark,_videoBounds.Width,_videoBounds.Height);
+            var rendered=mark.Kind==VideoMarkKind.Callout
+                ?Rect.Union(EditorRenderer.Bounds(annotation),EditorRenderer.ContentBounds(annotation))
+                :EditorRenderer.Bounds(annotation);
+            rendered.Offset(_videoBounds.X,_videoBounds.Y);
+            rendered.Inflate(7,7);
+            return rendered;
+        }
         var box=mark.Kind switch{
             VideoMarkKind.Step=>new Rect(first.X-mark.FontSize*scale,first.Y-mark.FontSize*scale,mark.FontSize*scale*2,mark.FontSize*scale*2),
             VideoMarkKind.Text=>new Rect(first.X,first.Y,Math.Max(16,Math.Min(_videoBounds.Right-first.X,
@@ -227,28 +292,35 @@ public partial class MainWindow
         if(_inlineVideoText!=null&&e.OriginalSource is DependencyObject original
             &&(original==_inlineVideoText||_inlineVideoText.IsAncestorOf(original)))return;
         if(!VideoCanEdit||!_videoBounds.Contains(point)||!RequireLicense()||_timeline is not {} timeline)return;
-        CancelVideoInlineText();
+        if(_inlineVideoText!=null&&!CommitVideoInlineText())return;
         PauseVideoForEditing();
-        if(_videoTool==null){
+        if(PlaceVideoCue(point)){e.Handled=true;return;}
+        bool forceNew=Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+        if(_videoTool!="Crop"&&!forceNew){
             var selected=SelectedVideoTrack;
-            var active=selected!=null&&selected.IsActive(timeline.Project.Position)&&VideoMarkHitBox(selected.Mark).Contains(point)?selected:
+            var active=selected!=null&&selected.IsActive(timeline.Project.Position)&&(VideoMarkHitBox(selected.Mark).Contains(point)||FindCalloutHandle(selected.Mark,point)>0)?selected:
                 timeline.Project.Tracks.LastOrDefault(track=>track.IsActive(timeline.Project.Position)&&VideoMarkHitBox(track.Mark).Contains(point));
-            if(active==null){ClearVideoTrackSelection();return;}
-            SetSelectedVideoTrack(active.Id);
-            if(e.ClickCount==2&&active.Mark.Kind is VideoMarkKind.Text or VideoMarkKind.Callout or VideoMarkKind.Step){
-                EditVideoInlineText(active);
-                e.Handled=true;
-                return;
-            }
-            _videoDragTrack=active;
-            var mark=active.Mark;
-            if(HasVideoHandles(mark.Kind)){
-                if((VideoPoint(mark.X1,mark.Y1)-point).Length<=9)_videoDragHandle=1;
-                else if((VideoPoint(mark.X2,mark.Y2)-point).Length<=9)_videoDragHandle=2;
+            if(active==null){
+                ClearVideoTrackSelection();
+                if(_videoTool==null)return;
+            }else{
+                SetSelectedVideoTrack(active.Id);
+                var mark=active.Mark;
+                if(e.ClickCount==2&&mark.HasText){
+                    EditVideoInlineText(active);
+                    e.Handled=true;
+                    return;
+                }
+                _videoDragTrack=active;
+                if(mark.Kind==VideoMarkKind.Callout)_videoDragHandle=FindCalloutHandle(mark,point);
+                else if(HasVideoHandles(mark.Kind)||mark.TextFrame){
+                    if((VideoPoint(mark.X1,mark.Y1)-point).Length<=9)_videoDragHandle=1;
+                    else if((VideoPoint(mark.X2,mark.Y2)-point).Length<=9)_videoDragHandle=2;
+                }
             }
         }
         _videoDragStart=point;
-        if(_videoTool=="Freehand"){
+        if(_videoTool=="Freehand"&&_videoDragTrack==null){
             var at=VideoNormalized(point);
             _videoInkPoints.Add(new(at.X,at.Y));
         }
@@ -258,6 +330,7 @@ public partial class MainWindow
 
     private VideoMark MovedVideoMark(VideoMark mark,Point from,Point to)
     {
+        if(mark.Kind==VideoMarkKind.Callout)return MoveVideoCallout(mark,from,to);
         var first=VideoNormalized(from);
         var last=VideoNormalized(to);
         if(_videoDragHandle==1)return mark with{X1=last.X,Y1=last.Y};
@@ -273,7 +346,23 @@ public partial class MainWindow
         if(_videoDragStart is not {} start||!VideoOverlay.IsMouseCaptured||_videoBounds.IsEmpty)return;
         var end=VideoNormalized(e.GetPosition(VideoOverlay));
         var point=VideoPoint(end.X,end.Y);
-        if(_videoTool=="Freehand"&&_videoInkPoints.Count<2048){
+        if(_videoDragTrack is {} moving){
+            if((point-start).Length<2&&_videoMovedDraft==null)return;
+            _videoMovedDraft=MovedVideoMark(moving.Mark,start,point);
+            _videoDragPaint??=Dispatcher.InvokeAsync(()=>{
+                _videoDragPaint=null;
+                _previousVideoTracks=null;
+                UpdateVideoMarks();
+            },System.Windows.Threading.DispatcherPriority.Render);
+            return;
+        }
+        if(_videoTool=="Callout"){
+            if((point-start).Length<4)return;
+            var callout=PlaceVideoCallout(DefaultVideoInk(VideoMarkKind.Callout),start,point);
+            ShowVideoCalloutDraft(callout);
+            return;
+        }
+        if(_videoTool=="Freehand"&&_videoDragTrack==null&&_videoInkPoints.Count is >0 and <2048){
             var last=_videoInkPoints[^1];
             var previous=VideoPoint(last.X,last.Y);
             if((point-previous).Length>=2){
@@ -303,17 +392,19 @@ public partial class MainWindow
             return;
         }
         if(_videoTool=="Crop"){CropVideoByDrag(start,end);return;}
-        var name=_videoTool=="Shape"?"Frame":_videoTool;
-        if(!Enum.TryParse<VideoMarkKind>(name,out var kind))return;
+        if(VideoKindForTool(_videoTool) is not {} kind)return;
+        if(kind==VideoMarkKind.Callout&&(end-start).Length<4)return;
         var first=VideoNormalized(start);
         var last=VideoNormalized(end);
         if(kind is (VideoMarkKind.Frame or VideoMarkKind.Blur or VideoMarkKind.Highlight or VideoMarkKind.Spotlight or VideoMarkKind.Magnifier)&&(Math.Abs(end.X-start.X)<5||Math.Abs(end.Y-start.Y)<5))return;
         if(kind==VideoMarkKind.Arrow&&(end-start).Length<5)return;
-        if(kind==VideoMarkKind.Callout&&(last.X-first.X<.03||last.Y-first.Y<.03)){
-            last=new(Math.Min(1,first.X+.24),Math.Min(1,first.Y+.13));
-            first=new(Math.Min(first.X,last.X-.12),Math.Min(first.Y,last.Y-.08));
+        bool textFrame=kind is (VideoMarkKind.Text or VideoMarkKind.Title)&&Math.Abs(end.X-start.X)>=8&&Math.Abs(end.Y-start.Y)>=8;
+        if(kind==VideoMarkKind.Title&&!textFrame){
+            first=new(Math.Min(first.X,.75),Math.Min(first.Y,.85));
+            last=new(Math.Min(1,first.X+.45),Math.Min(1,first.Y+.15));
+            textFrame=true;
         }
-        if(kind is VideoMarkKind.Step or VideoMarkKind.Text)last=first;
+        if(kind==VideoMarkKind.Step||kind==VideoMarkKind.Text&&!textFrame)last=first;
         if(kind==VideoMarkKind.Freehand&&points.Length>0){
             first=new(points.Min(p=>p.X),points.Min(p=>p.Y));
             last=new(points.Max(p=>p.X),points.Max(p=>p.Y));
@@ -323,19 +414,19 @@ public partial class MainWindow
         if(position<TimeSpan.Zero)position=TimeSpan.Zero;
         var stop=position+TimeSpan.FromSeconds(3);
         if(stop>timeline.Project.Duration)stop=timeline.Project.Duration;
-        int number=kind==VideoMarkKind.Step?1+timeline.Project.Tracks.Count(item=>item.Mark.Kind==VideoMarkKind.Step):0;
-        string text=kind switch{VideoMarkKind.Text=>"Nội dung",VideoMarkKind.Callout=>"Chú thích",_=>""};
-        var mark=new VideoMark(kind,first.X,first.Y,last.X,last.Y,text,number){Points=points.Length>0?points:null};
-        if(kind==VideoMarkKind.Spotlight)mark=mark with{Color="#000000"};
+        int number=kind==VideoMarkKind.Step?NextVideoStep(timeline.Project):0;
+        string text=kind switch{VideoMarkKind.Title=>"Tiêu đề",VideoMarkKind.Text=>"Chữ",_=>""};
+        var mark=DefaultVideoInk(kind) with{X1=first.X,Y1=first.Y,X2=last.X,Y2=last.Y,Text=text,Number=number,
+            TextFrame=textFrame,Points=points.Length>0?points:null,StepLabel=null};
+        if(kind==VideoMarkKind.Callout)mark=PlaceVideoCallout(mark,start,end);
         var newTrack=new VideoMarkTrack(Guid.NewGuid(),position,stop,mark);
         if(!timeline.SetTrack(newTrack)){SetStatus("Timeline đã đạt giới hạn chú thích.");return;}
         if(position!=timeline.Project.Position)timeline.Seek(position);
         _selectedVideoTrack=newTrack.Id;
-        SetVideoTool(null);
         CommitVideoEdit();
         VideoStripScroll.UpdateLayout();
         VideoStripScroll.ScrollToVerticalOffset(Math.Max(0,VideoStrip.Height-VideoStripScroll.ViewportHeight));
-        if(kind is VideoMarkKind.Text or VideoMarkKind.Callout)EditVideoInlineText(newTrack);
+        if(kind is VideoMarkKind.Text or VideoMarkKind.Title or VideoMarkKind.Callout)EditVideoInlineText(newTrack);
     }
 
     private void EditVideoInlineText(VideoMarkTrack track)
@@ -343,23 +434,42 @@ public partial class MainWindow
         CancelVideoInlineText();
         if(_videoBounds.IsEmpty)return;
         var mark=track.Mark;
-        var bounds=VideoMarkHitBox(mark);
+        var annotation=VideoMarkRendering.AnnotationFor(mark,_videoBounds.Width,_videoBounds.Height);
+        var content=EditorRenderer.TextContent(annotation);
+        bool framed=mark.Kind==VideoMarkKind.Callout||mark.TextFrame;
+        bool step=mark.Kind==VideoMarkKind.Step;
+        var layout=EditorRenderer.TextLayout(annotation);
         var input=new TextBox{
-            Text=mark.Kind==VideoMarkKind.Step?mark.StepLabel??mark.Number.ToString(CultureInfo.CurrentCulture):mark.Text,
-            MaxLength=mark.Kind==VideoMarkKind.Step?12:500,AcceptsReturn=mark.Kind!=VideoMarkKind.Step,
-            Width=Math.Max(100,Math.Min(_videoBounds.Width,Math.Max(bounds.Width,160))),
-            MinHeight=28,MaxHeight=Math.Max(36,_videoBounds.Height*.45),
-            TextWrapping=TextWrapping.Wrap,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,
-            ToolTip=mark.Kind==VideoMarkKind.Step?"Enter lưu · Esc hủy":"Ctrl+Enter lưu · Esc hủy"
+            Text=step?mark.StepLabel??mark.Number.ToString(CultureInfo.CurrentCulture):mark.Text,
+            MaxLength=step?12:500,AcceptsReturn=!step,
+            Width=step?annotation.FontSize*4:framed?content.Width:Math.Min(_videoBounds.Width,Math.Max(160,layout.WidthIncludingTrailingWhitespace+40)),
+            Height=framed?content.Height:Math.Max(annotation.FontSize+4,layout.Height+4),
+            FontFamily=EditorRenderer.TextFont(annotation),FontSize=annotation.FontSize,
+            FontWeight=annotation.Bold?FontWeights.Bold:FontWeights.Normal,FontStyle=annotation.Italic?FontStyles.Italic:FontStyles.Normal,
+            Foreground=EditorRenderer.Ink(TextStudio.Foreground(annotation)),
+            TextAlignment=step?TextAlignment.Center:EditorRenderer.WpfAlignment(annotation.TextAlignment),
+            VerticalContentAlignment=annotation.VerticalAlignment switch{TextVertical.Center=>VerticalAlignment.Center,TextVertical.Bottom=>VerticalAlignment.Bottom,_=>VerticalAlignment.Top},
+            TextWrapping=framed?TextWrapping.Wrap:TextWrapping.NoWrap,
+            VerticalScrollBarVisibility=mark.TextFrame?ScrollBarVisibility.Auto:ScrollBarVisibility.Hidden,
+            ToolTip=step?"Enter lưu · Esc hủy":"Ctrl+Enter lưu · Esc hủy"
         };
+        input.SetResourceReference(StyleProperty,"InlineTextEditor");
+        input.CaretBrush=input.Foreground;
+        var local=EditorRenderer.LocalBox(annotation);
+        double x=step?annotation.X1-input.Width/2:content.X,y=step?annotation.Y1-input.Height/2:content.Y;
+        Canvas.SetLeft(input,_videoBounds.X+x);
+        Canvas.SetTop(input,_videoBounds.Y+y);
+        input.RenderTransform=new RotateTransform(annotation.Rotation,local.CenterX-x,local.CenterY-y);
+        TextBlock.SetLineHeight(input,annotation.LineSpacing>0?annotation.FontSize*annotation.LineSpacing:double.NaN);
+        input.SetValue(TextBlock.TextDecorationsProperty,annotation.Underline?TextDecorations.Underline:null);
         input.PreviewKeyDown+=VideoInlineText_KeyDown;
         input.LostKeyboardFocus+=VideoInlineText_LostFocus;
         _inlineVideoTrack=track.Id;
         _inlineVideoText=input;
         Panel.SetZIndex(input,10);
-        Canvas.SetLeft(input,Math.Max(_videoBounds.Left,Math.Min(bounds.Left,_videoBounds.Right-input.Width)));
-        Canvas.SetTop(input,Math.Max(_videoBounds.Top,Math.Min(bounds.Top,_videoBounds.Bottom-36)));
         VideoOverlay.Children.Add(input);
+        _previousVideoTracks=null;
+        UpdateVideoMarks();
         input.Focus();
         input.SelectAll();
     }
@@ -408,22 +518,31 @@ public partial class MainWindow
         input.LostKeyboardFocus-=VideoInlineText_LostFocus;
         input.PreviewKeyDown-=VideoInlineText_KeyDown;
         VideoOverlay.Children.Remove(input);
+        _previousVideoTracks=null;
+        UpdateVideoMarks();
     }
 
     private void VideoOverlay_LostCapture(object sender,MouseEventArgs e)=>ClearVideoDrag();
 
     private void ClearVideoDrag()
     {
+        _videoDragPaint?.Abort();
+        _videoDragPaint=null;
         _videoDragStart=null;
         _videoInkPoints.Clear();
+        if(_videoCalloutDraft!=null)VideoOverlay?.Children.Remove(_videoCalloutDraft);
+        _videoCalloutDraft=null;
         if(VideoOverlay!=null)
             foreach(var draft in VideoOverlay.Children.OfType<Line>().Where(line=>Equals(line.Tag,"FreehandDraft")).ToArray())
                 VideoOverlay.Children.Remove(draft);
+        bool redraw=_videoMovedDraft!=null;
+        _videoMovedDraft=null;
         _videoDragTrack=null;
         _videoDragHandle=0;
         if(VideoOverlay?.IsMouseCaptured==true)VideoOverlay.ReleaseMouseCapture();
         if(_videoGuide!=null)VideoOverlay?.Children.Remove(_videoGuide);
         _videoGuide=null;
+        if(redraw){_previousVideoTracks=null;UpdateVideoMarks();}
     }
 
     private void SelectVideoTrack(Guid id)
@@ -473,9 +592,16 @@ public partial class MainWindow
 
     private void RefreshVideoInspector(bool force=false)
     {
-        if(VideoInspector==null)return;
+        if(VideoInspector==null||!_videoStudio)return;
+        if(_timeline is {} motionTimeline){SyncVideoMotion(motionTimeline.Selected);SyncCameraInspector(motionTimeline);}
         var track=SelectedVideoTrack;
-        VideoTrackInspector.Visibility=track==null?Visibility.Collapsed:Visibility.Visible;
+        var draft=track==null?CurrentVideoInk():null;
+        var displayed=track?.Mark??draft;
+        VideoTrackInspector.Visibility=displayed==null?Visibility.Collapsed:Visibility.Visible;
+        VideoMarkTiming.Visibility=track==null?Visibility.Collapsed:Visibility.Visible;
+        VideoDeleteTrackButton.Visibility=VideoMarkTiming.Visibility;
+        VideoApplyTrackButton.Content=track==null?"Áp dụng kiểu công cụ":"Áp dụng chú thích";
+        SyncVideoFavorites(displayed);
         if(_timeline is not {} timeline){_videoInspectorLayout=null;_videoInspectorTrack=null;return;}
         var (canvas,layout,clip)=(timeline.Project.Canvas,timeline.Selected.Layout??VideoClipLayout.Default,timeline.Selected.Number);
         var key=(canvas,layout,clip);
@@ -491,16 +617,16 @@ public partial class MainWindow
                 VideoCropLeft.Text=Number(layout.Left*100);VideoCropTop.Text=Number(layout.Top*100);
                 VideoCropRight.Text=Number(layout.Right*100);VideoCropBottom.Text=Number(layout.Bottom*100);
             }
-            if(force||_videoInspectorTrack!=track){
+            if(force||_videoInspectorTrack!=track||_videoInspectorDefault!=draft){
                 _videoInspectorTrack=track;
-                if(track==null)return;
-                var mark=track.Mark;
+                _videoInspectorDefault=draft;
+                if(displayed is not {} mark)return;
                 VideoTrackTitle.Text=mark.Label;
-                bool text=mark.Kind is VideoMarkKind.Text or VideoMarkKind.Callout or VideoMarkKind.Step;
+                bool text=track!=null&&mark.HasText;
                 VideoTrackText.Visibility=VideoTrackTextLabel.Visibility=text?Visibility.Visible:Visibility.Collapsed;
                 VideoTrackText.MaxLength=mark.Kind==VideoMarkKind.Step?12:500;
                 VideoTrackText.Text=mark.Kind==VideoMarkKind.Step?mark.StepLabel??mark.Number.ToString(CultureInfo.CurrentCulture):mark.Text;
-                VideoTrackStart.Text=Number(track.Start.TotalSeconds);VideoTrackEnd.Text=Number(track.End.TotalSeconds);
+                if(track!=null){VideoTrackStart.Text=Number(track.Start.TotalSeconds);VideoTrackEnd.Text=Number(track.End.TotalSeconds);}
                 VideoTrackFont.Text=Number(mark.FontSize);VideoTrackStroke.Text=Number(mark.Stroke);
                 VideoTrackColor.Text=mark.Color??"#F54856";
                 SyncVideoInk(mark);
@@ -571,22 +697,20 @@ public partial class MainWindow
 
     private void VideoApplyTrack_Click(object sender,RoutedEventArgs e)
     {
-        if(!RequireLicense()||!VideoCanEdit||_timeline is not {} timeline||SelectedVideoTrack is not {} track)return;
+        if(!RequireLicense()||!VideoCanEdit||_timeline is not {} timeline||CurrentVideoInk() is not {} original)return;
+        var track=SelectedVideoTrack;
+        if(ReadVideoMark(original,track!=null) is not {} mark){
+            SetStatus("Kiểm tra màu, cỡ chữ, số bước và kiểu chú thích.");return;
+        }
+        if(track==null){
+            _videoToolStyles[mark.Kind]=mark;
+            RefreshVideoInspector(force:true);
+            return;
+        }
         if(!TryNumber(VideoTrackStart,out double start)||!TryNumber(VideoTrackEnd,out double end)
-            ||!TryNumber(VideoTrackFont,out double font)||!TryNumber(VideoTrackStroke,out double stroke)
             ||start<0||end>timeline.Project.Duration.TotalSeconds+.00000005||end<=start){
-            SetStatus("Nhập thời gian bắt đầu và kết thúc hợp lệ trong timeline.");return;
+            SetStatus("Nhập thời điểm hiện và ẩn hợp lệ trong timeline.");return;
         }
-        if(ReadVideoInk() is not {} style){SetStatus("Kiểm tra màu, thông số hình và opacity của chú thích.");return;}
-        var mark=track.Mark with{FontSize=font,Stroke=stroke,Color=VideoTrackColor.Text.Trim().ToUpperInvariant(),Style=style};
-        if(mark.Kind==VideoMarkKind.Step){
-            if(!TextStudio.TryStepNumber(VideoTrackText.Text,out var step,out bool tenths)){
-                SetStatus("Nhập số Bước hợp lệ, ví dụ 1 hoặc 1.2.");return;
-            }
-            mark=mark with{StepLabel=step.ToString(tenths?"0.0":"0",CultureInfo.InvariantCulture)};
-        }
-        else if(mark.Kind is VideoMarkKind.Text or VideoMarkKind.Callout)mark=mark with{Text=VideoTrackText.Text};
-        if(!mark.IsValid()){SetStatus("Kiểm tra màu #RRGGBB, cỡ chữ 8–120 và độ dày 1–24.");return;}
         var finish=TimeSpan.FromSeconds(end);
         if(finish>timeline.Project.Duration)finish=timeline.Project.Duration;
         var updated=track with{Mark=mark,Start=TimeSpan.FromSeconds(start),End=finish};
@@ -595,6 +719,33 @@ public partial class MainWindow
             CommitVideoEdit();
             SelectVideoTrack(track.Id);
         }
+    }
+
+    private VideoMark? ReadVideoMark(VideoMark original,bool includeText)
+    {
+        if(!TryNumber(VideoTrackFont,out double font)||!TryNumber(VideoTrackStroke,out double stroke)
+            ||ReadVideoInk(original.Style) is not {} style)return null;
+        var mark=original with{FontSize=font,Stroke=stroke,Color=VideoTrackColor.Text.Trim().ToUpperInvariant(),Style=style};
+        if(includeText&&mark.Kind==VideoMarkKind.Step){
+            if(!TextStudio.TryStepNumber(VideoTrackText.Text,out var step,out bool tenths))return null;
+            mark=mark with{StepLabel=step.ToString(tenths?"0.0":"0",CultureInfo.InvariantCulture)};
+        }else if(includeText&&mark.HasText)mark=mark with{Text=VideoTrackText.Text};
+        return mark.IsValid()?mark:null;
+    }
+
+    private void VideoUsePlayhead_Click(object sender,RoutedEventArgs e)
+    {
+        if(!VideoCanEdit||SelectedVideoTrack==null||_timeline is not {} timeline)return;
+        var field=(sender as Button)?.Tag as string=="start"?VideoTrackStart:VideoTrackEnd;
+        field.Text=Number(timeline.Project.Position.TotalSeconds);
+    }
+
+    private static int NextVideoStep(VideoProject project)
+    {
+        int highest=project.Tracks.Where(track=>track.Mark.Kind==VideoMarkKind.Step)
+            .Select(track=>track.Mark.StepLabel is {} label&&TextStudio.TryStepNumber(label,out var value,out _)
+                ?(int)Math.Floor(value):track.Mark.Number).DefaultIfEmpty().Max();
+        return Math.Min(9999,highest+1);
     }
 
     private static string Number(double value)=>value.ToString("0.#######",CultureInfo.CurrentCulture);

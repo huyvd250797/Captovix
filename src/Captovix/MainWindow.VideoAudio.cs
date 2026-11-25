@@ -28,6 +28,7 @@ public partial class MainWindow
             VideoAudioStatus.Text="Không mở được bản phối";
             SetStatus(e.ErrorException.Message);
         };
+        VideoAudioInspector.Expanded+=(_,_)=>RequestVideoAudio();
         VideoAudioVolume.ValueChanged+=(_,_)=>{
             if(!_videoAudioSyncFields&&_timeline!=null&&_audioShownTrack!=null)
                 VideoAudioStatus.Text="Bấm Áp dụng âm thanh để nghe thay đổi";
@@ -45,7 +46,7 @@ public partial class MainWindow
         VideoStrip.SetAudio(null,_audioLane);
         var directory=_videoAudioDirectory;
         _videoAudioDirectory=null;
-        if(directory!=null)DeleteVideoAudioDirectory(directory);
+        if(directory!=null)_=Task.Run(()=>DeleteVideoAudioDirectory(directory));
     }
 
     private static void DeleteVideoAudioDirectory(string directory)
@@ -57,11 +58,13 @@ public partial class MainWindow
 
     private async void RequestVideoAudio()
     {
-        if(_timeline?.Project is not {} project||(!_videoStudio&&!VideoAudioPlan.NeedsMix(project)))return;
+        if(_timeline?.Project is not {} project||(!_videoAudioPendingPlay&&(!_videoStudio||!VideoAudioInspector.IsExpanded)))return;
         if(_videoAudioSnapshot is {} snapshot&&ReferenceEquals(snapshot.Clips,project.Clips)
             &&ReferenceEquals(snapshot.AudioTracks,project.AudioTracks)&&ReferenceEquals(snapshot.AdditionalSources,project.AdditionalSources)
             &&snapshot.SourcePath==project.SourcePath)return;
+        bool pending=_videoAudioPendingPlay;
         ClearVideoAudio();
+        _videoAudioPendingPlay=pending;
         _videoAudioSnapshot=project;
         VideoPreview.IsMuted=VideoAudioPlan.NeedsMix(project);
         if(VideoTrimExport.FindFfmpeg()==null){
@@ -90,7 +93,7 @@ public partial class MainWindow
         }finally{
             if(ReferenceEquals(_videoAudioCancellation,cancellation))_videoAudioCancellation=null;
             cancellation.Dispose();
-            if(!keep)DeleteVideoAudioDirectory(directory);
+            if(!keep)_=Task.Run(()=>DeleteVideoAudioDirectory(directory));
         }
     }
 
@@ -103,8 +106,8 @@ public partial class MainWindow
             return false;
         }
         if(_videoAudioCancellation==null&&_videoAudioDirectory==null)_videoAudioSnapshot=null;
-        RequestVideoAudio();
         _videoAudioPendingPlay=true;
+        RequestVideoAudio();
         SetStatus("Đang chuẩn bị bản phối âm thanh…");
         return false;
     }

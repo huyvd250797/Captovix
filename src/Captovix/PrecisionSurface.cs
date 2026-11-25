@@ -12,10 +12,42 @@ public sealed partial class EditorSurface
     {
         if(Session==null||Layout is not {} l)return [];var p=l.ToOutput(source.X,source.Y);if(p.X<0||p.Y<0||p.X>l.Width||p.Y>l.Height)return [];
         var candidates=includeLocked?Session.Document.Annotations.Where(a=>a.Visible):ObjectControl.CanvasCandidates(Session.Document);
-        double tolerance=5/Zoom;
-        return candidates.Select((a,i)=>(Object:a,Index:i)).OrderByDescending(x=>AnnotationEditing.Tier(x.Object)).ThenByDescending(x=>x.Index).Where(x=>{
-            var world=EditorRenderer.Box(x.Object);double sourceTolerance=5/InteractionScale;if(source.X<world.X-sourceTolerance||source.X>world.Right+sourceTolerance||source.Y<world.Y-sourceTolerance||source.Y>world.Bottom+sourceTolerance)return false;var b=ObjectPrecision.Map(world,l);var target=x.Object;if(includeLocked&&target.Locked){target=target.Copy();target.Locked=false;}return p.X>=b.X-tolerance&&p.X<=b.Right+tolerance&&p.Y>=b.Y-tolerance&&p.Y<=b.Bottom+tolerance&&EditorRenderer.Hit(target,source,5/InteractionScale);
-        }).Select(x=>x.Object).ToArray();
+        double tolerance=5/Zoom,sourceTolerance=5/InteractionScale;
+        return candidates.Select((a,i)=>(Object:a,Index:i)).OrderByDescending(x=>AnnotationEditing.Tier(x.Object))
+            .ThenByDescending(x=>x.Index)
+            .Where(x=>HitCandidate(x.Object,source,p,l,tolerance,sourceTolerance,includeLocked))
+            .Select(x=>x.Object).ToArray();
+    }
+    private Annotation? HitTop(Point source)
+    {
+        if(Session==null||Layout is not {} layout)return null;
+        var output=layout.ToOutput(source.X,source.Y);
+        if(output.X<0||output.Y<0||output.X>layout.Width||output.Y>layout.Height)return null;
+        var candidates=ObjectControl.CanvasCandidates(Session.Document);
+        double tolerance=5/Zoom,sourceTolerance=5/InteractionScale;
+        Annotation? hit=null;
+        int tier=int.MinValue;
+        for(int i=candidates.Length-1;i>=0;i--){
+            var item=candidates[i];
+            int candidateTier=AnnotationEditing.Tier(item);
+            if(candidateTier<=tier||!HitCandidate(item,source,output,layout,tolerance,sourceTolerance,false))continue;
+            hit=item;
+            tier=candidateTier;
+            if(tier==2)break;
+        }
+        return hit;
+    }
+    private static bool HitCandidate(Annotation item,Point source,ImagePoint output,ImageLayout layout,
+        double tolerance,double sourceTolerance,bool includeLocked)
+    {
+        var world=EditorRenderer.Box(item);
+        if(source.X<world.X-sourceTolerance||source.X>world.Right+sourceTolerance
+            ||source.Y<world.Y-sourceTolerance||source.Y>world.Bottom+sourceTolerance)return false;
+        var bounds=ObjectPrecision.Map(world,layout);
+        if(output.X<bounds.X-tolerance||output.X>bounds.Right+tolerance
+            ||output.Y<bounds.Y-tolerance||output.Y>bounds.Bottom+tolerance)return false;
+        if(includeLocked&&item.Locked){item=item.Copy();item.Locked=false;}
+        return EditorRenderer.Hit(item,source,sourceTolerance);
     }
     private void UpdateHover(Annotation? hit)
     {

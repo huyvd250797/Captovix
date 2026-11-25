@@ -6,7 +6,7 @@ namespace Captovix;
 public partial class MainWindow
 {
     private List<string> _utilityStars=[];
-    private string? _favoriteKey;
+    private (bool Browse,string Tool,AnnotationKind Kind,List<StyleFavorite> Styles,List<string> Utilities)? _favoriteTilesKey;
     private bool _utilityStarsReadOnly;
     private void LoadUtilityStars(){try{string p=Path.Combine(App.DataRoot,"tool-stars.json");if(File.Exists(p)){var list=JsonSerializer.Deserialize<List<string>>(File.ReadAllText(p))??throw new InvalidDataException();if(list.Count>16||list.Any(t=>!Enum.TryParse<EditorTool>(t,out _))||list.Distinct().Count()!=list.Count)throw new InvalidDataException();_utilityStars=list;}}catch{_utilityStarsReadOnly=true;VisualStudioError.Text="Chưa đọc được công cụ đã lưu; giữ file cũ.";}}
     private bool UtilityTool=>Surface.Tool is EditorTool.Select or EditorTool.Crop or EditorTool.PixelRectangle or EditorTool.PixelEllipse or EditorTool.PixelLasso;
@@ -20,22 +20,27 @@ public partial class MainWindow
     }
     private void SyncAllFavorites(Annotation current)
     {
-        string? signature=current.Kind==AnnotationKind.ImageLayer?null:StudioStyle.Signature(current);string key=Surface.Tool+"|"+(signature??"ImageLayer")+"|"+string.Join(",",_favorites.Select(f=>f.Id))+"|"+string.Join(",",_utilityStars);if(key==_favoriteKey)return;_favoriteKey=key;
+        string? signature=current.Kind==AnnotationKind.ImageLayer?null:StudioStyle.Signature(current);bool browse=Surface.Tool==EditorTool.Select&&Surface.Selected==null;
+        var key=(browse,Surface.Tool.ToString(),current.Kind,_favorites,_utilityStars);
+        if(_favoriteTilesKey!=key){
+        _favoriteTilesKey=key;
         FavoriteTileGrid.Children.Clear();
-        // Keep favorites above properties, filtered to the active tool family.
-        bool browse=Surface.Tool==EditorTool.Select&&Surface.Selected==null;
         foreach(var f in _favorites.Where(f=>browse||f.Style.Kind==current.Kind||CompositionStudio.SameFamily(current.Kind,f.Style.Kind)))AddStyleTile(FavoriteTileGrid,f.Style,f.Label,()=>ChooseStyle(f.Style));
         foreach(var name in _utilityStars.Where(t=>browse||t==Surface.Tool.ToString()).ToArray()){var tile=new Grid{Width=64,Height=38};var pick=new Button{Content=AppIcons.Content(name,""),ToolTip=name};pick.Click+=(_,_)=>SelectTool(Enum.Parse<EditorTool>(name));tile.Children.Add(pick);var remove=new Button{Content="★",Padding=new(2),HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,ToolTip="Bỏ lưu",IsEnabled=!_utilityStarsReadOnly};remove.Click+=(_,_)=>{try{var list=_utilityStars.Where(t=>t!=name).ToList();MediaStore.AtomicWrite(Path.Combine(App.DataRoot,"tool-stars.json"),JsonSerializer.Serialize(list));_utilityStars=list;SyncProperties();}catch(Exception ex){SetStatus(ex.Message);}};remove.Opacity=0;tile.MouseEnter+=(_,_)=>remove.Opacity=1;tile.MouseLeave+=(_,_)=>remove.Opacity=0;tile.Children.Add(remove);FavoriteTileGrid.Children.Add(tile);}
+        }
         SaveToolStar.IsEnabled=Surface.Selected?.Kind!=AnnotationKind.ImageLayer;
         bool saved=UtilityTool&&Surface.Selected==null?_utilityStars.Contains(Surface.Tool.ToString()):signature!=null&&_favorites.Any(f=>f.Id==signature);
-        SaveToolStar.Content=AppIcons.Content("Star",saved?"Bỏ lưu công cụ này":"Lưu công cụ hiện tại");
+        string label=saved?"Bỏ lưu công cụ này":"Lưu công cụ hiện tại";
+        if(SaveToolStar.ToolTip as string!=label){SaveToolStar.Content=AppIcons.Content("Star",label);SaveToolStar.ToolTip=label;}
     }
     private void ChooseOtherFavorite(Annotation style)
     {
         var next=style.Copy();if(!Enum.TryParse<EditorTool>(next.Kind.ToString(),out var tool))return;
         var ids=Surface.SelectedIds.ToArray();string? primary=Surface.SelectedId;bool retain=Surface.Selected?.Kind==next.Kind;
-        var preset=AnnotationPreset.From("Mẫu đã lưu",next);preset.Apply(FocusStudio.Supports(next.Kind)?Surface.FocusDefaultsFor(next.Kind):TextStudio.IsText(next.Kind)?Surface.TextDefaultsFor(next.Kind):Surface.ShapeDefaults);
+        var preset=AnnotationPreset.From("Mẫu đã lưu",next);
+        var defaults=FocusStudio.Supports(next.Kind)?Surface.FocusDefaultsFor(next.Kind):TextStudio.IsText(next.Kind)?Surface.TextDefaultsFor(next.Kind):Surface.ShapeDefaults;
+        preset.Apply(defaults);defaults.ObjectOpacity=next.ObjectOpacity;
         Surface.InkColor=next.Color;Surface.StrokeSize=next.Stroke;Surface.TextSize=next.FontSize;Surface.EffectSize=next.EffectSize;
-        if(retain)ChangeSelected(a=>{if(a.Kind==next.Kind)preset.Apply(a);});_skipSavedStyle=true;try{SelectTool(tool);}finally{_skipSavedStyle=false;}if(retain)Surface.SelectIds(ids,primary);Surface.Refresh();SyncProperties();
+        if(retain)ChangeSelected(a=>{if(a.Kind==next.Kind){preset.Apply(a);a.ObjectOpacity=next.ObjectOpacity;}});_skipSavedStyle=true;try{SelectTool(tool);}finally{_skipSavedStyle=false;}if(retain)Surface.SelectIds(ids,primary);Surface.Refresh();SyncProperties();
     }
 }

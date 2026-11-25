@@ -20,7 +20,7 @@ internal static class VideoAudioRender
         if(frames*Channels*2>uint.MaxValue-36)
             throw new IOException("Bản phối WAV vượt 4 GiB. Hãy chia dự án thành các phần ngắn hơn.");
         var spans=VideoAudioPlan.Create(project,File.Exists);
-        var decoded=new Dictionary<string,string?>(StringComparer.OrdinalIgnoreCase);
+        var decoded=new Dictionary<(string File,TimeSpan In,TimeSpan Length,double Speed),string?>();
         var readers=new Dictionary<string,FileStream>(StringComparer.OrdinalIgnoreCase);
         var settings=Enum.GetValues<VideoAudioLane>().Select(lane=>VideoAudioPlan.Settings(project,lane)).ToArray();
         var activeLanes=spans.Select(span=>span.Lane).ToHashSet();
@@ -31,12 +31,13 @@ internal static class VideoAudioRender
             var rendered=new List<(VideoAudioSpan Span,FileStream Reader,long Start,long End,long Source)>();
             foreach(var span in spans){
                 cancellation.ThrowIfCancellationRequested();
-                if(!decoded.TryGetValue(span.File,out string? pcm)){
-                    pcm=await DecodeAsync(ffmpeg,span.File,directory,span.Lane==VideoAudioLane.Original,cancellation);
-                    decoded.Add(span.File,pcm);
-                    if(pcm!=null)readers.Add(span.File,new FileStream(pcm,FileMode.Open,FileAccess.Read,FileShare.Read));
+                var key=span.Speed==1?(span.File,TimeSpan.Zero,TimeSpan.Zero,1d):(span.File,span.InPoint,span.SourceLength!.Value,span.Speed);
+                if(!decoded.TryGetValue(key,out string? pcm)){
+                    pcm=await DecodeAsync(ffmpeg,span.File,directory,span.Lane==VideoAudioLane.Original,cancellation,key.Item2,key.Item3,span.Speed);
+                    decoded.Add(key,pcm);
+                    if(pcm!=null)readers.Add(pcm,new FileStream(pcm,FileMode.Open,FileAccess.Read,FileShare.Read));
                 }
-                if(pcm!=null)rendered.Add((span,readers[span.File],Frame(span.At),Frame(span.At+span.Length),Frame(span.InPoint)));
+                if(pcm!=null)rendered.Add((span,readers[pcm],Frame(span.At),Frame(span.At+span.Length),span.Speed==1?Frame(span.InPoint):0));
             }
             using var writer=new RecordingWaveFile(output,Rate,Channels);
             var buffer=new byte[Block*Channels*2];
@@ -125,13 +126,17 @@ internal static class VideoAudioRender
         }finally{Directory.Delete(directory,true);}
     }
 
-    private static async Task<string?> DecodeAsync(string ffmpeg,string source,string directory,bool optional,CancellationToken cancellation)
+    private static async Task<string?> DecodeAsync(string ffmpeg,string source,string directory,bool optional,CancellationToken cancellation,TimeSpan inputStart=default,TimeSpan inputLength=default,double speed=1)
     {
         if(!File.Exists(source))throw new FileNotFoundException("Thiếu nguồn âm thanh: "+Path.GetFileName(source));
         string output=Path.Combine(directory,Guid.NewGuid().ToString("N")+".pcm");
         var start=new ProcessStartInfo(ffmpeg){UseShellExecute=false,CreateNoWindow=true,RedirectStandardError=true};
-        foreach(var argument in new[]{"-nostdin","-hide_banner","-loglevel","error","-i",source,"-map","0:a:0",
-            "-vn","-sn","-dn","-ac","2","-ar","48000","-c:a","pcm_s16le","-f","s16le",output})
+        var arguments=new List<string>{"-nostdin","-hide_banner","-loglevel","error"};
+        if(speed!=1)arguments.AddRange(["-ss",VideoMotion.Number(inputStart.TotalSeconds),"-t",VideoMotion.Number(inputLength.TotalSeconds)]);
+        arguments.AddRange(["-i",source,"-map","0:a:0","-vn","-sn","-dn"]);
+        if(speed!=1)arguments.AddRange(["-af",VideoMotion.Tempo(speed)]);
+        arguments.AddRange(["-ac","2","-ar","48000","-c:a","pcm_s16le","-f","s16le",output]);
+        foreach(var argument in arguments)
             start.ArgumentList.Add(argument);
         using var process=Process.Start(start)??throw new IOException("Không mở được FFmpeg.");
         using var registration=cancellation.Register(()=>{

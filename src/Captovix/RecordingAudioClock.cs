@@ -42,6 +42,17 @@ internal sealed class RecordingAudioClock
         return span.Output+time-span.Start;
     }
 
+    internal IEnumerable<(TimeSpan Screen,TimeSpan Camera,TimeSpan Length)> CameraSpans(long started,TimeSpan length,TimeSpan screenLength)
+    {
+        long end=started+length.Ticks;
+        foreach(var span in Volatile.Read(ref _spans)){
+            long from=Math.Max(started,span.Start),to=Math.Min(end,span.End);
+            long screen=span.Output+from-span.Start;
+            long keep=Math.Min(to-from,screenLength.Ticks-screen);
+            if(keep>0)yield return (TimeSpan.FromTicks(screen),TimeSpan.FromTicks(from-started),TimeSpan.FromTicks(keep));
+        }
+    }
+
     internal IEnumerable<AudioSlice> Place(long timestamp,int frameCount,int rate)
     {
         const long ticks=TimeSpan.TicksPerSecond;

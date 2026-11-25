@@ -58,6 +58,7 @@ public static class CapturePrompts
     // Temporary selectors are capture overlays; all persistent configuration remains in the Editor.
     public static async Task<WindowInfo?> PickWindowAsync(CancellationToken cancellation,bool recording=false,WindowInfo? preferred=null)
     {
+        if(recording)return await RecordingWindowPicker.PickAsync(cancellation,preferred);
         cancellation.ThrowIfCancellationRequested();var done=new TaskCompletionSource<WindowInfo?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var picker=new Window{Title=recording?"Captovix · Chọn cửa sổ để quay":"Captovix · Chọn cửa sổ để chụp",Width=640,Height=460,WindowStartupLocation=WindowStartupLocation.CenterScreen,Topmost=true,ShowInTaskbar=false};
         var panel=new DockPanel{Margin=new Thickness(16)};var hint=new TextBlock{Text="Chọn cửa sổ đang mở · Enter / nhấp đúp để xác nhận · Esc hủy",Margin=new Thickness(0,0,0,12)};DockPanel.SetDock(hint,Dock.Top);panel.Children.Add(hint);
@@ -69,7 +70,9 @@ public static class CapturePrompts
         picker.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Escape)picker.Close();else if(e.Key==System.Windows.Input.Key.Enter)Finish();};list.MouseDoubleClick+=(_,_)=>Finish();picker.Closed+=(_,_)=>done.TrySetResult(null);
         using var registration=cancellation.Register(()=>picker.Dispatcher.BeginInvoke(()=>{if(picker.IsVisible)picker.Close();}));Refresh();picker.Show();list.Focus();return await done.Task;
     }
-    internal static async Task<(int Mode,DisplayInfo Display,RecordingAudioSettings Audio,RecordingProfile Profile,bool HighlightClicks,bool Hardware)?> PickRecordingSourceAsync(
+    private sealed record CameraOption(string? Id,string Name);
+
+    internal static async Task<(int Mode,DisplayInfo Display,RecordingAudioSettings Audio,RecordingProfile Profile,bool HighlightClicks,bool Hardware,string? Camera,bool Cursor)?> PickRecordingSourceAsync(
         Window owner,IReadOnlyList<DisplayInfo> displays,int initialMode,DisplayInfo initialDisplay,AppSettings preferences,CancellationToken cancellation)
     {
         cancellation.ThrowIfCancellationRequested();
@@ -88,7 +91,7 @@ public static class CapturePrompts
         panel.Children.Add(info);
         void Update(){
             screen.Visibility=mode.SelectedIndex==2?Visibility.Visible:Visibility.Collapsed;
-            info.Text=mode.SelectedIndex switch{0=>"Click vào khung tự nhận diện để quay hoặc kéo chọn vùng thủ công.",1=>"Chọn cửa sổ đang mở ở bước tiếp theo.",_=>"Chọn màn hình cần quay và kiểm tra độ phân giải."};
+            info.Text=mode.SelectedIndex switch{0=>"Click chọn khung tự nhận diện hoặc kéo chọn vùng, rồi bấm Quay. Vị trí vùng quay được cố định trên màn hình.",1=>"Chọn cửa sổ đang mở ở bước tiếp theo.",_=>"Chọn màn hình cần quay và kiểm tra độ phân giải."};
         }
         mode.SelectionChanged+=(_,_)=>Update();
         Update();
@@ -107,6 +110,22 @@ public static class CapturePrompts
         mode.SelectionChanged+=(_,_)=>UpdateEstimate();
         screen.SelectionChanged+=(_,_)=>UpdateEstimate();
         UpdateEstimate();
+        var camera=new ComboBox{DisplayMemberPath="Name",SelectedValuePath="Id"};
+        var cameraLabel=new TextBlock{Text="Webcam · ghi thành nguồn riêng",Margin=new Thickness(4,6,4,1)};
+        panel.Children.Add(cameraLabel);
+        panel.Children.Add(camera);
+        camera.Items.Add(new CameraOption(null,"Không quay webcam"));
+        camera.SelectedIndex=0;
+        async void LoadCameras(object? sender,EventArgs e){
+            try{
+                var devices=await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(Windows.Devices.Enumeration.DeviceClass.VideoCapture);
+                if(!dialog.IsVisible)return;
+                foreach(var device in devices)camera.Items.Add(new CameraOption(device.Id,device.Name));
+            }catch(Exception error){App.Log(error);cameraLabel.Text="Webcam · chưa đọc được thiết bị";}
+        }
+        dialog.Loaded+=LoadCameras;
+        var cursor=new CheckBox{Content="Hiển thị con trỏ chuột trong video",IsChecked=preferences.RecordingCursor,Margin=new Thickness(4,10,4,8)};
+        panel.Children.Add(cursor);
         var warning=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new Thickness(4,4,4,0)};
         panel.Children.Add(warning);
         var row=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right};
@@ -115,11 +134,11 @@ public static class CapturePrompts
         row.Children.Add(cancel);
         row.Children.Add(next);
         panel.Children.Add(row);
-        var result=new TaskCompletionSource<(int Mode,DisplayInfo Display,RecordingAudioSettings Audio,RecordingProfile Profile,bool HighlightClicks,bool Hardware)?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var result=new TaskCompletionSource<(int Mode,DisplayInfo Display,RecordingAudioSettings Audio,RecordingProfile Profile,bool HighlightClicks,bool Hardware,string? Camera,bool Cursor)?>(TaskCreationOptions.RunContinuationsAsynchronously);
         void Confirm(){
             if(screen.SelectedItem is not DisplayInfo selected)return;
             try{
-                result.TrySetResult((mode.SelectedIndex,selected,audio.Read(),profile.Read(),highlight.IsChecked==true,hardware.IsChecked==true));
+                result.TrySetResult((mode.SelectedIndex,selected,audio.Read(),profile.Read(),highlight.IsChecked==true,hardware.IsChecked==true,camera.SelectedValue as string,cursor.IsChecked==true));
                 dialog.Close();
             }catch(InvalidOperationException error){warning.Text=error.Message;}
         }

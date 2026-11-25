@@ -22,6 +22,15 @@ internal static class Program
  var image=ImageTransfer.Bitmap(800,600,Enumerable.Repeat((byte)255,800*600*4).ToArray());
  var surface=new EditorSurface();var doc=new EditorDocument{OriginalWidth=800,OriginalHeight=600};var session=new EditorSession(doc);surface.Load(image,session);surface.Tool=EditorTool.Callout;
  surface.PointerDown(new(40,300));surface.PointerMove(new(180,200));var a=surface.Selected!;Check(a.TailX==40&&a.TailY==300&&a.Width==122&&a.Height==82,"Callout starts at fixed tail and resizes during creation");surface.PointerMove(new(230,160));Check(a.Width==172&&a.Height==122&&a.TailX==40&&a.TailY==300,"Diagonal drag resizes both axes without moving tail");surface.PointerUp(new(230,160));Check(a.Width==172&&a.Height==122,"Release keeps empty drawn dimensions");Check(surface.Tool==EditorTool.Callout,"Drawing retains callout tool");
+ var geometry=EditorRenderer.CalloutGeometry(a);
+ a.FillOpacity=60;
+ Check(ReferenceEquals(geometry,EditorRenderer.CalloutGeometry(a)),"A paint-only edit reuses the exact Callout geometry");
+ a.Translate(5,0);
+ var moved=EditorRenderer.CalloutGeometry(a);
+ Check(!ReferenceEquals(geometry,moved)&&Math.Abs(moved.Bounds.Left-geometry.Bounds.Left-5)<.01,
+     "A moved Callout gets a new world geometry at the correct location");
+ a.Translate(-5,0);
+ a.FillOpacity=100;
  a.Text=new string('a',20000);a.AutoFitText=true;EditorRenderer.FitText(a,new(0,0,800,600),true);surface.Refresh();
  void Paint(){surface.Measure(new Size(1200,900));surface.Arrange(new Rect(0,0,surface.DesiredSize.Width,surface.DesiredSize.Height));var target=new RenderTargetBitmap(1200,900,96,96,PixelFormats.Pbgra32);target.Render(surface);}
  Paint();long builds=surface.SceneBuilds;var watch=Stopwatch.StartNew();for(int i=0;i<30;i++){surface.SetZoom(.25+i*.01);Paint();}watch.Stop();samples.Add(new{scenario="30 WPF zoom frames,20k-char callout",ms=watch.Elapsed.TotalMilliseconds});Check(surface.SceneBuilds==builds,"Zoom reuses unchanged scene drawing");

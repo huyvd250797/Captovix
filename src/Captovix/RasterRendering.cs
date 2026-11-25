@@ -5,12 +5,18 @@ namespace Captovix;
 public static class RasterPixels
 {
     private static readonly BudgetCache<string,BitmapSource> Cache=new(32L*1024*1024,96,ReferenceEqualityComparer.Instance);
+    private static readonly ConditionalWeakTable<string,WeakReference<BitmapSource>> LargeImages=new();
     public static CacheSnapshot CacheStats=>Cache.Stats;
-    public static void ClearCache()=>Cache.Clear();
-    public static BitmapSource Decode(string data){if(Cache.TryGet(data,out var cached))return cached;var expected=PixelStudio.PngSize(data);using var stream=new MemoryStream(Convert.FromBase64String(data));var image=BitmapDecoder.Create(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];if(image.PixelWidth!=expected.Width||image.PixelHeight!=expected.Height)throw new InvalidDataException("Kích thước PNG không khớp.");// A frozen BitmapFrame still delegates IsDownloading/metadata to its owning
+    public static void ClearCache(){Cache.Clear();LargeImages.Clear();}
+    public static BitmapSource Decode(string data){if(LargeImages.TryGetValue(data,out var weak)&&weak.TryGetTarget(out var large))return large;if(Cache.TryGet(data,out var cached))return cached;var expected=PixelStudio.PngSize(data);using var stream=new MemoryStream(Convert.FromBase64String(data));var image=BitmapDecoder.Create(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];if(image.PixelWidth!=expected.Width||image.PixelHeight!=expected.Height)throw new InvalidDataException("Kích thước PNG không khớp.");// A frozen BitmapFrame still delegates IsDownloading/metadata to its owning
         // BitmapDecoder. DrawingGroup.CanFreeze on another thread can enter that
         // decoder and fail VerifyAccess. Cache only detached, frozen BGRA pixels.
-        var detached=ImageTransfer.Detach(image);Cache.Add(data,detached,(long)data.Length*2+(long)detached.PixelWidth*detached.PixelHeight*4);return detached;}
+        var detached=ImageTransfer.Detach(image);long bytes=(long)data.Length*2+(long)detached.PixelWidth*detached.PixelHeight*4;
+        // The active drawing owns large bitmaps. A weak entry lets consecutive
+        // frames reuse them without adding their full size to the global cache.
+        if(bytes>32L*1024*1024)LargeImages.AddOrUpdate(data,new(detached));
+        else Cache.Add(data,detached,bytes);
+        return detached;}
     public static string Encode(BitmapSource image){if((long)image.PixelWidth*image.PixelHeight>PixelStudio.MaxPixels)throw new InvalidDataException("Chỉnh pixel hỗ trợ tối đa 40 triệu pixel.");var result=Convert.ToBase64String(ImageTransfer.Png(image));PixelStudio.PngSize(result);return result;}
     public static BitmapSource Source(BitmapSource original,EditorDocument doc)=>doc.PixelBasePng==null?original:Decode(doc.PixelBasePng);
     public static void ValidateDecoded(EditorDocument doc,CancellationToken token=default)
@@ -34,7 +40,7 @@ public static partial class EditorRenderer
     {
         var layers=doc.Annotations.Where(a=>a.Visible&&a.Kind==AnnotationKind.ImageLayer).ToArray();
         if(layers.Length==0||!doc.Annotations.Any(a=>a.Visible&&(a.IsRedaction||a.Kind==AnnotationKind.Magnifier))){_rasterSampling=null;_rasterSamplingOriginal=null;_rasterData=[];return source;}
-        string key=RuntimeHelpers.GetHashCode(source)+"|"+string.Join(";",layers.Select(a=>$"{a.Id}:{a.X1:R}:{a.Y1:R}:{a.X2:R}:{a.Y2:R}:{a.Rotation:R}:{System.Text.Json.JsonSerializer.Serialize(a.ImageStyle)}:{(a.PixelPng==null?0:RuntimeHelpers.GetHashCode(a.PixelPng))}"));
+        string key=RuntimeHelpers.GetHashCode(source)+"|"+string.Join(";",layers.Select(a=>$"{a.Id}:{a.X1:R}:{a.Y1:R}:{a.X2:R}:{a.Y2:R}:{a.Rotation:R}:{a.ObjectOpacity:R}:{System.Text.Json.JsonSerializer.Serialize(a.ImageStyle)}:{(a.PixelPng==null?0:RuntimeHelpers.GetHashCode(a.PixelPng))}"));
         if(key==_rasterSamplingKey&&_rasterSampling!=null&&ReferenceEquals(source,_rasterSamplingOriginal)&&layers.Select(a=>a.PixelPng).SequenceEqual(_rasterData??[]))return _rasterSampling;
         var visual=new System.Windows.Media.DrawingVisual();using(var dc=visual.RenderOpen()){dc.DrawImage(source,new System.Windows.Rect(0,0,doc.OriginalWidth,doc.OriginalHeight));foreach(var layer in layers)DrawAnnotation(dc,layer);}
         var bitmap=new RenderTargetBitmap(doc.OriginalWidth,doc.OriginalHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(visual);bitmap.Freeze();_rasterSamplingKey=key;_rasterSampling=bitmap;_rasterSamplingOriginal=source;_rasterData=layers.Select(a=>a.PixelPng).ToArray();return bitmap;

@@ -36,7 +36,10 @@ internal sealed record VideoInput(string Path,VideoSourceIdentity? Identity,Time
 internal sealed record VideoProject(int Version,string SourcePath,VideoSourceIdentity? Source,
     TimeSpan SourceDuration,VideoRange[] Clips,TimeSpan Position,int SelectedClip)
 {
-    internal const int CurrentVersion=4,MaximumClips=1000,MaximumMarks=64,MaximumTracks=256;
+    internal const int CurrentVersion=8,MaximumClips=1000,MaximumMarks=64,MaximumTracks=256;
+    public Dictionary<int,VideoCamera> Cameras {get;init;}=[];
+    public VideoCue[] Cues {get;init;}=[];
+    public bool ShowCues {get;init;}=true;
     public VideoAudioTrack[] AudioTracks {get;init;}=[];
     public VideoCanvasLayout Canvas {get;init;}=VideoCanvasLayout.Default;
     public VideoMarkTrack[] Tracks {get;init;}=[];
@@ -77,12 +80,17 @@ internal sealed record VideoProject(int Version,string SourcePath,VideoSourceIde
         TimeSpan previousEnd=TimeSpan.Zero;
         foreach(var clip in Clips){
             if(clip.SourceIndex<0||clip.SourceIndex>AdditionalSources.Length||clip.Start<TimeSpan.Zero
-                ||clip.End<=clip.Start||clip.End>Input(clip.SourceIndex).Duration
+                ||clip.End<=clip.Start||clip.End>Input(clip.SourceIndex).Duration||clip.Motion?.IsValid()==false
+                ||clip.MovingDuration<=TimeSpan.Zero
                 ||Version==1&&(clip.Start<previousEnd||clip.Marks is not null)
                 ||clip.Marks is {} marks&&(marks.Length>MaximumMarks||marks.Any(mark=>mark==null||!mark.IsValid())))
                 throw new InvalidDataException("Mốc cắt hoặc chú thích trong dự án không hợp lệ.");
             previousEnd=clip.End;
         }
+        if(Cameras==null||Cameras.Count>MaximumClips||Cameras.Any(c=>c.Key<0||c.Key>AdditionalSources.Length||c.Value==null||!c.Value.IsValid()))
+            throw new InvalidDataException("Nguồn camera hoặc bố cục không hợp lệ.");
+        if(Cues is not {Length:<=22000}||Cues.Any(cue=>cue==null||!cue.IsValid(AdditionalSources.Length+1)
+            ||cue.At>=Input(cue.SourceIndex).Duration))throw new InvalidDataException("Dữ liệu chỉ dẫn video không hợp lệ.");
         var duration=Duration;
         if(duration>TimeSpan.FromDays(30))throw new InvalidDataException("Timeline vượt giới hạn thời lượng.");
         if(Version>=3){

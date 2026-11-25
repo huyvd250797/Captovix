@@ -14,8 +14,8 @@
     <AssemblyName>Captovix</AssemblyName>
     <Product>Captovix</Product>
     <ApplicationIcon>Assets/Captovix-brand-v117.ico</ApplicationIcon>
-    <Version>1.60.0</Version>
-    <ReleaseTitle>Audio Editing</ReleaseTitle>
+    <Version>1.68.1</Version>
+    <ReleaseTitle>1080p Recording Sharpness Fix</ReleaseTitle>
     <StartupObject>Captovix.Program</StartupObject>
     
     <PublishTrimmed>false</PublishTrimmed>
@@ -23,6 +23,8 @@
     <Copyright>© 2026 HuyVo. All rights reserved.</Copyright>
   </PropertyGroup>
   <ItemGroup>
+    <Content Condition="Exists('../../media-engine/ffmpeg.exe')" Include="../../media-engine/ffmpeg.exe" Link="ffmpeg.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Condition="Exists('../../media-engine/ffprobe.exe')" Include="../../media-engine/ffprobe.exe" Link="ffprobe.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets/Captovix-brand-v117.ico" />
     <Content Include="Assets/Captovix-brand-v117.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets/Captovix-mark.png" />

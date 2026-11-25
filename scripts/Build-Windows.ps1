@@ -19,6 +19,7 @@ if (-not $AllowUnconfiguredLicensing) {
     dotnet run --project tools/LicenseBootstrap -- --validate src/Captovix/license-config.json
     if ($LASTEXITCODE -ne 0) { throw 'Invalid public license configuration.' }
 }
+& (Join-Path $PSScriptRoot 'Ensure-MediaEngine.ps1')
 $artifactRoot = Join-Path $projectRoot 'artifacts' 
 $payload = Join-Path $artifactRoot 'win-x64'
 $releases = Join-Path $artifactRoot 'releases'
@@ -42,6 +43,7 @@ dotnet publish src/Captovix.Recovery/Captovix.Recovery.csproj -c Release -r win-
 if ($LASTEXITCODE -ne 0) { throw 'Recovery Center publish failed.' }
 Copy-Item (Join-Path $recoveryPayload 'Captovix.Recovery.exe') $payload -Force
 Copy-Item docs,licenses -Destination $payload -Recurse -Force
+Copy-Item media-engine/FFmpeg-LICENSE.txt,media-engine/FFmpeg-build.txt -Destination $payload -Force
 Copy-Item README.md,CHANGELOG.md,ROADMAP.md,THIRD-PARTY-NOTICES.txt -Destination $payload -Force
 Copy-Item scripts/Recovery.cmd,scripts/Recovery.ps1,scripts/Install-Local.ps1,scripts/Install.cmd,scripts/Launch.cmd,scripts/Summarize-Fidelity.ps1,scripts/Measure-Memory.ps1,scripts/Test-UpgradeData.ps1 -Destination $payload -Force
 if ($UpdateSource) {

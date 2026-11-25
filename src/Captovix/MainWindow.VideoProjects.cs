@@ -18,6 +18,13 @@ public partial class MainWindow
     private CancellationTokenSource? _videoExportCancellation;
     private bool _videoReady,_videoProjectDirty,_syncVideoSeek,_videoProjectReadError;
     private DateTime _videoSaveAfter;
+    private long? _holdClock;
+    private bool _videoDecoderSuspended;
+    private CancellationTokenSource? _videoPosterWork;
+    private TimeSpan _holdStart;
+    private TimeSpan? _queuedVideoSeek;
+    private System.Windows.Threading.DispatcherOperation? _videoSeekWork;
+
     private static string VideoResumePath=>Path.Combine(App.DataRoot,"video-resume.json");
 
     private void RememberVideoSession(MediaItem? item)
@@ -60,7 +67,6 @@ public partial class MainWindow
     private void OpenVideoProject(MediaItem item,VideoProject? project)
     {
         _videoItem=item;
-        _videoTimer.Start();
         RememberVideoSession(item);
         _timeline=project==null?null:new VideoTimeline(project);
         _videoReady=false;
@@ -84,11 +90,14 @@ public partial class MainWindow
 
     private void OpenVideoMedia(bool resume=false)
     {
+        CancelVideoPoster();
+        _videoDecoderSuspended=false;
         _previewSourceIndex=_timeline?.Selected.SourceIndex??0;
         var input=_timeline?.Project.Input(_previewSourceIndex);
         _videoSource=input?.Path??_videoItem?.FilePath;
         _resumeAfterVideoOpen=resume;
         _videoReady=false;
+        ReleaseCameraPreview();
         VideoPreview.Close();
         VideoPreview.Source=null;
         SetVideoPlaying(false);
@@ -114,7 +123,13 @@ public partial class MainWindow
 
     private void DetachVideoProject()
     {
+        _videoSeekWork?.Abort();
+        _videoSeekWork=null;
+        _queuedVideoSeek=null;
         ExitVideoStudio();
+        CancelVideoPoster();
+        _videoDecoderSuspended=false;
+        _cueClips=null;_cueSource=null;_cueSpans=[];
         ClearVideoAudio();
         _videoTimer.Stop();
         _videoSourceSize=null;
@@ -123,14 +138,76 @@ public partial class MainWindow
         VideoMarkTools.Visibility=VideoInspector.Visibility=Visibility.Collapsed;
         _videoFullscreen?.Close();
         _resumeAfterVideoOpen=false;
+        ReleaseCameraPreview();
         VideoPreview.Close();
         VideoPreview.Source=null;
         SetVideoPlaying(false);
         if(_videoItem!=null)RememberVideoSession(null);
         _videoItem=null;_timeline=null;_videoSource=null;_videoProjectPath=null;
+        _videoReady=false;
         UpdateVideoWorkspace();
-        _videoReady=false;_videoProjectDirty=false;_videoProjectReadError=false;
+        _videoProjectDirty=false;_videoProjectReadError=false;
+        _videoCanvasKey=null;_previousVideoTracks=null;ClearVideoVisuals();
         RefreshVideoControls();
+    }
+
+    private void CancelVideoPoster()
+    {
+        _videoPosterWork?.Cancel();
+        _videoPosterWork=null;
+        VideoPausedFrame.Visibility=Visibility.Collapsed;
+        VideoPausedFrame.Source=null;
+        CameraPausedFrame.Visibility=Visibility.Collapsed;
+        CameraPausedFrame.Source=null;
+        VideoPreview.Visibility=Visibility.Visible;
+    }
+
+    private async void SuspendVideoDecoder()
+    {
+        if(_videoPosterWork!=null||_videoStudio||!_videoReady||_playing||_timeline is not {} timeline||_videoSource is not {} path)return;
+        var project=timeline.Project;
+        var (_,at)=timeline.Map(project.Position);
+        if(at>=timeline.Selected.End)at=LastVideoFrame(timeline.Selected);
+        using var token=new CancellationTokenSource(TimeSpan.FromSeconds(8));
+        _videoPosterWork?.Cancel();
+        _videoPosterWork=token;
+        try{
+            var bytes=await ReadVideoFrameAsync(path,at,3840,2160,token.Token);
+            var camera=project.Cameras.GetValueOrDefault(timeline.Selected.SourceIndex);
+            byte[]? cameraBytes=null;
+            if(camera is {Visible:true}&&camera.At(at) is {} cameraAt&&File.Exists(camera.Path)){
+                try{cameraBytes=await ReadVideoFrameAsync(camera.Path,cameraAt,640,480,token.Token);}
+                catch(Exception error) when(error is not OperationCanceledException){App.Log(error);}
+            }
+            if(_videoStudio||_playing||_timeline?.Project!=project||token.IsCancellationRequested)return;
+            var poster=DecodePoster(bytes);
+            if(cameraBytes!=null){
+                CameraPausedFrame.Source=DecodePoster(cameraBytes);
+                CameraPausedFrame.Visibility=Visibility.Visible;
+            }
+            VideoPausedFrame.Width=VideoPreview.Width;
+            VideoPausedFrame.Height=VideoPreview.Height;
+            VideoPausedFrame.Source=poster;
+            VideoPausedFrame.Visibility=Visibility.Visible;
+            VideoPreview.Visibility=Visibility.Collapsed;
+            _videoDecoderSuspended=true;
+            _videoReady=false;
+            VideoPreview.Close();
+            VideoPreview.Source=null;
+            if(!_videoProjectDirty)_videoTimer.Stop();
+            RefreshVideoControls();
+        }catch(OperationCanceledException){}
+        catch(Exception error){App.Log(error);}
+        finally{if(ReferenceEquals(_videoPosterWork,token))_videoPosterWork=null;}
+    }
+
+    private static System.Windows.Media.Imaging.BitmapFrame DecodePoster(byte[] bytes)
+    {
+        using var stream=new MemoryStream(bytes);
+        var image=System.Windows.Media.Imaging.BitmapFrame.Create(stream,
+            System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+        image.Freeze();
+        return image;
     }
 
     private void Video_Opened(object sender,RoutedEventArgs e)
@@ -150,7 +227,15 @@ public partial class MainWindow
         if(_timeline==null){
             var project=new VideoProject(VideoProject.CurrentVersion,_videoSource,null,
                 duration,[new VideoRange(TimeSpan.Zero,duration){Number=1}],TimeSpan.Zero,0){NextClipNumber=2};
-            try{project=WithSourceIdentity(project);}catch(Exception error){App.Log(error);}
+            try{
+                project=WithSourceIdentity(project);
+                string metadata=RecordingCamera.MetadataFor(_videoSource),path=RecordingCamera.PathFor(_videoSource);
+                if(File.Exists(path)&&File.Exists(metadata)&&new FileInfo(metadata).Length<2_000_000
+                    &&System.Text.Json.JsonSerializer.Deserialize<VideoCamera>(File.ReadAllText(metadata)) is {} camera){
+                    camera=camera with{Path=path};
+                    if(camera.IsValid())project.Cameras[0]=camera;
+                }
+            }catch(Exception error){App.Log(error);}
             _timeline=new VideoTimeline(project);
             MarkVideoProjectDirty();
         }else if(_previewSourceIndex==0&&_timeline.Project.Source==null){
@@ -167,13 +252,13 @@ public partial class MainWindow
         if(_timeline!.Selected.SourceIndex==0)
             _videoSourceSize=(VideoPreview.NaturalVideoWidth,VideoPreview.NaturalVideoHeight);
         SeekVideoMedia();
-        if(_resumeAfterVideoOpen){_resumeAfterVideoOpen=false;VideoPreview.Play();SetVideoPlaying(true);}
+        if(_resumeAfterVideoOpen){_resumeAfterVideoOpen=false;StartVideoPlayback();}
         RefreshVideoControls();
     }
 
     private void Video_Ended(object sender,RoutedEventArgs e)
     {
-        if(_playing&&_timeline is {} timeline)AdvanceVideo(timeline.Selected.End);
+        if(_playing&&_holdClock==null&&_timeline is {} timeline)AdvanceVideo(timeline.Selected.End);
     }
 
     private void Video_Failed(object sender,ExceptionRoutedEventArgs e)
@@ -186,8 +271,18 @@ public partial class MainWindow
 
     private void TickVideoProject()
     {
-        if(_videoReady&&_playing)AdvanceVideo(VideoPreview.Position);
-        if(_videoProjectDirty&&DateTime.UtcNow>=_videoSaveAfter)FlushVideoProject(false);
+        if(_videoReady&&_playing){
+            if(_holdClock is long clock&&_timeline is {} timeline){
+                var local=_holdStart+System.Diagnostics.Stopwatch.GetElapsedTime(clock);
+                var clip=timeline.Selected;
+                if(local>=clip.Duration)FinishVideoClip(timeline);
+                else timeline.Seek(timeline.Offset(timeline.Project.SelectedClip)+local);
+                MarkVideoProjectDirty(playback:true);
+                UpdateVideoPosition();
+            }else AdvanceVideo(VideoPreview.Position);
+        }
+        if(!_playing&&_videoProjectDirty&&DateTime.UtcNow>=_videoSaveAfter)FlushVideoProject(false);
+        if(!_playing&&!_videoProjectDirty){_videoTimer.Stop();if(!_videoStudio&&_videoFullscreen==null&&_videoPosterWork==null)SuspendVideoDecoder();}
     }
 
     private void AdvanceVideo(TimeSpan sourcePosition)
@@ -197,28 +292,64 @@ public partial class MainWindow
         if(sourcePosition<clip.Start)return;
         int index=timeline.Project.SelectedClip;
         if(sourcePosition>=clip.End){
-            if(index+1<timeline.Project.Clips.Length){
-                var next=timeline.Project.Clips[index+1];
-                timeline.Track(index+1,next.Start);
-                if(next.SourceIndex!=clip.SourceIndex)OpenVideoMedia(resume:true);
-                else if(next.Start!=clip.End||sourcePosition>=next.End){VideoPreview.Position=next.Start;SyncVideoAudio(force:true);}
-                else timeline.Track(index+1,sourcePosition);
-            }else{
-                timeline.Track(index,clip.End);
-                VideoPreview.Pause();SetVideoPlaying(false);
-                VideoPreview.Position=clip.End;
-            }
+            if(clip.Timing.Hold>TimeSpan.Zero){
+                timeline.Seek(timeline.Offset(index)+clip.MovingDuration);
+                BeginVideoHold(clip,clip.MovingDuration);
+            }else FinishVideoClip(timeline);
         }else timeline.Track(index,sourcePosition);
         MarkVideoProjectDirty(playback:true);
         UpdateVideoPosition();
         RefreshVideoInspector();
     }
 
+    private void FinishVideoClip(VideoTimeline timeline)
+    {
+        _holdClock=null;
+        int index=timeline.Project.SelectedClip;
+        var clip=timeline.Selected;
+        if(index+1<timeline.Project.Clips.Length){
+            var next=timeline.Project.Clips[index+1];
+            timeline.Track(index+1,next.Start);
+            if(next.SourceIndex!=clip.SourceIndex)OpenVideoMedia(resume:true);
+            else{
+                SeekVideoMedia();
+                VideoPreview.Play();
+                SyncVideoAudio(force:true);
+            }
+        }else{
+            timeline.Seek(timeline.Project.Duration);
+            VideoPreview.Pause();
+            SetVideoPlaying(false);
+            VideoPreview.Position=LastVideoFrame(clip);
+        }
+    }
+
+    private static TimeSpan LastVideoFrame(VideoRange clip)=>clip.End-TimeSpan.FromTicks(Math.Min(clip.SourceDuration.Ticks/2,TimeSpan.TicksPerMillisecond));
+    private void BeginVideoHold(VideoRange clip,TimeSpan local)
+    {
+        VideoPreview.Pause();
+        VideoPreview.Position=LastVideoFrame(clip);
+        _holdStart=local;
+        _holdClock=System.Diagnostics.Stopwatch.GetTimestamp();
+    }
+
+    private void StartVideoPlayback()
+    {
+        if(_timeline is not {} timeline)return;
+        var local=timeline.Project.Position-timeline.Offset(timeline.Project.SelectedClip);
+        if(local>=timeline.Selected.MovingDuration&&timeline.Selected.Timing.Hold>TimeSpan.Zero)BeginVideoHold(timeline.Selected,local);
+        else VideoPreview.Play();
+        SetVideoPlaying(true);
+    }
+
     private void SetVideoPlaying(bool playing)
     {
         _playing=playing;
+        if(playing)_videoTimer.Start();
+        if(!playing)_holdClock=null;
         SyncVideoAudio(force:true);
         var name=playing?"Tạm dừng":"Phát";
+        SyncFullscreenControls();
         VideoPlaybackButton.Content=AppIcons.Content(playing?"RecordingPause":"RecordingPlay","");
         VideoPlaybackButton.ToolTip=name;
         System.Windows.Automation.AutomationProperties.SetName(VideoPlaybackButton,name);
@@ -231,10 +362,15 @@ public partial class MainWindow
             PauseVideoForEditing();
             return;
         }
+        if(_videoDecoderSuspended){
+            if(timeline.Project.Position>=timeline.Project.Duration)timeline.Seek(TimeSpan.Zero);
+            if(PrepareVideoPlayback())OpenVideoMedia(resume:true);
+            return;
+        }
         if(timeline.Project.Position>=timeline.Project.Duration)SeekVideoProject(TimeSpan.Zero);
         else SeekVideoMedia();
         if(!PrepareVideoPlayback())return;
-        if(_videoReady){VideoPreview.Play();SetVideoPlaying(true);}
+        if(_videoReady)StartVideoPlayback();
         else if(File.Exists(_videoSource)&&VideoPreview.Source!=null)_resumeAfterVideoOpen=true;
     }
 
@@ -244,6 +380,9 @@ public partial class MainWindow
     private void SeekVideoProject(TimeSpan position)
     {
         if(!VideoCanEdit||_timeline is not {} timeline)return;
+        _videoSeekWork?.Abort();
+        _videoSeekWork=null;
+        _queuedVideoSeek=null;
         _resumeAfterVideoOpen=false;
         if(_playing){VideoPreview.Pause();SetVideoPlaying(false);}
         timeline.Seek(position);
@@ -256,26 +395,37 @@ public partial class MainWindow
     private void SeekVideoMedia()
     {
         if(_timeline is not {} timeline)return;
+        if(_videoDecoderSuspended){OpenVideoMedia();return;}
         var project=timeline.Project;
         var clip=timeline.Selected;
         if(clip.SourceIndex!=_previewSourceIndex||!SamePath(project.Input(clip.SourceIndex).Path,_videoSource??"")){OpenVideoMedia();return;}
         if(!_videoReady)return;
         var local=project.Position-timeline.Offset(project.SelectedClip);
-        VideoPreview.Position=clip.Start+(local<TimeSpan.Zero?TimeSpan.Zero:local>clip.Duration?clip.Duration:local);
+        VideoPreview.SpeedRatio=clip.Timing.Speed;
+        VideoPreview.Position=local>=clip.MovingDuration?LastVideoFrame(clip):clip.SourceAt(local);
     }
 
     private void VideoSeek_Changed(object sender,RoutedPropertyChangedEventArgs<double> e)
     {
-        if(!_syncVideoSeek&&VideoCanEdit)SeekVideoProject(TimeSpan.FromSeconds(e.NewValue));
+        if(_syncVideoSeek||!VideoCanEdit)return;
+        _queuedVideoSeek=TimeSpan.FromSeconds(e.NewValue);
+        if(_videoSeekWork!=null)return;
+        _videoSeekWork=Dispatcher.InvokeAsync(()=>{
+            _videoSeekWork=null;
+            var pending=_queuedVideoSeek;
+            _queuedVideoSeek=null;
+            if(pending is {} position)SeekVideoProject(position);
+        },System.Windows.Threading.DispatcherPriority.Render);
     }
 
     private void UpdateVideoPosition()
     {
+        SyncFullscreenControls();
         var project=_timeline?.Project;
         _syncVideoSeek=true;
         try{
-            VideoSeek.Maximum=project?.Duration.TotalSeconds??0;
-            VideoSeek.Value=project?.Position.TotalSeconds??0;
+            VideoViewerSeek.Maximum=VideoSeek.Maximum=project?.Duration.TotalSeconds??0;
+            VideoViewerSeek.Value=VideoSeek.Value=project?.Position.TotalSeconds??0;
         }finally{_syncVideoSeek=false;}
         if(_videoStudio)VideoStrip.Show(project,_selectedVideoTrack);
         SyncVideoAudio();
@@ -286,17 +436,19 @@ public partial class MainWindow
     private void RefreshVideoControls()
     {
         bool editable=VideoCanEdit;
-        VideoPlaybackButton.IsEnabled=VideoFullscreenButton.IsEnabled=editable&&_videoReady;
+        VideoPlaybackButton.IsEnabled=editable&&(_videoReady||_videoDecoderSuspended);
+        VideoFullscreenButton.IsEnabled=editable&&(_videoReady||_videoDecoderSuspended);
         VideoStudioButton.IsEnabled=editable;
         VideoMarkTools.IsEnabled=editable&&_videoReady;
         VideoInspector.IsEnabled=VideoExportClipButton.IsEnabled=editable;
         VideoAddClipButton.IsEnabled=editable&&!_addingVideoClips;
-        VideoSeek.IsEnabled=VideoStrip.IsEnabled=VideoSplitButton.IsEnabled=VideoExportButton.IsEnabled=editable;
+        VideoViewerSeek.IsEnabled=VideoSeek.IsEnabled=VideoStrip.IsEnabled=VideoSplitButton.IsEnabled=VideoExportButton.IsEnabled=editable;
         VideoDeleteClipButton.IsEnabled=editable&&_timeline!.Project.Clips.Length>1;
         VideoUndoButton.IsEnabled=editable&&_timeline!.CanUndo;
         VideoRedoButton.IsEnabled=editable&&_timeline!.CanRedo;
         VideoSaveProjectButton.IsEnabled=_timeline!=null&&_videoExportCancellation==null;
         VideoRelinkButton.IsEnabled=_videoItem!=null&&_videoExportCancellation==null;
+        VideoCueVisible.IsChecked=_timeline?.Project.ShowCues??true;
         VideoMarkersButton.Visibility=_videoReady&&_videoItem?.RecordingCues?.Any(c=>c?.Kind=="marker")==true?Visibility.Visible:Visibility.Collapsed;
         ListenMicButton.Visibility=_videoSource!=null&&File.Exists(RecordingAudioFiles.PathFor(_videoSource,false))?Visibility.Visible:Visibility.Collapsed;
         ListenSystemButton.Visibility=_videoSource!=null&&File.Exists(RecordingAudioFiles.PathFor(_videoSource,true))?Visibility.Visible:Visibility.Collapsed;
@@ -346,6 +498,7 @@ public partial class MainWindow
         if(!playback||!_videoProjectDirty)_videoSaveAfter=DateTime.UtcNow.AddMilliseconds(playback?3000:650);
         if(!_videoProjectDirty)SavedLabel.Text="Đang chờ tự lưu";
         _videoProjectDirty=true;
+        _videoTimer.Start();
     }
 
     private bool FlushVideoProject(bool report=true)
@@ -457,19 +610,21 @@ public partial class MainWindow
 
     private void VideoMarkers_Click(object sender,RoutedEventArgs e)
     {
-        if(!VideoCanEdit||_videoItem?.RecordingCues is not {} cues||_timeline is not {} timeline)return;
-        var menu=new ContextMenu{PlacementTarget=VideoMarkersButton,Placement=System.Windows.Controls.Primitives.PlacementMode.Bottom};
-        foreach(var cue in cues.Where(c=>c?.Kind=="marker"&&c.Milliseconds>=0&&c.Milliseconds<=timeline.Project.SourceDuration.TotalMilliseconds).Take(150)){
-            var sourceTime=TimeSpan.FromMilliseconds(cue.Milliseconds);
-            int index=Array.FindIndex(timeline.Project.Clips,clip=>clip.SourceIndex==0&&sourceTime>=clip.Start&&sourceTime<clip.End);
-            if(index<0)continue;
-            var time=timeline.Offset(index)+sourceTime-timeline.Project.Clips[index].Start;
+        if(!VideoCanEdit||_timeline is not {} timeline)return;
+        var menu=new ContextMenu{PlacementTarget=sender as FrameworkElement??VideoMarkersButton,Placement=System.Windows.Controls.Primitives.PlacementMode.Bottom};
+        var project=timeline.Project;
+        var sourceMarkers=(_videoItem?.RecordingCues??[]).OfType<RecordingCue>()
+            .Where(c=>c.Kind=="marker"&&c.Milliseconds>=0&&c.Milliseconds<project.SourceDuration.TotalMilliseconds)
+            .Select(c=>new VideoCue(0,TimeSpan.FromMilliseconds(c.Milliseconds),"marker"));
+        var markers=VideoCuePlan.Create(project.Clips,project.Cues.Where(c=>c.Kind=="marker").Concat(sourceMarkers).Distinct());
+        foreach(var cue in markers.Take(300)){
+            var time=cue.Start;
             var marker=new MenuItem{Header=$"Mốc {menu.Items.Count+1} · {VideoTimecode.Format(time)}"};
             marker.Click+=(_,_)=>SeekVideoProject(time);
             menu.Items.Add(marker);
         }
         if(menu.Items.Count>0){AppMenus.Decorate(menu);menu.IsOpen=true;}
-        else SetStatus("Không có mốc trong các đoạn đang giữ.");
+        else SetStatus("Không có marker trong các đoạn đang giữ.");
     }
 
     private async void ExportVideo_Click(object sender,RoutedEventArgs e)
@@ -508,7 +663,9 @@ public partial class MainWindow
                 VideoExportProgress.Value=Math.Clamp(value,0,100);
                 VideoExportLabel.Text=$"Đang xuất MP4 · {VideoExportProgress.Value:0}%";
             }),cancellation.Token);
+            _lastVideoExport=save.FileName;VideoOpenExportFolder.Visibility=Visibility.Visible;
             SetStatus("Đã xuất video: "+save.FileName);
+            if(AppDialog.Show(this,"Đã xuất MP4 thành công. Mở thư mục chứa video?","Xuất video",MessageBoxButton.YesNo,MessageBoxImage.Information)==MessageBoxResult.Yes)OpenVideoExportFolder_Click(this,new());
         }catch(OperationCanceledException){SetStatus("Đã hủy xuất video.");}
         catch(Exception error){App.Log(error);SetStatus("Không xuất được video: "+error.Message);}
         finally{

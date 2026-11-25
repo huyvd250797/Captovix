@@ -1,4 +1,4 @@
-# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.60.0
+# Captovix — roadmap hiệu năng và trải nghiệm, cập nhật V1.68.1
 
 Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Phạm vi Image Tools & OCR tổng thể chuyển backlog chưa gán số; roadmap cũ bên dưới là lịch sử.
 
@@ -22,7 +22,13 @@ Boss chọn các mốc Mockup M1/V1.38, M2/V1.39 và M3/V1.40 và M4/V1.41. Ph�
 | V1.58.0 — Timeline Editing | Xóa đoạn thừa và ghép nhiều clip | Split, kéo thả, xóa khép khoảng trống, zoom, Undo/Redo, chú thích, toàn màn hình, xuất timeline | Xem trước và xuất từ cùng thứ tự clip | Kiểm tra nguồn VFR, thứ tự, thời lượng và âm thanh trên Windows | Đã triển khai, chờ nghiệm thu Windows |
 | V1.59.0 — Canvas & Layout | Xuất ngang, dọc hoặc vuông | Crop, xoay, Fit/Fill, nền, số đoạn cố định và track chú thích | Hình học dùng chung cho preview/render, dự án V3 | So ba kích thước MP4, pixel nền, vị trí khung hình và mốc chú thích | Đã triển khai, chờ nghiệm thu Windows |
 | V1.60.0 — Audio Editing | Chỉnh lời nói, tiếng máy và nhạc | Studio, waveform, Mute/Solo, âm lượng, fade, khoảng cắt và nhạc nền, opacity ảnh | PCM phối chung cho preview/export, track theo dự án schema 4 | So mốc cắt, hạ tiếng máy, giữ micro và nhạc sau nhiều điểm cắt | Đã triển khai, chờ nghiệm thu Windows |
-| V1.61.0 — Audio Keyframes & Export Presets | Chỉnh âm lượng theo thời gian và lưu cấu hình xuất | Keyframe âm lượng, preset xuất theo tỷ lệ/FPS | Dùng chung timeline cho preview và render | Kiểm nội suy âm lượng và thông số MP4 | Đề xuất |
+| V1.61.0 — Text & Callouts | Chỉ rõ thao tác trên màn hình | Tiêu đề, chữ, Callout, mũi tên, khung, bước, mẫu dùng chung | Vị trí theo canvas, thời gian trên từng track, dùng cùng renderer chú thích cho preview và MP4 | Nghiệm thu dấu tiếng Việt, tay nắm Callout, mẫu cũ và xuất ngang/dọc | Đã triển khai, chờ nghiệm thu Windows |
+| V1.61.1 — Editor Responsiveness | Chỉnh nền, viền và ảnh chèn nhanh hơn | Thanh phần trăm theo giao diện sáng/tối, Opacity lớp ảnh | Gom thao tác kéo vào một bước hoàn tác, tái sử dụng hình học và bitmap, giảm dựng lại bộ mẫu | Kiểm tra kéo liên tục, nhập số, lưu/mở lại, Undo và cảm nhận độ trễ trên Windows | Đã triển khai, chờ nghiệm thu Windows |
+| V1.63.0 — Motion & Zoom | Nhấn mạnh chi tiết bằng chuyển động | Zoom, pan, tốc độ, dừng cuối đoạn, fade đen, thumbnail, tua video | Chung ánh xạ thời gian và keyframe giữa preview và xuất | Đối chiếu mốc hình và âm thanh trên Windows | Đã triển khai, chờ nghiệm thu Windows |
+| V1.64.0 — Cursor & Click Effects | Nhấn mạnh thao tác | Click, vòng sáng, phím, marker, ảnh ô Thư viện | Neo theo thời gian và tọa độ nguồn, giải phóng bộ giải mã khi rời Studio | So preview/MP4 sau cắt, zoom và đổi tỷ lệ, đo độ trễ Windows | Đã triển khai, chờ nghiệm thu Windows |
+| V1.65.0 — Camera & Picture-in-Picture | Thêm người trình bày | Webcam riêng, ghép clip mặt người, chỉnh góc/kích thước, splash, hợp nhất ảnh giữ pixel | Dùng mốc hoạt động cùng mic, giải phóng tài nguyên Studio | Đo đồng bộ đầu/cuối và độ trễ trên Windows | Đã triển khai, chờ nghiệm thu Windows |
+| V1.66.0 — Timeline Export & Library Retention | Xuất timeline sau Split và quản lý tuổi thư viện | MP4 liền mạch, vùng modal cố định, preview cửa sổ và tự dọn 23:59 | Chuẩn hóa clip, ghép hình/phối âm cùng timeline; journal chuyển Thùng rác Windows | So khung hình/tiếng sau nhiều điểm cắt và nghiệm thu vùng/window/recycle trên Windows | Đã triển khai; build và test media/retention tự động, chờ nghiệm thu Windows |
+| V1.69.0 — Audio Keyframes & Export Presets | Chỉnh âm lượng theo thời gian và lưu cấu hình xuất | Keyframe âm lượng, preset xuất theo tỷ lệ/FPS | Dùng chung timeline cho preview và render | Kiểm nội suy âm lượng và thông số MP4 | Đề xuất |
 | V1.50.1 — Windows Acceptance Fixes | Sửa hồi quy thực tế nếu có | Xử lý theo log và kết quả đo | Đối chiếu cùng máy | Chạy lại kịch bản lỗi | Đề xuất sau V1.50.0 |
 
 | V1.37.0 — Performance & Responsiveness | Phản hồi nhanh hơn | Startup, mở/chuyển, kéo/resize/chữ dài/zoom, cache, lưu nền; giữ tool,30ảnh,Callout kéo để tạo/tâm giữ đuôi | Worker/generation, snapshot/revision, drawing/lifecycle | Logic/build/package đạt; số đo Windows/native/RAM còn chờ | Đã triển khai; chưa nghiệm thu Windows toàn app |
@@ -405,3 +411,9 @@ Chuẩn xuyên suốt: PNG giữ pixel gốc, zoom không đổi file; annotatio
 Mỗi bản bàn giao đúng2file: Update-PackagesZIP (kèmSetup) và SourceZIP. Không tự publish/GitHub/deploy nếu chưa được giao. Phiên bản tiếp theo phải có mô tả nội dung cụ thể.
 
 Nghiên cứu tiếp ngoài phạm vi1.17: inpainting nền phức tạp, tự đoán font, tự nhận dạng mọi UI component và tự gợi ý vùng nhạy cảm. Các phần này cần đánh giá engine/dữ liệu và tiêu chí riêng, không coi là tính năng đã hoàn thành.
+
+| V1.67.0 — Viewer Controls & Retention Catch-up | Xem/xuất nhanh và dọn bù | Lọc loại, controls2s, tua10s, xuất màn chính/mở thư mục, ffprobe | Dùng chung timeline và mốc dọn quá hạn | Build/test logic/media; chờ nghiệm thu Windows | Đã triển khai |
+
+| V1.68.0 — SDR Color & Video Controls | Nhất quán màu SDR và thao tác xem | Nhãn màu, con trỏ quay riêng, HUD icon/click ngoài, nút xuất đồng nhất | Remux không đổi mẫu ảnh; giữ transfer khi render | Test màu/media và build; chờ Windows SDR/HDR/ICC | Đã triển khai |
+
+| V1.68.1 — 1080p Recording Sharpness Fix | Giữ chi tiết1080p | Trả Quality mode, bỏ retag quay, preview gốc, copy không tái nén, CRF14 | Test media/byte/geometry | So Windows cùng preset | Đã triển khai; chờ Windows |

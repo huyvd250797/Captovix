@@ -19,3 +19,7 @@ secrets/
 node_modules/
 edge-secrets.env
 .env.local
+
+media-engine/ffmpeg.exe
+
+media-engine/ffprobe.exe

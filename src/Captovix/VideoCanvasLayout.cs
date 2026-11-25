@@ -34,6 +34,8 @@ internal readonly record struct VideoPixelRect(int X,int Y,int Width,int Height)
 
 internal sealed record VideoCanvasGeometry(VideoPixelRect Crop,int Rotation,VideoPixelRect Image)
 {
+    public int SourceWidth {get;init;}
+    public int SourceHeight {get;init;}
     internal static VideoCanvasGeometry Create(VideoCanvasLayout canvas,VideoClipLayout layout,int sourceWidth,int sourceHeight,int width,int height)
     {
         var crop=layout.Crop(sourceWidth,sourceHeight);
@@ -45,17 +47,18 @@ internal sealed record VideoCanvasGeometry(VideoPixelRect Crop,int Rotation,Vide
             int visibleHeight=Math.Clamp((int)Math.Round(height/Math.Max(x,y)),1,rotatedHeight);
             int cropWidth=sideways?visibleHeight:visibleWidth,cropHeight=sideways?visibleWidth:visibleHeight;
             crop=new(crop.X+(crop.Width-cropWidth)/2,crop.Y+(crop.Height-cropHeight)/2,cropWidth,cropHeight);
-            return new(crop,layout.Rotation,new(0,0,width,height));
+            return new(crop,layout.Rotation,new(0,0,width,height)){SourceWidth=sourceWidth,SourceHeight=sourceHeight};
         }
         double scale=Math.Min(x,y);
         int w=Even(rotatedWidth*scale),h=Even(rotatedHeight*scale);
-        return new(crop,layout.Rotation,new((width-w)/2,(height-h)/2,w,h));
+        return new(crop,layout.Rotation,new((width-w)/2,(height-h)/2,w,h)){SourceWidth=sourceWidth,SourceHeight=sourceHeight};
     }
 
     private static int Even(double value)=>Math.Max(2,(int)Math.Round(value/2)*2);
 
     internal string Filter(int width,int height,string background)
     {
+        if(SourceWidth==width&&SourceHeight==height&&Rotation==0&&Crop.X==0&&Crop.Y==0&&Image.X==0&&Image.Y==0&&Crop.Width==width&&Crop.Height==height&&Image.Width==width&&Image.Height==height)return "null";
         var rotate=Rotation switch{90=>"transpose=clock,",180=>"hflip,vflip,",270=>"transpose=cclock,",_=>""};
         string pad=Image.Width==width&&Image.Height==height?"":$"pad={width}:{height}:{Image.X}:{Image.Y}:color=0x{background[1..]},";
         return $"crop={Crop.Width}:{Crop.Height}:{Crop.X}:{Crop.Y}:exact=1,{rotate}scale={Image.Width}:{Image.Height}:flags=bicubic,setsar=1,format=yuv444p,{pad}format=yuv420p";

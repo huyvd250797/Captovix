@@ -6,7 +6,7 @@ public partial class MainWindow
 {
     private FrameworkElement BuildStorageSettings(){
         var panel=new StackPanel{Margin=new(12)};panel.Children.Add(new TextBlock{Text="Dung lượng & bộ nhớ",FontSize=22,FontWeight=FontWeights.SemiBold});
-        panel.Children.Add(new TextBlock{Text="Chỉ dọn thumbnail/cache/tệp tạm của Captovix. Ảnh gốc, bản chỉnh sửa, bản sao lưu và KEY được giữ lại. Tệp đang dùng hoặc vừa thay đổi sẽ được bỏ qua.",TextWrapping=TextWrapping.Wrap,Margin=new(0,10,0,12)});
+        panel.Children.Add(new TextBlock{Text="Phần dọn thủ công chỉ dọn thumbnail/cache/tệp tạm của Captovix. Ảnh gốc, bản chỉnh sửa, bản sao lưu và KEY được giữ lại. Tệp đang dùng hoặc vừa thay đổi sẽ được bỏ qua.",TextWrapping=TextWrapping.Wrap,Margin=new(0,10,0,12)});
         var rows=new StackPanel();panel.Children.Add(rows);var status=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new(0,10,0,10)};panel.Children.Add(status);
         var actions=new StackPanel{Orientation=Orientation.Horizontal};var refresh=new Button{Content="Kiểm tra dung lượng"};var clearRam=new Button{Content="Giải phóng cache RAM"};var clean=new Button{Content="Dọn mục đã chọn",IsEnabled=false};actions.Children.Add(refresh);actions.Children.Add(clearRam);actions.Children.Add(clean);panel.Children.Add(actions);
         var checks=new List<(CheckBox Check,StorageCategory Category)>();DateTime scanTime=DateTime.UtcNow;bool working=false;
@@ -23,6 +23,7 @@ public partial class MainWindow
             if(AppDialog.Show(_settingsDialog??this,"Dọn các mục đã chọn? Thumbnail được tạo lại từ ảnh và bản chỉnh sửa khi cần.","Dọn dung lượng",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
             Busy(true);string message;try{var result=await Task.Run(()=>StorageMaintenance.Clean(App.DataRoot,selected,scanTime.AddHours(-24)));_store.ClearThumbnailCache();message=$"Đã dọn {StorageMaintenance.Size(result.Bytes)} · {result.Removed} tệp; bỏ qua {result.Skipped} tệp mới/đang dùng/đã thay đổi.";}catch(Exception ex){App.Log(ex);message="Chưa dọn xong: "+ex.Message;}finally{Busy(false);}await Scan();foreach(var item in _recentItems)_store.RequestThumbnail(item);status.Text=message;
         };
+        panel.Children.Add(BuildRetentionSettings());
         bool loaded=false;panel.Loaded+=async(_,_)=>{if(loaded)return;loaded=true;await Scan();};return panel;
     }
 }

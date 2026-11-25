@@ -12,7 +12,9 @@ internal static class Program
  var session=new EditorSession(doc);var surface=new EditorSurface();surface.Load(source,session);surface.Tool=EditorTool.Select;surface.SelectIds([layer.Id]);surface.ContentPanEnabled=true;surface.PointerDown(new(200,200));surface.PointerUp(new(240,200));Check(Math.Abs(layer.ImageStyle.PanX-.3)<.001&&layer.X1==100,"Content dragging pans fill without moving slot");session.Undo();Check(session.Document.Annotations[0].ImageStyle!.PanX==.5,"Pan gesture is one Undo");
  var export=ImageTransfer.Bgra(surface.Flatten());surface.SetZoom(.25);Check(ImageTransfer.Bgra(surface.Flatten()).SequenceEqual(export),"Composition export is independent of zoom");
  var flattenMethod=typeof(EditorRenderer).GetMethod("FlattenImageLayer",BindingFlags.Static|BindingFlags.NonPublic)!;
- var mergeSource=ImageTransfer.Bitmap(40,30,Enumerable.Repeat((byte)255,40*30*4).ToArray());
+ var basePixels=Enumerable.Repeat((byte)255,40*30*4).ToArray();
+ basePixels[0]=123;basePixels[1]=64;basePixels[2]=45;basePixels[3]=15;
+ var mergeSource=ImageTransfer.Bitmap(40,30,basePixels);
  byte[] pattern=Enumerable.Range(0,8*8).SelectMany(i=>i%2==0?new byte[]{0,0,255,255}:new byte[]{255,0,0,255}).ToArray();
  var pasted=new Annotation{Kind=AnnotationKind.ImageLayer,X1=5,Y1=7,X2=13,Y2=15,PixelPng=RasterPixels.Encode(ImageTransfer.Bitmap(8,8,pattern)),ImageStyle=new()};
  var shape=new Annotation{Kind=AnnotationKind.Rectangle,X1=21,Y1=14,X2=35,Y2=26};
@@ -20,6 +22,7 @@ internal static class Program
  var mergeSession=new EditorSession(mergeDoc);
  var renderedBefore=ImageTransfer.Bgra(EditorRenderer.Render(mergeSource,mergeDoc));
  string merged=(string)flattenMethod.Invoke(null,[mergeSource,mergeDoc.Snapshot(),pasted.Id])!;
+ Check(ImageTransfer.Bgra(RasterPixels.Decode(merged)).Take(4).SequenceEqual(basePixels.Take(4)),"Flatten preserves exact source BGRA outside the layer");
  mergeSession.Change(d=>{d.PixelBasePng=merged;d.Annotations.RemoveAll(a=>a.Id==pasted.Id);});
  Check(mergeSession.Document.Annotations.Single().Id==shape.Id,"Flatten leaves non-image annotation editable");
  Check(renderedBefore.SequenceEqual(ImageTransfer.Bgra(EditorRenderer.Render(mergeSource,mergeSession.Document))),"Flatten matches rendered pixels at natural size");

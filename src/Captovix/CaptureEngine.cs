@@ -57,6 +57,8 @@ public sealed class CaptureEngine : IDisposable
         options.SnapshotOptions.SnapshotFormat=ImageFormat.PNG;
         options.MouseOptions.IsMousePointerEnabled=request.Cursor;
         options.VideoEncoderOptions.Framerate=request.Fps;
+        if(request.Video)options.VideoEncoderOptions.Quality=70; // Restore the V1.67 quality-based recording path.
+        if(request.Video)options.VideoEncoderOptions.Encoder=new H264VideoEncoder{EncoderProfile=H264Profile.High,BitrateMode=H264BitrateControlMode.Quality};
         if(request.Video&&request.HighlightClicks)options.MouseOptions.IsMouseClicksDetected=true;
         options.VideoEncoderOptions.Bitrate=request.Profile is {} profile?profile.Bitrate(profile.Frame(request.Region)):8_000_000;
         options.VideoEncoderOptions.IsHardwareEncodingEnabled=request.Hardware;

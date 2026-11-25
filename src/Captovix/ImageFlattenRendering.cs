@@ -30,18 +30,30 @@ public static partial class EditorRenderer
         if ((long)document.OriginalWidth * document.OriginalHeight > PixelStudio.MaxPixels)
             throw new InvalidDataException("Hợp nhất hỗ trợ ảnh nền tối đa 40 triệu pixel.");
 
+        int left=Math.Max(0,(int)Math.Floor(affected.Left)-2),top=Math.Max(0,(int)Math.Floor(affected.Top)-2);
+        int right=Math.Min(document.OriginalWidth,(int)Math.Ceiling(affected.Right)+2);
+        int bottom=Math.Min(document.OriginalHeight,(int)Math.Ceiling(affected.Bottom)+2);
+        int width=right-left,height=bottom-top;
         var visual = new DrawingVisual();
         RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
         using (var drawing = visual.RenderOpen())
         {
-            drawing.DrawImage(RasterPixels.Source(original, document), new Rect(0, 0, document.OriginalWidth, document.OriginalHeight));
+
+            drawing.PushTransform(new TranslateTransform(-left,-top));
             drawing.PushClip(new RectangleGeometry(clip));
             DrawAnnotation(drawing, layer);
             drawing.Pop();
+            drawing.Pop();
         }
-        var bitmap = new RenderTargetBitmap(document.OriginalWidth, document.OriginalHeight, 96, 96, PixelFormats.Pbgra32);
+        var bitmap=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);
         bitmap.Render(visual);
-        bitmap.Freeze();
-        return RasterPixels.Encode(bitmap);
+        var basePixels=ImageTransfer.Bgra(RasterPixels.Source(original,document));
+        int stride=checked(width*4),baseStride=checked(document.OriginalWidth*4);
+        var row=new byte[stride];
+        for(int y=0;y<height;y++){
+            bitmap.CopyPixels(new Int32Rect(0,y,width,1),row,stride,0);
+            ImageFidelity.OverlayPremultiplied(basePixels.AsSpan((top+y)*baseStride+left*4,stride),row);
+        }
+        return RasterPixels.Encode(ImageTransfer.Bitmap(document.OriginalWidth,document.OriginalHeight,basePixels));
     }
 }

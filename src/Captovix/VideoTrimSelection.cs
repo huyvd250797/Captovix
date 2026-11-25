@@ -6,17 +6,31 @@ internal readonly record struct VideoRange(TimeSpan Start,TimeSpan End)
     public VideoClipLayout? Layout {get;init;}
     public int SourceIndex {get;init;}
     public VideoMark[]? Marks {get;init;}
-    internal TimeSpan Duration=>End-Start;
+    public VideoMotion? Motion {get;init;}
+    internal VideoMotion Timing=>Motion??VideoMotion.Default;
+    internal TimeSpan SourceDuration=>End-Start;
+    internal TimeSpan MovingDuration=>Timing.Playback(SourceDuration);
+    internal TimeSpan Duration=>MovingDuration+Timing.Hold;
+    internal TimeSpan SourceAt(TimeSpan local)=>local>=MovingDuration?End:Start+Timing.Source(TimeSpan.FromTicks(Math.Max(0,local.Ticks)));
+    internal double Fraction(TimeSpan local)=>Math.Clamp(local.TotalSeconds/MovingDuration.TotalSeconds,0,1);
+    internal TimeSpan LocalAt(TimeSpan source)=>Timing.Playback(TimeSpan.FromTicks(Math.Clamp((source-Start).Ticks,0,SourceDuration.Ticks)));
+
 
     internal bool TrySplit(TimeSpan position,TimeSpan minimum,out VideoRange left,out VideoRange right)
     {
         left=this with{End=position};
         right=this with{Start=position};
-        return left.Duration>=minimum&&right.Duration>=minimum;
+        if(left.SourceDuration<=TimeSpan.Zero||right.SourceDuration<=TimeSpan.Zero)return false;
+        if(Motion!=null){
+            double fraction=left.SourceDuration.TotalSeconds/SourceDuration.TotalSeconds;
+            left=left with{Motion=Timing.Slice(0,fraction,false,true,false)};
+            right=right with{Motion=Timing.Slice(fraction,1,true,false,true)};
+        }
+        return left.MovingDuration>=minimum&&right.MovingDuration>=minimum;
     }
 }
 
-internal enum VideoMarkKind { Frame, Callout, Arrow, Text, Step, Blur, Highlight, Spotlight, Magnifier, Freehand }
+internal enum VideoMarkKind { Frame, Callout, Arrow, Text, Step, Blur, Highlight, Spotlight, Magnifier, Freehand, Title }
 
 internal sealed record VideoInkPoint(double X,double Y)
 {
@@ -52,12 +66,30 @@ internal sealed record VideoInkStyle
     public int Alignment {get;init;}
     public double Padding {get;init;}=6;
     public double Focus {get;init;}=45;
+    public int Vertical {get;init;}
+    public double LineSpacing {get;init;}
+    public double ArrowSize {get;init;}
+    public int StarPoints {get;init;}=5;
+    public double StarInset {get;init;}=.45;
+    public int Route {get;init;}
+    public bool ShadowEnabled {get;init;}
+    public int ShadowDirection {get;init;}=7;
+    public double ShadowDistance {get;init;}=8;
+    public double ShadowBlur {get;init;}=8;
+    public double ShadowOpacity {get;init;}=25;
+    public string ShadowColor {get;init;}="#000000";
+    public string? StepStrokeColor {get;init;}
+    public bool? StepFillVisible {get;init;}
 
     internal bool IsValid()=>Percent(Opacity)&&Percent(StrokeOpacity)&&Percent(FillOpacity)&&Percent(Focus)
         &&VideoCanvasLayout.IsColor(Fill)&&VideoCanvasLayout.IsColor(TextColor)&&Font is {Length:>0 and <=100}
         &&Shape is >=0 and <=9&&Dash is >=0 and <=3&&ArrowHead is >=0 and <=4&&Callout is >=0 and <=9
         &&Step is >=0 and <=2&&Effect is >=0 and <=2&&Strength is >=4 and <=64&&Zoom is >=1.25 and <=8
-        &&Radius is >=0 and <=200&&Angle is >=-360 and <=360&&Alignment is >=0 and <=2&&Padding is >=0 and <=100;
+        &&Vertical is >=0 and <=2&&LineSpacing is >=0 and <=3&&(LineSpacing==0||LineSpacing>=.8)
+        &&ArrowSize is >=0 and <=160&&StarPoints is >=3 and <=20&&StarInset is >=.1 and <=.9&&Route is >=0 and <=2
+        &&ShadowDirection is >=0 and <=8&&ShadowDistance is >=0 and <=80&&ShadowBlur is >=0 and <=40&&Percent(ShadowOpacity)
+        &&VideoCanvasLayout.IsColor(ShadowColor)&&(StepStrokeColor==null||VideoCanvasLayout.IsColor(StepStrokeColor))
+        &&Radius is >=0 and <=1000&&Angle is >=-360 and <=360&&Alignment is >=0 and <=2&&Padding is >=0 and <=200;
     private static bool Percent(double value)=>value is >=0 and <=100;
 }
 
@@ -69,16 +101,19 @@ internal sealed record VideoMark(VideoMarkKind Kind,double X1,double Y1,double X
     public VideoInkStyle Style {get;init;}=VideoInkStyle.Default;
     public VideoInkPoint[]? Points {get;init;}
     internal bool SamplesVideo=>Kind is VideoMarkKind.Blur or VideoMarkKind.Magnifier;
+    public VideoInkPoint? Tail {get;init;}
+    public bool TextFrame {get;init;}
+    internal bool HasText=>Kind is VideoMarkKind.Text or VideoMarkKind.Title or VideoMarkKind.Callout or VideoMarkKind.Step;
     public string? StepLabel {get;init;}
     internal string Label=>Kind switch{
         VideoMarkKind.Frame=>"Khung",VideoMarkKind.Callout=>"Callout",VideoMarkKind.Arrow=>"Mũi tên",
-        VideoMarkKind.Text=>"Chữ",VideoMarkKind.Step=>"Bước",VideoMarkKind.Highlight=>"Highlight",
+        VideoMarkKind.Text=>"Chữ",VideoMarkKind.Title=>"Tiêu đề",VideoMarkKind.Step=>"Bước",VideoMarkKind.Highlight=>"Highlight",
         VideoMarkKind.Spotlight=>"Spotlight",VideoMarkKind.Magnifier=>"Phóng đại",VideoMarkKind.Freehand=>"Vẽ tự do",_=>"Làm mờ"
     };
     internal bool IsValid()=>Enum.IsDefined(Kind)&&Style!=null&&Style.IsValid()&&(Points==null||Points.Length<=2048
-        &&Points.All(point=>point!=null&&point.IsValid()))&&FontSize is >=8 and <=120&&Stroke is >=1 and <=24
-        &&(Color==null||VideoCanvasLayout.IsColor(Color))&&(StepLabel==null||StepLabel.Length<=12)&&Text is {Length:<=500}&&Number is >=0 and <=1000
-        &&Valid(X1)&&Valid(Y1)&&Valid(X2)&&Valid(Y2);
+        &&Points.All(point=>point!=null&&point.IsValid()))&&FontSize is >=8 and <=240&&Stroke is >=1 and <=40
+        &&(Color==null||VideoCanvasLayout.IsColor(Color))&&(StepLabel==null||StepLabel.Length<=12)&&Text is {Length:<=500}&&Number is >=0 and <=9999
+        &&Valid(X1)&&Valid(Y1)&&Valid(X2)&&Valid(Y2)&&(Tail==null||Tail.IsValid());
 
     private static bool Valid(double value)=>value is >=0 and <=1;
 }

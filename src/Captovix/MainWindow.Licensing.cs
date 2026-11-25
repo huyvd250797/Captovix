@@ -20,7 +20,7 @@ public partial class MainWindow
             if(_licenseTicks%3600==0)await RefreshLicenseSilently();
         };_licenseTimer.Start();Closed+=(_,_)=>{_licenseTimer.Stop();LicenseRuntime.CheckpointClock();};
         _=RefreshLicenseSilently();
-        if(!LicenseRuntime.Full)Dispatcher.BeginInvoke(()=>License_Click(this,new RoutedEventArgs()),DispatcherPriority.ContextIdle);
+        if(!LicenseRuntime.Full)Dispatcher.BeginInvoke(()=>{(Application.Current as App)?.CloseStartupSplash();License_Click(this,new RoutedEventArgs());},DispatcherPriority.ContextIdle);
     }
     async Task RefreshLicenseSilently()
     {

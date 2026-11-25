@@ -92,7 +92,7 @@ public static partial class EditorRenderer
         object key=(LayoutKey(a),a.VerticalAlignment,a.TextPadding,CacheCoordinate(a.Width),CacheCoordinate(a.Height),CacheCoordinate(a.TailX-a.Left),CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius,a.FillEnabled,a.FillColor,a.FillOpacity,a.StrokeEnabled,a.Color,a.Stroke,a.StrokeOpacity,a.Dash,suppressText);
         if(!Equals(entry.Key,key)||entry.Drawing==null){
             var local=a.Copy();local.Translate(-a.Left,-a.Top);var drawing=new DrawingGroup();
-            using(var context=drawing.Open()){context.DrawGeometry(local.FillEnabled?ShapeInk(local.FillColor,local.FillOpacity):null,local.StrokeEnabled?ShapePen(local):null,CalloutGeometry(local));if(!suppressText)DrawStyledText(context,local);}
+            using(var context=drawing.Open()){context.DrawGeometry(local.FillEnabled?ShapeInk(local.FillColor,local.FillOpacity):null,local.StrokeEnabled?ShapePen(local):null,CachedCalloutGeometry(a).Local!);if(!suppressText)DrawStyledText(context,local);}
             drawing.Freeze();entry.Drawing=drawing;entry.Key=key;
         }
         dc.PushTransform(new TranslateTransform(a.Left,a.Top));dc.DrawDrawing(entry.Drawing);dc.Pop();

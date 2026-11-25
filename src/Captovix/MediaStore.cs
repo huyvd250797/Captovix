@@ -52,6 +52,7 @@ public sealed class AppSettings
     public int Delay {get;set;}=0;
     public int Fps {get;set;}=30;
     public bool Cursor {get;set;}=true;
+    public bool RecordingCursor {get;set;}=true;
     public bool Mic {get;set;}=false;
     public bool SystemAudio {get;set;}=true;
     public string? MicDevice {get;set;}
@@ -78,9 +79,11 @@ public sealed partial class MediaStore
         catch(Exception ex){App.Log(ex);StartupWarning="Chưa nhập được lịch sử V0.1. Thư mục dữ liệu cũ vẫn giữ nguyên.\n"+ex.Message;}
         try{Root=MediaLocation.Load(App.DataRoot);Directory.CreateDirectory(Root);}catch(Exception ex){_locationError="Không truy cập được thư mục media. Hãy chọn lại thư mục lưu. "+ex.Message;StartupWarning=_locationError;App.Log(ex);}
         if(File.Exists(Metadata))try {foreach(var i in JsonSerializer.Deserialize<List<MediaItem>>(File.ReadAllText(Metadata))??[])Items.Add(i);}catch(Exception e){App.Log(e);File.Copy(Metadata,Metadata+".corrupt-"+DateTime.Now.ToString("yyyyMMddHHmmss"),true);}
+        try{RetentionBatch.Recover(this);}catch(Exception error){App.Log(error);StartupWarning="Chưa khôi phục xong phiên tự dọn thư viện: "+error.Message;}
         // Recover media committed before a crash between file completion and metadata commit.
         try{
         var knownPaths=Items.Select(i=>i.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        try{knownPaths.UnionWith(LibraryRetentionSettings.Load(App.DataRoot).RemovedSourcePaths??[]);}catch(Exception error){App.Log(error);}
         foreach(var path in (_locationError==null?Directory.EnumerateFiles(Root):Enumerable.Empty<string>()).Where(p=>System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(p),@"^\d{8}-\d{6}-\d{3}-[0-9a-f]{6}\.(png|mp4)$",System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
             if(knownPaths.Add(path))Items.Insert(0,new(){FilePath=path,Title=Path.GetFileNameWithoutExtension(path),IsVideo=Path.GetExtension(path)==".mp4",Created=File.GetCreationTime(path),Source="Khôi phục từ ổ đĩa"});
         }catch(Exception ex){_locationError="Không đọc được thư mục media. Hãy chọn lại thư mục lưu. "+ex.Message;StartupWarning=_locationError;App.Log(ex);}
@@ -105,6 +108,11 @@ public sealed partial class MediaStore
             }
             string cues=RecordingPresenter.PathFor(pending);
             if(File.Exists(cues))Move(cues,RecordingPresenter.PathFor(item.FilePath));
+            string camera=RecordingCamera.PathFor(pending),cameraMetadata=RecordingCamera.MetadataFor(pending);
+            if(File.Exists(cameraMetadata)&&File.Exists(camera)){
+                Move(camera,RecordingCamera.PathFor(item.FilePath));
+                Move(cameraMetadata,RecordingCamera.MetadataFor(item.FilePath));
+            }
             Move(pending,item.FilePath);
             Items.Insert(0,item);
             Save();

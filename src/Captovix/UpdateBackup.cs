@@ -7,7 +7,7 @@ public sealed record BackupFile(string Path,long Bytes,string Sha256);
 public sealed record BackupManifest(int Format,string From,string To,DateTimeOffset Created,List<BackupFile> Files);
 public static class UpdateBackup
 {
-    static readonly HashSet<string> Settings=new(StringComparer.OrdinalIgnoreCase){"library.json","settings.json","update-settings.json","editor-resume.json","video-resume.json","annotation-presets.json","capture-workflow.json","style-favorites.json","tool-stars.json","tool-order.json","tool-order-v133.json","batch-export.json","editor-layout.json","media-location.json","recent-capture-regions.json","appearance-settings.json","ui-model.json"};
+    static readonly HashSet<string> Settings=new(StringComparer.OrdinalIgnoreCase){"library.json","library-retention.json","settings.json","update-settings.json","editor-resume.json","video-resume.json","annotation-presets.json","capture-workflow.json","style-favorites.json","tool-stars.json","tool-order.json","tool-order-v133.json","batch-export.json","editor-layout.json","media-location.json","recent-capture-regions.json","appearance-settings.json","ui-model.json"};
     public static bool Allowed(string name)=>Settings.Contains(name)||name.StartsWith("Edits/",StringComparison.Ordinal)&&!name[6..].Contains('/')&&(name.EndsWith(".json")||name.EndsWith(".bak"))||AllowedVideoProject(name)||name is "licensing/device.bin" or "licensing/certificate.bin";
     private static bool AllowedVideoProject(string name)
     {

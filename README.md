@@ -1,6 +1,120 @@
-# Captovix V1.60.0 — Audio Editing
+# Captovix V1.68.1 — 1080p Recording Sharpness Fix
 
-## Video Studio và âm thanh
+- Khôi phục bộ ghi H.264 High, bitrate mode **Quality**, Quality70 như luồng V1.67. V1.68 đã đổi sang CBR với bitrate preset: cùng1080p nhưng bitrate bị giới hạn có thể mất chi tiết chữ. Đây là thay đổi cấu hình xác nhận được qua source; chưa có hai MP4 gốc để đo nguyên nhân trên máy Boss. Dung lượng ghi lại biến thiên theo nội dung, ước lượng bitrate trong preset chỉ mang tính gần đúng.
+- Bỏ bước tự gắn nhãn sRGB/range cho video sau khi quay của V1.68. Bỏ ép nhãn màu trong lệnh chuẩn hóa xuất. Màu của preview không được dùng để sửa nội dung/metadata MP4. Không tự retag các video cũ; video đã mất chi tiết không thể phục hồi bằng thay nhãn màu.
+- Khung tạm dừng dùng FFmpeg giải mã PNG trực tiếp, giữ1080p gốc, giới hạn tối đa4K thay cho1280×720 rồi phóng lớn. Thumbnail thư viện vẫn dùng kích thước nhỏ riêng. Khi không có FFmpeg, fallback bộ đọc Windows. Xem video đang phát vẫn dùng Windows MediaElement nên khác biệt màu do decoder/ICC/HDR cần kiểm thực tế.
+- Nếu xuất toàn bộ nguồn mà không thay đổi nội dung (kể cả Split nhưng giữ liên tục, nguyên thứ tự và không hiệu ứng/điều chỉnh âm thanh), sao chép đúng byte MP4: không tái nén video hay tiếng.
+- Timeline cần render vẫn cắt chính xác, nhưng tăng chất lượng từ CRF17 lên14 và bỏ scale/chroma resample cho canvas trùng kích thước nguồn. Crop/rotate/zoom/canvas khác vẫn xử lý đúng. Không dùng sharpen hay tăng saturation để che lỗi.
+- Giữ con trỏ video riêng, HUD/icon, nút xuất và mọi dữ liệu/license. Không cần migration mới. Chọn preset1080p rồi quay lại để đánh giá sửa bộ ghi; file đã quay mờ không được tự biến thành bản sắc nét.
+
+## Xác minh
+
+20 kiểm tra media/export qua trên Linux: giữ byte nguồn chính xác, Split liên tục, loại trừ trim/reorder/motion khỏi copy, không bỏ crop, fixture nét UI1920×1080, PNG preview1920×1080, âm thanh, màu và nhiều điểm cắt. Fixture render có MAE luma dưới1.5 mức trên255; không phải đo bản quay thực tế Windows. CaptureWorkflowChecks160 qua. Publish Windows x64 và kiểm gói update trước bàn giao.
+
+Nghiệm thu Windows còn chờ: cùng màn hình/app mẫu/preset1080p, quay V1.67/V1.68/V1.68.1, so frame gốc và file xuất ở100% pixel, kiểm bitrate/detail/âm thanh, paused preview vs playback, HDR/ICC nếu có. Không phóng ảnh720p rồi dùng nó để đánh giá file1080p. Video cũ do CBR mất nét cần quay lại; không áp bộ tăng nét tự động.
+
+Build: chạy Build.cmd; bộ build tải FFmpeg/ffprobe theo checksum. Gói update Windows có engine/runtime: giải nén, thoát app cả khay hệ thống, chạy HuyVo.Captovix-win-Setup.exe. Gói chưa được ký số.
+
+
+## Các bản trước
+
+# Captovix V1.68.0 — SDR Color & Video Controls
+
+- Chuẩn hóa thông tin màu của **bản quay SDR mới**: đánh dấu sRGB transfer, BT.709 primaries/matrix và dải video rõ ràng bằng remux H.264, không mã hóa lại ảnh và không tự tăng saturation/gamma. Giữ full range khi nguồn đã đánh dấu pc; dùng video range khi nguồn chưa khai báo. Timeline giữ nhãn sRGB của nguồn bản quay. Bộ ghi H.264 High/CBR dùng đúng bitrate preset.
+- Hai ảnh tham chiếu cho thấy khác màu nhưng không đủ xác định toàn bộ nguyên nhân (màn hình HDR, profile ICC, decoder và file MP4 gốc chưa được cung cấp). Đây là sửa luồng metadata cho SDR; không khẳng định HDR hay video cũ đã được phục hồi. Cần so video mới với màn hình trên Windows thực tế.
+- Trước khi quay có **Hiển thị con trỏ chuột trong video**, mặc định bật và lưu độc lập qua restart. Cấu hình con trỏ trong ảnh chụp không còn điều khiển con trỏ bản quay. Mouse pointer và từng nguồn ghi đều nhận đúng cấu hình video.
+- Fullscreen dùng icon phát tam giác / tạm dừng hai vạch; nút tua10giây và thoát fullscreen là icon có tooltip/nhãn truy cập. Thanh tua dùng cùng kiểu slider của app, HUD giới hạn chiều rộng, tương phản rõ.
+- Click trái ngoài HUD/nút thoát sẽ ẩn HUD ngay. Di chuyển chuột thật sự (không phải layout đổi dưới con trỏ) hiện lại; vẫn tự ẩn sau2giây. Click nút/slider không bị chặn. Kéo tua không bị ẩn giữa thao tác.
+- Hai nút **Xuất MP4** ở màn chính và Studio dùng cùng icon, nhãn, kích thước và style Primary. Giữ màu thương hiệu Captovix; không thay logo hay sao chép tài sản CapCut.
+- Không cần migration mới. Giữ dự án schema8, thư viện và KEY.
+
+## Build / cập nhật
+
+Chạy Build.cmd trên Windows: tự lấy FFmpeg/ffprobe đã pin, build và đóng gói bản cài. Để dựng bằng IDE, chạy scripts/Ensure-MediaEngine.ps1 trước. Bản update Windows đã kèm hai engine; giải nén và chạy HuyVo.Captovix-win-Setup.exe sau khi thoát app. Source ZIP không nhúng executable của media engine.
+
+## Kiểm tra
+
+- VideoExportChecks:16 kiểm tra media thật, gồm metadata sRGB/range, giữ nguyên mẫu YUV qua remux, nhãn màu qua xuất timeline và RGB của ô đen/trắng/xám/xanh UI sai lệch tối đa3/255 trong fixture.
+- CaptureWorkflowChecks:160 kiểm tra qua. Publish WPF Windows x64 trên Linux. Test không phải bằng chứng về màu thực tế của Desktop Duplication/MF/WPF trên màn hình Boss.
+- Nghiệm thu Windows: quay cùng một bảng màu và app mẫu, so màn hình / MP4 / xuất timeline; thử bật/tắt cursor riêng với ảnh, restart; click ngoài HUD, tua và đổi trạng thái play/pause; so hai nút xuất ở light/dark; kiểm tương tác trong Windows thật. HDR/ICC, webcam và video nhập cần kiểm riêng.
+
+## Tài liệu các bản trước
+
+# Captovix V1.67.0 — Viewer Controls & Retention Catch-up
+
+- Dọn bù khi mở app: nếu Captovix/máy không chạy ở23:59, lần mở tiếp theo xác định mốc23:59 gần nhất chưa xử lý, gom ảnh/video đủ hạn tại mốc đó và chuyển vào Thùng rác Windows khi app rảnh. Không cần chạy app khi máy đã tắt. Sau dọn bù, chờ lịch mới; không quét/xóa liên tục. Cấu hình mới bật lần đầu chờ mốc23:59 đầu tiên.
+- Thư viện có lọc nhanh Tất cả / Ảnh / Video, áp dụng trên dữ liệu trước khi lấy30 nội dung gần nhất. Quản lý lịch sử cũng có lọc loại.
+- Xem video tại màn chính có phát/dừng, lùi/tiến10 giây, tua, fullscreen và xuất MP4. Fullscreen có cùng thanh tua, thời gian và nút điều khiển. Không di chuột2 giây sẽ ẩn điều khiển và con trỏ; di chuyển/click hiện lại. Kéo tua không bị ẩn giữa thao tác. Esc/F11 thoát; Space phát/dừng; trái/phải tua10 giây trong fullscreen.
+- Xuất MP4 từ màn chính và Studio dùng cùng dự án đã chỉnh. Khi có bộ FFmpeg/ffprobe, phần đọc nguồn và xác minh đầu ra không còn phụ thuộc MediaClip/MediaPlayer Windows. Cache thông tin theo nguồn khi nhiều đoạn Split dùng chung tệp. Lỗi FFmpeg hiển thị chi tiết để chẩn đoán. Chưa có log lỗi trên máy Boss nên vẫn cần nghiệm thu thực tế.
+- Xuất xong có thể mở thư mục chứa MP4 ngay ở hộp thông báo, hoặc nút Mở thư mục xuất. Kèm FFmpeg và ffprobe trong gói Windows; không cần cài riêng.
+- Không cần migration mới. Giữ schema video8 và thư viện/license. Gói chưa được ký số. Kiểm build trên Linux với Windows targeting; nghiệm thu tương tác thực tế Windows còn chờ.
+
+## Hướng dẫn bản trước
+
+# Captovix V1.66.0 — Timeline Export & Library Retention
+
+- **Xuất timeline MP4 liền mạch:** chuẩn hóa từng đoạn rồi ghép theo thứ tự đã chỉnh sửa. Trim, Split, đổi thứ tự, tốc độ, dừng hình, canvas, chú thích, chỉ dẫn chuột và camera dùng cùng timeline. Âm thanh được phối theo cùng mốc nguồn. Ranh giới khung hình được làm tròn theo thời gian tích lũy để tránh sai số sau nhiều điểm cắt. Chỉ thay tệp đích sau khi xác minh MP4, kích thước và thời lượng.
+- **Chọn vùng quay modal:** click khung tự nhận diện để khóa vùng, điều chỉnh nếu cần, rồi bấm **Quay** hoặc Enter. Chọn vùng luôn ghi một tọa độ màn hình cố định; không chuyển sang quay cửa sổ và không chạy ngay lúc click modal. Cửa sổ di chuyển sau đó không làm vùng quay chạy theo.
+- **Chọn cửa sổ có ảnh xem trước:** các ô hiển thị tên và preview DWM của cửa sổ đang mở. Chọn ô rồi xác nhận, nhấp đúp hoặc Enter. Có Làm mới và kiểm lại cửa sổ trước khi nhận. Preview được giải phóng khi đóng hộp chọn.
+- **Tự dọn thư viện:** Thiết lập → Dung lượng & bộ nhớ → Tự dọn thư viện. Mặc định tắt. Nhập 1–36500 ngày (mặc định 60), bật và Lưu lịch tự dọn. Tính hạn từ ngày chụp/quay theo giờ Windows, kể cả nội dung cũ. Chuyển tệp hết hạn và bản chỉnh liên quan vào **Thùng rác Windows** thành một thư mục có thông tin phục hồi; không xóa vĩnh viễn bằng lệnh của app.
+- Lịch chạy lúc **23:59 hằng ngày khi Captovix đang mở hoặc chạy nền**. Không cài dịch vụ/task tự khởi động. Nếu thoát hẳn hoặc tắt máy, chờ lịch 23:59 tiếp theo khi app hoạt động; timer quá hạn sau sleep được xử lý khi máy thức. Khi đang quay, xuất hoặc thao tác bận, lùi xử lý đến lúc rảnh. Lỗi trong phiên chỉ thử lại ở lịch ngày sau. Không quét/xóa liên tục khi đang sử dụng app.
+- Video liên kết gỡ khỏi thư viện nhưng giữ nguồn ngoài app. Nguồn còn dùng bởi dự án chưa hết hạn được giữ; các bản backup cập nhật được giữ. Nếu cần phục hồi một mục đã tự dọn: mở Thùng rác Windows, khôi phục thư mục, xem `Captovix-recovery.json` bên trong để biết đường dẫn nguồn/bản chỉnh ban đầu. Nút Khôi phục của thao tác xóa thủ công vẫn dùng thùng rác Captovix riêng.
+- Không cần chạy migration mới. Giữ dữ liệu, license và schema dự án video 8 của V1.65.0.
+
+## Dựng bản cập nhật
+
+1. Cài .NET 10 SDK x64 và các yêu cầu build ở phần hướng dẫn bên dưới.
+2. Giải nén rồi chạy **Build.cmd**. Script tự tải FFmpeg 9.0.2 essentials từ Gyan về `media-engine/`, kiểm SHA-256 cả ZIP và executable, và đưa `ffmpeg.exe` vào payload/bản cài. Cần Internet lần đầu. Không cần đặt FFmpeg thủ công.
+3. Source ZIP không nhúng executable FFmpeg. Nếu dựng trực tiếp bằng IDE/dotnet, chạy `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Ensure-MediaEngine.ps1` trước, rồi build/publish. Không phát hành bản thiếu media engine.
+4. Build/cài bản Windows theo hướng dẫn hiện có. Giữ cấu hình public licensing và update-source hiện tại; không cần reset thư viện hoặc database.
+
+## Xác minh V1.66.0
+
+- `dotnet run --project tests/VideoExportChecks -c Release`: dùng FFmpeg thật và các hàm dựng lệnh đang dùng ở production; kiểm màu khung hình sau cắt/đổi thứ tự/tốc độ/dừng hình, tần số âm thanh, tổng thời lượng và sai số 1.000 điểm cắt.
+- `dotnet run --project tests/LibraryRetentionChecks -c Release`: hạn 60 ngày theo ví dụ, tắt/bật, giờ 23:59, lưu cấu hình, chuyển tệp và phục hồi khi gián đoạn trước/sau commit.
+- Checklist Windows cho release: `docs/V1.66.0-WINDOWS-QA.md`. Linux chỉ kiểm build WPF và phần logic/media chạy đa nền tảng; chưa xác nhận tương tác DWM, thu màn hình và Recycle Bin thực tế trên Windows.
+
+## Chức năng đã có từ V1.65.0
+
+- Chọn webcam trong **Nguồn quay**. Captovix lưu màn hình, mic và webcam riêng. Nếu webcam không mở được hoặc bị rút, Captovix tiếp tục lưu màn hình và mic. Tệp webcam và bản đồ đồng bộ nằm cùng MP4.
+- Mở **Studio → Camera · hình trong hình**. Chọn video trình bày, bật/tắt camera, chọn góc hoặc nhập vị trí và kích thước. Video nhập có thể chỉnh mốc lệch. Camera không phát tiếng riêng, bản phối dùng track mic/âm thanh của dự án. Xuất MP4 với lớp camera cần FFmpeg có libx264.
+- Hợp nhất lớp ảnh chỉ render vùng lớp cần gộp ở kích thước pixel gốc và giữ byte ảnh nền ở các điểm không phủ. Nếu lớp đã thu nhỏ, chi tiết đầu ra vẫn bị giới hạn bởi kích thước canvas.
+- Studio tạo waveform khi mở nhóm Âm thanh hoặc cần phối để phát. Khi rời Studio, hiệu ứng GPU, công việc âm thanh và bộ giải mã được giải phóng sau khi giữ khung tĩnh.
+- Splash hiển thị lúc mở app. Nếu bật khởi động cùng Windows, Captovix hiện splash rồi mở cửa sổ chính.
+- Dự án schema 8 mở được V1–V7. Bản sao thư viện có webcam dùng schema 4. Không cần migration cơ sở dữ liệu.
+
+## Cursor & Click Effects từ V1.64.0
+
+- Mở **Studio → Con trỏ, phím & marker**. Nhập click và marker của bản quay đã có dữ liệu, hoặc thêm thủ công click, vòng sáng, nhãn phím và marker. Với click/vòng sáng, chọn **Thêm tại đầu phát** rồi bấm vào video. V1.54.0 chỉ lưu click và marker.
+- Chỉ dẫn neo vào video nguồn, bám theo trim, split, crop, xoay, zoom và tỷ lệ. Khi cắt mất mốc nguồn, chỉ dẫn tại mốc đó cũng biến mất. Xuất video có chỉ dẫn cần FFmpeg có libass và libx264.
+- Rê chuột trên ô video ở Thư viện rồi bấm nút ảnh, hoặc dùng **Ảnh Thư viện** dưới video đang mở. Tua đến mốc và lấy khung bằng bộ giải mã Windows, hoặc chọn ảnh từ máy.
+- Thoát Studio hủy phối âm nền, tắt bộ hẹn giờ khi rảnh và thay bộ giải mã bằng một ảnh tĩnh. Khi phát hoặc tua, app mở lại video.
+- Dự án video schema 7 mở được V1–V6. Không cần migration cơ sở dữ liệu.
+
+## Motion & Zoom từ V1.63.0
+
+- Mở video và kéo thanh tua. Chọn **Ảnh đại diện** để dùng khung hiện tại hoặc ảnh từ máy.
+- Chọn **Vào Studio → Chuyển động & tốc độ**, chọn đoạn rồi nhập tốc độ 0,25–4×, số giây dừng cuối đoạn và mờ dần vào/ra. Để giữ một khung giữa đoạn, Split tại mốc đó rồi đặt dừng hình cho đoạn bên trái.
+- Tua trong đoạn, nhập Zoom và tâm ngang/dọc, rồi **Lưu keyframe**. Có thể chọn một keyframe để tua tới mốc, cập nhật hoặc xóa.
+- Tốc độ và dừng hình dùng cùng thời gian cho timeline, phối âm và MP4. Âm thanh nguồn giữ cao độ bằng FFmpeg, phần dừng hình không có âm thanh nguồn. Nhạc nền vẫn theo timeline. Cần FFmpeg cho MP4 chuyển động, phối âm và lấy khung làm ảnh đại diện.
+- Chú thích không giao nhau tự xếp chung một hàng. Khi kéo, hình và tay nắm đi cùng nhau. **Quay lại** ở góc trái đóng công việc tạo waveform của Studio.
+- Dự án video dùng schema 6. V1–V5 vẫn mở được. Không cần migration cơ sở dữ liệu.
+
+## Editor Responsiveness từ V1.61.1
+
+- Dùng **Đậm nền** và **Đậm viền** để chỉnh chú thích. Callout có thanh rộng và ô phần trăm đồng bộ. Kéo để xem thay đổi trực tiếp, thả chuột để ghi một bước hoàn tác. Có thể nhập số rồi nhấn Enter hoặc rời ô.
+- Chọn ảnh chèn, mở **Lớp ảnh → Opacity (%)** để chỉnh độ trong suốt của ảnh. Các chú thích cũ giữ giá trị độ đậm đã lưu.
+- Trình chỉnh sửa tái sử dụng hình học Callout, mẫu công cụ và bitmap đang vẽ để giảm công việc khi rê chuột và kéo.
+
+## Chú thích và mẫu đã lưu
+
+- Trong **Studio**, tua tới điểm bắt đầu và chọn **Tiêu đề**, **Chữ**, **Callout**, **Mũi tên**, **Khung** hoặc **Bước**. Nhấp đúp chú thích chữ để sửa trực tiếp trên canvas. Chọn đối tượng để chỉnh nội dung, màu, font, căn lề và opacity trong bảng bên phải.
+- Kéo Callout từ vị trí đuôi tới vị trí đặt hộp như trình chỉnh ảnh. Tay nắm cam di chuyển đuôi, tay nắm giữa hộp di chuyển thân, các tay nắm biên đổi kích thước. Giữ Ctrl khi vẽ đè lên chú thích có sẵn để tạo đối tượng mới.
+- Kéo mỗi lớp trên timeline hoặc chỉnh hai đầu, hoặc dùng **Hiện tại đầu phát** và **Ẩn tại đầu phát** để lấy thời điểm chính xác. Chú thích xuất hiện từ mốc đầu và ẩn ở mốc cuối. Preview và xuất dùng cùng renderer, tọa độ được lưu theo tỷ lệ canvas.
+- Mở **Đã lưu**, dùng **Lưu công cụ hiện tại** để thêm kiểu đang chỉnh vào danh sách chung với chỉnh ảnh. Mẫu từ phiên bản trước khi có Opacity được đọc lại nếu còn trong tệp cài đặt. Áp dụng mẫu lên chú thích đang chọn giữ vị trí, thời gian và nội dung của lớp đó.
+- Dự án video schema 5 mở được V1–V4. Các dự án đã lưu bằng schema 5 cần V1.61.0 hoặc mới hơn để mở.
+
+## Video Studio và âm thanh từ V1.60.0
 
 - Mở video từ thư viện để xem hoặc chuyển toàn màn hình. Bấm **Studio** để mở không gian dựng toàn màn hình. **Thoát Studio** hoặc Esc trả về màn xem. Cắt video bằng **Split** rồi **Xóa đoạn**.
 - Chọn các hàng **Âm thanh gốc**, **Micro**, **Tiếng máy**, **Nhạc nền**. Track có waveform, Mute/Solo, âm lượng, fade đầu/cuối và danh sách khoảng cắt. Nhạc nền có mốc trong tệp và vị trí riêng trên timeline. Mốc cắt âm bám theo thời gian dự án; audio nguồn đi cùng clip qua Split và sắp xếp.
@@ -103,7 +217,7 @@ Theo yêu cầu hiện tại, bỏ mục **Cập nhật & khôi phục dữ li�
 
 Kết quả kiểm thử logic, biên dịch chéo và kiểm gói được ghi trong docs/VALIDATION.md và docs/WINDOWS-ACCEPTANCE-V1490.md. Host hiện tại là Linux: chưa chạy app, bộ cài, phím vật lý hoặc đo RAM trên Windows thật; không coi biên dịch WPF là nghiệm thu Windows. Publish stable vẫn cần báo cáo Windows thật.
 
-**V1.55.0 — Recording Recovery** vẫn nằm trong backlog. Mốc đề xuất tiếp theo là **V1.61.0 — Audio Keyframes & Export Presets**.
+**V1.55.0 — Recording Recovery** vẫn nằm trong backlog. Mốc đề xuất tiếp theo là **V1.66.0 — Audio Keyframes & Export Presets**.
 
 ## Dựng lại từ source trên Windows
 

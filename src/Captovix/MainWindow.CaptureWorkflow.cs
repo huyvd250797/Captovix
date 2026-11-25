@@ -25,7 +25,6 @@ public partial class MainWindow
         var hwnd=new WindowInteropHelper(this).Handle;_photoKeys=new((id,mods,key)=>Native.RegisterHotKey(hwnd,id,mods,key),id=>Native.UnregisterHotKey(hwnd,id));
         ResumeWorkflow();RenderWorkflow();
         if(warning!=null)WorkflowStatus.Text=warning;
-        if(App.StartedAutomatically&&_workflow.StartInTray&&_tray?.Ready==true)Dispatcher.BeginInvoke(()=>{Hide();_tray.Notify("Đang chạy nền. Nhấp biểu tượng để mở Editor.");},DispatcherPriority.ApplicationIdle);
     }
     private void ResumeWorkflow()
     {

@@ -15,6 +15,22 @@ try{
  var invalid=shape.Copy();invalid.Shadow.Opacity=101;Reject(()=>StudioStyle.Validate(invalid),"Reject invalid shadow opacity");invalid.Shadow= null!;Reject(()=>StudioStyle.Validate(invalid),"Reject null shadow");
  var id=StudioStyle.Signature(shape);var moved=shape.Copy();moved.Id="other";moved.X1=70;moved.Rotation=30;moved.Name="Name";moved.GroupId="group";Check(StudioStyle.Signature(moved)==id,"Favorites ignore object identity and placement");moved.FillColor="#FFFFFF";Check(StudioStyle.Signature(moved)!=id,"Favorites distinguish paint colors");
  var list=new List<StyleFavorite>{new(id,"Rounded",StudioStyle.Sample(shape))};StyleFavoriteStore.Save(root,list);var loaded=StyleFavoriteStore.Load(root,out var warning);Check(warning==null&&loaded.Count==1&&loaded[0].Style.Shadow.Enabled,"Favorite survives reopening");StyleFavoriteStore.Save(root,list);Check(File.Exists(StyleFavoriteStore.PathFor(root)+".pre-v1.12.bak"),"Favorite file backup before rewriting");
+ var preset=StudioStyle.Sample(new Annotation{Kind=AnnotationKind.Callout,CalloutStyle=CalloutStyle.RoundedSpeech});
+ var oldFavorite=new StyleFavorite(StudioStyle.BeforeOpacitySignature(preset),"Mẫu Callout cũ",preset);
+ var oldFile=System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(new[]{oldFavorite},EditorDocument.JsonOptions))!.AsArray();
+ oldFile[0]!["Style"]!.AsObject().Remove(nameof(Annotation.ObjectOpacity));
+ string favoritePath=StyleFavoriteStore.PathFor(root);
+ string beforeOpacityJson=oldFile.ToJsonString(EditorDocument.JsonOptions);
+ File.WriteAllText(favoritePath,beforeOpacityJson);
+ var migratedFavorites=StyleFavoriteStore.Load(root,out warning);
+ Check(warning==null&&migratedFavorites.Single().Id==StudioStyle.Signature(preset)&&migratedFavorites[0].Style.ObjectOpacity==100
+     &&File.ReadAllText(favoritePath)==beforeOpacityJson,"Pre-opacity favorites reopen with their original style and remain untouched on read");
+ preset.ObjectOpacity=70;
+ migratedFavorites.Add(new(StudioStyle.Signature(preset),"Opacity 70",preset));
+ StyleFavoriteStore.Save(root,migratedFavorites);
+ var savedFavorites=StyleFavoriteStore.Load(root,out warning);
+ Check(warning==null&&savedFavorites.Select(f=>f.Style.ObjectOpacity).SequenceEqual(new[]{100d,70d}),
+     "A new favorite can be saved alongside recovered presets");
  Reject(()=>StyleFavoriteStore.Save(root,[list[0],list[0]]),"Reject duplicate favorite");File.WriteAllText(StyleFavoriteStore.PathFor(root),"broken");Check(StyleFavoriteStore.Load(root,out warning).Count==0&&warning!=null&&File.ReadAllText(StyleFavoriteStore.PathFor(root))=="broken","Corrupt favorites are not overwritten by load");
  foreach(var kind in new[]{AnnotationKind.Text,AnnotationKind.Step,AnnotationKind.Freehand,AnnotationKind.Blur,AnnotationKind.Highlight,AnnotationKind.Magnifier,AnnotationKind.Spotlight}){var a=StudioStyle.Sample(new Annotation{Kind=kind,EffectSize=24});var saved=new List<StyleFavorite>{new(StudioStyle.Signature(a),kind.ToString(),a)};StyleFavoriteStore.Save(root,saved);var restored=StyleFavoriteStore.Load(root,out var w);Check(w==null&&restored.Single().Style.Kind==kind,"Saved tool style round trip: "+kind);}
  var snug=new ImageLayout(new(0,0,320,180),new(){BorderWidth=3,Padding=0});Check(snug.Width==326&&snug.Height==186&&snug.Canvas.X==3&&snug.Canvas.Y==3,"Snug capture border adds exactly one border thickness outside source");

@@ -13,7 +13,7 @@ void Mutate(string name,Action<ZipArchive> action){File.Copy(zip,Path.Combine(ro
 Mutate("extra.zip",z=>{using var w=new StreamWriter(z.CreateEntry("../escape.txt").Open());w.Write("bad");});Reject(()=>LibraryArchive.Read(Path.Combine(root,"extra.zip"),Path.Combine(root,"extra")),"Reject unlisted traversal entry");Check(!File.Exists(Path.Combine(root,"escape.txt")),"No file escaped extraction");Check(!Directory.Exists(Path.Combine(root,"extra")),"Failed import removes staging tree");
 Mutate("hash.zip",z=>{var name="media/"+key+".png";z.GetEntry(name)!.Delete();using var w=new StreamWriter(z.CreateEntry(name).Open());w.Write("changed");});Reject(()=>LibraryArchive.Read(Path.Combine(root,"hash.zip"),Path.Combine(root,"hash")),"Reject corrupted media hash");
 Mutate("edit.zip",z=>{var name="edits/"+key+".json";z.GetEntry(name)!.Delete();using var w=new StreamWriter(z.CreateEntry(name).Open());w.Write("changed");});Reject(()=>LibraryArchive.Read(Path.Combine(root,"edit.zip"),Path.Combine(root,"bad-edit")),"Reject corrupted edit hash");
-Mutate("version.zip",z=>{var e=z.GetEntry("manifest.json")!;LibraryManifest m;using(var stream=e.Open())m=JsonSerializer.Deserialize<LibraryManifest>(stream)!;e.Delete();using var w=new StreamWriter(z.CreateEntry("manifest.json").Open());w.Write(JsonSerializer.Serialize(m with{Version=4}));});Reject(()=>LibraryArchive.Read(Path.Combine(root,"version.zip"),Path.Combine(root,"future")),"Reject future archive schema without reset");
+Mutate("version.zip",z=>{var e=z.GetEntry("manifest.json")!;LibraryManifest m;using(var stream=e.Open())m=JsonSerializer.Deserialize<LibraryManifest>(stream)!;e.Delete();using var w=new StreamWriter(z.CreateEntry("manifest.json").Open());w.Write(JsonSerializer.Serialize(m with{Version=5}));});Reject(()=>LibraryArchive.Read(Path.Combine(root,"version.zip"),Path.Combine(root,"future")),"Reject future archive schema without reset");
 Mutate("duplicate.zip",z=>z.CreateEntry("manifest.json"));Reject(()=>LibraryArchive.Read(Path.Combine(root,"duplicate.zip"),Path.Combine(root,"duplicate")),"Reject duplicate zip entry");
 Reject(()=>LibraryArchive.Read(zip,Path.Combine(root,"stage")),"Refuse nonempty staging destination");LibraryArchive.Save(Path.Combine(root,"empty.zip"),[]);Check(LibraryArchive.Read(Path.Combine(root,"empty.zip"),Path.Combine(root,"empty")).Count==0,"Empty library supported");
 Reject(()=>LibraryArchive.Tags(string.Join(',',Enumerable.Range(0,33))),"Reject tag overflow without silent loss");
@@ -36,6 +36,16 @@ var presenterAsset=LibraryArchive.Read(withClicks,Path.Combine(root,"presenter-s
 Check(File.ReadAllBytes(presenterAsset.RecordingClicks!).SequenceEqual(File.ReadAllBytes(clicks))&&presenterAsset.Mic!=null,"Presenter clicks and WAV survive backup/import");
 Reject(()=>LibraryArchive.Save(withClicks,[asset with{RecordingClicks=clicks}]),"Reject recording clicks on still images");
 
+var camera=Path.Combine(root,"camera.mp4");
+var sync=Path.Combine(root,"camera.json");
+File.WriteAllBytes(camera,[7,8,9]);
+File.WriteAllText(sync,"{\"Sync\":[]}");
+var cameraArchive=Path.Combine(root,"camera.cvlibrary");
+LibraryArchive.Save(cameraArchive,[audioAsset with{Camera=camera,CameraMetadata=sync}]);
+var cameraAsset=LibraryArchive.Read(cameraArchive,Path.Combine(root,"camera-stage")).Single();
+Check(File.ReadAllBytes(cameraAsset.Camera!).SequenceEqual(File.ReadAllBytes(camera))
+    &&File.ReadAllText(cameraAsset.CameraMetadata!)==File.ReadAllText(sync),"Webcam source and sync survive library backup/import");
+Reject(()=>LibraryArchive.Save(cameraArchive,[audioAsset with{Camera=camera}]),"Reject an incomplete webcam source");
 using(var z=ZipFile.Open(av,ZipArchiveMode.Update)){
  string name="audio/"+key+".mic.wav";z.GetEntry(name)!.Delete();
  using var entry=z.CreateEntry(name).Open();entry.WriteByte(9);

@@ -14,7 +14,7 @@ public partial class MainWindow
     private static readonly string[] DirectionArrows=["↖","↑","↗","←","●","→","↙","↓","↘"];
     private void InitializeVisualStudio()
     {
-        LoadUtilityStars();_favorites=StyleFavoriteStore.Load(App.DataRoot,out var warning);_favoritesReadOnly=warning!=null;if(warning!=null)VisualStudioError.Text=warning;
+        LoadUtilityStars();_favorites=StyleFavoriteStore.Load(App.DataRoot,out var warning);_favoritesReadOnly=warning!=null;if(warning!=null){VisualStudioError.Text=warning;SetStatus(warning);}
         void Directions(UniformGrid grid,bool frame){for(int n=0;n<9;n++){int direction=n;var button=new Button{Content=new TextBlock{Text=DirectionArrows[n],FontSize=18,HorizontalAlignment=HorizontalAlignment.Center},Tag=n,Padding=new(2),MinHeight=32,Margin=new(2),HorizontalContentAlignment=HorizontalAlignment.Center,ToolTip=new[]{"Trên trái","Trên","Trên phải","Trái","Bóng quanh","Phải","Dưới trái","Dưới","Dưới phải"}[n]};System.Windows.Automation.AutomationProperties.SetName(button,button.ToolTip.ToString());button.Click+=(_,_)=>{
             FlushAutoProperties();if(frame){var offset=StudioStyle.Offset(direction,_frameShadowDistance);ApplyAppearance(a=>{a.Shadow=true;a.ShadowX=(int)offset.X;a.ShadowY=(int)offset.Y;});}
             else{_shadowDirection=direction;bool old=_syncProperties;_syncProperties=true;ObjectShadowEnabled.IsChecked=true;_syncProperties=old;ApplyObjectShadow();}
@@ -23,7 +23,13 @@ public partial class MainWindow
     }
     private Annotation StudioTarget()
     {
-        if(Surface.Selected is {} selected){var copy=selected.Copy();if(copy.Kind==AnnotationKind.Line){copy.Kind=AnnotationKind.Arrow;copy.Tip=ArrowTip.None;}return copy;}
+        if(Surface.Selected is {} selected){
+            if(selected.Kind!=AnnotationKind.Line&&selected.Mockup==null)return selected;
+            var copy=selected.Copy();
+            if(copy.Kind==AnnotationKind.Line){copy.Kind=AnnotationKind.Arrow;copy.Tip=ArrowTip.None;}
+            if(copy.Mockup!=null)copy.PixelPng=null;
+            return copy;
+        }
         var kind=Surface.Tool switch{EditorTool.Shape=>Surface.ShapeKind,EditorTool.Rectangle=>AnnotationKind.Rectangle,EditorTool.Ellipse=>AnnotationKind.Ellipse,EditorTool.Arrow=>AnnotationKind.Arrow,EditorTool.Line=>AnnotationKind.Line,EditorTool.Callout=>AnnotationKind.Callout,EditorTool.Text=>AnnotationKind.Text,_=>AnnotationKind.Freehand};
         if(Enum.TryParse<AnnotationKind>(Surface.Tool.ToString(),out var toolKind)&&!ShapeStudio.IsClosed(kind))kind=toolKind;
         var a=(FocusStudio.Supports(kind)?Surface.FocusDefaultsFor(kind):TextStudio.IsText(kind)?Surface.TextDefaultsFor(kind):Surface.ShapeDefaults).Copy();a.Kind=kind;a.Color=Surface.InkColor;a.Stroke=Surface.StrokeSize;a.FontSize=Surface.TextSize;a.Route=Surface.ArrowRoute;return a;
@@ -56,7 +62,7 @@ public partial class MainWindow
         var snapshot=StudioStyle.Sample(style);var preview=snapshot.Copy();preview.Text=preview.Kind==AnnotationKind.Callout?"":"Aa";preview.FontSize=18;preview.TextPadding=4;preview.TextWidth=0;preview.LineSpacing=0;preview.VerticalAlignment=TextVertical.Center;preview.TextAlignment=TextAlign.Center;preview.Shadow.Enabled=false;preview.Stroke=Math.Min(3,preview.Stroke);var drawing=ToolPreview.Create(preview);
         var grid=new Grid{Width=64,Margin=new(2)};var content=new Grid{Height=38,Margin=new(8,6,8,6)};content.Children.Add(new Image{Source=new DrawingImage(drawing),Stretch=Stretch.Uniform,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center,MaxWidth=46,MaxHeight=28});
         var select=new Button{Content=content,Padding=new(1),Margin=new(0),ToolTip=label};select.Click+=(_,_)=>{FlushAutoProperties();choose();};grid.Children.Add(select);
-        var id=StudioStyle.Signature(snapshot);var star=new Button{Content=_favorites.Any(f=>f.Id==id)?"★":"☆",HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Padding=new(2,0,2,0),Margin=new(0),FontSize=11,ToolTip="Lưu / bỏ mẫu yêu thích",IsEnabled=!_favoritesReadOnly};star.Click+=(_,e)=>{try{var list=_favorites.ToList();if(list.Any(f=>f.Id==id))list.RemoveAll(f=>f.Id==id);else list.Add(new(id,label,snapshot.Copy()));StyleFavoriteStore.Save(App.DataRoot,list);_favorites=list;_galleryKey=null;SyncProperties();}catch(Exception ex){VisualStudioError.Text=ex.Message;}e.Handled=true;};star.Opacity=0;grid.MouseEnter+=(_,_)=>star.Opacity=1;grid.MouseLeave+=(_,_)=>{if(!grid.IsKeyboardFocusWithin)star.Opacity=0;};grid.GotKeyboardFocus+=(_,_)=>star.Opacity=1;grid.LostKeyboardFocus+=(_,_)=>{if(!grid.IsMouseOver)star.Opacity=0;};grid.Children.Add(star);host.Children.Add(grid);
+        var id=StudioStyle.Signature(snapshot);var star=new Button{Content=_favorites.Any(f=>f.Id==id)?"★":"☆",HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Padding=new(2,0,2,0),Margin=new(0),FontSize=11,ToolTip="Lưu / bỏ mẫu yêu thích",IsEnabled=!_favoritesReadOnly};star.Click+=(_,e)=>{try{var list=_favorites.ToList();if(list.Any(f=>f.Id==id))list.RemoveAll(f=>f.Id==id);else list.Add(new(id,label,snapshot.Copy()));StyleFavoriteStore.Save(App.DataRoot,list);_favorites=list;_galleryKey=null;SyncProperties();SyncVideoFavorites(CurrentVideoInk());}catch(Exception ex){VisualStudioError.Text=ex.Message;}e.Handled=true;};star.Opacity=0;grid.MouseEnter+=(_,_)=>star.Opacity=1;grid.MouseLeave+=(_,_)=>{if(!grid.IsKeyboardFocusWithin)star.Opacity=0;};grid.GotKeyboardFocus+=(_,_)=>star.Opacity=1;grid.LostKeyboardFocus+=(_,_)=>{if(!grid.IsMouseOver)star.Opacity=0;};grid.Children.Add(star);host.Children.Add(grid);
     }
     private static string CalloutLabel(CalloutStyle s)=>s switch{CalloutStyle.Speech=>"Hộp có đuôi",CalloutStyle.RoundedSpeech=>"Bo góc có đuôi",CalloutStyle.EllipseSpeech=>"Bầu dục có đuôi",CalloutStyle.Rectangle=>"Hộp",CalloutStyle.RoundedRectangle=>"Hộp bo góc",CalloutStyle.PillSpeech=>"Viên thuốc có đuôi",CalloutStyle.Pill=>"Viên thuốc",CalloutStyle.Ellipse=>"Bầu dục",CalloutStyle.DiamondSpeech=>"Thoi có đuôi",_=>"Lục giác có đuôi"};
     private void ChooseStyle(Annotation style)
@@ -66,8 +72,8 @@ public partial class MainWindow
         bool Compatible(Annotation a)=>a.Mockup==null&&((ShapeStudio.IsClosed(a.Kind)&&ShapeStudio.IsClosed(next.Kind))||(ShapeStudio.IsLine(a.Kind)&&ShapeStudio.IsLine(next.Kind))||(a.Kind==AnnotationKind.Callout&&next.Kind==AnnotationKind.Callout));
         var ids=Surface.SelectedIds.ToArray();var primary=Surface.Selected?.Id;
         bool retain=ids.Length>0&&_session!=null&&_session.Document.Annotations.Where(a=>ids.Contains(a.Id)).All(Compatible);
-        if(next.Kind==AnnotationKind.Callout){ShapeStudio.CopyStyle(next,Surface.CalloutDefaults);TextStudio.CopyStyle(next,Surface.CalloutDefaults);Surface.CalloutDefaults.FontSize=next.FontSize;Surface.TextSize=next.FontSize;}
-        if(retain)ChangeSelected(a=>{if(!Compatible(a))return;if(a.Kind==AnnotationKind.Callout){TextStudio.CopyStyle(next,a);ShapeStudio.CopyStyle(next,a);a.Color=next.Color;a.Stroke=next.Stroke;a.FontSize=next.FontSize;if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds,true);return;}a.Kind=next.Kind;if(ShapeStudio.IsLine(a.Kind)){a.Route=next.Route;a.Control=null;}a.Color=next.Color;a.Stroke=next.Stroke;ShapeStudio.CopyStyle(next,a);});
+        if(next.Kind==AnnotationKind.Callout){ShapeStudio.CopyStyle(next,Surface.CalloutDefaults);TextStudio.CopyStyle(next,Surface.CalloutDefaults);Surface.CalloutDefaults.ObjectOpacity=next.ObjectOpacity;Surface.CalloutDefaults.FontSize=next.FontSize;Surface.TextSize=next.FontSize;}
+        if(retain)ChangeSelected(a=>{if(!Compatible(a))return;a.ObjectOpacity=next.ObjectOpacity;if(a.Kind==AnnotationKind.Callout){TextStudio.CopyStyle(next,a);ShapeStudio.CopyStyle(next,a);a.Color=next.Color;a.Stroke=next.Stroke;a.FontSize=next.FontSize;if(_session!=null)EditorRenderer.FitText(a,Surface.EditingBounds,true);return;}a.Kind=next.Kind;if(ShapeStudio.IsLine(a.Kind)){a.Route=next.Route;a.Control=null;}a.Color=next.Color;a.Stroke=next.Stroke;ShapeStudio.CopyStyle(next,a);});
         _skipSavedStyle=true;try{SelectTool(next.Kind==AnnotationKind.Callout?EditorTool.Callout:ShapeStudio.IsClosed(next.Kind)?EditorTool.Shape:EditorTool.Arrow);}finally{_skipSavedStyle=false;}
         if(retain)Surface.SelectIds(ids,primary);
         Surface.Refresh();SyncProperties();
@@ -88,7 +94,9 @@ public partial class MainWindow
     private void FrameFillPaint_Click(object sender,RoutedEventArgs e){if(!RequireLicense())return;OpenPaint(FrameFillPaint,color=>ApplyAppearance(a=>{a.Transparent=color==null;if(color!=null)a.BackgroundColor=color;}));}
     private void PaintButton(Button button,string label,string? color)
     {
-        var row=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center};var patch=new Border{Height=14,Width=26,BorderBrush=Brushes.SlateGray,BorderThickness=new(1),Background=color==null?(Brush)FindResource("TransparencyGrid"):EditorRenderer.Ink(color),Margin=new(0,0,7,0)};row.Children.Add(patch);row.Children.Add(new TextBlock{Text=label,FontSize=11,TextWrapping=TextWrapping.NoWrap,TextTrimming=TextTrimming.CharacterEllipsis,TextAlignment=TextAlignment.Center});button.Content=row;button.ToolTip=label+": "+(color??"Trong suốt");button.MinHeight=32;button.Height=32;
+        string tooltip=label+": "+(color??"Trong suốt");
+        if(button.ToolTip as string==tooltip&&button.Content is StackPanel)return;
+        var row=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center};var patch=new Border{Height=14,Width=26,BorderBrush=Brushes.SlateGray,BorderThickness=new(1),Background=color==null?(Brush)FindResource("TransparencyGrid"):EditorRenderer.Ink(color),Margin=new(0,0,7,0)};row.Children.Add(patch);row.Children.Add(new TextBlock{Text=label,FontSize=11,TextWrapping=TextWrapping.NoWrap,TextTrimming=TextTrimming.CharacterEllipsis,TextAlignment=TextAlignment.Center});button.Content=row;button.ToolTip=tooltip;button.MinHeight=32;button.Height=32;
     }
     private void OpenPaint(Button anchor,Action<string?> selected,bool transparent=true)
     {

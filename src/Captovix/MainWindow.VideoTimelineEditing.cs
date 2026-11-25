@@ -16,7 +16,7 @@ public partial class MainWindow
     {
         _resumeAfterVideoOpen=false;
         if(!_playing)return;
-        if(_videoReady&&_timeline is {} timeline)timeline.Track(timeline.Project.SelectedClip,VideoPreview.Position);
+        if(_videoReady&&_holdClock==null&&_timeline is {} timeline)timeline.Track(timeline.Project.SelectedClip,VideoPreview.Position);
         VideoPreview.Pause();
         SetVideoPlaying(false);
         UpdateVideoPosition();
@@ -67,7 +67,7 @@ public partial class MainWindow
     {
         if(!VideoCanEdit||MediaList.IsKeyboardFocusWithin||Keyboard.FocusedElement is TextBoxBase or ComboBox or ComboBoxItem)return false;
         var modifiers=Keyboard.Modifiers;
-        if(modifiers==ModifierKeys.None&&e.Key==Key.F11&&_videoReady)VideoFullscreen_Click(this,e);
+        if(modifiers==ModifierKeys.None&&e.Key==Key.F11&&(_videoReady||_videoDecoderSuspended))VideoFullscreen_Click(this,e);
         else if(modifiers==ModifierKeys.None&&e.Key==Key.Space){ToggleVideoPlayback_Click(this,e);}
         else if(!_videoStudio)return false;
         else if(modifiers==ModifierKeys.Control&&e.Key==Key.Z)ExecuteVideoEdit("undo");
@@ -120,7 +120,7 @@ public partial class MainWindow
     private void VideoFullscreen_Click(object sender,RoutedEventArgs e)
     {
         if(_videoFullscreen is {} active){active.Close();return;}
-        if(!VideoCanEdit||!_videoReady)return;
+        if(!VideoCanEdit||(!_videoReady&&!_videoDecoderSuspended))return;
         SetVideoTool(null);
         ClearVideoTrackSelection();
         var window=new Window{
@@ -129,21 +129,37 @@ public partial class MainWindow
             Background=Brushes.Black,Title="Captovix · Xem trước video"
         };
         var container=new Grid();
-        var close=new Button{Content="⛶",ToolTip="Thoát toàn màn hình · Esc",HorizontalAlignment=HorizontalAlignment.Right,
+        var close=new Button{Content=AppIcons.Content("FullscreenExit","",20),ToolTip="Thoát toàn màn hình · Esc",HorizontalAlignment=HorizontalAlignment.Right,
             VerticalAlignment=VerticalAlignment.Top,Margin=new Thickness(12)};
         System.Windows.Automation.AutomationProperties.SetName(close,"Thoát toàn màn hình");
         close.Click+=(_,_)=>window.Close();
         VideoHost.Children.Remove(VideoViewport);
         container.Children.Add(VideoViewport);
         container.Children.Add(close);
+        var controls=CreateFullscreenControls(window);container.Children.Add(controls);
+        var idle=new System.Windows.Threading.DispatcherTimer{Interval=TimeSpan.FromSeconds(2)};
+        void Reveal(){controls.Visibility=close.Visibility=Visibility.Visible;window.Cursor=VideoViewport.Cursor=Cursors.Arrow;idle.Stop();idle.Start();}
+        idle.Tick+=(_,_)=>{if(Mouse.Captured!=null)return;controls.Visibility=close.Visibility=Visibility.Collapsed;window.Cursor=VideoViewport.Cursor=Cursors.None;idle.Stop();};
+        Point? lastPointer=null;
+        window.PreviewMouseMove+=(_,move)=>{var at=move.GetPosition(window);if(lastPointer is {} last&&(at-last).Length<1)return;lastPointer=at;Reveal();};
+        window.PreviewMouseDown+=(_,click)=>{
+            var point=click.GetPosition(controls);var exitPoint=click.GetPosition(close);
+            bool overHud=controls.Visibility==Visibility.Visible&&point.X>=0&&point.Y>=0&&point.X<=controls.ActualWidth&&point.Y<=controls.ActualHeight;
+            bool overExit=close.Visibility==Visibility.Visible&&exitPoint.X>=0&&exitPoint.Y>=0&&exitPoint.X<=close.ActualWidth&&exitPoint.Y<=close.ActualHeight;
+            if(overHud||overExit){Reveal();return;}
+            lastPointer=click.GetPosition(window);idle.Stop();controls.Visibility=close.Visibility=Visibility.Collapsed;window.Cursor=VideoViewport.Cursor=Cursors.None;click.Handled=true;
+        };window.PreviewKeyDown+=(_,_)=>Reveal();window.Deactivated+=(_,_)=>{idle.Stop();controls.Visibility=close.Visibility=Visibility.Visible;};
+        Reveal();
         window.Content=container;
         window.PreviewKeyDown+=(_,key)=>{
             if(key.Key is Key.Escape or Key.F11){window.Close();key.Handled=true;}
+            else if(key.Key is Key.Left or Key.Right){SkipVideo(key.Key==Key.Left?-10:10);key.Handled=true;}
             else if(key.Key==Key.Space){ToggleVideoPlayback_Click(this,key);key.Handled=true;}
         };
         window.Closed+=(_,_)=>{
             container.Children.Remove(VideoViewport);
             VideoHost.Children.Add(VideoViewport);
+            idle.Stop();VideoViewport.Cursor=Cursors.Arrow;_fullscreenSeek=null;_fullscreenTime=null;_fullscreenPlay=null;
             _videoFullscreen=null;
             UpdateVideoMarks();
         };

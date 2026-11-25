@@ -181,15 +181,89 @@ try{
  var edited=Path.Combine(root,"ordered.cvxvideo");
  ordered.Project.Save(edited);
  var restored=VideoProject.Open(edited);
- Check(restored.Version==4&&restored.Input(1)==input&&restored.Canvas==canvas
+ Check(restored.Version==8&&restored.Input(1)==input&&restored.Canvas==canvas
      &&restored.Clips.SequenceEqual(ordered.Project.Clips)&&restored.Tracks.SequenceEqual(new[]{shifted}),
-     "V4 persists clip numbers, order, canvas, clip layout and annotation timing");
+     "V8 persists clip numbers, order, canvas, clip layout and annotation timing");
+ var title=new VideoMarkTrack(Guid.NewGuid(),Seconds(1),Seconds(3),
+     new(VideoMarkKind.Title,.12,.18,.88,.34,"Bước 1 — Mở cửa sổ Cài đặt",0){TextFrame=true,
+        Style=VideoInkStyle.Default with{Font="Segoe UI",Bold=true,LineSpacing=1.25,Vertical=1}});
+ var callout=new VideoMarkTrack(Guid.NewGuid(),Seconds(3),Seconds(5),
+     new(VideoMarkKind.Callout,.35,.25,.65,.45,"Chọn Công cụ",0){Tail=new(.25,.50)});
+ var v4=restored with{Version=4,Tracks=[shifted]};
+ v4.Save(legacy);
+ Check(new VideoTimeline(VideoProject.Open(legacy)).Project.Tracks.SequenceEqual(new[]{shifted}),
+     "V4 opens and preserves annotation times while upgrading to V8");
+ Check(ordered.SetTrack(title)&&ordered.SetTrack(callout),"A title and a callout with an independent tail can be added");
+ ordered.Project.Save(edited);
+ var styled=VideoProject.Open(edited);
+ Check(styled.Tracks.Contains(title)&&styled.Tracks.Contains(callout)
+     &&callout.Slice(Seconds(4),Seconds(6)) is {Start.Ticks:0} croppedCallout&&croppedCallout.End==Seconds(1)
+     &&croppedCallout.Mark.Tail==new VideoInkPoint(.25,.50),
+     "Vietnamese content, typography and the normalized callout tail survive save and export-time slicing");
+ var moving=new VideoTimeline(legacyProject);
+ moving.Seek(Seconds(10));
+ var motion=new VideoMotion{Speed=2,Hold=Seconds(2),FadeOut=.5,Keys=[new(0,1,.5,.5),new(1,3,.7,.4)]};
+ Check(moving.SetMotion(motion)&&moving.Project.Duration==Seconds(17)&&moving.Project.Position==Seconds(5)
+     &&moving.Map(Seconds(6)).SourcePosition==Seconds(12)&&moving.Map(Seconds(16)).SourcePosition==Seconds(30),
+     "Speed, freeze and seek share the source-to-timeline mapping");
+ Check(motion.At(.5).Zoom==2&&Math.Abs(motion.At(.5).X-.6)<1e-9,"Zoom and pan use linear interpolation");
+ var audioPlan=VideoAudioPlan.Create(moving.Project,_=>false).Single();
+ Check(audioPlan.Speed==2&&audioPlan.Length==Seconds(15)&&audioPlan.SourceLength==Seconds(30),
+     "Mix adjusts source speed and leaves the freeze interval silent");
+ var motionFile=Path.Combine(root,"motion.cvxvideo");
+ moving.Project.Save(motionFile);
+ var persisted=VideoProject.Open(motionFile);
+ Check(persisted.Clips[0].Timing.Keys.SequenceEqual(motion.Keys)&&persisted.Clips[0].Timing.Hold==Seconds(2),
+     "Motion keyframes and hold survive project save and reopen");
+ var lanes=VideoAnnotationLanes.Pack([title,callout,other]);
+ Check(lanes.Count==2&&lanes[0].SequenceEqual(new[]{title,callout}),"Adjacent annotations share a lane and overlaps use a separate lane");
+ Check(moving.Split(minimum)&&moving.Project.Clips[0].Timing.Hold==TimeSpan.Zero
+     &&moving.Project.Clips[1].Timing.Hold==Seconds(2)&&moving.Project.Duration==Seconds(17),
+     "Splitting a speed-adjusted clip keeps its final freeze and total duration");
+ if(Environment.GetEnvironmentVariable("CAPTOVIX_MOTION_FILTER_TEST") is {} filterPath)
+     File.WriteAllText(filterPath,motion.Filter(320,180,30,2,3));
+ var click=new VideoCue(0,Seconds(10),"left",.5,.5);
+ var ring=new VideoCue(0,Seconds(30),"ring");
+ Check(moving.SetCues([click],true)&&!moving.SetCues([ring],true),"Cue validation accepts source positions and rejects an event at the exclusive end");
+ var cueSpans=VideoCuePlan.Create(moving.Project.Clips,moving.Project.Cues);
+ Check(cueSpans is [{Start:var cueStart}]&&cueStart==Seconds(5),"A click at Split occurs once, on the right clip at the speed-adjusted time");
+ var cueSpan=cueSpans.Single();
+ var cueLayout=new VideoCanvasLayout(VideoAspect.Portrait);
+ var cueGeometry=VideoCanvasGeometry.Create(cueLayout,VideoClipLayout.Default,320,180,180,320);
+ Check(VideoCuePlan.Point(cueSpan,cueSpan.Start,cueGeometry,320,180,180,320) is {} cuePoint
+     &&cuePoint.X>0&&cuePoint.X<180&&cuePoint.Y>0&&cuePoint.Y<320,"A click follows zoom and portrait letterboxing");
+ moving.Project.Save(motionFile);
+ Check(VideoProject.Open(motionFile).Cues.SequenceEqual(new[]{click}),"Source-timed cues persist in schema 7");
+ var cueScript=VideoCueSubtitles.Build(cueSpans,new Dictionary<int,(int Width,int Height)>{{0,(320,180)}},cueLayout,180,320,30,Seconds(17));
+ Check(cueScript.Contains("Dialogue:")&&cueScript.Contains("0:00:05.00"),"Export uses the same cue time and frame grid");
+ if(Environment.GetEnvironmentVariable("CAPTOVIX_CUE_FILTER_TEST") is {} cuePath)File.WriteAllText(cuePath,cueScript);
+ var cameraClock=new RecordingAudioClock();
+ cameraClock.Resume(Seconds(2).Ticks);
+ cameraClock.Pause(Seconds(5).Ticks);
+ cameraClock.Resume(Seconds(10).Ticks);
+ cameraClock.Pause(Seconds(15).Ticks,true);
+ var cameraSpans=cameraClock.CameraSpans(Seconds(1).Ticks,Seconds(12),Seconds(8))
+     .Select(part=>new CameraSyncSpan(part.Screen,part.Camera,part.Length)).ToArray();
+ Check(cameraSpans.SequenceEqual(new[]{new CameraSyncSpan(Seconds(0),Seconds(1),Seconds(3)),new CameraSyncSpan(Seconds(3),Seconds(9),Seconds(3))}),
+     "Webcam and microphone use the same active clock, removing pause and ending at camera loss");
+ var camera=new VideoCamera(originalPath,Seconds(12)){Sync=cameraSpans};
+ Check(camera.At(Seconds(0))==Seconds(1)&&camera.At(Seconds(5))==Seconds(11)&&camera.At(Seconds(6))==null,
+     "Camera follows active time and disappears when the source ends");
+ Check(moving.SetCamera(0,camera)&&moving.Undo()&&moving.Redo(),"Camera layout is undoable");
+ moving.Project.Save(motionFile);
+ Check(VideoProject.Open(motionFile).Cameras[0].Sync.SequenceEqual(cameraSpans),"Project schema 8 preserves camera synchronization");
+ var cameraRange=new VideoRange(Seconds(2),Seconds(6)){Motion=new VideoMotion{Speed=2}};
+ var sections=camera.ForClip(cameraRange).ToArray();
+ Check(sections.Length==2&&sections[0].CameraStart==Seconds(3)&&cameraRange.LocalAt(sections[1].ScreenStart)==Seconds(.5),
+     "Trimmed speed-adjusted camera uses the source offsets across pauses");
+ if(Environment.GetEnvironmentVariable("CAPTOVIX_CAMERA_FILTER_TEST") is {} cameraPath)
+     File.WriteAllText(cameraPath,VideoCameraFilter.Build(camera,cameraRange,320,180,sections));
  var legacyInk=legacyProject with{Version=2,Clips=[
      new VideoRange(Seconds(12),Seconds(18)){Marks=[mark]},
      new VideoRange(TimeSpan.Zero,Seconds(3))],Position=TimeSpan.Zero};
  legacyInk.Save(legacy);
  var converted=new VideoTimeline(VideoProject.Open(legacy)).Project;
- Check(converted.Version==4&&converted.Clips[0].Number==1&&converted.Clips[0].Marks==null
+ Check(converted.Version==8&&converted.Clips[0].Number==1&&converted.Clips[0].Marks==null
      &&converted.Tracks is [{Start.Ticks:0} migrated]&&migrated.End==Seconds(6)&&migrated.Mark==mark,
      "V2 whole-clip marks migrate to independent tracks at the correct timeline position");
  var fit=new VideoCanvasLayout(VideoAspect.Portrait,VideoFit.Fit,"#26364B");
@@ -229,7 +303,7 @@ try{
  var audioPath=Path.Combine(root,"audio.cvxvideo");
  audioTimeline.Project.Save(audioPath);
  var loadedAudio=VideoProject.Open(audioPath);
- Check(loadedAudio.Version==4&&VideoAudioPlan.Settings(loadedAudio,VideoAudioLane.System).Cuts.SequenceEqual(systemTrack.Cuts)
+ Check(loadedAudio.Version==8&&VideoAudioPlan.Settings(loadedAudio,VideoAudioLane.System).Cuts.SequenceEqual(systemTrack.Cuts)
      &&VideoAudioPlan.Settings(loadedAudio,VideoAudioLane.Music).File==musicPath,"V4 saves audio track settings");
  var previousAudio=Path.Combine(root,"previous-audio.cvxvideo");
  (baseAudio with {Version=3}).Save(previousAudio);

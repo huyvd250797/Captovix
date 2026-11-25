@@ -14,6 +14,7 @@ public partial class MainWindow
     private readonly StackPanel _imageLayerPanel=new(){Margin=new(0,4,0,10)};
     private readonly ComboBox _layerFit=new(){ItemsSource=new[]{"Vừa ảnh · giữ toàn bộ","Lấp đầy ô · cắt phần thừa"}};
     private readonly Slider _layerPanX=new(){Minimum=0,Maximum=1,TickFrequency=.01},_layerPanY=new(){Minimum=0,Maximum=1,TickFrequency=.01};
+    private readonly PercentField _layerOpacity=new(){Label="Opacity (%)"};
     private readonly TextBox _layerRadius=new(),_layerBorder=new();
     private readonly Button _layerColor=new(){Content="Màu viền"};
     private readonly CheckBox _panImageMode=new(){Content="Kéo ảnh bên trong ô"};
@@ -26,7 +27,7 @@ public partial class MainWindow
     private void InitializeComposition()
     {
         _imageLayerPanel.Children.Add(new TextBlock{Text="Lớp ảnh",FontWeight=FontWeights.SemiBold,FontSize=16});
-        _imageLayerPanel.Children.Add(_layerFit);_imageLayerPanel.Children.Add(_panImageMode);_panImageMode.Checked+=(_,_)=>Surface.ContentPanEnabled=true;_panImageMode.Unchecked+=(_,_)=>Surface.ContentPanEnabled=false;_imageLayerPanel.Children.Add(new TextBlock{Text="Vị trí ảnh trong ô · ngang / dọc"});_imageLayerPanel.Children.Add(_layerPanX);_imageLayerPanel.Children.Add(_layerPanY);
+        _imageLayerPanel.Children.Add(_layerOpacity);_imageLayerPanel.Children.Add(_layerFit);_imageLayerPanel.Children.Add(_panImageMode);_panImageMode.Checked+=(_,_)=>Surface.ContentPanEnabled=true;_panImageMode.Unchecked+=(_,_)=>Surface.ContentPanEnabled=false;_imageLayerPanel.Children.Add(new TextBlock{Text="Vị trí ảnh trong ô · ngang / dọc"});_imageLayerPanel.Children.Add(_layerPanX);_imageLayerPanel.Children.Add(_layerPanY);
         _imageLayerPanel.Children.Add(new TextBlock{Text="Bo góc · px"});_imageLayerPanel.Children.Add(_layerRadius);_imageLayerPanel.Children.Add(new TextBlock{Text="Dày viền · 0 = không viền"});_imageLayerPanel.Children.Add(_layerBorder);_imageLayerPanel.Children.Add(_layerColor);_imageLayerPanel.Children.Add(_layerShadow);
         _imageLayerPanel.Children.Add(ActionButton("Hợp nhất ảnh",async ()=>await FlattenSelectedImageAsync()));
         _imageLayerPanel.Children.Add(ActionButton("Thay ảnh trong ô…",ReplaceLayerImage));_imageLayerPanel.Children.Add(ActionButton("Cắt riêng ảnh này…",CropLayerImage));_imageLayerPanel.Children.Add(ActionButton("Khôi phục vùng ảnh",()=>LayerChange(a=>(a.ImageStyle??=new()).Crop=null)));_imageLayerPanel.Children.Add(ActionButton("Đổi chỗ hai ảnh đã chọn",SwapImages));EditorProperties.Children.Insert(0,_imageLayerPanel);
@@ -46,7 +47,7 @@ public partial class MainWindow
     private void SyncCompositionControls()
     {
         if(_imageLayerPanel.Parent==null)return;var a=SelectedImage();_imageLayerPanel.Visibility=a==null?Visibility.Collapsed:Visibility.Visible;if(a==null)return;_imageLayerPanel.IsEnabled=_session!=null&&ObjectControl.CanEdit(_session.Document,Surface.SelectedIds);_syncComposition=true;
-        try{var style=a.ImageStyle??new();_layerFit.SelectedIndex=(int)style.Fit;_layerPanX.Value=style.PanX;_layerPanY.Value=style.PanY;_layerRadius.Text=ShapeNumber(style.Radius);_layerBorder.Text=ShapeNumber(style.Border);_layerShadow.IsChecked=a.Shadow.Enabled;PaintButton(_layerColor,"Viền",style.Border>0?style.BorderColor:null);}finally{_syncComposition=false;}
+        try{var style=a.ImageStyle??new();_layerOpacity.Value=style.Opacity*a.ObjectOpacity;_layerFit.SelectedIndex=(int)style.Fit;_layerPanX.Value=style.PanX;_layerPanY.Value=style.PanY;_layerRadius.Text=ShapeNumber(style.Radius);_layerBorder.Text=ShapeNumber(style.Border);_layerShadow.IsChecked=a.Shadow.Enabled;PaintButton(_layerColor,"Viền",style.Border>0?style.BorderColor:null);}finally{_syncComposition=false;}
     }
     private void LayerChange(Action<Annotation> change){if(_session==null||SelectedImage() is not {} a||!ObjectControl.CanEdit(_session.Document,Surface.SelectedIds))return;try{EndInlineText(true);Surface.CancelInteraction();_session.Change(d=>{change(d.Annotations.First(x=>x.Id==a.Id));d.Validate(d.OriginalWidth,d.OriginalHeight,d.SourceHash);});Surface.Refresh();SyncProperties();}catch(Exception ex){SetStatus("Chưa chỉnh được lớp ảnh: "+ex.Message);}}
     private void ApplyLayerControls(){if(_syncComposition)return;try{double radius=ShapeValue(_layerRadius,"Bo góc",0,1000),border=ShapeValue(_layerBorder,"Viền",0,40);int fit=_layerFit.SelectedIndex;double x=_layerPanX.Value,y=_layerPanY.Value;bool shadow=_layerShadow.IsChecked==true;LayerChange(a=>{var s=a.ImageStyle??=new();s.Fit=(ImageFit)fit;s.PanX=x;s.PanY=y;s.Radius=radius;s.Border=border;a.Shadow.Enabled=shadow;});}catch(Exception ex){SetStatus(ex.Message);}}

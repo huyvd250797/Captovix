@@ -24,7 +24,7 @@ public partial class MainWindow
         ShapeKindPanel.Visibility=closed?Visibility.Visible:Visibility.Collapsed;ShapeKindPicker.SelectedValue=closed?kind:Surface.ShapeKind;
         ShapeTargetHint.Text=Surface.SelectedIds.Count>0?$"Sửa {Surface.SelectedIds.Count} đối tượng đã chọn; lưu tự động, có Undo.":"Kiểu cho nét vẽ tiếp theo. Đối tượng đã vẽ được giữ nguyên.";
         ShapeStrokeHex.Text=Surface.InkColor;ShapeFillHex.Text=a.FillColor;ShapeStrokeEnabled.IsChecked=a.StrokeEnabled;ShapeFillEnabled.IsChecked=a.FillEnabled;ShapeFillEnabled.IsEnabled=closed;ShapeFillHex.IsEnabled=closed;
-        ShapeStrokeOpacity.Text=ShapeNumber(a.StrokeOpacity);ShapeFillOpacity.Text=ShapeNumber(a.FillOpacity);ShapeThickness.Text=ShapeNumber(Surface.StrokeSize);ShapeDash.SelectedIndex=(int)a.Dash;
+        _shapeStrokePercent.Value=a.StrokeOpacity;_shapeFillPercent.Value=a.FillOpacity;_shapeFillPercent.Visibility=closed?Visibility.Visible:Visibility.Collapsed;ShapeThickness.Text=ShapeNumber(Surface.StrokeSize);ShapeDash.SelectedIndex=(int)a.Dash;
         ShapeRadius.Text=ShapeNumber(a.CornerRadius);ShapeStarPoints.Text=a.StarPoints.ToString(CultureInfo.InvariantCulture);ShapeStarInset.Text=ShapeNumber(a.StarInset*100);
         ShapeArrowTip.SelectedIndex=(int)a.Tip;ShapeDoubleArrow.IsChecked=a.DoubleArrow;ShapeNoArrow.IsChecked=a.Tip==ArrowTip.None;ShapeArrowSize.Text=ShapeNumber(a.ArrowHeadSize);
         RoundedShapePanel.Visibility=kind==AnnotationKind.RoundedRectangle?Visibility.Visible:Visibility.Collapsed;StarShapePanel.Visibility=kind==AnnotationKind.Star?Visibility.Visible:Visibility.Collapsed;ArrowShapePanel.Visibility=kind==AnnotationKind.Arrow?Visibility.Visible:Visibility.Collapsed;

@@ -10,11 +10,13 @@ public partial class MainWindow
 {
     private string _collectionFilter="",_tagFilter="";
     private int _libraryFilter;
+    private int _libraryType;
+    private void LibraryType_Changed(object sender,RoutedEventArgs e){if(LibraryTypeFilter==null||_store==null)return;if(!FlushEdits()||!FlushVideoProject()){LibraryTypeFilter.SelectedIndex=_libraryType;return;}_libraryType=LibraryTypeFilter.SelectedIndex;RebuildRecent();RefreshLibrary();MediaList.SelectedItem=CollectionViewSource.GetDefaultView(_recentItems).Cast<MediaItem>().FirstOrDefault();}
     private void InitializeLibraryProjects(){var v=CollectionViewSource.GetDefaultView(_recentItems);v.SortDescriptions.Add(new(nameof(MediaItem.Favorite),ListSortDirection.Descending));v.SortDescriptions.Add(new(nameof(MediaItem.Created),ListSortDirection.Descending));}
     private bool LibraryMatch(MediaItem i)
     {
         var q=SearchBox.Text??"";bool edited=File.Exists(DocumentStore.EditPath(i.Id));
-        return (_libraryFilter!=1||i.Favorite)&&(_libraryFilter!=2||!i.IsVideo)&&(_libraryFilter!=3||i.IsVideo)&&(_libraryFilter!=4||edited)&&(_libraryFilter!=5||!edited)&&
+        return (_libraryType!=1||!i.IsVideo)&&(_libraryType!=2||i.IsVideo)&&(_libraryFilter!=1||i.Favorite)&&(_libraryFilter!=2||!i.IsVideo)&&(_libraryFilter!=3||i.IsVideo)&&(_libraryFilter!=4||edited)&&(_libraryFilter!=5||!edited)&&
             (string.IsNullOrEmpty(_collectionFilter)||i.Collection.Equals(_collectionFilter,StringComparison.CurrentCultureIgnoreCase))&&
             (string.IsNullOrEmpty(_tagFilter)||(i.Tags??[]).Contains(_tagFilter,StringComparer.CurrentCultureIgnoreCase))&&
             $"{i.Title} {i.Collection} {string.Join(' ',i.Tags??[])} {(i.IsVideo?"video":"ảnh")} {i.Created:dd/MM/yyyy}".Contains(q,StringComparison.CurrentCultureIgnoreCase);
@@ -41,7 +43,9 @@ public partial class MainWindow
         try{var assets=_store.Items.Select(i=>{var clone=JsonSerializer.Deserialize<MediaItem>(JsonSerializer.Serialize(i))!;clone.FilePath="";return new LibraryAsset(Guid.NewGuid().ToString("N"),Path.GetExtension(i.FilePath).ToLowerInvariant(),JsonSerializer.Serialize(clone),i.FilePath,File.Exists(DocumentStore.EditPath(i.Id))?DocumentStore.EditPath(i.Id):null,
                 i.IsVideo&&File.Exists(RecordingAudioFiles.PathFor(i.FilePath,false))?RecordingAudioFiles.PathFor(i.FilePath,false):null,
                 i.IsVideo&&File.Exists(RecordingAudioFiles.PathFor(i.FilePath,true))?RecordingAudioFiles.PathFor(i.FilePath,true):null,
-                i.IsVideo&&File.Exists(RecordingPresenter.PathFor(i.FilePath))?RecordingPresenter.PathFor(i.FilePath):null);}).ToArray();await Task.Run(()=>LibraryArchive.Save(picker.FileName,assets,_captureCancellation.Token));SetStatus("Đã sao lưu toàn bộ thư viện kèm ảnh gốc, bản chỉnh, tag và bộ sưu tập. Bản sao chứa cả dữ liệu gốc trước khi che.");}
+                i.IsVideo&&File.Exists(RecordingPresenter.PathFor(i.FilePath))?RecordingPresenter.PathFor(i.FilePath):null,
+                i.IsVideo&&File.Exists(RecordingCamera.MetadataFor(i.FilePath))&&File.Exists(RecordingCamera.PathFor(i.FilePath))?RecordingCamera.PathFor(i.FilePath):null,
+                i.IsVideo&&File.Exists(RecordingCamera.MetadataFor(i.FilePath))&&File.Exists(RecordingCamera.PathFor(i.FilePath))?RecordingCamera.MetadataFor(i.FilePath):null);}).ToArray();await Task.Run(()=>LibraryArchive.Save(picker.FileName,assets,_captureCancellation.Token));SetStatus("Đã sao lưu toàn bộ thư viện kèm ảnh gốc, bản chỉnh, tag và bộ sưu tập. Bản sao chứa cả dữ liệu gốc trước khi che.");}
         catch(Exception ex){App.Log(ex);AppDialog.Show(this,ex.Message,"Chưa sao lưu được");}finally{_captureCancellation?.Dispose();_captureCancellation=null;WorkspaceGrid.IsEnabled=true;SetBusy(false);if(_exitRequested)_=Dispatcher.BeginInvoke(RequestExit);}
     }
     private async void ImportLibrary_Click(object sender,RoutedEventArgs e)
@@ -55,6 +59,11 @@ public partial class MainWindow
                 string target=RecordingAudioFiles.PathFor(i.FilePath,system);
                 written.Add(target);
                 await Task.Run(()=>File.Copy(audio,target,false));
+            }
+            if(a.Camera is {} camera&&a.CameraMetadata is {} sync){
+                string target=RecordingCamera.PathFor(i.FilePath),metadata=RecordingCamera.MetadataFor(i.FilePath);
+                written.Add(target);written.Add(metadata);
+                await Task.Run(()=>{File.Copy(camera,target,false);File.Copy(sync,metadata,false);});
             }
             if(a.RecordingClicks is {} clicks){string target=RecordingPresenter.PathFor(i.FilePath);written.Add(target);await Task.Run(()=>File.Copy(clicks,target,false));}
             if(a.Edit!=null){var edit=DocumentStore.EditPath(i.Id);Directory.CreateDirectory(Path.GetDirectoryName(edit)!);File.Copy(a.Edit,edit,false);written.Add(edit);} if(a.Edit!=null&&!i.IsVideo){var bitmap=MediaStore.LoadImage(i.FilePath);var session=new EditorSession(EditorDocument.Deserialize(File.ReadAllText(a.Edit)));written.Add(DocumentStore.ThumbnailPath(i.Id));DocumentStore.Save(i,session,bitmap);_store.RequestThumbnail(i);}else _store.TryThumbnail(i);_store.Items.Add(i);added.Add(i);await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}_store.Save();written.Clear();added.Clear();SetStatus($"Đã nhập {items.Count} nội dung với mã mới; giữ nguyên thư viện hiện có.");RefreshLibrary();

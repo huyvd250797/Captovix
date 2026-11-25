@@ -26,7 +26,7 @@ internal sealed record VideoAudioTrack(VideoAudioLane Lane)
     private static bool ValidTime(TimeSpan value)=>value>=TimeSpan.Zero&&value<=TimeSpan.FromDays(30);
 }
 
-internal sealed record VideoAudioSpan(VideoAudioLane Lane,string File,TimeSpan At,TimeSpan InPoint,TimeSpan Length);
+internal sealed record VideoAudioSpan(VideoAudioLane Lane,string File,TimeSpan At,TimeSpan InPoint,TimeSpan Length,double Speed=1,TimeSpan? SourceLength=null);
 
 internal static class VideoAudioPlan
 {
@@ -41,9 +41,9 @@ internal static class VideoAudioPlan
             var video=project.Input(clip.SourceIndex).Path;
             string mic=video+".mic.wav",system=video+".system.wav";
             bool hasMic=exists(mic),hasSystem=exists(system);
-            if(hasMic)spans.Add(new(VideoAudioLane.Microphone,mic,offset,clip.Start,clip.Duration));
-            if(hasSystem)spans.Add(new(VideoAudioLane.System,system,offset,clip.Start,clip.Duration));
-            if(!hasMic&&!hasSystem)spans.Add(new(VideoAudioLane.Original,video,offset,clip.Start,clip.Duration));
+            if(hasMic)spans.Add(new(VideoAudioLane.Microphone,mic,offset,clip.Start,clip.MovingDuration,clip.Timing.Speed,clip.SourceDuration));
+            if(hasSystem)spans.Add(new(VideoAudioLane.System,system,offset,clip.Start,clip.MovingDuration,clip.Timing.Speed,clip.SourceDuration));
+            if(!hasMic&&!hasSystem)spans.Add(new(VideoAudioLane.Original,video,offset,clip.Start,clip.MovingDuration,clip.Timing.Speed,clip.SourceDuration));
             offset+=clip.Duration;
         }
         var music=Settings(project,VideoAudioLane.Music);
@@ -55,5 +55,5 @@ internal static class VideoAudioPlan
         return spans;
     }
 
-    internal static bool NeedsMix(VideoProject project)=>project.AudioTracks.Length>0;
+    internal static bool NeedsMix(VideoProject project)=>project.AudioTracks.Length>0||project.Clips.Any(clip=>clip.Timing.ChangesAudio);
 }

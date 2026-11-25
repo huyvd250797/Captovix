@@ -87,3 +87,5 @@ SOFTWARE.
 NAudio Wasapi and Core 3.2.0 — Mark Heath and contributors, MIT.
 https://github.com/naudio/NAudio
 See licenses/NAudio-LICENSE.txt.
+
+V1.66.0 build-time media engine: FFmpeg 9.0.2 essentials, GPL v3, provided by Gyan. Executable not included in source ZIP. See media-engine/README.md and downloaded FFmpeg-LICENSE.txt / FFmpeg-build.txt.

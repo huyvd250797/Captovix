@@ -16,7 +16,7 @@ internal sealed class VideoTimeline(VideoProject project)
         for(int i=0;i<clips.Length;i++){
             var clip=clips[i];
             if(position<offset+clip.Duration||i==clips.Length-1)
-                return (i,clip.Start+Clamp(position-offset,TimeSpan.Zero,clip.Duration));
+                return (i,clip.SourceAt(position-offset));
             offset+=clip.Duration;
         }
         throw new InvalidOperationException();
@@ -38,7 +38,7 @@ internal sealed class VideoTimeline(VideoProject project)
     internal void Track(int index,TimeSpan sourcePosition)
     {
         var clip=Project.Clips[index];
-        var position=Offset(index)+Clamp(sourcePosition-clip.Start,TimeSpan.Zero,clip.Duration);
+        var position=Offset(index)+clip.LocalAt(sourcePosition);
         Project=Project with{Position=position,SelectedClip=index};
     }
 
@@ -58,9 +58,13 @@ internal sealed class VideoTimeline(VideoProject project)
     {
         int index=Project.SelectedClip;
         var clip=Project.Clips[index];
-        var source=clip.Start+Clamp(Project.Position-Offset(index),TimeSpan.Zero,clip.Duration);
+        var source=clip.SourceAt(Project.Position-Offset(index));
         var updated=start?clip with{Start=source}:clip with{End=source};
-        if(updated==clip||updated.Duration<minimum)return false;
+        if(updated==clip||updated.SourceDuration<=TimeSpan.Zero||updated.MovingDuration<minimum)return false;
+        if(clip.Motion!=null){
+            double fraction=(source-clip.Start).TotalSeconds/clip.SourceDuration.TotalSeconds;
+            updated=updated with{Motion=clip.Timing.Slice(start?fraction:0,start?1:fraction,true,true,true)};
+        }
         var clips=(VideoRange[])Project.Clips.Clone();
         clips[index]=updated;
         Change(clips,index,start?Offset(index):Project.Position);
@@ -107,6 +111,22 @@ internal sealed class VideoTimeline(VideoProject project)
         return true;
     }
 
+    internal bool SetMotion(VideoMotion motion)
+    {
+        if(!motion.IsValid()||motion==Selected.Timing)return false;
+        int index=Project.SelectedClip;
+        var clip=Selected;
+        var updated=clip with{Motion=motion};
+        if(updated.MovingDuration<=TimeSpan.Zero||Project.Duration-clip.Duration+updated.Duration>TimeSpan.FromDays(30))return false;
+        var offset=Offset(index);
+        var local=Project.Position-offset;
+        var next=local>=clip.MovingDuration?updated.MovingDuration+local-clip.MovingDuration:updated.LocalAt(clip.SourceAt(local));
+        var clips=(VideoRange[])Project.Clips.Clone();
+        clips[index]=updated;
+        Change(clips,index,offset+next);
+        return true;
+    }
+
     internal bool SetCanvas(VideoCanvasLayout canvas,VideoClipLayout layout)
     {
         if(!canvas.IsValid()||!layout.IsValid())return false;
@@ -136,6 +156,26 @@ internal sealed class VideoTimeline(VideoProject project)
         var tracks=Project.Tracks.Where(track=>track.Id!=id).ToArray();
         if(tracks.Length==Project.Tracks.Length)return false;
         Change(Project.Clips,Project.SelectedClip,Project.Position,Project with{Tracks=tracks});
+        return true;
+    }
+
+    internal bool SetCamera(int source,VideoCamera? camera)
+    {
+        if(source<0||source>Project.AdditionalSources.Length||camera?.IsValid()==false)return false;
+        if(Project.Cameras.GetValueOrDefault(source)==camera)return false;
+        var cameras=new Dictionary<int,VideoCamera>(Project.Cameras);
+        if(camera==null)cameras.Remove(source);
+        else cameras[source]=camera;
+        Change(Project.Clips,Project.SelectedClip,Project.Position,Project with{Cameras=cameras});
+        return true;
+    }
+
+    internal bool SetCues(VideoCue[] cues,bool visible)
+    {
+        if(cues.Length>22000||cues.Any(cue=>!cue.IsValid(Project.AdditionalSources.Length+1)
+            ||cue.At>=Project.Input(cue.SourceIndex).Duration))return false;
+        if(visible==Project.ShowCues&&Project.Cues.SequenceEqual(cues))return false;
+        Change(Project.Clips,Project.SelectedClip,Project.Position,Project with{Cues=cues,ShowCues=visible});
         return true;
     }
 

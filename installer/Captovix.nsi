@@ -5,7 +5,7 @@ Unicode true
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
 !ifndef APPVERSION
- !define APPVERSION "1.60.0"
+ !define APPVERSION "1.68.1"
 !endif
 !ifndef CORESETUP
  !define CORESETUP "..\artifacts\CoreSetup.exe"
@@ -22,8 +22,8 @@ InstallDir "$LOCALAPPDATA\HuyVo.Captovix"
 Icon "..\src\Captovix\Assets\Captovix.ico"
 OutFile "${OUTPUT}"
 RequestExecutionLevel user
-SetCompressor /SOLID lzma
-SetCompressorDictSize 32
+SetCompressor /SOLID zlib
+
 VIProductVersion "${APPVERSION}.0"
 VIAddVersionKey "ProductName" "Captovix"
 VIAddVersionKey "FileDescription" "Captovix ${APPVERSION} Setup"

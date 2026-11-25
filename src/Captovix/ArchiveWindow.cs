@@ -14,6 +14,7 @@ internal sealed class ArchiveWindow:Window
     private readonly TextBlock _count=new(){VerticalAlignment=VerticalAlignment.Center,Margin=new(8)};
     private HistoryCalendar<MediaItem> _calendar=null!;
     private bool _sync;
+    private int _mediaType;
     private readonly CheckBox _hideEmpty=new(){Content="Ẩn ngày tháng không có hình",Margin=new(4,0,0,12)};
     private string ViewPreference=>System.IO.Path.Combine(App.DataRoot,"archive-view.json");
     public Action<MediaItem>? OpenItem {get;set;}
@@ -25,6 +26,8 @@ internal sealed class ArchiveWindow:Window
         var hint=new TextBlock{Text="Lịch sử theo năm, tháng và ngày · Ctrl / Shift để chọn nhiều",Margin=new(4,0,4,12)};hint.SetResourceReference(TextBlock.ForegroundProperty,"Muted");DockPanel.SetDock(hint,Dock.Top);root.Children.Add(hint);
         try{_hideEmpty.IsChecked=System.IO.File.Exists(ViewPreference)?System.Text.Json.JsonSerializer.Deserialize<bool>(System.IO.File.ReadAllText(ViewPreference)):true;}catch{_hideEmpty.IsChecked=true;}
         DockPanel.SetDock(_hideEmpty,Dock.Top);root.Children.Add(_hideEmpty);_hideEmpty.Click+=(_,_)=>{try{MediaStore.AtomicWrite(ViewPreference,System.Text.Json.JsonSerializer.Serialize(_hideEmpty.IsChecked==true));}catch(Exception ex){App.Log(ex);}Refresh();};
+        var type=new ComboBox{ItemsSource=new[]{"Tất cả","Ảnh","Video"},SelectedIndex=0,Margin=new(4,0,4,12)};DockPanel.SetDock(type,Dock.Top);root.Children.Add(type);
+        type.SelectionChanged+=(_,_)=>{_mediaType=type.SelectedIndex;_selected.Clear();Refresh();};
         var actions=new StackPanel{Orientation=Orientation.Horizontal};DockPanel.SetDock(actions,Dock.Bottom);root.Children.Add(actions);
         MediaItem[] Selection()=>_store.Items.Where(i=>_selected.Contains(i.Id)).ToArray();void Button(string icon,string text,Action a){var b=new Button{Content=AppIcons.Content(icon,text)};b.Click+=(_,_)=>a();actions.Children.Add(b);}
         Button("Folder","Mở",()=>Open(Selection().FirstOrDefault()));Button("Export","Xuất",()=>export(Selection()));Button("Delete","Xóa",()=>{delete(Selection());Refresh();});actions.Children.Add(_count);root.Children.Add(_tree);
@@ -41,7 +44,7 @@ internal sealed class ArchiveWindow:Window
     }
     private void Refresh()
     {
-        _selected.RemoveWhere(id=>!_store.Items.Any(i=>i.Id==id));_calendar=new(_store.Items.OrderByDescending(i=>i.Created),i=>i.Created,DateTime.Now.Year);_lists.Clear();_tree.Items.Clear();
+        _selected.RemoveWhere(id=>!_store.Items.Any(i=>i.Id==id));_calendar=new(_store.Items.Where(i=>(_mediaType!=1||!i.IsVideo)&&(_mediaType!=2||i.IsVideo)).OrderByDescending(i=>i.Created),i=>i.Created,DateTime.Now.Year);_lists.Clear();_tree.Items.Clear();
         foreach(int year in _calendar.Years)_tree.Items.Add(Branch($"{year} · {_calendar.Count(year)} nội dung",year.ToString(),y=>{
             foreach(int month in HistoryCalendar<MediaItem>.Months().Where(month=>_hideEmpty.IsChecked!=true||_calendar.Count(year,month)>0))y.Items.Add(Branch($"Tháng {month:00} · {_calendar.Count(year,month)}",$"{year}/{month}",m=>{
                 foreach(int day in HistoryCalendar<MediaItem>.Days(year,month)){var items=_calendar.Items(year,month,day);if(_hideEmpty.IsChecked==true&&items.Count==0)continue;m.Items.Add(Branch($"Ngày {day:00} · {items.Count}",$"{year}/{month}/{day}",d=>PopulateDay(d,items)));}

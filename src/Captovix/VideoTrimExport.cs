@@ -25,6 +25,7 @@ internal static class VideoTrimExport
 
     internal static async Task<(int Width,int Height)> ReadDimensionsAsync(string source)
     {
+        if(VideoProbe.Executable!=null){var metadata=await VideoProbe.ReadAsync(source,CancellationToken.None);return(metadata.Width,metadata.Height);}
         var info=await RecordingMedia.VerifyAsync(source,CancellationToken.None);
         return (info.Width,info.Height);
     }
@@ -33,25 +34,48 @@ internal static class VideoTrimExport
         TimeSpan timelineStart,IProgress<double> progress,CancellationToken cancellation)
     {
         destination=Path.GetFullPath(destination);
-        if(project.Inputs.Any(input=>Path.GetFullPath(input.Path).Equals(destination,StringComparison.OrdinalIgnoreCase)))
+        if(project.Inputs.Select(input=>input.Path).Concat(project.Cameras.Values.Select(camera=>camera.Path))
+            .Any(path=>Path.GetFullPath(path).Equals(destination,StringComparison.OrdinalIgnoreCase)))
             throw new IOException("Chọn tên xuất khác để giữ nguyên video gốc.");
 
+        if(ranges.Count==0)throw new InvalidDataException("Timeline không có đoạn để xuất.");
+        if(VideoExportIdentity.CanCopy(project,ranges)){
+            string source=project.Input(ranges[0].SourceIndex).Path;
+            string copy=Path.Combine(Path.GetDirectoryName(destination)!,".captovix-copy-"+Guid.NewGuid().ToString("N")+".mp4");
+            try{
+                await VideoExportIdentity.CopyAsync(source,copy,cancellation);cancellation.ThrowIfCancellationRequested();File.Move(copy,destination,true);progress.Report(100);return;
+            }finally{if(File.Exists(copy))File.Delete(copy);}
+        }
         var requestedDuration=TimeSpan.FromTicks(ranges.Sum(range=>range.Duration.Ticks));
         var tracks=project.Tracks.Select(track=>track.Slice(timelineStart,timelineStart+requestedDuration))
             .OfType<VideoMarkTrack>().ToArray();
+        var cues=project.ShowCues?VideoCuePlan.Create(project.Clips,project.Cues)
+            .Where(c=>c.Cue.Kind!="marker"&&c.End>timelineStart&&c.Start<timelineStart+requestedDuration)
+            .Select(c=>c with{ClipAt=c.ClipAt-timelineStart,Start=c.Start>timelineStart?c.Start-timelineStart:TimeSpan.Zero,End=c.End-timelineStart})
+            .ToArray():[];
+        bool needsCues=cues.Length>0;
         bool needsBlur=tracks.Any(track=>track.Mark.SamplesVideo&&track.Mark.Style.Opacity>0);
-        bool needsCanvas=project.Canvas!=VideoCanvasLayout.Default||ranges.Any(range=>range.Layout!=null);
+        bool needsCamera=ranges.Any(range=>project.Cameras.GetValueOrDefault(range.SourceIndex) is {Visible:true} camera&&camera.ForClip(range).Any());
+        bool needsCanvas=needsCamera||project.Canvas!=VideoCanvasLayout.Default||ranges.Any(range=>range.Layout!=null||range.Motion!=null);
         bool needsAudio=VideoAudioPlan.NeedsMix(project);
-        string? ffmpeg=needsBlur||needsCanvas||needsAudio?FindFfmpeg():null;
-        if((needsBlur||needsCanvas||needsAudio)&&ffmpeg==null)
-            throw new IOException("Xuất bố cục, làm mờ hoặc âm thanh đã chỉnh cần FFmpeg có libx264. Đặt ffmpeg.exe cạnh Captovix hoặc thêm vào PATH.");
+        string? ffmpeg=FindFfmpeg();
+        // Normalize every cut to the same codec/timebase, then concatenate in timeline order.
+        // Audio uses the same source-time mapping as preview, including split/reorder/speed.
+        if(ranges.Count>1&&ffmpeg==null)throw new IOException("Thiếu bộ dựng video cho timeline nhiều đoạn. Dựng lại bản cập nhật bằng Build.cmd để tự cài FFmpeg, hoặc đặt ffmpeg.exe cạnh Captovix.exe.");
+        bool concatenate=ffmpeg!=null;
+        needsCanvas|=concatenate;
+        needsAudio|=concatenate;
+        if((needsBlur||needsCanvas||needsAudio||needsCues)&&ffmpeg==null)
+            throw new IOException("Xuất bố cục, camera, làm mờ hoặc âm thanh đã chỉnh cần FFmpeg có libx264. Đặt ffmpeg.exe cạnh Captovix hoặc thêm vào PATH.");
 
         var work=Path.Combine(Path.GetDirectoryName(destination)!,$".captovix-{Guid.NewGuid():N}");
         Directory.CreateDirectory(work);
         try{
             var composition=new MediaComposition();
+            var normalizedClips=new List<string>();
             var profile=MediaEncodingProfile.CreateMp4(VideoEncodingQuality.HD1080p);
             var inputFiles=new Dictionary<int,StorageFile>();
+            var sourceMetadata=new Dictionary<int,VideoProbeInfo>();
             var sourceSizes=new Dictionary<int,(int Width,int Height)>();
             (int Width,int Height) sourceSize=(1920,1080);
             if(project.Canvas.Aspect==VideoAspect.Source){
@@ -71,16 +95,19 @@ internal static class VideoTrimExport
                 cancellation.ThrowIfCancellationRequested();
                 var range=ranges[i];
                 var path=project.Input(range.SourceIndex).Path;
-                if(!inputFiles.TryGetValue(range.SourceIndex,out var input)){
-                    input=await StorageFile.GetFileFromPathAsync(path).AsTask(cancellation);
-                    inputFiles.Add(range.SourceIndex,input);
+                MediaClip? clip=null;
+                int sourceWidth,sourceHeight;double fps;TimeSpan originalDuration;
+                if(concatenate&&VideoProbe.Executable!=null){
+                    if(!sourceMetadata.TryGetValue(range.SourceIndex,out var metadata)){metadata=await VideoProbe.ReadAsync(path,cancellation);sourceMetadata.Add(range.SourceIndex,metadata);}
+                    sourceWidth=metadata.Width;sourceHeight=metadata.Height;fps=metadata.Fps;originalDuration=metadata.Duration;
+                }else{
+                    if(!inputFiles.TryGetValue(range.SourceIndex,out var input)){input=await StorageFile.GetFileFromPathAsync(path).AsTask(cancellation);inputFiles.Add(range.SourceIndex,input);}
+                    clip=await MediaClip.CreateFromFileAsync(input).AsTask(cancellation);
+                    var properties=clip.GetVideoEncodingProperties();sourceWidth=(int)properties.Width;sourceHeight=(int)properties.Height;
+                    fps=properties.FrameRate.Denominator>0?(double)properties.FrameRate.Numerator/properties.FrameRate.Denominator:30;originalDuration=clip.OriginalDuration;
                 }
-                var clip=await MediaClip.CreateFromFileAsync(input).AsTask(cancellation);
-                var properties=clip.GetVideoEncodingProperties();
-                if(properties.Width==0||properties.Height==0)throw new InvalidDataException("Một nguồn MP4 không có hình ảnh.");
-                uint numerator=properties.FrameRate.Numerator,denominator=properties.FrameRate.Denominator;
-                double fps=numerator>0&&denominator>0?(double)numerator/denominator:30;
-                var end=range.End>clip.OriginalDuration?clip.OriginalDuration:range.End;
+                if(sourceWidth<=0||sourceHeight<=0)throw new InvalidDataException("Nguồn MP4 không có hình ảnh.");
+                var end=range.End>originalDuration?originalDuration:range.End;
                 if(range.Start<TimeSpan.Zero||end<=range.Start||range.End-end>TimeSpan.FromSeconds(Math.Max(.12,2/fps)))
                     throw new InvalidDataException($"Mốc cắt của Đoạn {range.Number} vượt thời lượng nguồn.");
                 if(i==0){
@@ -90,6 +117,8 @@ internal static class VideoTrimExport
                     profile.Video.Bitrate=(uint)Math.Clamp(width*(double)height*outputFps*.16,2_000_000,55_000_000);
                 }
                 var duration=end-range.Start;
+                if(needsCues&&!sourceSizes.ContainsKey(range.SourceIndex))
+                    sourceSizes.Add(range.SourceIndex,(sourceWidth,sourceHeight));
                 if(needsCanvas){
                     if(!sourceSizes.TryGetValue(range.SourceIndex,out var size)){
                         size=await ReadDimensionsAsync(path);
@@ -98,17 +127,29 @@ internal static class VideoTrimExport
                     var geometry=VideoCanvasGeometry.Create(project.Canvas,range.Layout??VideoClipLayout.Default,size.Width,size.Height,width,height);
                     var normalized=Path.Combine(work,$"canvas-{i}.mp4");
                     double completed=offset.TotalSeconds;
+                    var moving=range.Timing.Playback(duration);
+                    var renderedDuration=moving+range.Timing.Hold;
+                    long? frameCount=concatenate?VideoExportTiming.Frames(offset,range.Duration,outputFps):null;
+                    if(frameCount==0){offset+=range.Duration;continue;}
                     await RenderCanvasClipAsync(ffmpeg!,path,normalized,geometry.Filter(width,height,project.Canvas.Background),
-                        range.Start,duration,outputFps,fraction=>progress.Report(50*(completed+fraction*duration.TotalSeconds)/requestedDuration.TotalSeconds),cancellation);
+                        range.Start,duration,renderedDuration,range.Timing,width,height,outputFps,!needsAudio,
+                        fraction=>progress.Report(50*(completed+fraction*renderedDuration.TotalSeconds)/requestedDuration.TotalSeconds),cancellation,frameCount,sourceMetadata.GetValueOrDefault(range.SourceIndex)?.Transfer);
+                    if(project.Cameras.GetValueOrDefault(range.SourceIndex) is {Visible:true} camera&&camera.ForClip(range).Any()){
+                        if(!File.Exists(camera.Path))throw new FileNotFoundException("Thiếu nguồn camera. Tắt lớp camera hoặc liên kết lại tệp.",camera.Path);
+                        string picture=Path.Combine(work,$"camera-{i}.mp4");
+                        await RenderCameraAsync(ffmpeg!,normalized,picture,camera,range with{End=end},width,height,renderedDuration,cancellation);
+                        normalized=picture;
+                    }
+                    if(concatenate){offset+=range.Duration;normalizedClips.Add(normalized);continue;}
                     var transformed=await StorageFile.GetFileFromPathAsync(normalized).AsTask(cancellation);
                     clip=await MediaClip.CreateFromFileAsync(transformed).AsTask(cancellation);
-                    if(clip.OriginalDuration>duration)clip.TrimTimeFromEnd=clip.OriginalDuration-duration;
+                    if(clip.OriginalDuration>renderedDuration)clip.TrimTimeFromEnd=clip.OriginalDuration-renderedDuration;
                 }else{
-                    clip.TrimTimeFromStart=range.Start;
+                    clip!.TrimTimeFromStart=range.Start;
                     clip.TrimTimeFromEnd=clip.OriginalDuration-end;
                 }
-                composition.Clips.Add(clip);
-                offset+=clip.TrimmedDuration;
+                composition.Clips.Add(clip!);
+                offset+=clip!.TrimmedDuration;
             }
 
             for(int i=0;i<tracks.Length;i++){
@@ -126,7 +167,7 @@ internal static class VideoTrimExport
                 }
                 string png=Path.Combine(work,$"ink-{i}.png");
                 if(!VideoMarkRendering.WritePng([mark],width,height,png))continue;
-                if(needsBlur){inkRegions.Add(new(png,track.Start,track.End));continue;}
+                if(needsBlur||concatenate){inkRegions.Add(new(png,track.Start,track.End));continue;}
                 var file=await StorageFile.GetFileFromPathAsync(png).AsTask(cancellation);
                 var ink=await MediaClip.CreateFromImageFileAsync(file,track.Length).AsTask(cancellation);
                 var overlay=new MediaOverlay(ink,new Windows.Foundation.Rect(0,0,width,height),1){Delay=track.Start};
@@ -136,6 +177,13 @@ internal static class VideoTrimExport
             }
 
             var temporary=Path.Combine(work,"composition.mp4");
+            if(concatenate){
+                string manifest=Path.Combine(work,"concat.txt");
+                // Generated relative ASCII names avoid ffconcat quoting of user paths.
+                await File.WriteAllLinesAsync(manifest,normalizedClips.Select(path=>"file '"+Path.GetFileName(path)+"'"),cancellation);
+                await RunFfmpegAsync(ffmpeg!,VideoExportCommands.Concat(manifest,temporary,requestedDuration),requestedDuration,
+                    value=>progress.Report(50+value*15),cancellation,"Không ghép được các đoạn thành MP4 liền mạch.",work);
+            }else{
             using(File.Create(temporary)){}
             var output=await StorageFile.GetFileFromPathAsync(temporary).AsTask(cancellation);
             double begin=needsCanvas?50:0;
@@ -144,10 +192,21 @@ internal static class VideoTrimExport
             var result=await composition.RenderToFileAsync(output,MediaTrimmingPreference.Precise,profile).AsTask(cancellation,renderProgress);
             if(result!=TranscodeFailureReason.None)
                 throw new IOException($"Windows không xuất được MP4 ({result}). Hãy kiểm tra codec của video nguồn.");
+            }
             if(blurRegions.Count>0||inkRegions.Count>0){
                 var blurred=Path.Combine(work,"blurred.mp4");
                 await ApplyTracksAsync(ffmpeg!,temporary,blurred,blurRegions,inkRegions,offset,needsAudio?new Progress<double>(value=>progress.Report(value*.8)):progress,cancellation);
                 temporary=blurred;
+            }
+            if(needsCues){
+                string script=Path.Combine(work,"cues.ass");
+                await File.WriteAllTextAsync(script,VideoCueSubtitles.Build(cues,sourceSizes,project.Canvas,width,height,outputFps,offset),cancellation);
+                var withCues=Path.Combine(work,"cues.mp4");
+                await RunFfmpegAsync(ffmpeg!,["-i",temporary,"-vf","ass=cues.ass","-map","0:v:0","-map","0:a?",
+                    "-c:v","libx264","-preset","fast","-crf","16","-c:a","copy",withCues],offset,
+                    fraction=>progress.Report(82+fraction*(needsAudio?6:17)),cancellation,
+                    "Không xuất được chỉ dẫn chuột. Cần FFmpeg có libass và libx264.",work);
+                temporary=withCues;
             }
             if(needsAudio){
                 var mix=await Task.Run(()=>VideoAudioRender.RenderAsync(project,work,false,cancellation),cancellation);
@@ -158,7 +217,11 @@ internal static class VideoTrimExport
                     "Không ghép được bản phối âm thanh vào MP4.");
                 temporary=withAudio;
             }
-            var verified=await RecordingMedia.VerifyAsync(temporary,cancellation);
+            RecordingMediaInfo verified;
+            if(concatenate&&VideoProbe.Executable!=null){
+                RecordingContainer.Verify(temporary);var metadata=await VideoProbe.ReadAsync(temporary,cancellation);
+                verified=new(metadata.Width,metadata.Height,metadata.Duration);
+            }else verified=await RecordingMedia.VerifyAsync(temporary,cancellation);
             if(verified.Width!=width||verified.Height!=height)
                 throw new InvalidDataException($"Kích thước MP4 không khớp canvas {width} × {height}.");
             if((verified.Duration-requestedDuration).Duration()>TimeSpan.FromSeconds(Math.Max(.15,2/outputFps)))
@@ -172,13 +235,24 @@ internal static class VideoTrimExport
     }
 
     private static Task RenderCanvasClipAsync(string executable,string input,string output,string filter,TimeSpan start,
-        TimeSpan duration,double fps,Action<double> progress,CancellationToken cancellation)
+        TimeSpan sourceDuration,TimeSpan duration,VideoMotion motion,int width,int height,double fps,bool keepAudio,
+        Action<double> progress,CancellationToken cancellation,long? frameCount=null,string? transfer=null)
     {
-        string rate=fps.ToString("0.###",CultureInfo.InvariantCulture);
-        return RunFfmpegAsync(executable,["-ss",Seconds(start),"-i",input,"-t",Seconds(duration),"-filter_threads","1","-vf",
-            filter+$",fps={rate}:round=near,tpad=stop_mode=clone:stop_duration=1", "-map","0:v:0","-map","0:a:0?",
-            "-map_metadata","-1","-c:v","libx264","-preset","fast","-crf","17","-c:a","aac","-b:a","256k",output],
-            duration,progress,cancellation,"FFmpeg không dựng được canvas. Kiểm tra bộ mã hóa libx264.");
+        var arguments=VideoExportCommands.Normalize(input,output,filter,start,sourceDuration,duration,motion,width,height,fps,keepAudio,frameCount,transfer);
+        return RunFfmpegAsync(executable,arguments,duration,progress,cancellation,"FFmpeg không dựng được canvas hoặc chuyển động. Kiểm tra libx264.");
+    }
+
+    private static async Task RenderCameraAsync(string ffmpeg,string input,string output,VideoCamera camera,
+        VideoRange range,int width,int height,TimeSpan duration,CancellationToken token)
+    {
+        var spans=camera.ForClip(range).ToArray();
+        if(spans.Length==0){File.Copy(input,output);return;}
+        string filter=VideoCameraFilter.Build(camera,range,width,height,spans);
+        string script=Path.Combine(Path.GetDirectoryName(output)!,"camera-filter.txt");
+        await File.WriteAllTextAsync(script,filter,token);
+        await RunFfmpegAsync(ffmpeg,["-i",input,"-i",camera.Path,"-filter_complex_threads","1","-filter_complex_script",script,
+            "-map","[cameraout]","-map","0:a?","-c:a","copy","-c:v","libx264","-preset","fast","-crf","16","-video_track_timescale","90000",output],
+            duration,_=>{},token,"Không ghép được lớp camera. Kiểm tra nguồn MP4 và FFmpeg có libx264.");
     }
 
     private static string Seconds(TimeSpan value)=>value.TotalSeconds.ToString("0.#######",CultureInfo.InvariantCulture);
@@ -255,11 +329,12 @@ internal static class VideoTrimExport
             cancellation,"FFmpeg không xuất được track chú thích. Kiểm tra bộ mã hóa libx264.");
     }
 
-    private static async Task RunFfmpegAsync(string executable,IReadOnlyList<string> arguments,TimeSpan duration,
-        Action<double> progress,CancellationToken cancellation,string errorMessage)
+    internal static async Task RunFfmpegAsync(string executable,IReadOnlyList<string> arguments,TimeSpan duration,
+        Action<double> progress,CancellationToken cancellation,string errorMessage,string? workingDirectory=null)
     {
         cancellation.ThrowIfCancellationRequested();
         var settings=new ProcessStartInfo(executable){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true};
+        if(workingDirectory!=null)settings.WorkingDirectory=workingDirectory;
         foreach(var argument in new[]{"-nostdin","-hide_banner","-loglevel","error","-progress","pipe:1"}.Concat(arguments))
             settings.ArgumentList.Add(argument);
         using var process=Process.Start(settings)??throw new IOException("Không khởi động được FFmpeg.");
@@ -276,8 +351,8 @@ internal static class VideoTrimExport
         await process.WaitForExitAsync();
         cancellation.ThrowIfCancellationRequested();
         if(process.ExitCode!=0){
-            App.Log(new IOException(await errors));
-            throw new IOException(errorMessage);
+            string details=(await errors).Trim();App.Log(new IOException(details));
+            throw new IOException(errorMessage+" "+(details.Length>1500?details[^1500..]:details));
         }
         await errors;
     }

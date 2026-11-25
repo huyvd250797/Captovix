@@ -64,13 +64,39 @@ public static partial class EditorRenderer
         }
     }
     [System.ThreadStatic] private static System.Runtime.CompilerServices.ConditionalWeakTable<Annotation,CalloutGeometryEntry>? _calloutGeometries;
-    private sealed class CalloutGeometryEntry { public CalloutGeometryEntry(){} public object? Key;public Geometry? Shape;}
-    public static Geometry CalloutGeometry(Annotation a)
+    private sealed class CalloutGeometryEntry
+    {
+        public (double Width,double Height,double TailX,double TailY,CalloutStyle Style,double Radius) Key;
+        public Geometry? Local,World;
+        public Point Origin;
+    }
+    private static CalloutGeometryEntry CachedCalloutGeometry(Annotation a)
     {
         var entry=(_calloutGeometries??=new()).GetOrCreateValue(a);
-        object key=(CacheCoordinate(a.Width),CacheCoordinate(a.Height),CacheCoordinate(a.TailX-a.Left),CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius);
-        if(!Equals(entry.Key,key)||entry.Shape==null){var local=a.Copy();local.Translate(-a.Left,-a.Top);entry.Shape=BuildCalloutGeometry(local);entry.Shape.Freeze();entry.Key=key;}
-        var result=entry.Shape.Clone();result.Transform=new TranslateTransform(a.Left,a.Top);result.Freeze();return result;
+        var key=(CacheCoordinate(a.Width),CacheCoordinate(a.Height),CacheCoordinate(a.TailX-a.Left),
+            CacheCoordinate(a.TailY-a.Top),a.CalloutStyle,a.CornerRadius);
+        if(entry.Local==null||entry.Key!=key){
+            var local=a.Copy();
+            local.Translate(-a.Left,-a.Top);
+            entry.Local=BuildCalloutGeometry(local);
+            entry.Local.Freeze();
+            entry.World=null;
+            entry.Key=key;
+        }
+        return entry;
+    }
+    public static Geometry CalloutGeometry(Annotation a)
+    {
+        var entry=CachedCalloutGeometry(a);
+        var origin=new Point(a.Left,a.Top);
+        if(entry.World==null||entry.Origin!=origin){
+            var world=entry.Local!.Clone();
+            world.Transform=new TranslateTransform(origin.X,origin.Y);
+            world.Freeze();
+            entry.World=world;
+            entry.Origin=origin;
+        }
+        return entry.World;
     }
     private static Geometry BuildCalloutGeometry(Annotation a)
     {
